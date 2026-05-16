@@ -1,8 +1,10 @@
 
 "use client"
-
+export const dynamic = "force-dynamic"
 import { useSearchParams } from "next/navigation"
-export default function Sucesso() {
+import { Suspense } from "react"
+
+function SucessoContent() {
 
     const searchParams = useSearchParams()
 
@@ -167,5 +169,12 @@ ${historia}
       </div>
 
     </div>
+  )
+}
+export default function Sucesso() {
+  return (
+    <Suspense fallback={null}>
+      <SucessoContent />
+    </Suspense>
   )
 }
