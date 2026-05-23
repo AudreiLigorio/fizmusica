@@ -2,6 +2,11 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import FizMusicaCarousel from "./components/FizMusicaCarousel";
+import Header from "./components/Header"
+import Footer from "./components/Footer"
+
+
 
 export default function Home() {
   const [playing, setPlaying] = useState(false)
@@ -9,46 +14,12 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const router = useRouter()
+  const [currentAudio, setCurrentAudio] = useState<string | null>(null)
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
 
-      {/* HEADER */}
-
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/70 border-b border-white/10">
-
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
-
-          {/* LOGO */}
-
-          <div className="flex items-center gap-5">
-
-            <img
-              src="/logo_fizmusica.png"
-              alt="FizMusica"
-              className="h-24 w-auto drop-shadow-[0_0_15px_rgba(236,72,153,0.45)]"
-            />
-
-            <img
-              src="/som.png"
-              alt="Wave"
-              className="h-5 md:h-6 w-auto opacity-80 drop-shadow-[0_0_12px_rgba(236,72,153,0.25)]"
-            />
-
-          </div>
-
-          {/* CTA */}
-
-          <button
-            onClick={() => router.push("/criar")}
-            className="bg-pink-500 hover:bg-pink-600 transition-all px-7 py-3 rounded-2xl font-semibold shadow-lg shadow-pink-500/20"
-          >
-            Criar música
-          </button>
-
-        </div>
-
-      </header>
+      <Header />
 
       {/* HERO */}
 
@@ -62,12 +33,8 @@ export default function Home() {
 
           <div>
 
-            <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-sm mb-6 backdrop-blur-sm">
-              🎵 Música personalizada com IA
-            </div>
-
             <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6">
-              Transforme sua história em uma música inesquecível.
+              Existem histórias que merecem ser cantadas.
             </h1>
 
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
@@ -83,7 +50,7 @@ export default function Home() {
                 Criar minha música
               </button>
 
-      
+
 
             </div>
 
@@ -96,159 +63,234 @@ export default function Home() {
           </div>
 
           {/* PLAYER */}
-
           <div className="relative">
 
-            <div className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl">
+            <div className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-4 md:p-8 shadow-2xl">
 
-  <div className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl p-6 mb-8">
+              <div className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl p-5 md:p-6 mb-6 md:mb-8">
 
-    <div className="text-2xl font-bold mb-2">
-      Sua História. Sua Música ❤️
-    </div>
+                <div className="text-xl md:text-2xl font-bold mb-2">
+                  Sua História. Sua Música ❤️
+                </div>
 
-    <div className="opacity-80 text-lg">
-      Ouça alguns exemplos emocionantes
-    </div>
+                <div className="opacity-80 text-sm md:text-lg">
+                  Ouça alguns exemplos emocionantes
+                </div>
 
-  </div>
+              </div>
 
-  <div className="space-y-5">
+              <div className="space-y-4">
 
-    {/* EXEMPLO 1 */}
+                {/* EXEMPLO 1 */}
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
 
-    <div className="bg-black/30 border border-white/10 rounded-2xl p-5 hover:border-pink-500/40 transition-all">
+                  <div className="flex items-center justify-between gap-3">
 
-      <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
 
-        <div>
+                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
+                        💖 Homenagem Dia dos Namorados
+                      </div>
 
-          <div className="text-xl font-semibold mb-1">
-            💖 Homenagem Dia dos Namorados
+                      <div className="text-gray-400 text-xs md:text-sm">
+                        Para: Maria Eduarda | Sertanejo romântico • 3:12
+                      </div>
+
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (!audioRef.current) return
+
+                        if (
+                          currentAudio === "/namoro_2anos.mp3" &&
+                          playing
+                        ) {
+                          audioRef.current.pause()
+                          setPlaying(false)
+                          return
+                        }
+
+                        audioRef.current.src = "/namoro_2anos.mp3"
+                        audioRef.current.play()
+
+                        setCurrentAudio("/namoro_2anos.mp3")
+                        setPlaying(true)
+                      }}
+                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
+                    >
+                      {playing && currentAudio === "/namoro_2anos.mp3"
+                        ? "⏸"
+                        : "▶"}
+                    </button>
+
+                  </div>
+
+                </div>
+
+                {/* EXEMPLO 2 */}
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
+
+                  <div className="flex items-center justify-between gap-3">
+
+                    <div className="flex-1 min-w-0">
+
+                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
+                        💍 Aniversário de Casamento
+                      </div>
+
+                      <div className="text-gray-400 text-xs md:text-sm">
+                        Para: Patricia "Mô" | Pagode romântico • 2:58
+                      </div>
+
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (!audioRef.current) return
+
+                        if (
+                          currentAudio === "/aniversario_casamento.mp3" &&
+                          playing
+                        ) {
+                          audioRef.current.pause()
+                          setPlaying(false)
+                          return
+                        }
+
+                        audioRef.current.src = "/aniversario_casamento.mp3"
+                        audioRef.current.play()
+
+                        setCurrentAudio("/aniversario_casamento.mp3")
+                        setPlaying(true)
+                      }}
+                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
+                    >
+                      {playing && currentAudio === "/aniversario_casamento.mp3"
+                        ? "⏸"
+                        : "▶"}
+                    </button>
+
+                  </div>
+
+                </div>
+
+                {/* EXEMPLO 3 */}
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
+
+                  <div className="flex items-center justify-between gap-3">
+
+                    <div className="flex-1 min-w-0">
+
+                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
+                        👶 Chá Revelação - Revela só no último trecho da música. (Incrível)
+                      </div>
+
+                      <div className="text-gray-400 text-xs md:text-sm">
+                        É Menina | Sertanejo animado • 3:34
+                      </div>
+
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (!audioRef.current) return
+
+                        if (
+                          currentAudio === "/cha_revelacao_menina.mp3" &&
+                          playing
+                        ) {
+                          audioRef.current.pause()
+                          setPlaying(false)
+                          return
+                        }
+
+                        audioRef.current.src = "/cha_revelacao_menina.mp3"
+                        audioRef.current.play()
+
+                        setCurrentAudio("/cha_revelacao.mp3")
+                        setPlaying(true)
+                      }}
+                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
+                    >
+                      {playing && currentAudio === "/cha_revelacao_menina.mp3"
+                        ? "⏸"
+                        : "▶"}
+                    </button>
+
+                  </div>
+
+                </div>
+                {/* EXEMPLO 4 */}
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
+
+                  <div className="flex items-center justify-between gap-3">
+
+                    <div className="flex-1 min-w-0">
+
+                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
+                        ✨ Despedida Pet - Amora
+                      </div>
+
+                      <div className="text-gray-400 text-xs md:text-sm">
+                        Homenagem Amora | Sentimental - MPB • 3:20
+                      </div>
+
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (!audioRef.current) return
+
+                        if (
+                          currentAudio === "/despedida_pet.mp3" &&
+                          playing
+                        ) {
+                          audioRef.current.pause()
+                          setPlaying(false)
+                          return
+                        }
+
+                        audioRef.current.src = "/despedida_pet.mp3"
+                        audioRef.current.play()
+
+                        setCurrentAudio("/despedida_pet.mp3")
+                        setPlaying(true)
+                      }}
+                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
+                    >
+                      {playing && currentAudio === "/despedida_pet.mp3"
+                        ? "⏸"
+                        : "▶"}
+                    </button>
+
+                  </div>
+
+                </div>
+
+
+              </div>
+
+              <audio
+                ref={audioRef}
+                onEnded={() => {
+                  setPlaying(false)
+                  setCurrentAudio(null)
+                }}
+              />
+
+            </div>
+
           </div>
-
-          <div className="text-gray-400 text-sm">
-            Sertanejo romântico • 3:12
-          </div>
+          {/* player */}
 
         </div>
 
-        <button
-          onClick={() => {
-            if (!audioRef.current) return
+      </section>
 
-            audioRef.current.src = "/exemplo_namorados.mpeg"
-
-            if (playing) {
-              audioRef.current.pause()
-              setPlaying(false)
-            } else {
-              audioRef.current.play()
-              setPlaying(true)
-            }
-          }}
-          className="w-14 h-14 rounded-full bg-pink-500 text-2xl hover:scale-110 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
-        >
-          {playing ? "⏸" : "▶"}
-        </button>
-
-      </div>
-
-    </div>
-
-    {/* EXEMPLO 2 */}
-
-    <div className="bg-black/30 border border-white/10 rounded-2xl p-5 hover:border-pink-500/40 transition-all">
-
-      <div className="flex items-center justify-between gap-4">
-
-        <div>
-
-          <div className="text-xl font-semibold mb-1">
-            💍 Aniversário de Casamento
-          </div>
-
-          <div className="text-gray-400 text-sm">
-            Pop romântico • 2:58
-          </div>
-
-        </div>
-
-        <button
-          onClick={() => {
-            if (!audioRef.current) return
-
-            audioRef.current.src = "/exemplo_casamento.mpeg"
-
-            if (playing) {
-              audioRef.current.pause()
-              setPlaying(false)
-            } else {
-              audioRef.current.play()
-              setPlaying(true)
-            }
-          }}
-          className="w-14 h-14 rounded-full bg-pink-500 text-2xl hover:scale-110 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
-        >
-          {playing ? "⏸" : "▶"}
-        </button>
-
-      </div>
-
-    </div>
-
-    {/* EXEMPLO 3 */}
-
-    <div className="bg-black/30 border border-white/10 rounded-2xl p-5 hover:border-pink-500/40 transition-all">
-
-      <div className="flex items-center justify-between gap-4">
-
-        <div>
-
-          <div className="text-xl font-semibold mb-1">
-            👶 Surpresa: Você Vai Ser Papai
-          </div>
-
-          <div className="text-gray-400 text-sm">
-            Piano emocionante • 3:34
-          </div>
-
-        </div>
-
-        <button
-          onClick={() => {
-            if (!audioRef.current) return
-
-            audioRef.current.src = "/exemplo_gravidez.mpeg"
-
-            if (playing) {
-              audioRef.current.pause()
-              setPlaying(false)
-            } else {
-              audioRef.current.play()
-              setPlaying(true)
-            }
-          }}
-          className="w-14 h-14 rounded-full bg-pink-500 text-2xl hover:scale-110 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
-        >
-          {playing ? "⏸" : "▶"}
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-  <audio ref={audioRef} />
-
-</div>
-
-
-          </div>
-
-        </div>
-
+      {/* CARROSSEL */}
+      <section className="max-w-7xl mx-auto px-6 py-20">
+        <FizMusicaCarousel />
       </section>
 
       {/* VIDEO */}
@@ -276,7 +318,7 @@ export default function Home() {
             </p>
 
             <p>
-              🎶 Cada detalhe da história transformado em música.
+              🎶 Nós te entregamos emoção e amor.
             </p>
 
           </div>
@@ -336,181 +378,9 @@ export default function Home() {
         </div>
 
       </section>
-{/* TIPOS DE HOMENAGENS */}
+      {/* TIPOS DE HOMENAGENS */}
 
-<section className="max-w-7xl mx-auto px-6 py-28">
-
-  <div className="text-center mb-20">
-
-    <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-5 py-2 rounded-full text-pink-300 mb-6">
-      🎶 Feito para momentos reais
-    </div>
-
-    <h2 className="text-5xl font-bold mb-6 leading-tight">
-      Criamos músicas para todos os momentos especiais da vida.
-    </h2>
-
-    <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-      Cada homenagem é personalizada de acordo com a história, emoção e momento vivido.
-    </p>
-
-  </div>
-
-  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-
-    {/* AMOR */}
-
-    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:border-pink-500/30 transition-all">
-
-      <div className="text-5xl mb-6">
-        ❤️
-      </div>
-
-      <h3 className="text-3xl font-bold mb-5">
-        Amor & Relacionamentos
-      </h3>
-
-      <div className="space-y-3 text-gray-300 text-lg">
-
-        <div>💍 Pedido de casamento</div>
-        <div>💖 Dia dos Namorados</div>
-        <div>🥹 Reconciliação</div>
-        <div>👰 Casamento</div>
-        <div>🎂 Aniversário namoro</div>
-        <div>💌 Declaração de amor</div>
-
-      </div>
-
-    </div>
-
-    {/* FAMÍLIA */}
-
-    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:border-pink-500/30 transition-all">
-
-      <div className="text-5xl mb-6">
-        👨‍👩‍👧
-      </div>
-
-      <h3 className="text-3xl font-bold mb-5">
-        Família
-      </h3>
-
-      <div className="space-y-3 text-gray-300 text-lg">
-
-        <div>👩 Música para mãe</div>
-        <div>👨 Música para pai</div>
-        <div>👵 Homenagem para avó</div>
-        <div>👴 Homenagem para avô</div>
-        <div>💖 Gratidão familiar</div>
-        <div>🏡 Memórias da família</div>
-
-      </div>
-
-    </div>
-
-    {/* BEBÊ */}
-
-    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:border-pink-500/30 transition-all">
-
-      <div className="text-5xl mb-6">
-        👶
-      </div>
-
-      <h3 className="text-3xl font-bold mb-5">
-        Gravidez & Bebê
-      </h3>
-
-      <div className="space-y-3 text-gray-300 text-lg">
-
-        <div>🤰 Descoberta gravidez</div>
-        <div>👶 Chá revelação</div>
-        <div>🍼 Nascimento bebê</div>
-        <div>👨 Você vai ser papai</div>
-        <div>👵 Você vai ser vovó</div>
-        <div>🌙 Canção de ninar</div>
-
-      </div>
-
-    </div>
-
-    {/* CONQUISTAS */}
-
-    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:border-pink-500/30 transition-all">
-
-      <div className="text-5xl mb-6">
-        🎓
-      </div>
-
-      <h3 className="text-3xl font-bold mb-5">
-        Conquistas
-      </h3>
-
-      <div className="space-y-3 text-gray-300 text-lg">
-
-        <div>🎓 Formatura</div>
-        <div>🏆 Aprovação</div>
-        <div>💼 Novo trabalho</div>
-        <div>🚀 Conquista profissional</div>
-        <div>💪 Superação pessoal</div>
-        <div>🌟 Realização de sonho</div>
-
-      </div>
-
-    </div>
-
-    {/* DATAS */}
-
-    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:border-pink-500/30 transition-all">
-
-      <div className="text-5xl mb-6">
-        🎂
-      </div>
-
-      <h3 className="text-3xl font-bold mb-5">
-        Datas Especiais
-      </h3>
-
-      <div className="space-y-3 text-gray-300 text-lg">
-
-        <div>🎂 Aniversário</div>
-        <div>🎄 Natal</div>
-        <div>🥂 Ano novo</div>
-        <div>🎉 Festa surpresa</div>
-        <div>💝 Presente especial</div>
-        <div>🎊 Bodas</div>
-
-      </div>
-
-    </div>
-
-    {/* HOMENAGENS */}
-
-    <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 hover:border-pink-500/30 transition-all">
-
-      <div className="text-5xl mb-6">
-        🕊️
-      </div>
-
-      <h3 className="text-3xl font-bold mb-5">
-        Homenagens & Saudade
-      </h3>
-
-      <div className="space-y-3 text-gray-300 text-lg">
-
-        <div>🕊️ Homenagem póstuma</div>
-        <div>💖 Saudade especial</div>
-        <div>🙏 Gratidão eterna</div>
-        <div>🌹 Música memorial</div>
-        <div>✨ Recordações especiais</div>
-        <div>💫 Tributo emocional</div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</section>
+   
       {/* CTA FINAL */}
 
       <section className="max-w-5xl mx-auto px-6 py-28 text-center">
@@ -522,11 +392,11 @@ export default function Home() {
           </div>
 
           <h2 className="text-5xl font-bold mb-6 leading-tight">
-            Sua história merece virar música.
+            Emocione agora quem você ama
           </h2>
 
           <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Transforme momentos especiais em uma música emocionante e inesquecível.
+            É fácil, rápido e personalizado. Será único e inesquecível.
           </p>
 
           <button
@@ -541,125 +411,345 @@ export default function Home() {
       </section>
       {/* POR QUE ESCOLHER */}
 
-<section className="border-y border-white/10 bg-white/5">
+      <section className="border-y border-white/10 bg-white/5">
 
-  <div className="max-w-7xl mx-auto px-6 py-28">
+        <div className="max-w-7xl mx-auto px-6 py-28">
 
-    <div className="text-center mb-20">
+          <div className="text-center mb-20">
 
-      <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-5 py-2 rounded-full text-pink-300 mb-6">
-        ❤️ Muito além de uma música
-      </div>
+            <h2 className="text-5xl font-bold mb-6">
+              Por que escolher a Fiz Música?
+            </h2>
 
-      <h2 className="text-5xl font-bold mb-6">
-        Por que escolher a Fiz Música?
-      </h2>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+              Somos apaixonados por criar experiências emocionais inesquecíveis capazes de marcar momentos para sempre.
+            </p>
 
-      <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-        Nós não criamos apenas músicas. Criamos experiências emocionais inesquecíveis capazes de marcar momentos para sempre.
-      </p>
-
-    </div>
-
-    <div className="grid lg:grid-cols-3 gap-8">
-
-      {/* CARD 1 */}
-
-      <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
-
-        <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
-          💖
-        </div>
-
-        <h3 className="text-3xl font-bold mb-5">
-          Experiência emocional real
-        </h3>
-
-        <p className="text-gray-300 text-lg leading-relaxed">
-          Cada música é construída a partir da sua história, sentimentos, momentos especiais e detalhes únicos. Nosso foco é emocionar de verdade.
-        </p>
-
-      </div>
-
-      {/* CARD 2 */}
-
-      <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
-
-        <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
-          🎵
-        </div>
-
-        <h3 className="text-3xl font-bold mb-5">
-          Música personalizada de verdade
-        </h3>
-
-        <p className="text-gray-300 text-lg leading-relaxed">
-          Nada genérico. Cada letra é criada exclusivamente para a sua história, com o estilo musical e emoção que fazem sentido para o momento.
-        </p>
-
-      </div>
-
-      {/* CARD 3 */}
-
-      <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
-
-        <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
-          ✨
-        </div>
-
-        <h3 className="text-3xl font-bold mb-5">
-          Um presente inesquecível
-        </h3>
-
-        <p className="text-gray-300 text-lg leading-relaxed">
-          Mais do que um presente, você entrega uma lembrança eterna. Uma música criada especialmente para emocionar alguém importante.
-        </p>
-
-      </div>
-
-    </div>
-
-    {/* DESTAQUES */}
-
-    <div className="mt-20 bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 rounded-[40px] p-12">
-
-      <div className="grid lg:grid-cols-2 gap-12 items-center">
-
-        <div>
-
-          <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full text-sm mb-6">
-            🚀 Nosso diferencial
           </div>
 
-          <h3 className="text-4xl font-bold mb-6 leading-tight">
-            Acreditamos que cada história merece sua própria trilha sonora.
-          </h3>
+          <div className="grid lg:grid-cols-3 gap-8">
 
-          <p className="text-xl text-gray-300 leading-relaxed">
-            Enquanto outras plataformas focam apenas em gerar músicas automaticamente, nós focamos na experiência emocional completa do cliente.
+            {/* CARD 1 */}
+
+            <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
+
+              <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
+                💖
+              </div>
+
+              <h3 className="text-3xl font-bold mb-5">
+                Experiência emocional real tudo feito com muito carinho
+              </h3>
+
+              <p className="text-gray-300 text-lg leading-relaxed">
+                Cada música é construída a partir da sua história, sentimentos, momentos especiais e detalhes marcantes. Nosso foco é emocionar de verdade.
+              </p>
+
+            </div>
+
+            {/* CARD 2 */}
+
+            <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
+
+              <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
+                🎵
+              </div>
+
+              <h3 className="text-3xl font-bold mb-5">
+                Música personalizada de verdade que toca lá dentro.
+              </h3>
+
+              <p className="text-gray-300 text-lg leading-relaxed">
+                Nada genérico. Temos um processo de revisão rigoroso. Cada letra é criada exclusivamente para a sua história, com o estilo musical e emoção que fazem sentido para o momento.
+              </p>
+
+            </div>
+
+            {/* CARD 3 */}
+
+            <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
+
+              <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
+                ✨
+              </div>
+
+              <h3 className="text-3xl font-bold mb-5">
+                Maior Plataforma de emoção
+              </h3>
+
+              <p className="text-gray-300 text-lg leading-relaxed">
+                Temos um time especializado em criar experiências emocionais completas, que vão muito além de apenas entregar uma música. 
+              </p>
+
+            </div>
+
+          </div>
+
+          
+        </div>
+
+      </section>
+      {/* SECTION DIFERENCIAIS PREMIUM */}
+
+<section className="relative overflow-hidden mt-24">
+
+  {/* BG GLOW */}
+
+  <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-pink-500/10 blur-3xl"></div>
+
+  <div className="relative max-w-7xl mx-auto px-6">
+
+    <div className="relative border border-pink-500/20 bg-[#0B0B0F]/80 backdrop-blur-2xl rounded-[42px] overflow-hidden shadow-[0_0_80px_rgba(236,72,153,0.12)]">
+
+      <div className="grid lg:grid-cols-2 gap-0">
+
+        {/* LEFT */}
+
+        <div className="p-8 md:p-14 flex flex-col justify-center">
+
+          {/* TAG */}
+
+          <div className="inline-flex items-center gap-3 bg-white/5 border border-pink-500/20 px-5 py-3 rounded-full text-pink-300 text-sm font-medium mb-8 w-fit backdrop-blur-xl">
+
+            <div className="w-3 h-3 bg-pink-500 rounded-full shadow-[0_0_12px_rgba(236,72,153,0.9)]"></div>
+
+            O que nos torna únicos
+
+          </div>
+
+          {/* TITLE */}
+
+          <h2 className="text-4xl md:text-6xl font-bold leading-[1.05] mb-8 tracking-tight">
+
+            Mais que músicas,
+            <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
+
+              {" "}criamos emoções
+              que ficam para sempre.
+
+            </span>
+
+          </h2>
+
+          {/* DESCRIPTION */}
+
+          <p className="text-xl text-gray-300 leading-relaxed mb-10 max-w-2xl">
+
+            Enquanto outras plataformas apenas geram músicas,
+            nós criamos experiências emocionais completas,
+            feitas para tocar o coração de quem recebe.
+
           </p>
+
+          {/* BENEFITS */}
+
+          <div className="grid sm:grid-cols-2 gap-5">
+
+            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
+
+              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
+                ❤️
+              </div>
+
+              <h3 className="text-xl font-semibold mb-3">
+                Experiência emocional guiada
+              </h3>
+
+              <p className="text-gray-400 leading-relaxed">
+                Cada etapa foi criada para transformar sentimentos em músicas inesquecíveis.
+              </p>
+
+            </div>
+
+            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
+
+              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
+                🎶
+              </div>
+
+              <h3 className="text-xl font-semibold mb-3">
+                Letras feitas para sua história
+              </h3>
+
+              <p className="text-gray-400 leading-relaxed">
+                Cada detalhe da sua história inspira uma música feita especialmente para você.
+              </p>
+
+            </div>
+
+            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
+
+              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
+                💬
+              </div>
+
+              <h3 className="text-xl font-semibold mb-3">
+                Atendimento humanizado
+              </h3>
+
+              <p className="text-gray-400 leading-relaxed">
+                Nossa equipe acompanha você durante toda a experiência via WhatsApp.
+              </p>
+
+            </div>
+
+            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
+
+              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
+                🎁
+              </div>
+
+              <h3 className="text-xl font-semibold mb-3">
+                Um presente inesquecível
+              </h3>
+
+              <p className="text-gray-400 leading-relaxed">
+                Mais do que uma música:
+                uma lembrança que ficará guardada para sempre.
+              </p>
+
+            </div>
+
+          </div>
 
         </div>
 
-        <div className="space-y-6">
+        {/* RIGHT */}
 
-          {[
-            "❤️ Experiência emocional guiada",
-            "🎶 Músicas realmente personalizadas",
-            "⚡ Atendimento humanizado via WhatsApp",
-            "🎤 Diversos estilos musicais",
-            "🔒 Processo simples e seguro",
-            "🎁 Ideal para presentes emocionantes",
-          ].map((item) => (
+        <div className="relative min-h-[650px] flex items-center justify-center p-10">
 
-            <div
-              key={item}
-              className="bg-black/30 border border-white/10 rounded-2xl px-6 py-5 text-lg"
-            >
-              {item}
+          {/* GLOW */}
+
+          <div className="absolute w-[500px] h-[500px] bg-pink-500/20 rounded-full blur-3xl"></div>
+
+          {/* PHOTO */}
+
+          <div className="relative w-full flex justify-center mb-[-40px] z-10">
+
+  <img
+    src="/time_fizmusica.png"
+    alt="FizMusica"
+    className="
+      w-full
+      max-w-[280px]
+      md:max-w-[520px]
+      h-auto
+      object-contain
+      rounded-[32px]
+      drop-shadow-[0_0_50px_rgba(236,72,153,0.25)]
+    "
+  />
+
+</div>
+
+          {/* FLOAT CARD */}
+
+          <div className="absolute bottom-10 left-6 md:left-12 z-20 bg-black/60 border border-white/10 backdrop-blur-2xl rounded-3xl p-6 max-w-sm shadow-2xl">
+
+            <div className="flex items-center gap-4 mb-4">
+
+              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-3xl">
+                ✨
+              </div>
+
+              <div>
+
+                <p className="text-lg font-semibold">
+                  Nossa missão é simples:
+                </p>
+
+              </div>
+
             </div>
 
-          ))}
+            <p className="text-2xl font-bold leading-snug">
+
+              Fazer parte das histórias
+              mais importantes da sua vida ❤️
+
+            </p>
+
+          </div>
+
+          {/* FLOAT TEXT */}
+
+          <div className="absolute top-14 right-10 text-right hidden md:block">
+
+            <p className="text-3xl text-pink-200 leading-relaxed italic">
+
+              Feito com amor
+              <br />
+              em cada detalhe ✨
+
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* FOOT STATS */}
+
+      <div className="border-t border-white/10 px-8 md:px-14 py-8">
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+
+          <div className="text-center">
+
+            <div className="text-4xl mb-3">❤️</div>
+
+            <h4 className="text-3xl font-bold mb-1">
+              +10.000
+            </h4>
+
+            <p className="text-gray-400">
+              músicas criadas
+            </p>
+
+          </div>
+
+          <div className="text-center">
+
+            <div className="text-4xl mb-3">🥹</div>
+
+            <h4 className="text-3xl font-bold mb-1">
+              +8.000
+            </h4>
+
+            <p className="text-gray-400">
+              clientes emocionados
+            </p>
+
+          </div>
+
+          <div className="text-center">
+
+            <div className="text-4xl mb-3">⭐</div>
+
+            <h4 className="text-3xl font-bold mb-1">
+              4,9/5
+            </h4>
+
+            <p className="text-gray-400">
+              satisfação média
+            </p>
+
+          </div>
+
+          <div className="text-center">
+
+            <div className="text-4xl mb-3">🛡️</div>
+
+            <h4 className="text-3xl font-bold mb-1">
+              Premium
+            </h4>
+
+            <p className="text-gray-400">
+              experiência assistida
+            </p>
+
+          </div>
 
         </div>
 
@@ -672,26 +762,8 @@ export default function Home() {
 </section>
 
 
+      <Footer />
 
-      {/* FOOTER */}
-
-      <footer className="border-t border-white/10 py-16 text-center text-gray-500">
-
-        <img
-          src="/logo_fizmusica.png"
-          alt="FizMusica"
-          className="h-20 mx-auto mb-6 opacity-90 drop-shadow-[0_0_25px_rgba(236,72,153,0.35)]"
-        />
-
-        <p className="text-lg text-gray-300 mb-2">
-          Sua história. Sua música.
-        </p>
-
-        <p className="text-sm text-gray-500">
-          © 2026 FizMusica
-        </p>
-
-      </footer>
 
     </div>
   )

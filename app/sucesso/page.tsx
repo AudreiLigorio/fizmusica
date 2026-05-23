@@ -3,6 +3,8 @@
 export const dynamic = "force-dynamic"
 import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
+import Header from "../components/Header"
+import Footer from "../components/Footer"
 
 function SucessoContent() {
 
@@ -39,41 +41,9 @@ ${historia}
   return (
     <div className="min-h-screen bg-black text-white">
 
-    {/* HEADER */}
-<header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/70 border-b border-white/10">
-  <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+    
 
-    {/* LOGO */}
-    <div className="flex items-center gap-5">
-
-      <img
-        src="/logo_fizmusica.png"
-        alt="FizMusica"
-        className="h-24 w-auto drop-shadow-[0_0_15px_rgba(236,72,153,0.45)]"
-      />
-
-      <div>
-        <div className="flex items-center gap-4">
-
-          <img
-            src="/som.png"
-            alt="Wave"
-            className="
-              h-5
-              md:h-6
-              w-auto
-              opacity-80
-              drop-shadow-[0_0_12px_rgba(236,72,153,0.25)]
-            "
-          />
-
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</header>
+<Header />
 
       {/* CONTEÚDO */}
       <div className="flex items-center justify-center px-6 pt-40 pb-16">
@@ -167,7 +137,7 @@ ${historia}
         </div>
 
       </div>
-
+<Header showButton={false} />
     </div>
   )
 }
@@ -177,4 +147,5 @@ export default function Sucesso() {
       <SucessoContent />
     </Suspense>
   )
+  
 }

@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react"
 import { formStructure } from "@/app/data/formStructure"
+import Header from "../components/Header"
+import Footer from "../components/Footer"
 
 export default function CriarMusicaPage() {
 
@@ -172,39 +174,9 @@ ${whatsapp}
 
   return (
 
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div className="min-h-screen bg-black text-white font-sans pt-40">
 
-      {/* HEADER */}
-
-      <div className="max-w-5xl mx-auto px-6 pt-10">
-
-        <div className="flex justify-between text-sm text-gray-400 mb-3">
-
-          <span>
-            {step === 2
-  ? `Pergunta ${questionStep + 1} de ${questions.length}`
-  : `Etapa ${step} de 5`
-}
-          </span>
-
-          <span>
-            {Math.round(progress)}%
-          </span>
-
-        </div>
-
-        <div className="h-3 bg-white/10 rounded-full overflow-hidden">
-
-          <div
-            className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-500"
-            style={{
-              width: `${progress}%`,
-            }}
-          />
-
-        </div>
-
-      </div>
+      <Header showButton={false} />
 
       {/* CONTENT */}
 
@@ -223,16 +195,32 @@ ${whatsapp}
               <div className="text-center mb-14">
 
                 <h1 className="text-5xl font-bold mb-5">
-                  Vamos criar sua música ❤️
+                  Vamos criar sua Música ❤️
                 </h1>
 
-                <div className="bg-pink-500/10 border border-pink-500/20 rounded-3xl p-5 max-w-2xl mx-auto text-gray-300 leading-relaxed">
+               <div className="bg-pink-500/10 border border-pink-500/20 rounded-3xl p-6 max-w-2xl mx-auto text-center">
 
-                  ✨ Preencha com carinho cada detalhe da sua história.
-                  Quanto mais informações você compartilhar,
-                  mais especial ficará sua música ❤️
+  <p className="text-gray-200 text-lg leading-relaxed mb-4">
 
-                </div>
+    ✨ Preencha com carinho cada detalhe da sua história.
+
+  </p>
+
+  <p className="text-gray-400 leading-relaxed mb-5">
+
+    Quanto mais informações você compartilhar,
+    mais emocionante e especial ficará sua música ❤️
+
+  </p>
+
+  <div className="inline-flex items-center gap-2 bg-black/40 border border-white/10 px-5 py-3 rounded-2xl text-pink-300 font-medium">
+
+    🎵 Selecione a ocasião que deseja homenagear:
+
+  </div>
+
+</div>
+                
 
               </div>
 
@@ -272,9 +260,6 @@ ${whatsapp}
                             {context}
                           </h2>
 
-                          <p className="text-gray-400">
-                            Escolha o momento da sua homenagem
-                          </p>
 
                         </div>
 
@@ -294,22 +279,29 @@ ${whatsapp}
                             (subcategory) => (
 
                               <button
-                                key={subcategory}
-                                onClick={() =>
-                                  setSelectedSubcategory(
-                                    subcategory
-                                  )
-                                }
-                                className={`rounded-2xl p-5 border transition-all text-left
-                                ${
-                                  selectedSubcategory ===
-                                  subcategory
-                                    ? "border-pink-500 bg-pink-500/10"
-                                    : "border-white/10 bg-black/30 hover:border-pink-500"
-                                }`}
-                              >
-                                {subcategory}
-                              </button>
+  key={subcategory}
+  onClick={() => {
+
+    setSelectedSubcategory(subcategory)
+
+    setQuestionStep(0)
+
+    setAnswers({})
+
+    setTimeout(() => {
+      setStep(2)
+    }, 150)
+
+  }}
+  className={`rounded-2xl p-5 border transition-all text-left
+  ${
+    selectedSubcategory === subcategory
+      ? "border-pink-500 bg-pink-500/10"
+      : "border-white/10 bg-black/30 hover:border-pink-500"
+  }`}
+>
+  {subcategory}
+</button>
 
                             )
                           )}
@@ -412,6 +404,8 @@ ${whatsapp}
                     "🎧 Funk",
                     "🔥 Trap",
                     "🎙️ Rap",
+                    "🎙️ Dance",
+                    "🎷 Jazz",
                     "🌎 Internacional",
                   ].map((item) => (
 
@@ -449,7 +443,6 @@ ${whatsapp}
                   {[
                     "👨 Masculina",
                     "👩 Feminina",
-                    "🎙️ Dueto",
                   ].map((item) => (
 
                     <button
@@ -486,10 +479,12 @@ ${whatsapp}
                   {[
                     "💖 Muito emocionante",
                     "🥹 Romântica",
-                    "☀️ Feliz",
+                    "☀️ Alegre & Feliz",
                     "🎉 Divertida",
                     "🌙 Delicada",
+                    "😭 Profunda",
                     "🔥 Intensa",
+                    "😭 Profunda",
                     "😭 Saudade",
                     "🙏 Inspiradora",
                   ].map((item) => (
@@ -629,29 +624,31 @@ ${whatsapp}
             <div />
           )}
 
-          {step < 5 ? (
+         {step !== 1 && step < 5 ? (
 
-            <button
-              onClick={nextStep}
-              className="bg-pink-500 hover:bg-pink-600 transition-all px-10 py-4 rounded-2xl text-lg font-semibold shadow-lg shadow-pink-500/20"
-            >
-              Continuar
-            </button>
+  <button
+    onClick={nextStep}
+    className="bg-pink-500 hover:bg-pink-600 transition-all px-10 py-4 rounded-2xl text-lg font-semibold shadow-lg shadow-pink-500/20"
+  >
+    Continuar
+  </button>
 
-          ) : (
+) : step === 5 ? (
 
-            <button
-              className="bg-pink-500 hover:bg-pink-600 transition-all px-10 py-4 rounded-2xl text-lg font-semibold shadow-lg shadow-pink-500/20"
-            >
-              Finalizar pedido ❤️
-            </button>
+  <button
+    className="bg-pink-500 hover:bg-pink-600 transition-all px-10 py-4 rounded-2xl text-lg font-semibold shadow-lg shadow-pink-500/20"
+  >
+    Finalizar pedido ❤️
+  </button>
 
-          )}
+) : (
+  <div />
+)}
 
         </div>
 
       </section>
-
+<Footer />
     </div>
 
   )
