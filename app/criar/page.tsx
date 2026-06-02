@@ -193,38 +193,44 @@ WHATSAPP: ${whatsapp}`
   /* ================================================= */
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pt-40">
-      <Header showButton={false} />
+    <div className="min-h-screen text-white font-sans pt-40 relative overflow-x-hidden"
+         style={{ background: "#07060d" }}>
 
-      {/* BARRA DE PROGRESSO */}
-      <div className="fixed top-[73px] left-0 right-0 z-40 h-1 bg-white/5">
-        <div
-          className="h-full bg-gradient-to-r from-pink-500 to-fuchsia-500 transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
+      {/* Gradiente de fundo sutil */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute top-[-10%] left-[-5%] w-[55vw] h-[55vw] rounded-full blur-[120px] opacity-30"
+             style={{ background: "radial-gradient(circle, #f0196b 0%, transparent 70%)" }} />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] rounded-full blur-[120px] opacity-20"
+             style={{ background: "radial-gradient(circle, #d946ef 0%, transparent 70%)" }} />
+        <div className="absolute top-[40%] right-[20%] w-[30vw] h-[30vw] rounded-full blur-[100px] opacity-10"
+             style={{ background: "radial-gradient(circle, #f0196b 0%, transparent 70%)" }} />
       </div>
 
-      <section className="max-w-5xl mx-auto px-6 py-12">
-        <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 lg:p-12 backdrop-blur-xl">
+      <Header showButton={false} progress={progress} />
+
+      <section className="relative z-10 max-w-3xl mx-auto px-6 py-12">
+        <div className="rounded-[32px] p-8 lg:p-12"
+             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(24px)" }}>
 
           {/* ===== STEP 1 — Ocasião ===== */}
           {step === 1 && (
             <div>
-              <div className="text-center mb-14">
-                <h1 className="text-5xl font-bold mb-5">
-                  Vamos criar sua Música ❤️
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-xs font-medium mb-6"
+                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#f0196b" }} />
+                  Sua música começa aqui
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
+                  Vamos criar sua música
                 </h1>
-                <div className="bg-pink-500/10 border border-pink-500/20 rounded-3xl p-6 max-w-2xl mx-auto">
-                  <p className="text-gray-200 text-lg leading-relaxed mb-4">
-                    ✨ Preencha com carinho cada detalhe da sua história.
-                  </p>
-                  <p className="text-gray-400 leading-relaxed mb-5">
-                    Quanto mais informações você compartilhar,
-                    mais emocionante e especial ficará sua música ❤️
-                  </p>
-                  <div className="inline-flex items-center gap-2 bg-black/40 border border-white/10 px-5 py-3 rounded-2xl text-pink-300 font-medium">
-                    🎵 Selecione a ocasião que deseja homenagear:
-                  </div>
+                <p className="text-white/45 text-base max-w-md mx-auto leading-relaxed">
+                  Preencha com carinho — quanto mais detalhes, mais emocionante e especial ficará sua música.
+                </p>
+                <div className="mt-6 inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-medium"
+                     style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.15), rgba(217,70,239,0.15))", border: "1px solid rgba(240,25,107,0.2)", color: "#ff6b9d" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  Selecione a ocasião que deseja homenagear
                 </div>
               </div>
 
@@ -300,18 +306,19 @@ WHATSAPP: ${whatsapp}`
           {step === 2 && (
             <div>
               <div className="mb-10">
-                <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-4 py-2 rounded-full text-pink-300 text-sm font-medium mb-5">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
+                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
                   {selectedContext} · {selectedSubcategory}
                 </div>
-                <h1 className="text-5xl font-bold mb-3">
-                  Conte sua história ❤️
+                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
+                  Conte sua história
                 </h1>
-                <p className="text-xl text-gray-400">
+                <p className="text-white/45 text-base">
                   Quanto mais detalhes, mais especial ficará sua música.
                 </p>
               </div>
 
-              <div className="bg-black/30 border border-white/10 rounded-[28px] p-8">
+              <div className="rounded-[24px] p-8" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center justify-between mb-6">
                   <span className="text-sm text-pink-400 font-medium">
                     Pergunta {questionStep + 1} de {questions.length}
@@ -350,16 +357,23 @@ WHATSAPP: ${whatsapp}`
           {/* ===== STEP 3 — Estilo musical ===== */}
           {step === 3 && (
             <div>
-              <h1 className="text-5xl font-bold mb-3">
-                Defina o estilo da música 🎵
-              </h1>
-              <p className="text-xl text-gray-400 mb-12">
-                Escolha o clima perfeito para sua história.
-              </p>
+              <div className="mb-10">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
+                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                  Estilo da música
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
+                  Defina o estilo
+                </h1>
+                <p className="text-white/45 text-base">
+                  Escolha o clima perfeito para sua história.
+                </p>
+              </div>
 
               {/* Estilo */}
               <div className="mb-10">
-                <h2 className="text-2xl font-bold mb-5">🎶 Estilo musical</h2>
+                <h2 className="text-base font-semibold text-white/70 mb-4 uppercase tracking-wider" style={{ fontSize: "0.7rem", letterSpacing: "0.15em" }}>Estilo musical</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {[
                     "🎤 Sertanejo", "🎶 Pagode", "💖 Pop",
@@ -385,7 +399,7 @@ WHATSAPP: ${whatsapp}`
 
               {/* Voz */}
               <div className="mb-10">
-                <h2 className="text-2xl font-bold mb-5">🎤 Tipo de voz</h2>
+                <h2 className="text-base font-semibold text-white/70 mb-4 uppercase tracking-wider" style={{ fontSize: "0.7rem", letterSpacing: "0.15em" }}>Tipo de voz</h2>
                 <div className="grid grid-cols-2 gap-3 max-w-sm">
                   {["👨 Masculina", "👩 Feminina"].map((item) => (
                     <button
@@ -405,7 +419,7 @@ WHATSAPP: ${whatsapp}`
 
               {/* Emoção */}
               <div>
-                <h2 className="text-2xl font-bold mb-5">✨ Emoção da música</h2>
+                <h2 className="text-base font-semibold text-white/70 mb-4 uppercase tracking-wider" style={{ fontSize: "0.7rem", letterSpacing: "0.15em" }}>Emoção da música</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {[
                     "💖 Muito emocionante", "🥹 Romântica",
@@ -434,10 +448,18 @@ WHATSAPP: ${whatsapp}`
           {/* ===== STEP 4 — Dados de contato ===== */}
           {step === 4 && (
             <div>
-              <h1 className="text-5xl font-bold mb-3">Seus dados ❤️</h1>
-              <p className="text-xl text-gray-400 mb-12">
-                Para entrarmos em contato e entregar sua música.
-              </p>
+              <div className="mb-10">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
+                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
+                  Seus dados
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
+                  Quase lá!
+                </h1>
+                <p className="text-white/45 text-base">
+                  Para entrarmos em contato e entregar sua música.
+                </p>
+              </div>
 
               <div className="grid md:grid-cols-2 gap-5">
                 <div className="space-y-2">
@@ -488,10 +510,14 @@ WHATSAPP: ${whatsapp}`
           {step === 5 && (
             <div>
               <div className="text-center mb-10">
-                <h1 className="text-5xl font-bold mb-3">
-                  Tudo pronto! 🎶
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
+                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
+                  Revisão final
+                </div>
+                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
+                  Tudo pronto!
                 </h1>
-                <p className="text-xl text-gray-400">
+                <p className="text-white/45 text-base">
                   Confira o resumo antes de finalizar.
                 </p>
               </div>
@@ -545,7 +571,8 @@ WHATSAPP: ${whatsapp}`
             <button
               onClick={prevStep}
               disabled={submitting}
-              className="border border-white/10 hover:bg-white/10 transition-all px-8 py-4 rounded-2xl text-lg disabled:opacity-40"
+              className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
             >
               ← Voltar
             </button>
@@ -556,7 +583,8 @@ WHATSAPP: ${whatsapp}`
           {step !== 1 && step < 5 && (
             <button
               onClick={nextStep}
-              className="bg-pink-500 hover:bg-pink-600 transition-all px-10 py-4 rounded-2xl text-lg font-semibold shadow-lg shadow-pink-500/20"
+              className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white"
+              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
             >
               Continuar →
             </button>
@@ -566,15 +594,16 @@ WHATSAPP: ${whatsapp}`
             <button
               onClick={handleFinalizar}
               disabled={submitting}
-              className="bg-pink-500 hover:bg-pink-600 transition-all px-10 py-4 rounded-2xl text-lg font-semibold shadow-2xl shadow-pink-500/20 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
+              className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
+              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}
             >
               {submitting ? (
                 <>
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Enviando…
                 </>
               ) : (
-                "Finalizar e escolher produto ❤️"
+                "Finalizar e escolher produto →"
               )}
             </button>
           )}

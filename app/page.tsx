@@ -1,770 +1,683 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import FizMusicaCarousel from "./components/FizMusicaCarousel";
+import FizMusicaCarousel from "./components/FizMusicaCarousel"
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 
+const DEMOS = [
+  { id: "namoro",    src: "/namoro_2anos.mp3",          title: "Homenagem Dia dos Namorados", meta: "Maria Eduarda · Sertanejo romântico · 3:12", emoji: "💖" },
+  { id: "casamento", src: "/aniversario_casamento.mp3", title: "Aniversário de Casamento",     meta: 'Patricia "Mô" · Pagode romântico · 2:58',  emoji: "💍" },
+  { id: "revelacao", src: "/cha_revelacao_menina.mp3",  title: "Chá Revelação",                meta: "É Menina · Sertanejo animado · 3:34",       emoji: "🎀" },
+  { id: "pet",       src: "/despedida_pet.mp3",         title: "Despedida — Amora",            meta: "MPB sentimental · 3:20",                    emoji: "🐾" },
+]
 
+const STEPS = [
+  { n: "1", label: "Conte sua história",    desc: "Responda sobre a pessoa e o momento especial." },
+  { n: "2", label: "Escolha o estilo",       desc: "Sertanejo, MPB, pagode, pop — você decide." },
+  { n: "3", label: "Receba no WhatsApp",     desc: "Sua música chega direto no seu celular." },
+  { n: "4", label: "Emocione alguém",        desc: "Um presente que ficará guardado para sempre." },
+]
 
-export default function Home() {
-  const [playing, setPlaying] = useState(false)
+const STEP_GRADIENTS = [
+  "linear-gradient(135deg, #f0196b, #d946ef)",
+  "linear-gradient(135deg, #d946ef, #f0196b)",
+  "linear-gradient(135deg, #f0196b, #d946ef)",
+  "linear-gradient(135deg, #d946ef, #f0196b)",
+]
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+const STATS = [
+  { target: 10000, prefix: "+", suffix: "",  decimals: 0, label: "músicas criadas" },
+  { target: 8000,  prefix: "+", suffix: "",  decimals: 0, label: "clientes emocionados" },
+  { target: 4.9,   prefix: "",  suffix: "",  decimals: 1, label: "de satisfação média" },
+  { target: 100,   prefix: "",  suffix: "%", decimals: 0, label: "personalizado" },
+]
 
-  const router = useRouter()
-  const [currentAudio, setCurrentAudio] = useState<string | null>(null)
+const WHY = [
+  {
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+    ),
+    title: "Experiência emocional real",
+    desc: "Cada música nasce da sua história, sentimentos e momentos marcantes.",
+    gradient: "linear-gradient(135deg, #f0196b, #d946ef)",
+  },
+  {
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+      </svg>
+    ),
+    title: "Letra exclusiva para você",
+    desc: "Revisão rigorosa. Nada genérico — cada detalhe inspira a composição.",
+    gradient: "linear-gradient(135deg, #d946ef, #f0196b)",
+  },
+  {
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </svg>
+    ),
+    title: "Plataforma premium assistida",
+    desc: "Nossa equipe acompanha você do início ao fim via WhatsApp.",
+    gradient: "linear-gradient(135deg, #f0196b, #d946ef)",
+  },
+]
+
+function useCountUp(target: number, decimals: number, duration = 1800) {
+  const [value, setValue] = useState(0)
+  const [started, setStarted] = useState(false)
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  const start = useCallback(() => {
+    if (started) return
+    setStarted(true)
+    const startTime = performance.now()
+    const tick = (now: number) => {
+      const elapsed = now - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      // ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setValue(parseFloat((eased * target).toFixed(decimals)))
+      if (progress < 1) requestAnimationFrame(tick)
+      else setValue(target)
+    }
+    requestAnimationFrame(tick)
+  }, [started, target, decimals, duration])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) start() },
+      { threshold: 0.4 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [start])
+
+  return { ref, value }
+}
+
+function StatItem({ stat, displayFont, bodyFont }: {
+  stat: typeof STATS[0],
+  displayFont: React.CSSProperties,
+  bodyFont: React.CSSProperties,
+}) {
+  const { ref, value } = useCountUp(stat.target, stat.decimals)
+  const display = stat.decimals > 0
+    ? value.toFixed(stat.decimals).replace(".", ",")
+    : Math.floor(value).toLocaleString("pt-BR")
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div ref={ref} className="text-center group">
+      <p
+        className="mb-1 tabular-nums leading-none"
+        style={{
+          ...displayFont,
+          fontSize: "clamp(2rem, 3.5vw, 3rem)",
+          fontWeight: 700,
+          color: "rgba(255,255,255,0.92)",
+          letterSpacing: "-0.02em",
+        }}
+      >
+        {stat.prefix}{display}{stat.suffix}
+      </p>
+      <p className="text-xs tracking-wide" style={{ ...bodyFont, color: "rgba(255,255,255,0.3)" }}>
+        {stat.label}
+      </p>
+    </div>
+  )
+}
 
+export default function Home() {
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [currentAudio, setCurrentAudio] = useState<string | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const router = useRouter()
+
+  function togglePlay(src: string) {
+    if (!audioRef.current) return
+    if (currentAudio === src && playing) {
+      audioRef.current.pause(); setPlaying(false); return
+    }
+    audioRef.current.src = src
+    audioRef.current.play()
+    setCurrentAudio(src); setPlaying(true)
+  }
+
+  const displayFont = { fontFamily: "'Cormorant Garamond', Georgia, serif" }
+  const bodyFont    = { fontFamily: "'DM Sans', system-ui, sans-serif" }
+
+  return (
+    <div className="noise min-h-screen text-white" style={{ backgroundColor: "#07060d", ...bodyFont }}>
       <Header />
 
-      {/* HERO */}
+      {/* ═══════════════════════════════════════════
+          HERO
+      ═══════════════════════════════════════════ */}
+      <section className="relative min-h-screen flex items-center overflow-hidden pt-24">
 
-      <section className="relative overflow-hidden border-b border-white/10 pt-36">
+        {/* ambient orbs */}
+        <div className="animate-orb pointer-events-none absolute -top-32 -left-32 w-[700px] h-[700px] rounded-full"
+             style={{ background: "radial-gradient(circle, rgba(240,25,107,0.08) 0%, transparent 70%)" }} />
+        <div className="animate-orb pointer-events-none absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full delay-700"
+             style={{ background: "radial-gradient(circle, rgba(217,70,239,0.06) 0%, transparent 70%)", animationDelay: "6s" }} />
 
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-purple-500/10 to-black" />
+        <div className="relative max-w-6xl mx-auto px-6 py-20 w-full grid lg:grid-cols-[1fr_420px] gap-16 xl:gap-24 items-start">
 
-        <div className="relative max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-12 items-center">
-
-          {/* TEXTO */}
-
+          {/* ── copy ── */}
           <div>
-
-            <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6">
-              Existem histórias que merecem ser cantadas.
-            </h1>
-
-            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              Crie uma música personalizada e emocione quem você ama com um presente único.
+            <p className="animate-fade-up delay-100 text-[#f0196b] text-xs font-medium tracking-[0.3em] uppercase mb-8"
+               style={bodyFont}>
+              Músicas personalizadas
             </p>
 
-            <div className="flex flex-wrap gap-4 mb-8">
+            <h1 className="animate-fade-up delay-200 leading-[0.95] mb-8" style={displayFont}>
+              <span className="block font-light text-white/90"
+                    style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)" }}>
+                Existem histórias
+              </span>
+              <span className="block font-light text-white/90"
+                    style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)" }}>
+                que merecem ser
+              </span>
+              <em className="block font-semibold not-italic"
+                  style={{ fontSize: "clamp(3.2rem, 7.5vw, 7rem)", color: "#f0196b" }}>
+                cantadas.
+              </em>
+            </h1>
 
+            <p className="animate-fade-up delay-300 text-white/50 leading-relaxed mb-10 max-w-sm"
+               style={{ ...bodyFont, fontSize: "1rem" }}>
+              Crie uma música 100% personalizada e emocione quem você ama com um presente verdadeiramente único.
+            </p>
+
+            <div className="animate-fade-up delay-400 flex flex-wrap gap-3 mb-10">
               <button
                 onClick={() => router.push("/criar")}
-                className="bg-pink-500 hover:bg-pink-600 px-8 py-4 rounded-2xl text-lg font-semibold transition-all shadow-2xl shadow-pink-500/20"
+                className="text-white px-7 py-3.5 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_6px_24px_rgba(240,25,107,0.35)]"
+                style={{
+                  ...bodyFont,
+                  background: "#f0196b",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.03em",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                }}
               >
                 Criar minha música
               </button>
-
-
-
+              <button
+                onClick={() => router.push("/criar")}
+                className="text-white/60 px-7 py-3.5 rounded-xl transition-all duration-200 hover:text-white hover:border-white/20 active:scale-[0.97]"
+                style={{
+                  ...bodyFont,
+                  fontSize: "0.875rem",
+                  fontWeight: 400,
+                  letterSpacing: "0.03em",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "transparent",
+                }}
+              >
+                Ver exemplos
+              </button>
             </div>
 
-            <div className="flex gap-8 text-sm text-gray-400">
-              <div>❤️ Presente único</div>
-              <div>⚡ Entrega via WhatsApp</div>
-              <div>🔒 Pagamento seguro</div>
+            <div className="animate-fade-up delay-500 flex flex-wrap gap-7 text-xs text-white/30 tracking-wide"
+                 style={bodyFont}>
+              {["Presente único", "Entrega via WhatsApp", "Pagamento seguro"].map(t => (
+                <span key={t} className="flex items-center gap-2">
+                  <span style={{ color: "#f0196b" }}>✦</span> {t}
+                </span>
+              ))}
             </div>
-
           </div>
 
-          {/* PLAYER */}
-          <div className="relative">
+          {/* ── player ── */}
+          <div className="animate-fade-up delay-400 lg:pt-16">
 
-            <div className="bg-white/10 border border-white/10 backdrop-blur-xl rounded-3xl p-4 md:p-8 shadow-2xl">
+            {/* Logo com glow ambiente */}
+            <div className="hidden lg:flex relative mb-14 items-center justify-center">
+              <div className="pointer-events-none absolute w-64 h-32 rounded-full blur-[60px] opacity-50"
+                   style={{ background: "radial-gradient(ellipse, #f0196b 0%, transparent 70%)" }} />
+              <div className="pointer-events-none absolute w-48 h-28 rounded-full blur-[50px] opacity-35 translate-x-8"
+                   style={{ background: "radial-gradient(ellipse, #d946ef 0%, transparent 70%)" }} />
+              <img src="/logo_fizmusica.png" alt="Fiz Música" className="relative z-10 h-48 w-auto" />
+            </div>
 
-              <div className="bg-gradient-to-r from-pink-500 to-purple-500 rounded-2xl p-5 md:p-6 mb-6 md:mb-8">
+            <div className="animate-float rounded-3xl border border-white/[0.07] p-5 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+                 style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(24px)" }}>
 
-                <div className="text-xl md:text-2xl font-bold mb-2">
-                  Sua História. Sua Música ❤️
-                </div>
-
-                <div className="opacity-80 text-sm md:text-lg">
-                  Ouça alguns exemplos emocionantes
-                </div>
-
+              {/* header card */}
+              <div className="rounded-2xl p-5 mb-4"
+                   style={{ background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)" }}>
+                <p className="font-semibold text-base mb-1" style={displayFont}>
+                  Sua história. Sua música.
+                </p>
+                <p className="text-white/70 text-xs" style={bodyFont}>
+                  Ouça exemplos reais criados para nossos clientes
+                </p>
               </div>
 
-              <div className="space-y-4">
-
-                {/* EXEMPLO 1 */}
-                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
-
-                  <div className="flex items-center justify-between gap-3">
-
-                    <div className="flex-1 min-w-0">
-
-                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
-                        💖 Homenagem Dia dos Namorados
-                      </div>
-
-                      <div className="text-gray-400 text-xs md:text-sm">
-                        Para: Maria Eduarda | Sertanejo romântico • 3:12
-                      </div>
-
-                    </div>
-
+              {/* tracks */}
+              <div className="space-y-1">
+                {DEMOS.map((d, idx) => {
+                  const isActive = currentAudio === d.src && playing
+                  return (
                     <button
-                      onClick={() => {
-                        if (!audioRef.current) return
-
-                        if (
-                          currentAudio === "/namoro_2anos.mp3" &&
-                          playing
-                        ) {
-                          audioRef.current.pause()
-                          setPlaying(false)
-                          return
-                        }
-
-                        audioRef.current.src = "/namoro_2anos.mp3"
-                        audioRef.current.play()
-
-                        setCurrentAudio("/namoro_2anos.mp3")
-                        setPlaying(true)
+                      key={d.id}
+                      onClick={() => togglePlay(d.src)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group"
+                      style={{
+                        background: isActive ? "rgba(240,25,107,0.07)" : "transparent",
                       }}
-                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
                     >
-                      {playing && currentAudio === "/namoro_2anos.mp3"
-                        ? "⏸"
-                        : "▶"}
+                      {/* track number */}
+                      <span
+                        className="shrink-0 w-6 text-center tabular-nums"
+                        style={{ ...bodyFont, fontSize: "0.7rem", color: "rgba(255,255,255,0.2)" }}
+                      >
+                        {String(idx + 1).padStart(2, "0")}
+                      </span>
+
+                      {/* text */}
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className="truncate leading-snug"
+                          style={{
+                            ...bodyFont,
+                            fontSize: "0.8125rem",
+                            fontWeight: 500,
+                            color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)",
+                            letterSpacing: "0.01em",
+                          }}
+                        >
+                          {d.title}
+                        </p>
+                        <p
+                          className="truncate mt-0.5"
+                          style={{
+                            ...bodyFont,
+                            fontSize: "0.68rem",
+                            color: "rgba(255,255,255,0.28)",
+                            letterSpacing: "0.02em",
+                          }}
+                        >
+                          {d.meta}
+                        </p>
+                      </div>
+
+                      {/* play button */}
+                      <div
+                        className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110"
+                        style={{
+                          background: isActive
+                            ? "#f0196b"
+                            : "rgba(255,255,255,0.07)",
+                          boxShadow: isActive
+                            ? "0 0 18px rgba(240,25,107,0.55), 0 0 6px rgba(240,25,107,0.3)"
+                            : "none",
+                          border: `1px solid ${isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.1)"}`,
+                        }}
+                      >
+                        {isActive ? (
+                          /* pause icon */
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
+                            <rect x="2" y="1" width="3" height="10" rx="1"/>
+                            <rect x="7" y="1" width="3" height="10" rx="1"/>
+                          </svg>
+                        ) : (
+                          /* play icon SVG — slightly offset right for optical centering */
+                          <svg width="11" height="12" viewBox="0 0 11 12" fill="none" style={{ marginLeft: "1px" }}>
+                            <path d="M1 1.5L10 6L1 10.5V1.5Z" fill="rgba(255,255,255,0.7)" stroke="rgba(255,255,255,0.7)" strokeWidth="0.5" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
                     </button>
-
-                  </div>
-
-                </div>
-
-                {/* EXEMPLO 2 */}
-                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
-
-                  <div className="flex items-center justify-between gap-3">
-
-                    <div className="flex-1 min-w-0">
-
-                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
-                        💍 Aniversário de Casamento
-                      </div>
-
-                      <div className="text-gray-400 text-xs md:text-sm">
-                        Para: Patricia "Mô" | Pagode romântico • 2:58
-                      </div>
-
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        if (!audioRef.current) return
-
-                        if (
-                          currentAudio === "/aniversario_casamento.mp3" &&
-                          playing
-                        ) {
-                          audioRef.current.pause()
-                          setPlaying(false)
-                          return
-                        }
-
-                        audioRef.current.src = "/aniversario_casamento.mp3"
-                        audioRef.current.play()
-
-                        setCurrentAudio("/aniversario_casamento.mp3")
-                        setPlaying(true)
-                      }}
-                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
-                    >
-                      {playing && currentAudio === "/aniversario_casamento.mp3"
-                        ? "⏸"
-                        : "▶"}
-                    </button>
-
-                  </div>
-
-                </div>
-
-                {/* EXEMPLO 3 */}
-                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
-
-                  <div className="flex items-center justify-between gap-3">
-
-                    <div className="flex-1 min-w-0">
-
-                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
-                        👶 Chá Revelação - Revela só no último trecho da música. (Incrível)
-                      </div>
-
-                      <div className="text-gray-400 text-xs md:text-sm">
-                        É Menina | Sertanejo animado • 3:34
-                      </div>
-
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        if (!audioRef.current) return
-
-                        if (
-                          currentAudio === "/cha_revelacao_menina.mp3" &&
-                          playing
-                        ) {
-                          audioRef.current.pause()
-                          setPlaying(false)
-                          return
-                        }
-
-                        audioRef.current.src = "/cha_revelacao_menina.mp3"
-                        audioRef.current.play()
-
-                        setCurrentAudio("/cha_revelacao.mp3")
-                        setPlaying(true)
-                      }}
-                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
-                    >
-                      {playing && currentAudio === "/cha_revelacao_menina.mp3"
-                        ? "⏸"
-                        : "▶"}
-                    </button>
-
-                  </div>
-
-                </div>
-                {/* EXEMPLO 4 */}
-                <div className="bg-black/30 border border-white/10 rounded-2xl p-4 md:p-5 hover:border-pink-500/40 transition-all">
-
-                  <div className="flex items-center justify-between gap-3">
-
-                    <div className="flex-1 min-w-0">
-
-                      <div className="text-base md:text-xl font-semibold mb-1 leading-tight">
-                        ✨ Despedida Pet - Amora
-                      </div>
-
-                      <div className="text-gray-400 text-xs md:text-sm">
-                        Homenagem Amora | Sentimental - MPB • 3:20
-                      </div>
-
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        if (!audioRef.current) return
-
-                        if (
-                          currentAudio === "/despedida_pet.mp3" &&
-                          playing
-                        ) {
-                          audioRef.current.pause()
-                          setPlaying(false)
-                          return
-                        }
-
-                        audioRef.current.src = "/despedida_pet.mp3"
-                        audioRef.current.play()
-
-                        setCurrentAudio("/despedida_pet.mp3")
-                        setPlaying(true)
-                      }}
-                      className="w-12 h-12 md:w-14 md:h-14 shrink-0 rounded-full bg-pink-500 text-xl md:text-2xl hover:scale-110 active:scale-95 transition-all flex items-center justify-center shadow-lg shadow-pink-500/20"
-                    >
-                      {playing && currentAudio === "/despedida_pet.mp3"
-                        ? "⏸"
-                        : "▶"}
-                    </button>
-
-                  </div>
-
-                </div>
-
-
+                  )
+                })}
               </div>
 
               <audio
                 ref={audioRef}
-                onEnded={() => {
-                  setPlaying(false)
-                  setCurrentAudio(null)
-                }}
+                onEnded={() => { setPlaying(false); setCurrentAudio(null) }}
               />
-
             </div>
 
           </div>
-          {/* player */}
 
         </div>
-
       </section>
 
-      {/* CARROSSEL */}
-      <section className="max-w-7xl mx-auto px-6 py-20">
+
+      {/* ═══════════════════════════════════════════
+          CARROSSEL
+      ═══════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
         <FizMusicaCarousel />
       </section>
 
-      {/* VIDEO */}
+      {/* ═══════════════════════════════════════════
+          COMO FUNCIONA
+      ═══════════════════════════════════════════ */}
+      <section className="py-28 border-y border-white/[0.05]">
+        <div className="max-w-6xl mx-auto px-6">
 
-      <section className="max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-16 items-center">
+          <div className="mb-16">
+            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ ...bodyFont, color: "#f0196b" }}>
+              Processo
+            </p>
+            <h2 className="font-light text-white/90 leading-tight"
+                style={{ ...displayFont, fontSize: "clamp(2.2rem, 4vw, 3.5rem)" }}>
+              Em quatro passos simples,<br />
+              <em style={{ color: "#f0196b" }}>sua história vira música.</em>
+            </h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {STEPS.map((s, i) => (
+              <div key={s.n}
+                   className="group relative p-8 rounded-3xl cursor-default"
+                   style={{
+                     background: "rgba(14,13,26,0.95)",
+                     border: "1px solid rgba(255,255,255,0.07)",
+                     transition: "transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, border-color 0.3s ease",
+                   }}
+                   onMouseEnter={e => {
+                     const el = e.currentTarget
+                     el.style.transform = "translateY(-10px) scale(1.02)"
+                     el.style.boxShadow = "0 24px 60px rgba(240,25,107,0.22), 0 8px 24px rgba(0,0,0,0.6)"
+                     el.style.borderColor = "rgba(240,25,107,0.35)"
+                     el.style.background = "rgba(20,18,35,1)"
+                     el.style.zIndex = "10"
+                   }}
+                   onMouseLeave={e => {
+                     const el = e.currentTarget
+                     el.style.transform = ""
+                     el.style.boxShadow = ""
+                     el.style.borderColor = "rgba(255,255,255,0.07)"
+                     el.style.background = "rgba(14,13,26,0.95)"
+                     el.style.zIndex = ""
+                   }}>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                     style={{ background: STEP_GRADIENTS[i], boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
+                  <span className="text-white font-bold text-xl" style={bodyFont}>{s.n}</span>
+                </div>
+                <h3 className="font-semibold text-white text-base mb-2" style={bodyFont}>{s.label}</h3>
+                <p className="text-sm text-white/45 leading-relaxed" style={bodyFont}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          EMOTIONAL / VIDEO
+      ═══════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-6 py-28 grid lg:grid-cols-2 gap-20 items-center">
 
         <div>
-
-          <h2 className="text-4xl font-bold mb-6">
-            Veja a emoção de transformar sentimentos em música.
-          </h2>
-
-          <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-            Um presente personalizado capaz de marcar momentos para sempre.
+          <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ ...bodyFont, color: "#f0196b" }}>
+            A experiência
           </p>
-
-          <div className="space-y-6 text-gray-300 text-lg">
-
-            <p>
-              💖 Imagine a reação da pessoa ao ouvir uma música feita especialmente para ela.
-            </p>
-
-            <p>
-              🎁 Mais do que um presente. Uma lembrança para a vida toda.
-            </p>
-
-            <p>
-              🎶 Nós te entregamos emoção e amor.
-            </p>
-
+          <h2 className="font-light leading-tight mb-8 text-white/90"
+              style={{ ...displayFont, fontSize: "clamp(2rem, 3.5vw, 3rem)" }}>
+            Veja a emoção de transformar{" "}
+            <em style={{ color: "#f0196b" }}>sentimentos em música.</em>
+          </h2>
+          <div className="space-y-5">
+            {[
+              "Imagine a reação ao ouvir uma música feita especialmente para ela.",
+              "Mais do que um presente — uma lembrança para a vida toda.",
+              "Nós te entregamos emoção e amor em cada nota.",
+            ].map((t, i) => (
+              <div key={i} className="flex items-start gap-4">
+                <div className="shrink-0 w-px h-12 mt-1 rounded-full" style={{ background: "rgba(240,25,107,0.3)" }} />
+                <p className="text-white/55 leading-relaxed text-sm" style={bodyFont}>{t}</p>
+              </div>
+            ))}
           </div>
-
         </div>
 
-        <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-white/5 aspect-video flex items-center justify-center">
-
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-purple-500/10" />
-
-          <button className="relative w-24 h-24 rounded-full bg-white/20 backdrop-blur-xl text-4xl hover:scale-110 transition-all">
+        <div className="relative rounded-3xl overflow-hidden aspect-video flex items-center justify-center cursor-pointer group"
+             style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="absolute inset-0"
+               style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.1) 0%, rgba(217,70,239,0.06) 100%)" }} />
+          <div className="relative w-16 h-16 rounded-full flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-110"
+               style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.1)" }}>
             ▶
-          </button>
-
+          </div>
         </div>
 
       </section>
 
-      {/* COMO FUNCIONA */}
+      {/* ═══════════════════════════════════════════
+          POR QUE NOS ESCOLHER
+      ═══════════════════════════════════════════ */}
+      <section className="border-y border-white/[0.05] py-28" style={{ background: "rgba(255,255,255,0.015)" }}>
+        <div className="max-w-6xl mx-auto px-6">
 
-      <section className="border-y border-white/10 bg-white/5">
+          <div className="mb-16 max-w-xl">
+            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ ...bodyFont, color: "#f0196b" }}>
+              Diferenciais
+            </p>
+            <h2 className="font-light text-white/90 leading-tight"
+                style={{ ...displayFont, fontSize: "clamp(2rem, 3.5vw, 3rem)" }}>
+              Por que escolher<br />
+              <em style={{ color: "#f0196b" }}>a Fiz Música?</em>
+            </h2>
+          </div>
 
-        <div className="max-w-7xl mx-auto px-6 py-24">
+          <div className="grid lg:grid-cols-3 gap-5">
+            {WHY.map((w) => (
+              <div key={w.title}
+                   className="group relative p-8 rounded-3xl cursor-default"
+                   style={{
+                     background: "rgba(255,255,255,0.03)",
+                     border: "1px solid rgba(255,255,255,0.07)",
+                     transition: "transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, border-color 0.3s ease",
+                   }}
+                   onMouseEnter={e => {
+                     const el = e.currentTarget
+                     el.style.transform = "translateY(-10px) scale(1.02)"
+                     el.style.boxShadow = "0 24px 60px rgba(240,25,107,0.22), 0 8px 24px rgba(0,0,0,0.6)"
+                     el.style.borderColor = "rgba(240,25,107,0.35)"
+                     el.style.background = "rgba(20,18,35,1)"
+                     el.style.zIndex = "10"
+                   }}
+                   onMouseLeave={e => {
+                     const el = e.currentTarget
+                     el.style.transform = ""
+                     el.style.boxShadow = ""
+                     el.style.borderColor = "rgba(255,255,255,0.07)"
+                     el.style.background = "rgba(255,255,255,0.03)"
+                     el.style.zIndex = ""
+                   }}>
+                {/* glow hover */}
+                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                     style={{ background: "radial-gradient(ellipse at 30% 0%, rgba(240,25,107,0.08) 0%, transparent 70%)" }} />
 
-          <h2 className="text-4xl font-bold text-center mb-16">
-            Como funciona
-          </h2>
-
-          <div className="grid md:grid-cols-4 gap-8">
-
-            {[
-              ["1", "Conte sua história"],
-              ["2", "Escolha o estilo musical"],
-              ["3", "Receba no WhatsApp"],
-              ["4", "Emocione alguém especial"],
-            ].map(([n, text]) => (
-
-              <div
-                key={n}
-                className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center"
-              >
-
-                <div className="w-16 h-16 rounded-full bg-pink-500 mx-auto mb-6 flex items-center justify-center text-2xl font-bold">
-                  {n}
+                {/* icon badge */}
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-7 text-white"
+                     style={{ background: w.gradient, boxShadow: "0 4px 20px rgba(240,25,107,0.25)" }}>
+                  {w.icon}
                 </div>
 
-                <h3 className="text-xl font-semibold">
-                  {text}
+                <h3 className="font-semibold text-white text-base mb-3 leading-snug" style={bodyFont}>
+                  {w.title}
                 </h3>
-
+                <p className="text-sm leading-relaxed" style={{ ...bodyFont, color: "rgba(255,255,255,0.45)" }}>
+                  {w.desc}
+                </p>
               </div>
-
             ))}
-
           </div>
 
         </div>
-
       </section>
-      {/* TIPOS DE HOMENAGENS */}
 
-   
-      {/* CTA FINAL */}
-
-      <section className="max-w-5xl mx-auto px-6 py-28 text-center">
-
-        <div className="bg-gradient-to-r from-pink-500/20 to-purple-500/20 border border-pink-500/20 rounded-[40px] p-14">
-
-          <div className="text-6xl mb-8">
-            🎶
-          </div>
-
-          <h2 className="text-5xl font-bold mb-6 leading-tight">
-            Emocione agora quem você ama
-          </h2>
-
-          <p className="text-xl text-gray-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-            É fácil, rápido e personalizado. Será único e inesquecível.
-          </p>
-
-          <button
-            onClick={() => router.push("/criar")}
-            className="bg-pink-500 hover:bg-pink-600 transition-all px-10 py-5 rounded-3xl text-2xl font-bold shadow-2xl shadow-pink-500/20"
-          >
-            Criar minha música ❤️
-          </button>
-
-        </div>
-
-      </section>
-      {/* POR QUE ESCOLHER */}
-
-      <section className="border-y border-white/10 bg-white/5">
-
-        <div className="max-w-7xl mx-auto px-6 py-28">
-
-          <div className="text-center mb-20">
-
-            <h2 className="text-5xl font-bold mb-6">
-              Por que escolher a Fiz Música?
-            </h2>
-
-            <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
-              Somos apaixonados por criar experiências emocionais inesquecíveis capazes de marcar momentos para sempre.
-            </p>
-
-          </div>
-
-          <div className="grid lg:grid-cols-3 gap-8">
-
-            {/* CARD 1 */}
-
-            <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
-
-              <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
-                💖
-              </div>
-
-              <h3 className="text-3xl font-bold mb-5">
-                Experiência emocional real tudo feito com muito carinho
-              </h3>
-
-              <p className="text-gray-300 text-lg leading-relaxed">
-                Cada música é construída a partir da sua história, sentimentos, momentos especiais e detalhes marcantes. Nosso foco é emocionar de verdade.
-              </p>
-
-            </div>
-
-            {/* CARD 2 */}
-
-            <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
-
-              <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
-                🎵
-              </div>
-
-              <h3 className="text-3xl font-bold mb-5">
-                Música personalizada de verdade que toca lá dentro.
-              </h3>
-
-              <p className="text-gray-300 text-lg leading-relaxed">
-                Nada genérico. Temos um processo de revisão rigoroso. Cada letra é criada exclusivamente para a sua história, com o estilo musical e emoção que fazem sentido para o momento.
-              </p>
-
-            </div>
-
-            {/* CARD 3 */}
-
-            <div className="bg-white/5 border border-white/10 rounded-[32px] p-10 hover:border-pink-500/30 transition-all">
-
-              <div className="w-20 h-20 rounded-3xl bg-pink-500/20 flex items-center justify-center text-4xl mb-8">
-                ✨
-              </div>
-
-              <h3 className="text-3xl font-bold mb-5">
-                Maior Plataforma de emoção
-              </h3>
-
-              <p className="text-gray-300 text-lg leading-relaxed">
-                Temos um time especializado em criar experiências emocionais completas, que vão muito além de apenas entregar uma música. 
-              </p>
-
-            </div>
-
-          </div>
-
-          
-        </div>
-
-      </section>
-      {/* SECTION DIFERENCIAIS PREMIUM */}
-
-<section className="relative overflow-hidden mt-24">
-
-  {/* BG GLOW */}
-
-  <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-pink-500/10 blur-3xl"></div>
-
-  <div className="relative max-w-7xl mx-auto px-6">
-
-    <div className="relative border border-pink-500/20 bg-[#0B0B0F]/80 backdrop-blur-2xl rounded-[42px] overflow-hidden shadow-[0_0_80px_rgba(236,72,153,0.12)]">
-
-      <div className="grid lg:grid-cols-2 gap-0">
-
-        {/* LEFT */}
-
-        <div className="p-8 md:p-14 flex flex-col justify-center">
-
-          {/* TAG */}
-
-          <div className="inline-flex items-center gap-3 bg-white/5 border border-pink-500/20 px-5 py-3 rounded-full text-pink-300 text-sm font-medium mb-8 w-fit backdrop-blur-xl">
-
-            <div className="w-3 h-3 bg-pink-500 rounded-full shadow-[0_0_12px_rgba(236,72,153,0.9)]"></div>
-
-            O que nos torna únicos
-
-          </div>
-
-          {/* TITLE */}
-
-          <h2 className="text-4xl md:text-6xl font-bold leading-[1.05] mb-8 tracking-tight">
-
-            Mais que músicas,
-            <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
-
-              {" "}criamos emoções
-              que ficam para sempre.
-
-            </span>
-
-          </h2>
-
-          {/* DESCRIPTION */}
-
-          <p className="text-xl text-gray-300 leading-relaxed mb-10 max-w-2xl">
-
-            Enquanto outras plataformas apenas geram músicas,
-            nós criamos experiências emocionais completas,
-            feitas para tocar o coração de quem recebe.
-
-          </p>
-
-          {/* BENEFITS */}
-
-          <div className="grid sm:grid-cols-2 gap-5">
-
-            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
-
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
-                ❤️
-              </div>
-
-              <h3 className="text-xl font-semibold mb-3">
-                Experiência emocional guiada
-              </h3>
-
-              <p className="text-gray-400 leading-relaxed">
-                Cada etapa foi criada para transformar sentimentos em músicas inesquecíveis.
-              </p>
-
-            </div>
-
-            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
-
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
-                🎶
-              </div>
-
-              <h3 className="text-xl font-semibold mb-3">
-                Letras feitas para sua história
-              </h3>
-
-              <p className="text-gray-400 leading-relaxed">
-                Cada detalhe da sua história inspira uma música feita especialmente para você.
-              </p>
-
-            </div>
-
-            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
-
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
-                💬
-              </div>
-
-              <h3 className="text-xl font-semibold mb-3">
-                Atendimento humanizado
-              </h3>
-
-              <p className="text-gray-400 leading-relaxed">
-                Nossa equipe acompanha você durante toda a experiência via WhatsApp.
-              </p>
-
-            </div>
-
-            <div className="group bg-white/5 border border-white/10 hover:border-pink-500/30 transition-all rounded-3xl p-6 backdrop-blur-xl">
-
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-2xl mb-5">
-                🎁
-              </div>
-
-              <h3 className="text-xl font-semibold mb-3">
-                Um presente inesquecível
-              </h3>
-
-              <p className="text-gray-400 leading-relaxed">
-                Mais do que uma música:
-                uma lembrança que ficará guardada para sempre.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        {/* RIGHT */}
-
-        <div className="relative min-h-[650px] flex items-center justify-center p-10">
-
-          {/* GLOW */}
-
-          <div className="absolute w-[500px] h-[500px] bg-pink-500/20 rounded-full blur-3xl"></div>
-
-          {/* PHOTO */}
-
-          <div className="relative w-full flex justify-center mb-[-40px] z-10">
-
-  <img
-    src="/time_fizmusica.png"
-    alt="FizMusica"
-    className="
-      w-full
-      max-w-[280px]
-      md:max-w-[520px]
-      h-auto
-      object-contain
-      rounded-[32px]
-      drop-shadow-[0_0_50px_rgba(236,72,153,0.25)]
-    "
-  />
-
-</div>
-
-          {/* FLOAT CARD */}
-
-          <div className="absolute bottom-10 left-6 md:left-12 z-20 bg-black/60 border border-white/10 backdrop-blur-2xl rounded-3xl p-6 max-w-sm shadow-2xl">
-
-            <div className="flex items-center gap-4 mb-4">
-
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 flex items-center justify-center text-3xl">
-                ✨
-              </div>
-
-              <div>
-
-                <p className="text-lg font-semibold">
-                  Nossa missão é simples:
+      {/* ═══════════════════════════════════════════
+          DIFERENCIAIS PREMIUM (team)
+      ═══════════════════════════════════════════ */}
+      <section className="relative py-28 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0"
+             style={{ background: "radial-gradient(ellipse at 60% 50%, rgba(240,25,107,0.06) 0%, transparent 60%)" }} />
+
+        <div className="relative max-w-6xl mx-auto px-6">
+          <div className="rounded-3xl overflow-hidden"
+               style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,25,107,0.1)" }}>
+
+            <div className="grid lg:grid-cols-2">
+
+              {/* left */}
+              <div className="p-7 lg:p-14 flex flex-col justify-center space-y-6 lg:space-y-8">
+                <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full w-fit text-sm font-medium"
+                     style={{ ...bodyFont, background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
+                  <span className="w-2 h-2 rounded-full animate-pulse-ring shrink-0" style={{ background: "#f0196b" }} />
+                  O que nos torna únicos
+                </div>
+
+                <h2 className="font-light leading-tight text-white/90"
+                    style={{ ...displayFont, fontSize: "clamp(2.2rem, 4vw, 3.5rem)" }}>
+                  Mais que músicas,{" "}
+                  <em style={{ color: "#f0196b" }}>
+                    criamos emoções que ficam para sempre.
+                  </em>
+                </h2>
+
+                <p className="text-sm text-white/40 leading-relaxed max-w-md" style={bodyFont}>
+                  Enquanto outras plataformas apenas geram músicas, nós criamos experiências emocionais completas feitas para tocar o coração de quem recebe.
                 </p>
 
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {
+                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+                      title: "Experiência emocional guiada",
+                      grad: "linear-gradient(135deg,#f0196b,#d946ef)",
+                    },
+                    {
+                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
+                      title: "Letras feitas para sua história",
+                      grad: "linear-gradient(135deg,#d946ef,#f0196b)",
+                    },
+                    {
+                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+                      title: "Atendimento humanizado",
+                      grad: "linear-gradient(135deg,#f0196b,#d946ef)",
+                    },
+                    {
+                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
+                      title: "Presente inesquecível",
+                      grad: "linear-gradient(135deg,#d946ef,#f0196b)",
+                    },
+                  ].map((b) => (
+                    <div key={b.title}
+                         className="p-4 rounded-2xl flex items-start gap-3 transition-all duration-200"
+                         style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white mt-0.5"
+                           style={{ background: b.grad }}>
+                        {b.icon}
+                      </div>
+                      <p className="text-xs text-white/65 leading-snug pt-1" style={bodyFont}>{b.title}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* right */}
+              <div className="relative min-h-[320px] lg:min-h-[520px] flex items-center justify-center p-6 lg:p-10 overflow-hidden">
+                {/* glow de fundo */}
+                <div className="pointer-events-none absolute w-80 h-80 rounded-full blur-[80px]"
+                     style={{ background: "rgba(240,25,107,0.18)" }} />
+                <div className="pointer-events-none absolute w-64 h-64 rounded-full blur-[60px] translate-x-16 translate-y-8"
+                     style={{ background: "rgba(217,70,239,0.12)" }} />
+
+                {/* moldura gradiente */}
+                <div className="relative z-10 p-[2px] rounded-[28px]"
+                     style={{ background: "linear-gradient(135deg, #f0196b 0%, #d946ef 50%, rgba(255,255,255,0.08) 100%)" }}>
+                  <div className="rounded-[26px] overflow-hidden"
+                       style={{ background: "#07060d" }}>
+                    <img
+                      src="/time_fizmusica.png"
+                      alt="Time Fiz Música"
+                      className="w-full max-w-sm h-auto object-cover block"
+                      style={{
+                        filter: "brightness(1.05) contrast(1.05)",
+                        maxHeight: "380px",
+                        objectPosition: "top",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* badge missão */}
+                <div className="absolute bottom-8 left-8 right-8 z-20 p-5 rounded-2xl"
+                     style={{ background: "rgba(7,6,13,0.9)", backdropFilter: "blur(24px)", border: "1px solid rgba(240,25,107,0.15)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#f0196b" }} />
+                    <p className="text-xs text-white/40" style={bodyFont}>Nossa missão</p>
+                  </div>
+                  <p className="font-medium text-white/90 leading-snug text-sm" style={bodyFont}>
+                    Fazer parte das histórias mais importantes da sua vida ❤️
+                  </p>
+                </div>
               </div>
 
             </div>
 
-            <p className="text-2xl font-bold leading-snug">
-
-              Fazer parte das histórias
-              mais importantes da sua vida ❤️
-
-            </p>
 
           </div>
-
-          {/* FLOAT TEXT */}
-
-          <div className="absolute top-14 right-10 text-right hidden md:block">
-
-            <p className="text-3xl text-pink-200 leading-relaxed italic">
-
-              Feito com amor
-              <br />
-              em cada detalhe ✨
-
-            </p>
-
-          </div>
-
         </div>
+      </section>
 
-      </div>
+      {/* ═══════════════════════════════════════════
+          CTA FINAL
+      ═══════════════════════════════════════════ */}
+      <section className="max-w-4xl mx-auto px-6 py-28 text-center">
+        <div className="relative overflow-hidden rounded-3xl p-8 lg:p-14"
+             style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,25,107,0.12)" }}>
+          <div className="pointer-events-none absolute inset-0"
+               style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(240,25,107,0.1) 0%, transparent 65%)" }} />
 
-      {/* FOOT STATS */}
-
-      <div className="border-t border-white/10 px-8 md:px-14 py-8">
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-
-          <div className="text-center">
-
-            <div className="text-4xl mb-3">❤️</div>
-
-            <h4 className="text-3xl font-bold mb-1">
-              +10.000
-            </h4>
-
-            <p className="text-gray-400">
-              músicas criadas
+          <div className="relative space-y-7">
+            <p className="text-xs tracking-[0.3em] uppercase" style={{ ...bodyFont, color: "#f0196b" }}>
+              Comece agora
             </p>
-
-          </div>
-
-          <div className="text-center">
-
-            <div className="text-4xl mb-3">🥹</div>
-
-            <h4 className="text-3xl font-bold mb-1">
-              +8.000
-            </h4>
-
-            <p className="text-gray-400">
-              clientes emocionados
+            <h2 className="font-light text-white/90 leading-tight"
+                style={{ ...displayFont, fontSize: "clamp(2.5rem, 5vw, 4.5rem)" }}>
+              Emocione agora<br />
+              <em style={{ color: "#f0196b" }}>quem você ama.</em>
+            </h2>
+            <p className="text-white/40 text-sm max-w-sm mx-auto leading-relaxed" style={bodyFont}>
+              Fácil, rápido e completamente personalizado. Será único e inesquecível.
             </p>
-
+            <div className="pt-2">
+              <button
+                onClick={() => router.push("/criar")}
+                className="text-white px-8 py-3.5 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_6px_28px_rgba(240,25,107,0.4)]"
+                style={{
+                  ...bodyFont,
+                  background: "#f0196b",
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  letterSpacing: "0.04em",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                }}
+              >
+                Criar minha música
+              </button>
+            </div>
           </div>
-
-          <div className="text-center">
-
-            <div className="text-4xl mb-3">⭐</div>
-
-            <h4 className="text-3xl font-bold mb-1">
-              4,9/5
-            </h4>
-
-            <p className="text-gray-400">
-              satisfação média
-            </p>
-
-          </div>
-
-          <div className="text-center">
-
-            <div className="text-4xl mb-3">🛡️</div>
-
-            <h4 className="text-3xl font-bold mb-1">
-              Premium
-            </h4>
-
-            <p className="text-gray-400">
-              experiência assistida
-            </p>
-
-          </div>
-
         </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</section>
-
+      </section>
 
       <Footer />
-
-
     </div>
   )
 }
