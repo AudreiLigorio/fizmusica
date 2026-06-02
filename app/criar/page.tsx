@@ -193,10 +193,9 @@ WHATSAPP: ${whatsapp}`
   /* ================================================= */
 
   return (
-    <div className="min-h-screen text-white font-sans pt-40 relative overflow-x-hidden"
-         style={{ background: "#07060d" }}>
+    <div className="text-white font-sans" style={{ background: "#07060d" }}>
 
-      {/* Gradiente de fundo sutil */}
+      {/* Gradiente de fundo — fixo atrás de tudo */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute top-[-10%] left-[-5%] w-[55vw] h-[55vw] rounded-full blur-[120px] opacity-30"
              style={{ background: "radial-gradient(circle, #f0196b 0%, transparent 70%)" }} />
@@ -206,11 +205,40 @@ WHATSAPP: ${whatsapp}`
              style={{ background: "radial-gradient(circle, #f0196b 0%, transparent 70%)" }} />
       </div>
 
-      <Header showButton={false} progress={progress} />
+      {/* Header — desktop only */}
+      <div className="hidden lg:block">
+        <Header showButton={false} progress={progress} />
+      </div>
 
-      <section className="relative z-10 max-w-3xl mx-auto px-6 py-12">
-        <div className="rounded-[32px] p-8 lg:p-12"
-             style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(24px)" }}>
+      {/*
+        Container único adaptativo:
+        Mobile  → fixed tela cheia, flex-col
+        Desktop → static, fluxo normal, pt-40
+      */}
+      <div className="fixed inset-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-40"
+           style={{ background: "#07060d" }}>
+
+        {/* ── Mobile: barra de progresso + topo ── */}
+        <div className="lg:hidden shrink-0">
+          <div className="h-[2px] w-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+            <div className="h-full transition-all duration-500"
+                 style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
+          </div>
+          <div className="flex items-center justify-between px-5 pt-4 pb-2">
+            {step > 1 ? (
+              <button onClick={prevStep} disabled={submitting}
+                      className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
+            ) : <div />}
+            <span className="text-xs text-white/30 font-medium">{step} / {totalSteps}</span>
+            <div />
+          </div>
+        </div>
+
+        {/* ── Área de conteúdo ── */}
+        <div className="flex-1 overflow-y-auto lg:overflow-visible">
+          <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12">
+            <div className="wizard-card">
+              <div className="py-2 lg:py-0">
 
           {/* ===== STEP 1 — Ocasião ===== */}
           {step === 1 && (
@@ -556,61 +584,74 @@ WHATSAPP: ${whatsapp}`
             </div>
           )}
 
-        </div>
+            </div>{/* fecha wizard-card inner */}
+            </div>{/* fecha wizard-card */}
 
-        {/* ERRO */}
-        {error && (
-          <div className="mt-6 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-5">
-            ⚠️ {error}
+            {/* Erro */}
+            {error && (
+              <div className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
+                ⚠️ {error}
+              </div>
+            )}
+
+            {/* Botões de navegação — desktop */}
+            <div className="hidden lg:flex justify-between items-center mt-10">
+              {step > 1 ? (
+                <button onClick={prevStep} disabled={submitting}
+                        className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
+                        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                  ← Voltar
+                </button>
+              ) : <div />}
+              {step !== 1 && step < 5 && (
+                <button onClick={nextStep}
+                        className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white"
+                        style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
+                  Continuar →
+                </button>
+              )}
+              {step === 5 && (
+                <button onClick={handleFinalizar} disabled={submitting}
+                        className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center gap-3"
+                        style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
+                  {submitting ? (
+                    <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
+                  ) : "Finalizar e escolher produto →"}
+                </button>
+              )}
+            </div>
+
+          </div>{/* fecha px-5/lg:max-w-3xl */}
+        </div>{/* fecha flex-1 overflow-y-auto */}
+
+        {/* Botão fixo no rodapé — mobile */}
+        {step !== 1 && (
+          <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
+               style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
+            {step < 5 ? (
+              <button onClick={nextStep}
+                      className="w-full py-4 rounded-2xl text-sm font-semibold text-white"
+                      style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
+                Continuar →
+              </button>
+            ) : (
+              <button onClick={handleFinalizar} disabled={submitting}
+                      className="w-full py-4 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-3"
+                      style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
+                {submitting ? (
+                  <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
+                ) : "Finalizar e escolher produto →"}
+              </button>
+            )}
           </div>
         )}
 
-        {/* BOTÕES DE NAVEGAÇÃO */}
-        <div className="flex justify-between items-center mt-10">
-          {step > 1 ? (
-            <button
-              onClick={prevStep}
-              disabled={submitting}
-              className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
-            >
-              ← Voltar
-            </button>
-          ) : (
-            <div />
-          )}
-
-          {step !== 1 && step < 5 && (
-            <button
-              onClick={nextStep}
-              className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
-            >
-              Continuar →
-            </button>
-          )}
-
-          {step === 5 && (
-            <button
-              onClick={handleFinalizar}
-              disabled={submitting}
-              className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
-              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}
-            >
-              {submitting ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Enviando…
-                </>
-              ) : (
-                "Finalizar e escolher produto →"
-              )}
-            </button>
-          )}
+        {/* Footer — desktop only */}
+        <div className="hidden lg:block">
+          <Footer />
         </div>
 
-      </section>
-      <Footer />
+      </div>{/* fecha container adaptativo */}
     </div>
   )
 }
