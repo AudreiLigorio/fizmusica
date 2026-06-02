@@ -1,0 +1,165 @@
+import { Resend } from "resend"
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+const FROM_ADDRESS = "FizMusica <contato@fizmusica.com.br>"
+const ADMIN_EMAIL  = "contato@fizmusica.com.br"
+
+// ============================================================
+// E-mail de entrega da música ao cliente
+// ============================================================
+
+interface MusicDeliveryEmailData {
+  nome:      string
+  email:     string
+  musicName: string
+  publicUrl: string
+  orderId:   string
+}
+
+export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Promise<void> {
+  try {
+    await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: `🎵 Sua música está pronta, ${data.nome.split(" ")[0]}!`,
+      html:    buildDeliveryEmail(data),
+    })
+    console.log(`[email] Entrega enviada para ${data.email}`)
+  } catch (err) {
+    console.error("[email] Falha ao enviar e-mail de entrega:", err)
+  }
+}
+
+function buildDeliveryEmail(data: MusicDeliveryEmailData): string {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">🎵</div>
+        <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800">Sua música está pronta!</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:16px">Feita com amor especialmente para você</p>
+      </div>
+
+      <div style="padding:40px 32px">
+        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! ❤️</p>
+        <p style="color:#999;margin:0 0 32px">
+          Sua música personalizada <strong style="color:#ec4899">"${data.musicName}"</strong> ficou incrível e está pronta para você ouvir!
+        </p>
+
+        <div style="text-align:center;margin:32px 0">
+          <a href="${data.publicUrl}"
+            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:18px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
+            ▶ Ouvir minha música
+          </a>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;text-align:center;margin:24px 0">
+          <p style="color:#666;font-size:12px;margin:0 0 8px">Ou acesse o link:</p>
+          <a href="${data.publicUrl}" style="color:#ec4899;font-size:14px;word-break:break-all">${data.publicUrl}</a>
+        </div>
+
+        <p style="color:#666;font-size:14px;margin:24px 0 0">
+          Você também pode compartilhar essa música com quem quiser — a página tem QR Code para facilitar! ❤️
+        </p>
+
+        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
+          Dúvidas? Fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a>
+        </p>
+      </div>
+    </div>
+  `
+}
+
+interface OrderEmailData {
+  orderId: string
+  nome: string
+  email: string
+  whatsapp: string
+  context: string
+  subcategory: string
+  musicalStyle: string
+  voiceType: string
+  emotion: string
+  createdAt: Date
+}
+
+export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise<void> {
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: order.email,
+      subject: "Pedido recebido — FizMusica 🎵",
+      html: buildClientEmail(order),
+    })
+    console.log(`[email] Confirmação enviada para ${order.email}`)
+  } catch (err) {
+    console.error("[email] Falha ao enviar confirmação ao cliente:", err)
+  }
+}
+
+export async function sendOrderNotificationEmail(order: OrderEmailData): Promise<void> {
+  try {
+    await resend.emails.send({
+      from: FROM_ADDRESS,
+      to: ADMIN_EMAIL,
+      subject: `Novo pedido #${order.orderId.slice(0, 8)} — ${order.nome}`,
+      html: buildAdminEmail(order),
+    })
+    console.log("[email] Notificação interna enviada")
+  } catch (err) {
+    console.error("[email] Falha ao enviar notificação interna:", err)
+  }
+}
+
+function buildClientEmail(order: OrderEmailData): string {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a">
+      <div style="background:#7c3aed;padding:32px;text-align:center;border-radius:8px 8px 0 0">
+        <h1 style="color:#fff;margin:0;font-size:24px">FizMusica</h1>
+        <p style="color:#e9d5ff;margin:8px 0 0">Sua música personalizada está a caminho!</p>
+      </div>
+
+      <div style="background:#fff;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px">
+        <p>Olá, <strong>${order.nome}</strong>!</p>
+        <p>Recebemos seu pedido com sucesso. Nossa equipe já está trabalhando na sua música especial.</p>
+
+        <div style="background:#f5f3ff;border-left:4px solid #7c3aed;padding:16px;border-radius:4px;margin:24px 0">
+          <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Número do pedido</p>
+          <p style="margin:0;font-size:18px;font-weight:700;color:#7c3aed;font-family:monospace">#${order.orderId.slice(0, 8).toUpperCase()}</p>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin:24px 0">
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Ocasião</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.subcategory}</td></tr>
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Estilo musical</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.musicalStyle}</td></tr>
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Voz</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.voiceType}</td></tr>
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Emoção</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.emotion}</td></tr>
+        </table>
+
+        <p style="font-size:14px;color:#6b7280">Em breve entraremos em contato pelo WhatsApp <strong>${order.whatsapp}</strong> com mais detalhes.</p>
+
+        <p style="font-size:14px;color:#6b7280;margin-top:32px">Dúvidas? Responda este e-mail ou fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#7c3aed">contato@fizmusica.com.br</a></p>
+      </div>
+    </div>
+  `
+}
+
+function buildAdminEmail(order: OrderEmailData): string {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a">
+      <h2 style="color:#7c3aed">Novo pedido recebido</h2>
+
+      <table style="width:100%;border-collapse:collapse">
+        <tr><td style="padding:6px 0;color:#6b7280;width:140px">ID</td><td style="padding:6px 0;font-family:monospace">${order.orderId}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Nome</td><td style="padding:6px 0">${order.nome}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">E-mail</td><td style="padding:6px 0"><a href="mailto:${order.email}">${order.email}</a></td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">WhatsApp</td><td style="padding:6px 0">${order.whatsapp}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Contexto</td><td style="padding:6px 0">${order.context}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Ocasião</td><td style="padding:6px 0">${order.subcategory}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Estilo</td><td style="padding:6px 0">${order.musicalStyle}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Voz</td><td style="padding:6px 0">${order.voiceType}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Emoção</td><td style="padding:6px 0">${order.emotion}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Data</td><td style="padding:6px 0">${order.createdAt.toLocaleString("pt-BR")}</td></tr>
+      </table>
+    </div>
+  `
+}

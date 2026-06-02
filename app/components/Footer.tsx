@@ -7,7 +7,7 @@ export default function Footer() {
       <img
         src="/logo_fizmusica.png"
         alt="FizMusica"
-        className="h-20 mx-auto mb-6 opacity-90 drop-shadow-[0_0_25px_rgba(236,72,153,0.35)]"
+        className="h-10 mx-auto mb-6 opacity-90 drop-shadow-[0_0_20px_rgba(236,72,153,0.4)]"
       />
 
       <p className="text-lg text-gray-300 mb-2">

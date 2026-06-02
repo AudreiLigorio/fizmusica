@@ -21,7 +21,7 @@ export default function Header({
           <img
             src="/logo_fizmusica.png"
             alt="FizMusica"
-            className="h-24 w-auto drop-shadow-[0_0_15px_rgba(236,72,153,0.45)] cursor-pointer"
+            className="h-10 w-auto drop-shadow-[0_0_12px_rgba(236,72,153,0.5)] cursor-pointer"
             onClick={() => router.push("/")}
           />
 

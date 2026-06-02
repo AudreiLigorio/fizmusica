@@ -1,0 +1,56 @@
+import { createServerClient } from "@/lib/supabase"
+import ProductForm from "./ProductForm"
+import DeliveryOptions from "./DeliveryOptions"
+
+async function getProducts() {
+  const supabase = createServerClient()
+  const { data } = await supabase
+    .from("products")
+    .select("*")
+    .order("sortOrder", { ascending: true })
+  return data ?? []
+}
+
+export default async function AdminProdutos() {
+  const products = await getProducts()
+
+  return (
+    <div className="p-8 max-w-4xl">
+      <h1 className="text-3xl font-bold mb-2">Produtos</h1>
+      <p className="text-gray-500 mb-10">Gerencie os produtos disponíveis para compra</p>
+
+      <div className="space-y-4">
+        {products.map((p) => (
+          <div
+            key={p.id}
+            className="bg-black/40 border border-white/10 rounded-2xl p-6"
+          >
+            <div className="flex items-start gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-1">
+                  <h2 className="font-semibold text-lg">{p.name}</h2>
+                  {p.featured && (
+                    <span className="bg-pink-500/15 text-pink-300 border border-pink-500/20 text-xs px-2 py-0.5 rounded-full">
+                      Destaque
+                    </span>
+                  )}
+                  {!p.active && (
+                    <span className="bg-gray-500/15 text-gray-400 text-xs px-2 py-0.5 rounded-full">
+                      Inativo
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-400 text-sm mb-3">{p.description}</p>
+                <p className="text-pink-400 font-bold text-xl">
+                  R$ {Number(p.price).toFixed(2).replace(".", ",")}
+                </p>
+              </div>
+              <ProductForm product={p} />
+            </div>
+            <DeliveryOptions productId={p.id} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}

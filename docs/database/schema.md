@@ -1,0 +1,20 @@
+# Schema
+
+Entidades principais:
+
+customers
+honorees
+briefs
+products
+product_delivery_options
+orders
+payments
+production_prompts
+songs
+music_public_access
+deliveries
+users
+wizard_occasions
+wizard_subcategories
+wizard_questions
+wizard_question_options

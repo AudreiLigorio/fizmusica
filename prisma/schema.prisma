@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+// ORDERS
+// ============================================================
+
+model Order {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Contato
+  nome     String
+  email    String
+  whatsapp String
+
+  // Contexto do formulário
+  context     String
+  subcategory String
+
+  // Preferências musicais
+  musicalStyle String
+  voiceType    String
+  emotion      String
+
+  // Status operacional
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  // Produto escolhido (preenchido na tela de produtos)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  // Relações
+  answers        OrderAnswer[]
+  payment        Payment?
+  generatedMusic GeneratedMusic?
+
+  @@map("orders")
+}
+
+// ============================================================
+// RESPOSTAS DINÂMICAS (uma linha por pergunta/resposta)
+// Permite adicionar/remover perguntas sem migração
+// ============================================================
+
+model OrderAnswer {
+  id          String @id @default(cuid())
+  orderId     String
+  question    String
+  answer      String @db.Text
+  position    Int
+  context     String
+  subcategory String
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_answers")
+}
+
+// ============================================================
+// PRODUTOS (gerenciados pelo admin)
+// ============================================================
+
+model Product {
+  id          String  @id @default(cuid())
+  name        String
+  description String? @db.Text
+  price       Float
+  imageUrl    String?
+  active      Boolean @default(true)
+  featured    Boolean @default(false)
+  sortOrder   Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@map("products")
+}
+
+// ============================================================
+// PAGAMENTOS
+// ============================================================
+
+model Payment {
+  id      String @id @default(cuid())
+  orderId String @unique
+
+  amount Float
+  status PaymentStatus @default(UNPAID)
+
+  // Mercado Pago
+  mpPaymentId    String?
+  mpPreferenceId String?
+  mpStatus       String?
+
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("payments")
+}
+
+// ============================================================
+// MÚSICA GERADA (publicada pelo admin após produção)
+// ============================================================
+
+model GeneratedMusic {
+  id      String @id @default(cuid())
+  orderId String @unique
+
+  mp3Url     String?
+  lyrics     String? @db.Text
+  imageUrl   String?
+  personName String?
+  musicName  String?
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@map("generated_music")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum OrderStatus {
+  PENDING
+  IN_PRODUCTION
+  DELIVERED
+  ABANDONED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
+}
