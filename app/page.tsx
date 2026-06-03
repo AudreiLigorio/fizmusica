@@ -211,20 +211,6 @@ export default function Home() {
               >
                 Criar minha música
               </button>
-              <button
-                onClick={() => router.push("/criar")}
-                className="text-white/60 px-7 py-3.5 rounded-xl transition-all duration-200 hover:text-white hover:border-white/20 active:scale-[0.97]"
-                style={{
-                  ...bodyFont,
-                  fontSize: "0.875rem",
-                  fontWeight: 400,
-                  letterSpacing: "0.03em",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  background: "transparent",
-                }}
-              >
-                Ver exemplos
-              </button>
             </div>
 
             <div className="animate-fade-up delay-500 flex flex-wrap gap-6 text-xs text-white/55 tracking-wide"
