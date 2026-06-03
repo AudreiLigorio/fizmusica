@@ -252,11 +252,11 @@ WHATSAPP: ${whatsapp}`
                 </p>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-2">
                 {occasions.map((occasion) => (
                   <div
                     key={occasion.id}
-                    className={`border rounded-3xl overflow-hidden transition-all ${
+                    className={`border rounded-2xl overflow-hidden transition-all ${
                       selectedContext === occasion.label
                         ? "border-pink-500 bg-pink-500/5"
                         : "border-white/10 bg-black/20"
@@ -268,18 +268,18 @@ WHATSAPP: ${whatsapp}`
                           selectedContext === occasion.label ? "" : occasion.label
                         )
                       }
-                      className="w-full p-7 flex items-center justify-between text-left"
+                      className="w-full px-4 py-3.5 flex items-center justify-between text-left"
                     >
-                      <h2 className="text-2xl font-bold">
+                      <h2 className="text-base font-semibold">
                         {occasion.emoji} {occasion.label}
                       </h2>
-                      <span className="text-2xl text-pink-500">
+                      <span className="text-lg text-pink-500 shrink-0 ml-2">
                         {selectedContext === occasion.label ? "−" : "+"}
                       </span>
                     </button>
 
                     {selectedContext === occasion.label && (
-                      <div className="px-7 pb-7">
+                      <div className="px-4 pb-4">
                         {/* Campo homenageado */}
                         <div className="mb-5">
                           <label className="text-sm text-gray-200 font-medium pl-1 block mb-2">
