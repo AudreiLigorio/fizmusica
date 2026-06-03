@@ -354,24 +354,14 @@ WHATSAPP: ${whatsapp}`
           {/* ===== STEP 3 — Estilo musical ===== */}
           {step === 3 && (
             <div>
-              <div className="mb-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
-                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                  Estilo da música
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
-                  Defina o estilo
-                </h1>
-                <p className="text-white/60 text-base">
-                  Escolha o clima perfeito para sua história.
-                </p>
+              <div className="mb-4">
+                <h1 className="text-xl font-bold tracking-tight">Defina o estilo</h1>
               </div>
 
               {/* Estilo */}
-              <div className="mb-10">
-                <h2 className="text-base font-semibold text-white/70 mb-4 uppercase tracking-wider" style={{ fontSize: "0.7rem", letterSpacing: "0.15em" }}>Estilo musical</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="mb-4">
+                <h2 className="text-[0.65rem] font-semibold text-white/50 mb-2 uppercase tracking-widest">Estilo musical</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {[
                     "🎤 Sertanejo", "🎶 Pagode", "💖 Pop",
                     "🪗 Forró",     "🎸 Rock",   "🎹 MPB",
@@ -382,7 +372,7 @@ WHATSAPP: ${whatsapp}`
                     <button
                       key={item}
                       onClick={() => setMusicalStyle(item)}
-                      className={`rounded-2xl p-4 border transition-all text-left font-medium ${
+                      className={`rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium ${
                         musicalStyle === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
@@ -395,14 +385,14 @@ WHATSAPP: ${whatsapp}`
               </div>
 
               {/* Voz */}
-              <div className="mb-10">
-                <h2 className="text-base font-semibold text-white/70 mb-4 uppercase tracking-wider" style={{ fontSize: "0.7rem", letterSpacing: "0.15em" }}>Tipo de voz</h2>
-                <div className="grid grid-cols-2 gap-3 max-w-sm">
+              <div className="mb-4">
+                <h2 className="text-[0.65rem] font-semibold text-white/50 mb-2 uppercase tracking-widest">Tipo de voz</h2>
+                <div className="grid grid-cols-2 gap-2 max-w-sm">
                   {["👨 Masculina", "👩 Feminina"].map((item) => (
                     <button
                       key={item}
                       onClick={() => setVoiceType(item)}
-                      className={`rounded-2xl p-4 border transition-all text-left font-medium ${
+                      className={`rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium ${
                         voiceType === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
@@ -416,8 +406,8 @@ WHATSAPP: ${whatsapp}`
 
               {/* Emoção */}
               <div>
-                <h2 className="text-base font-semibold text-white/70 mb-4 uppercase tracking-wider" style={{ fontSize: "0.7rem", letterSpacing: "0.15em" }}>Emoção da música</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <h2 className="text-[0.65rem] font-semibold text-white/50 mb-2 uppercase tracking-widest">Emoção da música</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {[
                     "💖 Muito emocionante", "🥹 Romântica",
                     "☀️ Alegre & Feliz",    "🎉 Divertida",
@@ -428,7 +418,7 @@ WHATSAPP: ${whatsapp}`
                     <button
                       key={item}
                       onClick={() => setEmotion(item)}
-                      className={`rounded-2xl p-4 border transition-all text-left font-medium ${
+                      className={`rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium ${
                         emotion === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
