@@ -243,23 +243,13 @@ WHATSAPP: ${whatsapp}`
           {/* ===== STEP 1 — Ocasião ===== */}
           {step === 1 && (
             <div>
-              <div className="text-center mb-12">
-                <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full text-xs font-medium mb-6"
-                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#f0196b" }} />
-                  Sua música começa aqui
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
-                  Vamos criar sua música
-                </h1>
-                <p className="text-white/60 text-base max-w-md mx-auto leading-relaxed">
-                  Preencha com carinho — quanto mais detalhes, mais emocionante e especial ficará sua música.
-                </p>
-                <div className="mt-6 inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-medium"
-                     style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.15), rgba(217,70,239,0.15))", border: "1px solid rgba(240,25,107,0.2)", color: "#ff6b9d" }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+              <div className="mb-8">
+                <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
                   Selecione a ocasião que deseja homenagear
-                </div>
+                </h1>
+                <p className="text-white/55 text-sm">
+                  Escolha abaixo e preencha o questionário guiado.
+                </p>
               </div>
 
               <div className="space-y-6">
