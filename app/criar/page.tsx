@@ -215,7 +215,7 @@ WHATSAPP: ${whatsapp}`
         Mobile  → fixed tela cheia, flex-col
         Desktop → static, fluxo normal, pt-40
       */}
-      <div className="fixed inset-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
+      <div className="fixed inset-0 z-10 flex flex-col overflow-x-hidden lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
            style={{ background: "#07060d" }}>
 
         {/* ── Mobile: barra de progresso + topo ── */}
