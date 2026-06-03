@@ -16,7 +16,7 @@ const DEMOS = [
 const STEPS = [
   { n: "1", label: "Conte sua história",    desc: "Escolha a ocasião e preencha o questionário guiado." },
   { n: "2", label: "Escolha o estilo e sentimento", desc: "Sertanejo, MPB, pagode, pop — você decide." },
-  { n: "3", label: "Receba no WhatsApp",     desc: "Sua música chega direto no seu celular." },
+  { n: "3", label: "Selecione o produto de sua preferência", desc: "Aqui você vai se surpreender." },
   { n: "4", label: "Emocione alguém",        desc: "Um presente que ficará guardado para sempre." },
 ]
 
