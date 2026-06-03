@@ -65,6 +65,16 @@ const WHY = [
     desc: "Nossa equipe acompanha você do início ao fim via WhatsApp.",
     gradient: "linear-gradient(135deg, #f0196b, #d946ef)",
   },
+  {
+    icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    ),
+    title: "Satisfação garantida",
+    desc: "Nosso produto é diferenciado e feito para emocionar de verdade.",
+    gradient: "linear-gradient(135deg, #d946ef, #f0196b)",
+  },
 ]
 
 function useCountUp(target: number, decimals: number, duration = 1800) {
@@ -463,7 +473,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {WHY.map((w) => (
               <div key={w.title}
                    className="group relative p-8 rounded-3xl cursor-default"
