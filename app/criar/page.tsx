@@ -311,50 +311,41 @@ WHATSAPP: ${whatsapp}`
           {/* ===== STEP 2 — Perguntas ===== */}
           {step === 2 && (
             <div>
-              <div className="mb-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
-                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
-                  {selectedContext} · {selectedSubcategory}
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
-                  Conte sua história
-                </h1>
-                <p className="text-white/60 text-base">
-                  Quanto mais detalhes, mais especial ficará sua música.
-                </p>
+              <div className="mb-5">
+                <h1 className="text-2xl font-bold tracking-tight">Conte sua história</h1>
               </div>
 
-              <div className="rounded-[24px] p-8" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <div className="flex items-center justify-between mb-6">
-                  <span className="text-sm text-pink-400 font-medium">
+              <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs text-pink-400 font-medium">
                     Pergunta {questionStep + 1} de {questions.length}
                   </span>
                   <div className="flex gap-1">
                     {questions.map((_, i) => (
                       <div
                         key={i}
-                        className={`w-2 h-2 rounded-full transition-all ${
+                        className={`h-1.5 rounded-full transition-all ${
                           i < questionStep
-                            ? "bg-pink-500"
+                            ? "bg-pink-500 w-4"
                             : i === questionStep
-                            ? "bg-pink-400 w-4"
-                            : "bg-white/20"
+                            ? "bg-pink-400 w-6"
+                            : "bg-white/20 w-3"
                         }`}
                       />
                     ))}
                   </div>
                 </div>
 
-                <h2 className="text-3xl font-bold mb-6">{currentQuestion}</h2>
+                <h2 className="text-lg font-bold mb-4">{currentQuestion}</h2>
 
                 <textarea
-                  rows={5}
+                  rows={4}
                   value={answers[currentQuestion] || ""}
                   onChange={(e) =>
                     setAnswers({ ...answers, [currentQuestion]: e.target.value })
                   }
                   placeholder="Escreva com carinho… cada detalhe faz diferença ❤️"
-                  className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 text-lg outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-gray-200"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-base outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-white/30"
                 />
               </div>
             </div>
