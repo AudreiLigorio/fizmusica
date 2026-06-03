@@ -33,7 +33,7 @@ export default function EntrarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pt-36">
+    <div className="min-h-screen bg-black text-white font-sans pt-24">
       <Header showButton={false} />
 
       <div className="flex items-center justify-center px-6 py-20">

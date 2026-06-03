@@ -119,7 +119,7 @@ function ProdutosContent() {
       </div>
 
       {/* Container adaptativo: mobile fixed / desktop static */}
-      <div className="fixed inset-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-36"
+      <div className="fixed inset-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
            style={{ background: "#07060d" }}>
 
         {/* Mobile: barra de step no topo */}

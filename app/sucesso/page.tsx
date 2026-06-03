@@ -42,7 +42,7 @@ function SucessoContent() {
     <div className="min-h-screen bg-black text-white font-sans">
       <Header showButton={false} />
 
-      <div className="flex items-center justify-center px-6 pt-36 pb-16 min-h-screen">
+      <div className="flex items-center justify-center px-6 pt-24 pb-16 min-h-screen">
         <div className="max-w-2xl w-full">
 
           {/* ÍCONE ANIMADO */}

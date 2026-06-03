@@ -98,7 +98,7 @@ function MinhaMusica2() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pt-36">
+    <div className="min-h-screen bg-black text-white font-sans pt-24">
       <Header showButton={false} />
 
       <section className="max-w-3xl mx-auto px-6 py-12">
