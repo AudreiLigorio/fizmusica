@@ -159,7 +159,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           HERO
       ═══════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex items-center overflow-hidden pt-24">
+      <section className="relative lg:min-h-screen flex items-center overflow-hidden pt-20 lg:pt-24">
 
         {/* ambient orbs */}
         <div className="animate-orb pointer-events-none absolute -top-32 -left-32 w-[700px] h-[700px] rounded-full"
@@ -167,7 +167,7 @@ export default function Home() {
         <div className="animate-orb pointer-events-none absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full delay-700"
              style={{ background: "radial-gradient(circle, rgba(217,70,239,0.06) 0%, transparent 70%)", animationDelay: "6s" }} />
 
-        <div className="relative max-w-6xl mx-auto px-6 py-20 w-full grid lg:grid-cols-[1fr_420px] gap-16 xl:gap-24 items-start">
+        <div className="relative max-w-6xl mx-auto px-6 py-8 lg:py-20 w-full grid lg:grid-cols-[1fr_420px] gap-8 lg:gap-16 xl:gap-24 items-start">
 
           {/* ── copy ── */}
           <div>
@@ -357,14 +357,14 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           CARROSSEL
       ═══════════════════════════════════════════ */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
+      <section className="max-w-6xl mx-auto px-6 py-8 lg:py-16">
         <FizMusicaCarousel />
       </section>
 
       {/* ═══════════════════════════════════════════
           COMO FUNCIONA
       ═══════════════════════════════════════════ */}
-      <section className="py-28 border-y border-white/[0.05]">
+      <section className="py-14 lg:py-28 border-y border-white/[0.05]">
         <div className="max-w-6xl mx-auto px-6">
 
           <div className="mb-16">
@@ -419,7 +419,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           EMOTIONAL / VIDEO
       ═══════════════════════════════════════════ */}
-      <section className="max-w-6xl mx-auto px-6 py-28 grid lg:grid-cols-2 gap-20 items-center">
+      <section className="max-w-6xl mx-auto px-6 py-14 lg:py-28 grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
 
         <div>
           <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ ...bodyFont, color: "#f0196b" }}>
@@ -459,7 +459,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           POR QUE NOS ESCOLHER
       ═══════════════════════════════════════════ */}
-      <section className="border-y border-white/[0.05] py-28" style={{ background: "rgba(255,255,255,0.015)" }}>
+      <section className="border-y border-white/[0.05] py-14 lg:py-28" style={{ background: "rgba(255,255,255,0.015)" }}>
         <div className="max-w-6xl mx-auto px-6">
 
           <div className="mb-16 max-w-xl">
@@ -524,7 +524,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           DIFERENCIAIS PREMIUM (team)
       ═══════════════════════════════════════════ */}
-      <section className="relative py-28 overflow-hidden">
+      <section className="relative py-14 lg:py-28 overflow-hidden">
         <div className="pointer-events-none absolute inset-0"
              style={{ background: "radial-gradient(ellipse at 60% 50%, rgba(240,25,107,0.06) 0%, transparent 60%)" }} />
 
@@ -639,7 +639,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           CTA FINAL
       ═══════════════════════════════════════════ */}
-      <section className="max-w-4xl mx-auto px-6 py-28 text-center">
+      <section className="max-w-4xl mx-auto px-6 py-14 lg:py-28 text-center">
         <div className="relative overflow-hidden rounded-3xl p-8 lg:p-14"
              style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,25,107,0.12)" }}>
           <div className="pointer-events-none absolute inset-0"
