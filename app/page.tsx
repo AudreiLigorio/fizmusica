@@ -253,37 +253,37 @@ export default function Home() {
               <img src="/logo_fizmusica.png" alt="Fiz Música" className="relative z-10 h-48 w-auto" />
             </div>
 
-            <div className="animate-float rounded-3xl border border-white/[0.07] p-5 shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
-                 style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(24px)" }}>
+            <div className="animate-float rounded-3xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
+                 style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.18) 0%, rgba(217,70,239,0.12) 50%, rgba(255,255,255,0.03) 100%)", border: "1px solid rgba(240,25,107,0.2)", backdropFilter: "blur(24px)" }}>
 
               {/* header card */}
-              <div className="rounded-2xl p-5 mb-4"
+              <div className="px-5 pt-5 pb-4 border-b border-white/[0.06]"
                    style={{ background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)" }}>
-                <p className="font-semibold text-base mb-1" style={displayFont}>
-                  Sua história. Sua música.
+                <p className="font-semibold text-base mb-0.5" style={displayFont}>
+                  Escute agora algumas histórias:
                 </p>
-                <p className="text-white/70 text-xs" style={bodyFont}>
-                  Ouça exemplos reais criados para nossos clientes
+                <p className="text-white/75 text-xs" style={bodyFont}>
+                  Exemplos reais criados para nossos clientes
                 </p>
               </div>
 
               {/* tracks */}
-              <div className="space-y-1">
+              <div className="space-y-0 p-2">
                 {DEMOS.map((d, idx) => {
                   const isActive = currentAudio === d.src && playing
                   return (
                     <button
                       key={d.id}
                       onClick={() => togglePlay(d.src)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group"
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200 group"
                       style={{
-                        background: isActive ? "rgba(240,25,107,0.07)" : "transparent",
+                        background: isActive ? "rgba(240,25,107,0.15)" : "rgba(255,255,255,0.03)",
                       }}
                     >
                       {/* track number */}
                       <span
                         className="shrink-0 w-6 text-center tabular-nums"
-                        style={{ ...bodyFont, fontSize: "0.7rem", color: "rgba(255,255,255,0.2)" }}
+                        style={{ ...bodyFont, fontSize: "0.7rem", color: isActive ? "rgba(240,25,107,0.8)" : "rgba(255,255,255,0.25)" }}
                       >
                         {String(idx + 1).padStart(2, "0")}
                       </span>
@@ -296,7 +296,7 @@ export default function Home() {
                             ...bodyFont,
                             fontSize: "0.8125rem",
                             fontWeight: 500,
-                            color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)",
+                            color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
                             letterSpacing: "0.01em",
                           }}
                         >
@@ -307,7 +307,7 @@ export default function Home() {
                           style={{
                             ...bodyFont,
                             fontSize: "0.68rem",
-                            color: "rgba(255,255,255,0.28)",
+                            color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)",
                             letterSpacing: "0.02em",
                           }}
                         >
