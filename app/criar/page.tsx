@@ -312,7 +312,7 @@ WHATSAPP: ${whatsapp}`
           {step === 2 && (
             <div>
               <div className="mb-5">
-                <h1 className="text-2xl font-bold tracking-tight">Conte sua história</h1>
+                <h1 className="text-xl font-bold tracking-tight">Conte sua história</h1>
               </div>
 
               <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -336,7 +336,7 @@ WHATSAPP: ${whatsapp}`
                   </div>
                 </div>
 
-                <h2 className="text-lg font-bold mb-4">{currentQuestion}</h2>
+                <h2 className="text-base font-bold mb-3">{currentQuestion}</h2>
 
                 <textarea
                   rows={4}
@@ -345,7 +345,7 @@ WHATSAPP: ${whatsapp}`
                     setAnswers({ ...answers, [currentQuestion]: e.target.value })
                   }
                   placeholder="Escreva com carinho… cada detalhe faz diferença ❤️"
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-base outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-white/30"
+                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-white/30"
                 />
               </div>
             </div>
