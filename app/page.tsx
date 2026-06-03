@@ -377,7 +377,7 @@ export default function Home() {
             </p>
             <h2 className="font-light text-white/90 leading-tight"
                 style={{ ...displayFont, fontSize: "clamp(2.2rem, 4vw, 3.5rem)" }}>
-              Em quatro passos simples,<br />
+              Em apenas alguns passos,<br />
               <em style={{ color: "#f0196b" }}>sua história vira música.</em>
             </h2>
           </div>
