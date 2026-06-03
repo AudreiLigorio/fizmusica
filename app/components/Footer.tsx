@@ -1,4 +1,4 @@
-export default function Footer() {
+﻿export default function Footer() {
   return (
     <footer
       className="border-t border-white/[0.05] py-14"
@@ -11,7 +11,7 @@ export default function Footer() {
           className="h-8 w-auto opacity-70"
         />
         <p
-          className="text-sm tracking-[0.2em] uppercase text-white/30"
+          className="text-sm tracking-[0.2em] uppercase text-white/55"
           style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontStyle: "italic" }}
         >
           Sua história. Sua música.
@@ -22,3 +22,4 @@ export default function Footer() {
     </footer>
   )
 }
+

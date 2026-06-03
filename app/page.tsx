@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useRef, useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -227,7 +227,7 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="animate-fade-up delay-500 flex flex-wrap gap-7 text-xs text-white/30 tracking-wide"
+            <div className="animate-fade-up delay-500 flex flex-wrap gap-7 text-xs text-white/55 tracking-wide"
                  style={bodyFont}>
               {["Presente único", "Entrega via WhatsApp", "Pagamento seguro"].map(t => (
                 <span key={t} className="flex items-center gap-2">
@@ -408,7 +408,7 @@ export default function Home() {
                   <span className="text-white font-bold text-xl" style={bodyFont}>{s.n}</span>
                 </div>
                 <h3 className="font-semibold text-white text-base mb-2" style={bodyFont}>{s.label}</h3>
-                <p className="text-sm text-white/45 leading-relaxed" style={bodyFont}>{s.desc}</p>
+                <p className="text-sm text-white/60 leading-relaxed" style={bodyFont}>{s.desc}</p>
               </div>
             ))}
           </div>
@@ -550,7 +550,7 @@ export default function Home() {
                   </em>
                 </h2>
 
-                <p className="text-sm text-white/40 leading-relaxed max-w-md" style={bodyFont}>
+                <p className="text-sm text-white/60 leading-relaxed max-w-md" style={bodyFont}>
                   Enquanto outras plataformas apenas geram músicas, nós criamos experiências emocionais completas feitas para tocar o coração de quem recebe.
                 </p>
 
@@ -621,7 +621,7 @@ export default function Home() {
                      style={{ background: "rgba(7,6,13,0.9)", backdropFilter: "blur(24px)", border: "1px solid rgba(240,25,107,0.15)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#f0196b" }} />
-                    <p className="text-xs text-white/40" style={bodyFont}>Nossa missão</p>
+                    <p className="text-xs text-white/60" style={bodyFont}>Nossa missão</p>
                   </div>
                   <p className="font-medium text-white/90 leading-snug text-sm" style={bodyFont}>
                     Fazer parte das histórias mais importantes da sua vida ❤️
@@ -654,7 +654,7 @@ export default function Home() {
               Emocione agora<br />
               <em style={{ color: "#f0196b" }}>quem você ama.</em>
             </h2>
-            <p className="text-white/40 text-sm max-w-sm mx-auto leading-relaxed" style={bodyFont}>
+            <p className="text-white/60 text-sm max-w-sm mx-auto leading-relaxed" style={bodyFont}>
               Fácil, rápido e completamente personalizado. Será único e inesquecível.
             </p>
             <div className="pt-2">
@@ -681,3 +681,4 @@ export default function Home() {
     </div>
   )
 }
+

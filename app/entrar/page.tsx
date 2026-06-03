@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
@@ -43,7 +43,7 @@ export default function EntrarPage() {
             <div className="text-center bg-white/5 border border-white/10 rounded-3xl p-10">
               <div className="text-5xl mb-5">📧</div>
               <h1 className="text-2xl font-bold mb-3">Verifique seu e-mail</h1>
-              <p className="text-gray-400 leading-relaxed mb-6">
+              <p className="text-gray-200 leading-relaxed mb-6">
                 Enviamos um link de acesso para{" "}
                 <span className="text-white font-medium">{email}</span>.
                 Clique no link para entrar.
@@ -59,7 +59,7 @@ export default function EntrarPage() {
             <>
               <div className="text-center mb-8">
                 <span className="text-pink-400 font-bold text-2xl">Fiz Música</span>
-                <p className="text-gray-500 text-sm mt-1">Acompanhe sua música ❤️</p>
+                <p className="text-gray-300 text-sm mt-1">Acompanhe sua música ❤️</p>
               </div>
 
               <form
@@ -67,7 +67,7 @@ export default function EntrarPage() {
                 className="bg-white/5 border border-white/10 rounded-2xl p-8 space-y-5"
               >
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400 font-medium">Seu e-mail</label>
+                  <label className="text-sm text-gray-200 font-medium">Seu e-mail</label>
                   <input
                     type="email"
                     value={email}
@@ -100,7 +100,7 @@ export default function EntrarPage() {
                   )}
                 </button>
 
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-gray-300 text-center">
                   Você receberá um link seguro por e-mail — sem senha necessária.
                 </p>
               </form>
@@ -113,3 +113,4 @@ export default function EntrarPage() {
     </div>
   )
 }
+

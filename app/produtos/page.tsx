@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
@@ -153,7 +153,7 @@ function ProdutosContent() {
                   {" "}sua música
                 </span>
               </h1>
-              <p className="text-base lg:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base lg:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
                 Selecione o produto ideal para transformar essa história em uma experiência inesquecível.
               </p>
             </div>
@@ -171,12 +171,12 @@ function ProdutosContent() {
                       step === n
                         ? "bg-pink-500/15 border border-pink-500/30 text-pink-300"
                         : step > n
-                        ? "bg-white/5 border border-white/10 text-gray-400 hover:text-white cursor-pointer"
-                        : "bg-white/5 border border-white/5 text-gray-600 cursor-default"
+                        ? "bg-white/5 border border-white/10 text-gray-200 hover:text-white cursor-pointer"
+                        : "bg-white/5 border border-white/5 text-gray-200 cursor-default"
                     }`}
                   >
                     <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                      step > n ? "bg-pink-500 text-white" : step === n ? "bg-pink-500 text-white" : "bg-white/10 text-gray-500"
+                      step > n ? "bg-pink-500 text-white" : step === n ? "bg-pink-500 text-white" : "bg-white/10 text-gray-300"
                     }`}>
                       {step > n ? "✓" : n}
                     </span>
@@ -226,16 +226,16 @@ function ProdutosContent() {
                   </div>
 
                   {product.description && (
-                    <p className="text-gray-400 leading-relaxed mb-4">{product.description}</p>
+                    <p className="text-gray-200 leading-relaxed mb-4">{product.description}</p>
                   )}
 
                   {product.product_delivery_options.length > 0 && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-300">
                       ⏱ Prazo: a partir de {product.product_delivery_options[0].days} dias úteis
                     </p>
                   )}
 
-                  <div className={`mt-5 flex items-center gap-2 text-sm font-medium transition-all ${isSelected ? "text-pink-400" : "text-gray-500"}`}>
+                  <div className={`mt-5 flex items-center gap-2 text-sm font-medium transition-all ${isSelected ? "text-pink-400" : "text-gray-300"}`}>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-pink-500 bg-pink-500" : "border-white/20"}`}>
                       {isSelected && (
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -269,7 +269,7 @@ function ProdutosContent() {
             </div>
 
             <h2 className="text-2xl font-bold mb-2">⏱ Escolha o prazo de entrega</h2>
-            <p className="text-gray-400 mb-6">Quanto mais urgente, mais rápido entregamos.</p>
+            <p className="text-gray-200 mb-6">Quanto mais urgente, mais rápido entregamos.</p>
 
             <div className="space-y-3">
               {selected.product_delivery_options.map((opt) => {
@@ -296,7 +296,7 @@ function ProdutosContent() {
                       <div>
                         <p className="font-semibold">{opt.label}</p>
                         {opt.price_extra > 0 && (
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-gray-200 mt-0.5">
                             + R$ {fmt(opt.price_extra)} de urgência
                           </p>
                         )}
@@ -344,7 +344,7 @@ function ProdutosContent() {
                   {checkingOut ? "Aguarde..." : delivery ? `Pagar R$ ${fmt(finalPrice)} ❤️` : "Selecione um prazo para continuar"}
                 </button>
               )}
-              <div className="flex gap-8 text-sm text-gray-500">
+              <div className="flex gap-8 text-sm text-gray-300">
                 <span>🔒 Pagamento seguro</span>
                 <span>⚡ Confirmação imediata</span>
                 <span>💬 Suporte via WhatsApp</span>
@@ -359,7 +359,7 @@ function ProdutosContent() {
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
             {step === 2 && !delivery ? (
-              <div className="w-full py-4 rounded-2xl text-sm font-semibold text-center text-white/30"
+              <div className="w-full py-4 rounded-2xl text-sm font-semibold text-center text-white/55"
                    style={{ background: "rgba(255,255,255,0.06)" }}>
                 Selecione um prazo para continuar
               </div>
@@ -402,3 +402,4 @@ export default function ProdutosPage() {
     </Suspense>
   )
 }
+

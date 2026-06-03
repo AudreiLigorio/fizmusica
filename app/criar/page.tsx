@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -229,7 +229,7 @@ WHATSAPP: ${whatsapp}`
               <button onClick={prevStep} disabled={submitting}
                       className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
             ) : <div />}
-            <span className="text-xs text-white/30 font-medium">{step} / {totalSteps}</span>
+            <span className="text-xs text-white/55 font-medium">{step} / {totalSteps}</span>
             <div />
           </div>
         </div>
@@ -252,7 +252,7 @@ WHATSAPP: ${whatsapp}`
                 <h1 className="text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
                   Vamos criar sua música
                 </h1>
-                <p className="text-white/45 text-base max-w-md mx-auto leading-relaxed">
+                <p className="text-white/60 text-base max-w-md mx-auto leading-relaxed">
                   Preencha com carinho — quanto mais detalhes, mais emocionante e especial ficará sua música.
                 </p>
                 <div className="mt-6 inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full text-sm font-medium"
@@ -292,7 +292,7 @@ WHATSAPP: ${whatsapp}`
                       <div className="px-7 pb-7">
                         {/* Campo homenageado */}
                         <div className="mb-5">
-                          <label className="text-sm text-gray-400 font-medium pl-1 block mb-2">
+                          <label className="text-sm text-gray-200 font-medium pl-1 block mb-2">
                             🎁 Nome de quem vai receber a música (opcional)
                           </label>
                           <input
@@ -341,7 +341,7 @@ WHATSAPP: ${whatsapp}`
                 <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
                   Conte sua história
                 </h1>
-                <p className="text-white/45 text-base">
+                <p className="text-white/60 text-base">
                   Quanto mais detalhes, mais especial ficará sua música.
                 </p>
               </div>
@@ -376,7 +376,7 @@ WHATSAPP: ${whatsapp}`
                     setAnswers({ ...answers, [currentQuestion]: e.target.value })
                   }
                   placeholder="Escreva com carinho… cada detalhe faz diferença ❤️"
-                  className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 text-lg outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-gray-600"
+                  className="w-full bg-black/40 border border-white/10 rounded-3xl p-6 text-lg outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-gray-200"
                 />
               </div>
             </div>
@@ -394,7 +394,7 @@ WHATSAPP: ${whatsapp}`
                 <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
                   Defina o estilo
                 </h1>
-                <p className="text-white/45 text-base">
+                <p className="text-white/60 text-base">
                   Escolha o clima perfeito para sua história.
                 </p>
               </div>
@@ -484,14 +484,14 @@ WHATSAPP: ${whatsapp}`
                 <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
                   Quase lá!
                 </h1>
-                <p className="text-white/45 text-base">
+                <p className="text-white/60 text-base">
                   Para entrarmos em contato e entregar sua música.
                 </p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-5">
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400 font-medium pl-2">
+                  <label className="text-sm text-gray-200 font-medium pl-2">
                     Seu nome completo
                   </label>
                   <input
@@ -503,7 +503,7 @@ WHATSAPP: ${whatsapp}`
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm text-gray-400 font-medium pl-2">
+                  <label className="text-sm text-gray-200 font-medium pl-2">
                     Seu e-mail
                   </label>
                   <input
@@ -516,7 +516,7 @@ WHATSAPP: ${whatsapp}`
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm text-gray-400 font-medium pl-2">
+                  <label className="text-sm text-gray-200 font-medium pl-2">
                     WhatsApp com DDD
                   </label>
                   <input
@@ -528,7 +528,7 @@ WHATSAPP: ${whatsapp}`
                 </div>
               </div>
 
-              <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-400 leading-relaxed">
+              <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-200 leading-relaxed">
                 🔒 Seus dados são privados e usados exclusivamente para entrega da sua música.
               </div>
             </div>
@@ -545,7 +545,7 @@ WHATSAPP: ${whatsapp}`
                 <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
                   Tudo pronto!
                 </h1>
-                <p className="text-white/45 text-base">
+                <p className="text-white/60 text-base">
                   Confira o resumo antes de finalizar.
                 </p>
               </div>
@@ -558,13 +558,13 @@ WHATSAPP: ${whatsapp}`
                   <p className="font-semibold">{selectedSubcategory}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wider">
+                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">
                     Estilo
                   </p>
                   <p className="font-semibold">{musicalStyle}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-400 font-medium mb-1 uppercase tracking-wider">
+                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">
                     Emoção
                   </p>
                   <p className="font-semibold">{emotion}</p>
@@ -575,7 +575,7 @@ WHATSAPP: ${whatsapp}`
                 {resumo}
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-4 text-sm text-gray-400">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-4 text-sm text-gray-200">
                 <span className="text-2xl">👤</span>
                 <span>
                   <strong className="text-white">{nome}</strong> · {email} · {whatsapp}
@@ -655,3 +655,4 @@ WHATSAPP: ${whatsapp}`
     </div>
   )
 }
+

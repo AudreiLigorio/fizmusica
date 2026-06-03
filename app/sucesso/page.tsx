@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
@@ -137,7 +137,7 @@ function SucessoContent() {
 
             {/* NÚMERO DO PEDIDO */}
             {orderId && (
-              <div className="bg-black/40 border border-white/10 rounded-2xl p-4 text-center text-sm text-gray-500 mb-6 font-mono">
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-4 text-center text-sm text-gray-300 mb-6 font-mono">
                 Pedido # {orderId}
               </div>
             )}
@@ -171,7 +171,7 @@ function SucessoContent() {
           <div className="text-center">
             <button
               onClick={() => router.push("/")}
-              className="text-gray-500 hover:text-gray-300 transition-colors text-sm"
+              className="text-gray-300 hover:text-gray-300 transition-colors text-sm"
             >
               ← Voltar para a página inicial
             </button>
@@ -198,3 +198,4 @@ export default function Sucesso() {
     </Suspense>
   )
 }
+

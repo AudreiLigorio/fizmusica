@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -106,18 +106,18 @@ function MinhaMusica2() {
         <div className="flex items-center justify-between mb-10">
           <div>
             <h1 className="text-4xl font-bold">Minha música ❤️</h1>
-            <p className="text-gray-500 mt-1 text-sm">{user.email}</p>
+            <p className="text-gray-300 mt-1 text-sm">{user.email}</p>
           </div>
           <button
             onClick={handleLogout}
-            className="text-sm text-gray-500 hover:text-red-400 transition-colors"
+            className="text-sm text-gray-300 hover:text-red-400 transition-colors"
           >
             Sair
           </button>
         </div>
 
         {orders.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">
+          <div className="text-center py-20 text-gray-300">
             <p className="text-5xl mb-4">🎵</p>
             <p>Nenhum pedido encontrado para este e-mail.</p>
             <button
@@ -137,7 +137,7 @@ function MinhaMusica2() {
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div>
                     <p className="font-semibold text-lg">{order.subcategory}</p>
-                    <p className="text-sm text-gray-500">{order.context}</p>
+                    <p className="text-sm text-gray-300">{order.context}</p>
                   </div>
                   <span className={`text-xs px-3 py-1.5 rounded-full font-medium whitespace-nowrap ${
                     order.status === "DELIVERED"
@@ -153,26 +153,26 @@ function MinhaMusica2() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   {order.products && (
                     <div className="bg-black/30 rounded-xl p-3">
-                      <p className="text-gray-500 text-xs mb-1">Produto</p>
+                      <p className="text-gray-300 text-xs mb-1">Produto</p>
                       <p className="font-medium">{order.products.name}</p>
                     </div>
                   )}
                   <div className="bg-black/30 rounded-xl p-3">
-                    <p className="text-gray-500 text-xs mb-1">Pagamento</p>
+                    <p className="text-gray-300 text-xs mb-1">Pagamento</p>
                     <p className={`font-medium ${order.paymentStatus === "PAID" ? "text-green-400" : "text-gray-300"}`}>
                       {PAYMENT_LABEL[order.paymentStatus] ?? order.paymentStatus}
                     </p>
                   </div>
                   {order.payments?.amount && (
                     <div className="bg-black/30 rounded-xl p-3">
-                      <p className="text-gray-500 text-xs mb-1">Valor</p>
+                      <p className="text-gray-300 text-xs mb-1">Valor</p>
                       <p className="font-medium text-pink-400">
                         R$ {Number(order.payments.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                   )}
                   <div className="bg-black/30 rounded-xl p-3">
-                    <p className="text-gray-500 text-xs mb-1">Data</p>
+                    <p className="text-gray-300 text-xs mb-1">Data</p>
                     <p className="font-medium text-gray-300">
                       {new Date(order.createdAt).toLocaleDateString("pt-BR")}
                     </p>
@@ -203,3 +203,4 @@ export default function MinhaMusica() {
     </Suspense>
   )
 }
+

@@ -77,7 +77,7 @@ export default function PublicMusicPlayer({
         </div>
 
         {music.person_name && (
-          <p className="text-gray-400 text-lg mb-2">Uma música especial para</p>
+          <p className="text-gray-200 text-lg mb-2">Uma música especial para</p>
         )}
         <h1 className="text-4xl md:text-5xl font-bold leading-tight">
           {music.person_name ? (
@@ -89,10 +89,10 @@ export default function PublicMusicPlayer({
           )}
         </h1>
         {music.music_name && music.person_name && (
-          <p className="text-gray-500 mt-2 text-lg">"{music.music_name}"</p>
+          <p className="text-gray-300 mt-2 text-lg">"{music.music_name}"</p>
         )}
         {order && (
-          <p className="text-gray-600 text-sm mt-2">{order.subcategory} · {order.musicalStyle}</p>
+          <p className="text-gray-300 text-sm mt-2">{order.subcategory} · {order.musicalStyle}</p>
         )}
       </div>
 
@@ -148,7 +148,7 @@ export default function PublicMusicPlayer({
             onChange={handleSeek}
             className="w-full accent-pink-500 cursor-pointer"
           />
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-xs text-gray-300">
             <span>{formatTime(progress)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -171,7 +171,7 @@ export default function PublicMusicPlayer({
 
       {/* COMPARTILHAR */}
       <div className="w-full max-w-lg space-y-3">
-        <p className="text-center text-gray-500 text-sm mb-4">Compartilhe esta música ❤️</p>
+        <p className="text-center text-gray-300 text-sm mb-4">Compartilhe esta música ❤️</p>
 
         <div className="flex gap-3">
           <button
@@ -205,7 +205,7 @@ export default function PublicMusicPlayer({
         {showQr && (
           <div className="flex flex-col items-center gap-3 bg-white p-6 rounded-2xl">
             <QRCodeSVG value={publicUrl} size={180} />
-            <p className="text-gray-600 text-xs text-center">Escaneie para ouvir a música</p>
+            <p className="text-gray-300 text-xs text-center">Escaneie para ouvir a música</p>
           </div>
         )}
       </div>
