@@ -15,12 +15,12 @@ export default async function AdminWizard() {
   const occasions = await getOccasions()
 
   return (
-    <div className="p-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-3xl font-bold">Wizard Manager</h1>
+    <div className="p-4 lg:p-8 max-w-4xl">
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl lg:text-3xl font-bold">Wizard Manager</h1>
         <OccasionActions mode="create" />
       </div>
-      <p className="text-gray-500 mb-8">Gerencie ocasiões, subcategorias e perguntas do formulário</p>
+      <p className="text-gray-500 text-sm mb-6 lg:mb-8">Gerencie ocasiões, subcategorias e perguntas do formulário</p>
 
       <div className="space-y-3">
         {occasions.map((o) => {

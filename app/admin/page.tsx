@@ -58,12 +58,12 @@ export default async function AdminDashboard() {
   const [stats, orders] = await Promise.all([getStats(), getRecentOrders()])
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-      <p className="text-gray-500 mb-10">Visão geral do negócio</p>
+    <div className="p-4 lg:p-8">
+      <h1 className="text-2xl lg:text-3xl font-bold mb-1">Dashboard</h1>
+      <p className="text-gray-500 text-sm mb-6 lg:mb-10">Visão geral do negócio</p>
 
       {/* Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-10">
         <StatCard label="Total de pedidos" value={stats.total} icon="🎵" />
         <StatCard label="Pagos"             value={stats.paid}  icon="✅" color="text-green-400" />
         <StatCard label="Aguardando"        value={stats.pending} icon="⏳" color="text-yellow-400" />
@@ -77,10 +77,12 @@ export default async function AdminDashboard() {
 
       {/* Pedidos recentes */}
       <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-white/10">
-          <h2 className="font-semibold text-lg">Pedidos recentes</h2>
+        <div className="px-4 lg:px-6 py-4 border-b border-white/10">
+          <h2 className="font-semibold">Pedidos recentes</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Tabela — desktop */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/5 text-gray-500">
@@ -93,11 +95,7 @@ export default async function AdminDashboard() {
             </thead>
             <tbody>
               {orders.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-600">
-                    Nenhum pedido ainda.
-                  </td>
-                </tr>
+                <tr><td colSpan={5} className="px-6 py-8 text-center text-gray-600">Nenhum pedido ainda.</td></tr>
               )}
               {orders.map((o) => (
                 <tr key={o.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
@@ -113,13 +111,35 @@ export default async function AdminDashboard() {
                       {o.paymentStatus}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    {new Date(o.createdAt).toLocaleDateString("pt-BR")}
-                  </td>
+                  <td className="px-6 py-4 text-gray-500">{new Date(o.createdAt).toLocaleDateString("pt-BR")}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Cards — mobile */}
+        <div className="lg:hidden divide-y divide-white/5">
+          {orders.length === 0 && (
+            <p className="px-4 py-8 text-center text-gray-600 text-sm">Nenhum pedido ainda.</p>
+          )}
+          {orders.map((o) => (
+            <div key={o.id} className="px-4 py-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-medium text-sm truncate">{o.nome}</p>
+                <p className="text-gray-500 text-xs truncate mt-0.5">{o.subcategory}</p>
+                <p className="text-gray-600 text-xs mt-1">{new Date(o.createdAt).toLocaleDateString("pt-BR")}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${STATUS_COLOR[o.status] ?? ""}`}>
+                  {STATUS_LABEL[o.status] ?? o.status}
+                </span>
+                <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${PAYMENT_COLOR[o.paymentStatus] ?? ""}`}>
+                  {o.paymentStatus}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

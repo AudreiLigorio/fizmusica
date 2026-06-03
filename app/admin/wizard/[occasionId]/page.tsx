@@ -22,7 +22,7 @@ export default async function AdminWizardOcasiao({ params }: { params: Promise<{
   if (!occasion) notFound()
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 lg:p-8 max-w-4xl">
       <div className="flex items-center gap-3 mb-6">
         <Link href="/admin/wizard" className="text-gray-500 hover:text-white text-sm">← Wizard</Link>
         <h1 className="text-2xl font-bold">{occasion.emoji} {occasion.label}</h1>

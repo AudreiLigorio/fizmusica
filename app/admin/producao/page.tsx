@@ -39,12 +39,12 @@ export default async function AdminProducao() {
   const delivered  = orders.filter((o) => o.status === "DELIVERED")
 
   return (
-    <div className="p-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-2">Fila de Produção</h1>
-      <p className="text-gray-500 mb-8">Pedidos pagos aguardando produção da música</p>
+    <div className="p-4 lg:p-8 max-w-5xl">
+      <h1 className="text-2xl lg:text-3xl font-bold mb-1">Fila de Produção</h1>
+      <p className="text-gray-500 text-sm mb-6 lg:mb-8">Pedidos pagos aguardando produção da música</p>
 
       {/* RESUMO */}
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-6 lg:mb-10">
         {[
           { label: "Aguardando",  count: waiting.length,   color: "text-yellow-400" },
           { label: "Em produção", count: inProd.length,    color: "text-blue-400"   },
@@ -75,36 +75,28 @@ export default async function AdminProducao() {
                 }`}
               >
                 {/* Cabeçalho */}
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <p className="font-semibold text-lg">{order.nome}</p>
-                      <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${STATUS_COLOR[order.status] ?? ""}`}>
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <p className="font-semibold">{order.nome}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLOR[order.status] ?? ""}`}>
                         {STATUS_LABEL[order.status] ?? order.status}
                       </span>
                       {hasMusic && (
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                          ✅ Música pronta
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                          ✅ Pronta
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-400">{order.email} · {order.whatsapp}</p>
+                    <p className="text-xs text-gray-400 truncate">{order.email} · {order.whatsapp}</p>
                     {order.honoreeName && (
-                      <p className="text-sm text-pink-400 mt-0.5">🎁 Para: {order.honoreeName}</p>
+                      <p className="text-xs text-pink-400 mt-0.5">🎁 Para: {order.honoreeName}</p>
                     )}
                   </div>
-
-                  <div className="text-right text-sm">
+                  <div className="text-right text-xs shrink-0">
                     <p className="text-gray-400">{Array.isArray(order.products) ? order.products[0]?.name : (order.products as { name: string } | null)?.name}</p>
-                    <p className="text-gray-600 text-xs mt-0.5">
-                      {new Date(order.createdAt).toLocaleDateString("pt-BR")}
-                    </p>
-                    <Link
-                      href={`/admin/pedidos/${order.id}`}
-                      className="text-xs text-blue-400 hover:underline mt-1 block"
-                    >
-                      Ver pedido →
-                    </Link>
+                    <p className="text-gray-600 mt-0.5">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</p>
+                    <Link href={`/admin/pedidos/${order.id}`} className="text-blue-400 hover:underline mt-1 block">Ver pedido →</Link>
                   </div>
                 </div>
 

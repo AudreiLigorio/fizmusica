@@ -15,9 +15,9 @@ export default async function AdminProdutos() {
   const products = await getProducts()
 
   return (
-    <div className="p-8 max-w-4xl">
-      <h1 className="text-3xl font-bold mb-2">Produtos</h1>
-      <p className="text-gray-500 mb-10">Gerencie os produtos disponíveis para compra</p>
+    <div className="p-4 lg:p-8 max-w-4xl">
+      <h1 className="text-2xl lg:text-3xl font-bold mb-1">Produtos</h1>
+      <p className="text-gray-500 text-sm mb-6 lg:mb-10">Gerencie os produtos disponíveis para compra</p>
 
       <div className="space-y-4">
         {products.map((p) => (

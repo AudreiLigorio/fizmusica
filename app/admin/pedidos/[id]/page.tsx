@@ -25,7 +25,7 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
   const payment = order.payments?.[0] ?? null
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 lg:p-8 max-w-4xl">
       <div className="flex items-center gap-4 mb-8">
         <Link href="/admin/pedidos" className="text-gray-500 hover:text-white text-sm">
           ← Pedidos

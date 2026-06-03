@@ -27,7 +27,7 @@ export default async function AdminWizardPerguntas({
   if (!occasion || !subcategory) notFound()
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 lg:p-8 max-w-4xl">
       <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
         <Link href="/admin/wizard" className="hover:text-white">Wizard</Link>
         <span>›</span>
