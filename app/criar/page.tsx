@@ -360,7 +360,7 @@ WHATSAPP: ${whatsapp}`
 
               {/* Estilo */}
               <div className="mb-4">
-                <h2 className="text-[0.65rem] font-semibold text-white/50 mb-2 uppercase tracking-widest">Estilo musical</h2>
+                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {[
                     "🎤 Sertanejo", "🎶 Pagode", "💖 Pop",
@@ -386,7 +386,7 @@ WHATSAPP: ${whatsapp}`
 
               {/* Voz */}
               <div className="mb-4">
-                <h2 className="text-[0.65rem] font-semibold text-white/50 mb-2 uppercase tracking-widest">Tipo de voz</h2>
+                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Tipo de voz</h2>
                 <div className="grid grid-cols-2 gap-2 max-w-sm">
                   {["👨 Masculina", "👩 Feminina"].map((item) => (
                     <button
@@ -406,7 +406,7 @@ WHATSAPP: ${whatsapp}`
 
               {/* Emoção */}
               <div>
-                <h2 className="text-[0.65rem] font-semibold text-white/50 mb-2 uppercase tracking-widest">Emoção da música</h2>
+                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Emoção da música</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                   {[
                     "💖 Muito emocionante", "🥹 Romântica",
