@@ -368,7 +368,7 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {STEPS.map((s, i) => (
               <div key={s.n}
                    className="group relative p-8 rounded-3xl cursor-default"
