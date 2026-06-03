@@ -361,7 +361,21 @@ WHATSAPP: ${whatsapp}`
               {/* Estilo */}
               <div className="mb-4">
                 <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <select
+                  value={musicalStyle}
+                  onChange={(e) => setMusicalStyle(e.target.value)}
+                  className="w-full rounded-xl px-4 py-3 text-sm font-medium outline-none appearance-none cursor-pointer transition-colors"
+                  style={{
+                    background: musicalStyle ? "rgba(240,25,107,0.08)" : "rgba(0,0,0,0.3)",
+                    border: musicalStyle ? "1px solid rgba(240,25,107,0.5)" : "1px solid rgba(255,255,255,0.1)",
+                    color: musicalStyle ? "white" : "rgba(255,255,255,0.4)",
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f0196b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 14px center",
+                    paddingRight: "2.5rem",
+                  }}
+                >
+                  <option value="" disabled style={{ background: "#07060d" }}>Selecione o estilo…</option>
                   {[
                     "🎤 Sertanejo", "🎶 Pagode", "💖 Pop",
                     "🪗 Forró",     "🎸 Rock",   "🎹 MPB",
@@ -369,19 +383,9 @@ WHATSAPP: ${whatsapp}`
                     "🎙️ Rap",      "🎙️ Dance",  "🎷 Jazz",
                     "🌎 Internacional",
                   ].map((item) => (
-                    <button
-                      key={item}
-                      onClick={() => setMusicalStyle(item)}
-                      className={`rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium ${
-                        musicalStyle === item
-                          ? "border-pink-500 bg-pink-500/10 text-white"
-                          : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
-                      }`}
-                    >
-                      {item}
-                    </button>
+                    <option key={item} value={item} style={{ background: "#07060d" }}>{item}</option>
                   ))}
-                </div>
+                </select>
               </div>
 
               {/* Voz */}
