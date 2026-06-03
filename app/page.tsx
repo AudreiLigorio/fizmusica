@@ -591,15 +591,15 @@ export default function Home() {
               </div>
 
               {/* right */}
-              <div className="relative min-h-[320px] lg:min-h-[520px] flex items-center justify-center p-6 lg:p-10 overflow-hidden">
-                {/* glow de fundo */}
-                <div className="pointer-events-none absolute w-80 h-80 rounded-full blur-[80px]"
+              <div className="flex flex-col p-6 lg:relative lg:min-h-[520px] lg:flex lg:items-center lg:justify-center lg:p-10 overflow-hidden">
+                {/* glow de fundo — desktop */}
+                <div className="pointer-events-none hidden lg:block absolute w-80 h-80 rounded-full blur-[80px]"
                      style={{ background: "rgba(240,25,107,0.18)" }} />
-                <div className="pointer-events-none absolute w-64 h-64 rounded-full blur-[60px] translate-x-16 translate-y-8"
+                <div className="pointer-events-none hidden lg:block absolute w-64 h-64 rounded-full blur-[60px] translate-x-16 translate-y-8"
                      style={{ background: "rgba(217,70,239,0.12)" }} />
 
                 {/* moldura gradiente */}
-                <div className="relative z-10 p-[2px] rounded-[28px]"
+                <div className="relative z-10 p-[2px] rounded-[28px] mb-4 lg:mb-0"
                      style={{ background: "linear-gradient(135deg, #f0196b 0%, #d946ef 50%, rgba(255,255,255,0.08) 100%)" }}>
                   <div className="rounded-[26px] overflow-hidden"
                        style={{ background: "#07060d" }}>
@@ -616,11 +616,11 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* badge missão */}
-                <div className="absolute bottom-8 left-8 right-8 z-20 p-5 rounded-2xl"
+                {/* badge missão — mobile: inline, desktop: absolute */}
+                <div className="lg:absolute lg:bottom-8 lg:left-8 lg:right-8 z-20 p-4 lg:p-5 rounded-2xl"
                      style={{ background: "rgba(7,6,13,0.9)", backdropFilter: "blur(24px)", border: "1px solid rgba(240,25,107,0.15)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
                   <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: "#f0196b" }} />
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f0196b" }} />
                     <p className="text-xs text-white/60" style={bodyFont}>Nossa missão</p>
                   </div>
                   <p className="font-medium text-white/90 leading-snug text-sm" style={bodyFont}>
