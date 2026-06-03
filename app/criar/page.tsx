@@ -280,18 +280,6 @@ WHATSAPP: ${whatsapp}`
 
                     {selectedContext === occasion.label && (
                       <div className="px-4 pb-4">
-                        {/* Campo homenageado */}
-                        <div className="mb-5">
-                          <label className="text-sm text-gray-200 font-medium pl-1 block mb-2">
-                            🎁 Nome de quem vai receber a música (opcional)
-                          </label>
-                          <input
-                            value={honoreeName}
-                            onChange={(e) => setHonoreeName(e.target.value)}
-                            placeholder="Ex: Ana, vovó Bete, meu amor…"
-                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-base outline-none focus:border-pink-500 transition-colors"
-                          />
-                        </div>
                         <div className="grid md:grid-cols-2 gap-4">
                         {occasion.wizard_subcategories.map((sub) => (
                           <button
