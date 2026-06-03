@@ -103,59 +103,89 @@ function ProdutosContent() {
     : 0
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans pt-36">
-      <Header showButton={false} />
+    <div className="text-white font-sans" style={{ background: "#07060d" }}>
 
-      <section className="max-w-5xl mx-auto px-6 py-12">
+      {/* Gradiente de fundo */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute top-[-10%] left-[-5%] w-[55vw] h-[55vw] rounded-full blur-[120px] opacity-25"
+             style={{ background: "radial-gradient(circle, #f0196b 0%, transparent 70%)" }} />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] rounded-full blur-[120px] opacity-15"
+             style={{ background: "radial-gradient(circle, #d946ef 0%, transparent 70%)" }} />
+      </div>
 
-        {/* TOPO */}
-        <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-5 py-2 rounded-full text-pink-300 text-sm font-medium mb-6">
-            <span className="w-2 h-2 bg-pink-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.9)]" />
-            Pedido recebido com sucesso ❤️
+      {/* Header — desktop only */}
+      <div className="hidden lg:block">
+        <Header showButton={false} />
+      </div>
+
+      {/* Container adaptativo: mobile fixed / desktop static */}
+      <div className="fixed inset-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-36"
+           style={{ background: "#07060d" }}>
+
+        {/* Mobile: barra de step no topo */}
+        <div className="lg:hidden shrink-0 px-5 pt-4 pb-2 flex items-center justify-between">
+          {step === 2 ? (
+            <button onClick={() => setStep(1)} className="text-white/50 text-sm">← Voltar</button>
+          ) : <div />}
+          <div className="flex items-center gap-2">
+            {[1, 2].map((n) => (
+              <div key={n} className={`h-1 rounded-full transition-all duration-300 ${
+                n <= step ? "w-8" : "w-4"
+              }`} style={{ background: n <= step ? "linear-gradient(90deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.1)" }} />
+            ))}
           </div>
-
-          <h1 className="text-5xl font-bold mb-5 leading-tight">
-            Escolha como receber
-            <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
-              {" "}sua música
-            </span>
-          </h1>
-
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            Selecione o produto ideal para transformar essa história em uma
-            experiência inesquecível.
-          </p>
+          <div />
         </div>
 
-        {/* INDICADOR DE STEPS */}
-        <div className="flex items-center justify-center gap-3 mb-10">
-          {[
-            { n: 1, label: "Produto" },
-            { n: 2, label: "Prazo de entrega" },
-          ].map(({ n, label }, i, arr) => (
-            <div key={n} className="flex items-center gap-3">
-              <button
-                onClick={() => n < step && setStep(n as 1 | 2)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  step === n
-                    ? "bg-pink-500/15 border border-pink-500/30 text-pink-300"
-                    : step > n
-                    ? "bg-white/5 border border-white/10 text-gray-400 hover:text-white cursor-pointer"
-                    : "bg-white/5 border border-white/5 text-gray-600 cursor-default"
-                }`}
-              >
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                  step > n ? "bg-pink-500 text-white" : step === n ? "bg-pink-500 text-white" : "bg-white/10 text-gray-500"
-                }`}>
-                  {step > n ? "✓" : n}
+        {/* Área de conteúdo */}
+        <div className="flex-1 overflow-y-auto lg:overflow-visible">
+          <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-5xl lg:mx-auto lg:px-6 lg:py-12">
+
+            {/* TOPO */}
+            <div className="text-center mb-8 lg:mb-14">
+              <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-4 py-2 rounded-full text-pink-300 text-sm font-medium mb-5">
+                <span className="w-2 h-2 bg-pink-500 rounded-full" />
+                Pedido recebido com sucesso ❤️
+              </div>
+              <h1 className="text-3xl lg:text-5xl font-bold mb-3 leading-tight">
+                Escolha como receber
+                <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
+                  {" "}sua música
                 </span>
-                {label}
-              </button>
-              {i < arr.length - 1 && <div className="w-8 h-px bg-white/10" />}
+              </h1>
+              <p className="text-base lg:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                Selecione o produto ideal para transformar essa história em uma experiência inesquecível.
+              </p>
             </div>
-          ))}
-        </div>
+
+            {/* INDICADOR DE STEPS — desktop only */}
+            <div className="hidden lg:flex items-center justify-center gap-3 mb-10">
+              {[
+                { n: 1, label: "Produto" },
+                { n: 2, label: "Prazo de entrega" },
+              ].map(({ n, label }, i, arr) => (
+                <div key={n} className="flex items-center gap-3">
+                  <button
+                    onClick={() => n < step && setStep(n as 1 | 2)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      step === n
+                        ? "bg-pink-500/15 border border-pink-500/30 text-pink-300"
+                        : step > n
+                        ? "bg-white/5 border border-white/10 text-gray-400 hover:text-white cursor-pointer"
+                        : "bg-white/5 border border-white/5 text-gray-600 cursor-default"
+                    }`}
+                  >
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                      step > n ? "bg-pink-500 text-white" : step === n ? "bg-pink-500 text-white" : "bg-white/10 text-gray-500"
+                    }`}>
+                      {step > n ? "✓" : n}
+                    </span>
+                    {label}
+                  </button>
+                  {i < arr.length - 1 && <div className="w-8 h-px bg-white/10" />}
+                </div>
+              ))}
+            </div>
 
         {/* ====== STEP 1 — ESCOLHA DO PRODUTO ====== */}
         {loading ? (
@@ -285,52 +315,76 @@ function ProdutosContent() {
           </div>
         )}
 
-        {/* ERRO CHECKOUT */}
-        {checkoutError && (
-          <p className="text-center text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-            {checkoutError}
-          </p>
-        )}
+            {/* ERRO CHECKOUT */}
+            {checkoutError && (
+              <p className="text-center text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                {checkoutError}
+              </p>
+            )}
 
-        {/* BOTÃO CONTINUAR */}
-        <div className="flex flex-col items-center gap-4">
-          {step === 1 && selected && selected.product_delivery_options.length === 0 && (
-            <button
-              onClick={handleContinuar}
-              disabled={checkingOut}
-              className="px-12 py-5 rounded-3xl text-xl font-bold bg-pink-500 hover:bg-pink-600 shadow-2xl shadow-pink-500/20 hover:scale-105 transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
-            >
-              {checkingOut ? "Aguarde..." : `Pagar R$ ${fmt(selected.price)} ❤️`}
-            </button>
-          )}
+            {/* BOTÃO CONTINUAR — desktop */}
+            <div className="hidden lg:flex flex-col items-center gap-4 mt-4">
+              {step === 1 && selected && selected.product_delivery_options.length === 0 && (
+                <button
+                  onClick={handleContinuar}
+                  disabled={checkingOut}
+                  className="px-12 py-5 rounded-3xl text-xl font-bold hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 32px rgba(240,25,107,0.35)" }}
+                >
+                  {checkingOut ? "Aguarde..." : `Pagar R$ ${fmt(selected.price)} ❤️`}
+                </button>
+              )}
+              {step === 2 && (
+                <button
+                  onClick={handleContinuar}
+                  disabled={!delivery || checkingOut}
+                  className="px-12 py-5 rounded-3xl text-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{ background: delivery ? "linear-gradient(135deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.08)", boxShadow: delivery ? "0 8px 32px rgba(240,25,107,0.35)" : "none", color: delivery ? "white" : "rgba(255,255,255,0.3)" }}
+                >
+                  {checkingOut ? "Aguarde..." : delivery ? `Pagar R$ ${fmt(finalPrice)} ❤️` : "Selecione um prazo para continuar"}
+                </button>
+              )}
+              <div className="flex gap-8 text-sm text-gray-500">
+                <span>🔒 Pagamento seguro</span>
+                <span>⚡ Confirmação imediata</span>
+                <span>💬 Suporte via WhatsApp</span>
+              </div>
+            </div>
 
-          {step === 2 && (
-            <button
-              onClick={handleContinuar}
-              disabled={!delivery || checkingOut}
-              className={`px-12 py-5 rounded-3xl text-xl font-bold transition-all shadow-2xl ${
-                delivery && !checkingOut
-                  ? "bg-pink-500 hover:bg-pink-600 shadow-pink-500/20 hover:scale-105"
-                  : "bg-white/10 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              {checkingOut
-                ? "Aguarde..."
-                : delivery
-                ? `Pagar R$ ${fmt(finalPrice)} ❤️`
-                : "Selecione um prazo para continuar"}
-            </button>
-          )}
+          </div>{/* fecha px-5 / lg:max-w-5xl */}
+        </div>{/* fecha flex-1 overflow-y-auto */}
 
-          <div className="flex gap-8 text-sm text-gray-500">
-            <span>🔒 Pagamento seguro</span>
-            <span>⚡ Confirmação imediata</span>
-            <span>💬 Suporte via WhatsApp</span>
+        {/* BOTÃO FIXO NO RODAPÉ — mobile */}
+        {(step === 1 && selected && selected.product_delivery_options.length === 0) || step === 2 ? (
+          <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
+               style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
+            {step === 2 && !delivery ? (
+              <div className="w-full py-4 rounded-2xl text-sm font-semibold text-center text-white/30"
+                   style={{ background: "rgba(255,255,255,0.06)" }}>
+                Selecione um prazo para continuar
+              </div>
+            ) : (
+              <button
+                onClick={handleContinuar}
+                disabled={checkingOut || (step === 2 && !delivery)}
+                className="w-full py-4 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
+                style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
+              >
+                {checkingOut ? (
+                  <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Aguarde...</>
+                ) : `Pagar R$ ${fmt(finalPrice || selected?.price || 0)} ❤️`}
+              </button>
+            )}
+            <p className="text-center text-xs text-white/25 mt-2">🔒 Pagamento seguro · ⚡ Confirmação imediata</p>
           </div>
+        ) : null}
+
+        {/* Footer — desktop only */}
+        <div className="hidden lg:block">
+          <Footer />
         </div>
 
-      </section>
-      <Footer />
+      </div>{/* fecha container adaptativo */}
     </div>
   )
 }
