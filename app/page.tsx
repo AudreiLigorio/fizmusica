@@ -209,17 +209,17 @@ export default function Home() {
             <div className="animate-fade-up delay-400 flex flex-wrap gap-3 mb-10">
               <button
                 onClick={() => router.push("/criar")}
-                className="text-white px-7 py-3.5 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_6px_24px_rgba(240,25,107,0.35)]"
+                className="text-white px-8 py-4 rounded-2xl transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
                 style={{
                   ...bodyFont,
-                  background: "#f0196b",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  letterSpacing: "0.03em",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)",
+                  fontSize: "0.9375rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                  boxShadow: "0 8px_32px rgba(240,25,107,0.4), 0 2px 8px rgba(217,70,239,0.2)",
                 }}
               >
-                Criar minha música
+                Criar minha música ❤️
               </button>
             </div>
 
@@ -663,14 +663,14 @@ export default function Home() {
                 className="text-white px-8 py-3.5 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_6px_28px_rgba(240,25,107,0.4)]"
                 style={{
                   ...bodyFont,
-                  background: "#f0196b",
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  letterSpacing: "0.04em",
-                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)",
+                  fontSize: "0.9375rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                  boxShadow: "0 8px 32px rgba(240,25,107,0.4)",
                 }}
               >
-                Criar minha música
+                Criar minha música ❤️
               </button>
             </div>
           </div>
