@@ -41,6 +41,7 @@ export async function POST(req: Request) {
 
     const finalPrice = Number(price) + priceExtra
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
+    const isLocalhost = baseUrl.includes("localhost")
 
     // Cria o pagamento diretamente via API MP
     const paymentClient = new Payment(client)
@@ -50,7 +51,8 @@ export async function POST(req: Request) {
         transaction_amount: finalPrice,
         description: `FizMusica — ${productName}`,
         external_reference: orderId,
-        notification_url: `${baseUrl}/api/payments/webhook`,
+        // Só envia notification_url em produção (localhost não é acessível pelo MP)
+        ...(!isLocalhost ? { notification_url: `${baseUrl}/api/payments/webhook` } : {}),
         payer: {
           ...formData.payer,
           email: formData.payer?.email || order.email,
