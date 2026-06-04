@@ -37,8 +37,7 @@ export default function ProductForm({ product }: { product: Product }) {
         setFeedback({ ok: false, msg: data.error ?? "Erro ao salvar." })
       } else {
         setFeedback({ ok: true, msg: "Salvo com sucesso!" })
-        router.refresh()
-        setTimeout(() => setOpen(false), 800)
+        setTimeout(() => window.location.reload(), 800)
       }
     } catch {
       setFeedback({ ok: false, msg: "Falha de conexão." })
