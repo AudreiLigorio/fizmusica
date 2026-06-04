@@ -20,18 +20,31 @@ export default function ProductForm({ product }: { product: Product }) {
   const [active, setActive] = useState(product.active)
   const [featured, setFeatured] = useState(product.featured)
   const [saving, setSaving] = useState(false)
+  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const router = useRouter()
 
   const handleSave = async () => {
     setSaving(true)
-    await fetch(`/api/admin/produtos/${product.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, description, price: Number(price), active, featured }),
-    })
-    setSaving(false)
-    setOpen(false)
-    router.refresh()
+    setFeedback(null)
+    try {
+      const res = await fetch(`/api/admin/produtos/${product.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, price: Number(price), active, featured }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setFeedback({ ok: false, msg: data.error ?? "Erro ao salvar." })
+      } else {
+        setFeedback({ ok: true, msg: "Salvo com sucesso!" })
+        router.refresh()
+        setTimeout(() => setOpen(false), 800)
+      }
+    } catch {
+      setFeedback({ ok: false, msg: "Falha de conexão." })
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (!open) {
@@ -85,6 +98,11 @@ export default function ProductForm({ product }: { product: Product }) {
           Destaque
         </label>
       </div>
+      {feedback && (
+        <p className={`text-xs px-1 ${feedback.ok ? "text-green-400" : "text-red-400"}`}>
+          {feedback.ok ? "✅ " : "❌ "}{feedback.msg}
+        </p>
+      )}
       <div className="flex gap-3 justify-end">
         <button onClick={() => setOpen(false)} className="text-sm text-gray-500 hover:text-white px-4 py-2 rounded-xl border border-white/10 transition-all">
           Cancelar
