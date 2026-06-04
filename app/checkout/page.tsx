@@ -26,12 +26,23 @@ function CheckoutContent() {
       return
     }
 
-    const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!
+    const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY
+
+    if (!publicKey) {
+      setErrorMsg("Chave pública do Mercado Pago não configurada.")
+      setStatus("error")
+      return
+    }
 
     // Carrega o SDK do MP no browser
     const script = document.createElement("script")
     script.src = "https://sdk.mercadopago.com/js/v2"
+    script.async = true
     script.onload = () => initBrick(publicKey)
+    script.onerror = () => {
+      setErrorMsg("Falha ao carregar SDK de pagamento.")
+      setStatus("error")
+    }
     document.head.appendChild(script)
 
     return () => {
@@ -46,7 +57,6 @@ function CheckoutContent() {
     const settings = {
       initialization: {
         amount: price,
-        preferenceId: undefined, // não usamos preference no Bricks direto
       },
       customization: {
         paymentMethods: {
@@ -80,8 +90,9 @@ function CheckoutContent() {
       callbacks: {
         onReady: () => setStatus("ready"),
         onError: (error: any) => {
-          console.error("[Brick error]", error)
-          setErrorMsg("Erro ao carregar formulário de pagamento.")
+          console.error("[Brick error]", JSON.stringify(error))
+          const msg = error?.message || error?.cause || JSON.stringify(error) || "Erro desconhecido"
+          setErrorMsg(`Erro ao carregar pagamento: ${msg}`)
           setStatus("error")
         },
         onSubmit: async ({ selectedPaymentMethod, formData }: any) => {
