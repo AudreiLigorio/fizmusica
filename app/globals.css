@@ -301,6 +301,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
     @apply bg-background text-foreground;
     font-family: var(--fm-font-body);
