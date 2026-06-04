@@ -319,4 +319,11 @@
   button, [role="button"], input, select, textarea {
     font-family: var(--fm-font-body);
   }
+
+  /* iOS Safari: font-size >= 16px evita zoom automático ao focar inputs */
+  @media (max-width: 1023px) {
+    input, select, textarea {
+      font-size: 16px !important;
+    }
+  }
 }

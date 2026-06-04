@@ -364,8 +364,9 @@ WHATSAPP: ${whatsapp}`
                 <select
                   value={musicalStyle}
                   onChange={(e) => setMusicalStyle(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm font-medium outline-none appearance-none cursor-pointer transition-colors"
+                  className="w-full rounded-xl px-4 py-3 font-medium outline-none appearance-none cursor-pointer transition-colors"
                   style={{
+                    fontSize: "16px", /* evita zoom no iOS Safari */
                     background: musicalStyle ? "rgba(240,25,107,0.08)" : "rgba(0,0,0,0.3)",
                     border: musicalStyle ? "1px solid rgba(240,25,107,0.5)" : "1px solid rgba(255,255,255,0.1)",
                     color: musicalStyle ? "white" : "rgba(255,255,255,0.4)",
