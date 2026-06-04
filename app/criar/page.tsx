@@ -215,8 +215,8 @@ WHATSAPP: ${whatsapp}`
         Mobile  → fixed tela cheia, flex-col
         Desktop → static, fluxo normal, pt-40
       */}
-      <div className="fixed inset-0 z-10 flex flex-col overflow-x-hidden lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
-           style={{ background: "#07060d" }}>
+      <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
+           style={{ background: "#07060d", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
 
         {/* ── Mobile: barra de progresso + topo ── */}
         <div className="lg:hidden shrink-0">
@@ -235,8 +235,8 @@ WHATSAPP: ${whatsapp}`
         </div>
 
         {/* ── Área de conteúdo ── */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden lg:overflow-visible">
-          <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12">
+        <div className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
+          <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12" style={{ width: "100%", boxSizing: "border-box" }}>
             <div className="wizard-card">
               <div className="py-2 lg:py-0">
 
