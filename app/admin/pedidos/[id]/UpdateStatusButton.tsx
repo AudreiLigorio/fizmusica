@@ -21,31 +21,48 @@ export default function UpdateStatusButton({
 }) {
   const [status, setStatus] = useState(currentStatus)
   const [saving, setSaving] = useState(false)
+  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const router = useRouter()
 
   const handleSave = async () => {
     if (status === currentStatus) return
     setSaving(true)
-    await fetch(`/api/orders/${orderId}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    })
-    setSaving(false)
-    router.refresh()
+    setFeedback(null)
+
+    try {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        setFeedback({ ok: false, msg: data.error ?? "Erro ao atualizar status." })
+      } else {
+        setFeedback({ ok: true, msg: "Status atualizado com sucesso!" })
+        router.refresh()
+      }
+    } catch {
+      setFeedback({ ok: false, msg: "Falha de conexão. Tente novamente." })
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="space-y-3">
       <select
         value={status}
-        onChange={(e) => setStatus(e.target.value)}
+        onChange={(e) => { setStatus(e.target.value); setFeedback(null) }}
         className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-pink-500 transition-colors"
       >
         {options.map((s) => (
           <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>
         ))}
       </select>
+
       <button
         onClick={handleSave}
         disabled={saving || status === currentStatus}
@@ -53,6 +70,12 @@ export default function UpdateStatusButton({
       >
         {saving ? "Salvando…" : "Atualizar status"}
       </button>
+
+      {feedback && (
+        <p className={`text-xs px-1 ${feedback.ok ? "text-green-400" : "text-red-400"}`}>
+          {feedback.ok ? "✅ " : "❌ "}{feedback.msg}
+        </p>
+      )}
     </div>
   )
 }
