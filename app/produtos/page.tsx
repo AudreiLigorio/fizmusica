@@ -142,20 +142,10 @@ function ProdutosContent() {
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-5xl lg:mx-auto lg:px-6 lg:py-12">
 
             {/* TOPO */}
-            <div className="text-center mb-8 lg:mb-14">
-              <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/20 px-4 py-2 rounded-full text-pink-300 text-sm font-medium mb-5">
-                <span className="w-2 h-2 bg-pink-500 rounded-full" />
-                Pedido recebido com sucesso ❤️
-              </div>
-              <h1 className="text-3xl lg:text-5xl font-bold mb-3 leading-tight">
-                Escolha como receber
-                <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
-                  {" "}sua música
-                </span>
+            <div className="mb-6 lg:text-center lg:mb-14">
+              <h1 className="text-xl lg:text-4xl font-bold mb-1 leading-tight">
+                Selecione o produto ideal para transformar esse momento inesquecível
               </h1>
-              <p className="text-base lg:text-xl text-gray-200 max-w-2xl mx-auto leading-relaxed">
-                Selecione o produto ideal para transformar essa história em uma experiência inesquecível.
-              </p>
             </div>
 
             {/* INDICADOR DE STEPS — desktop only */}
