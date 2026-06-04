@@ -64,8 +64,6 @@ function ProdutosContent() {
   const [step, setStep]             = useState<1 | 2>(1)
   const [selected, setSelected]     = useState<Product | null>(null)
   const [delivery, setDelivery]     = useState<DeliveryOption | null>(null)
-  const [checkingOut, setCheckingOut] = useState(false)
-  const [checkoutError, setCheckoutError] = useState("")
 
   useEffect(() => {
     fetch("/api/produtos")
@@ -83,38 +81,19 @@ function ProdutosContent() {
     }
   }
 
-  async function handleContinuar() {
+  function handleContinuar() {
     if (!selected || !orderId) return
-    setCheckingOut(true)
-    setCheckoutError("")
 
-    try {
-      const res = await fetch("/api/payments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderId,
-          productId:        selected.id,
-          productName:      selected.name,
-          price:            selected.price,
-          deliveryOptionId: delivery?.id ?? undefined,
-        }),
-      })
+    // Vai para a página de checkout com o Payment Brick
+    const params = new URLSearchParams({
+      orderId,
+      productId:   selected.id,
+      productName: delivery ? `${selected.name} — ${delivery.label}` : selected.name,
+      price:       String(selected.price + (delivery?.price_extra ?? 0)),
+      ...(delivery ? { deliveryId: delivery.id } : {}),
+    })
 
-      const data = await res.json()
-
-      if (!res.ok || !data.success) {
-        setCheckoutError(data.error ?? "Erro ao iniciar pagamento. Tente novamente.")
-        setCheckingOut(false)
-        return
-      }
-
-      const isProd = process.env.NODE_ENV === "production"
-      window.location.href = isProd ? data.checkoutUrl : data.sandboxUrl
-    } catch {
-      setCheckoutError("Falha de conexão. Verifique sua internet.")
-      setCheckingOut(false)
-    }
+    window.location.href = `/checkout?${params.toString()}`
   }
 
   const finalPrice = selected
@@ -325,33 +304,25 @@ function ProdutosContent() {
           </div>
         )}
 
-            {/* ERRO CHECKOUT */}
-            {checkoutError && (
-              <p className="text-center text-red-400 text-sm mb-4 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
-                {checkoutError}
-              </p>
-            )}
-
             {/* BOTÃO CONTINUAR — desktop */}
             <div className="hidden lg:flex flex-col items-center gap-4 mt-4">
               {step === 1 && selected && selected.product_delivery_options.length === 0 && (
                 <button
                   onClick={handleContinuar}
-                  disabled={checkingOut}
-                  className="px-12 py-5 rounded-3xl text-xl font-bold hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-12 py-5 rounded-3xl text-xl font-bold hover:brightness-110 transition-all"
                   style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 32px rgba(240,25,107,0.35)" }}
                 >
-                  {checkingOut ? "Aguarde..." : `Pagar R$ ${fmt(selected.price)} ❤️`}
+                  Ir para pagamento ❤️
                 </button>
               )}
               {step === 2 && (
                 <button
                   onClick={handleContinuar}
-                  disabled={!delivery || checkingOut}
+                  disabled={!delivery}
                   className="px-12 py-5 rounded-3xl text-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{ background: delivery ? "linear-gradient(135deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.08)", boxShadow: delivery ? "0 8px 32px rgba(240,25,107,0.35)" : "none", color: delivery ? "white" : "rgba(255,255,255,0.3)" }}
                 >
-                  {checkingOut ? "Aguarde..." : delivery ? `Pagar R$ ${fmt(finalPrice)} ❤️` : "Selecione um prazo para continuar"}
+                  {delivery ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` : "Selecione um prazo para continuar"}
                 </button>
               )}
               <div className="flex gap-8 text-sm text-gray-300">
@@ -376,13 +347,11 @@ function ProdutosContent() {
             ) : (
               <button
                 onClick={handleContinuar}
-                disabled={checkingOut || (step === 2 && !delivery)}
+                disabled={step === 2 && !delivery}
                 className="w-full py-4 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
                 style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
               >
-                {checkingOut ? (
-                  <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Aguarde...</>
-                ) : `Pagar R$ ${fmt(finalPrice || selected?.price || 0)} ❤️`}
+                Ir para pagamento ❤️
               </button>
             )}
             <p className="text-center text-xs text-white/25 mt-2">🔒 Pagamento seguro · ⚡ Confirmação imediata</p>
