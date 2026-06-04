@@ -235,7 +235,7 @@ WHATSAPP: ${whatsapp}`
         </div>
 
         {/* ── Área de conteúdo ── */}
-        <div className="flex-1 overflow-y-auto lg:overflow-visible">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden lg:overflow-visible">
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12">
             <div className="wizard-card">
               <div className="py-2 lg:py-0">
