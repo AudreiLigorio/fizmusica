@@ -363,6 +363,15 @@ WHATSAPP: ${whatsapp}`
                   placeholder="Escreva com carinho… cada detalhe faz diferença ❤️"
                   className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-white/30"
                 />
+
+                {/* Botão inline — sobe junto com o teclado no mobile */}
+                <button
+                  onClick={nextStep}
+                  className="lg:hidden w-full mt-3 py-3.5 rounded-2xl text-sm font-semibold text-white"
+                  style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
+                >
+                  Continuar →
+                </button>
               </div>
             </div>
           )}
@@ -614,8 +623,8 @@ WHATSAPP: ${whatsapp}`
           </div>{/* fecha px-5/lg:max-w-3xl */}
         </div>{/* fecha flex-1 overflow-y-auto */}
 
-        {/* Botão fixo no rodapé — mobile */}
-        {step !== 1 && (
+        {/* Botão fixo no rodapé — mobile (oculto no step 2 pois o botão fica inline junto ao textarea) */}
+        {step !== 1 && step !== 2 && (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
             {step < 5 ? (
