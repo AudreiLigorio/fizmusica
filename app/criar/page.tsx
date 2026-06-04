@@ -392,12 +392,12 @@ WHATSAPP: ${whatsapp}`
               {/* Voz */}
               <div className="mb-4">
                 <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Tipo de voz</h2>
-                <div className="grid grid-cols-2 gap-2 max-w-sm">
+                <div className="grid grid-cols-2 gap-2 overflow-hidden">
                   {["👨 Masculina", "👩 Feminina"].map((item) => (
                     <button
                       key={item}
                       onClick={() => setVoiceType(item)}
-                      className={`rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium ${
+                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium overflow-hidden ${
                         voiceType === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
@@ -412,18 +412,18 @@ WHATSAPP: ${whatsapp}`
               {/* Emoção */}
               <div>
                 <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Emoção da música</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
                   {[
-                    "💖 Muito emocionante", "🥹 Romântica",
-                    "☀️ Alegre & Feliz",    "🎉 Divertida",
-                    "🌙 Delicada",          "😭 Profunda",
-                    "🔥 Intensa",           "😢 Saudade",
+                    "💖 Emocionante",  "🥹 Romântica",
+                    "☀️ Alegre",       "🎉 Divertida",
+                    "🌙 Delicada",     "😭 Profunda",
+                    "🔥 Intensa",      "😢 Saudade",
                     "🙏 Inspiradora",
                   ].map((item) => (
                     <button
                       key={item}
                       onClick={() => setEmotion(item)}
-                      className={`rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium ${
+                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium overflow-hidden ${
                         emotion === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
