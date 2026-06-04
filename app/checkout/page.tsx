@@ -59,13 +59,6 @@ function CheckoutContent() {
         amount: price,
       },
       customization: {
-        paymentMethods: {
-          creditCard: "all",
-          debitCard: "all",
-          ticket: "all",       // boleto
-          bankTransfer: "all", // Pix
-          mercadoPago: "all",  // carteira MP
-        },
         visual: {
           style: {
             theme: "dark",
@@ -73,16 +66,9 @@ function CheckoutContent() {
               baseColor: "#f0196b",
               baseColorFirstVariant: "#d946ef",
               baseColorSecondVariant: "#f0196b",
-              errorColor: "#f0196b",
-              successColor: "#22c55e",
-              warningColor: "#f59e0b",
-              fontSizeSmall: "12px",
-              fontSizeMedium: "14px",
-              fontSizeLarge: "16px",
               borderRadiusSmall: "8px",
               borderRadiusMedium: "12px",
               borderRadiusLarge: "16px",
-              borderRadiusFull: "999px",
             },
           },
         },
