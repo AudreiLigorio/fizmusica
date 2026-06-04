@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "@/app/components/Header"
@@ -24,11 +24,30 @@ type Product = {
   product_delivery_options: DeliveryOption[]
 }
 
-const PRODUCT_ICONS: Record<string, string> = {
-  "Música Digital":   "🎵",
-  "Box Premium":      "🎁",
-  "QR Code Musical":  "📱",
-  "Spotify Frame":    "🖼️",
+const PRODUCT_ICONS: Record<string, React.ReactNode> = {
+  "Música Digital": (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+    </svg>
+  ),
+  "Box Premium": (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/>
+      <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+    </svg>
+  ),
+  "QR Code Musical": (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      <rect x="5" y="5" width="3" height="3" fill="white"/><rect x="16" y="5" width="3" height="3" fill="white"/><rect x="5" y="16" width="3" height="3" fill="white"/>
+      <path d="M14 14h3v3h-3z"/><path d="M17 17h4"/><path d="M17 21v-4"/>
+    </svg>
+  ),
+  "Spotify Frame": (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 13.5a4 4 0 0 1 8 0"/><path d="M6 16.5a7 7 0 0 1 12 0"/><circle cx="12" cy="11" r="1" fill="white"/>
+    </svg>
+  ),
 }
 
 function fmt(value: number) {
@@ -204,7 +223,8 @@ function ProdutosContent() {
                     </div>
                   )}
 
-                  <div className="w-16 h-16 rounded-2xl bg-pink-500/20 flex items-center justify-center text-3xl mb-6">
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
+                       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
                     {icon}
                   </div>
 
