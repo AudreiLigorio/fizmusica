@@ -59,6 +59,15 @@ function CheckoutContent() {
         amount: price,
       },
       customization: {
+        paymentMethods: {
+          creditCard: "all",
+          debitCard: "all",
+          bankTransfer: "all",  // Pix
+          ticket: "all",        // Boleto
+          atm: "all",
+          mercadoPago: ["wallet_purchase"],
+          maxInstallments: 12,
+        },
         visual: {
           style: {
             theme: "dark",
