@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     }
 
     const finalPrice = Number(price) + priceExtra
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
+    const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "")
     const isLocalhost = baseUrl.includes("localhost")
 
     // Cria o pagamento diretamente via API MP
