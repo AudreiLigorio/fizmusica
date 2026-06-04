@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     const mpStatus = result.status // approved | pending | rejected | in_process
 
     // Atualiza pedido com produto e prazo
-    await supabase
+    const { error: orderUpdateError } = await supabase
       .from("orders")
       .update({
         productId,
@@ -74,8 +74,10 @@ export async function POST(req: Request) {
       })
       .eq("id", orderId)
 
+    if (orderUpdateError) console.error("[create] order update error:", orderUpdateError)
+
     // Salva pagamento
-    await supabase.from("payments").upsert(
+    const { error: paymentError } = await supabase.from("payments").upsert(
       {
         orderId,
         mpPaymentId: String(result.id),
@@ -88,13 +90,20 @@ export async function POST(req: Request) {
       { onConflict: "orderId" }
     )
 
+    if (paymentError) console.error("[create] payment upsert error:", paymentError)
+
     // Atualiza paymentStatus do pedido se aprovado
     if (mpStatus === "approved") {
-      await supabase
+      const { error: paidError } = await supabase
         .from("orders")
         .update({ paymentStatus: "PAID", updatedAt: new Date().toISOString() })
         .eq("id", orderId)
+
+      if (paidError) console.error("[create] paymentStatus update error:", paidError)
+      else console.log(`[create] order ${orderId} marcado como PAID`)
     }
+
+    console.log(`[create] payment ${result.id} — status: ${mpStatus} — order: ${orderId}`)
 
     return NextResponse.json({
       success: true,
