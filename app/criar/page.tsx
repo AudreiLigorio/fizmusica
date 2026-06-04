@@ -107,10 +107,26 @@ export default function CriarMusicaPage() {
         setError("E-mail inválido.")
         return
       }
+      const whatsappRegex = /^\(\d{2}\) 9\d{4}-\d{4}$/
+      if (!whatsappRegex.test(whatsapp)) {
+        setError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX.")
+        return
+      }
     }
 
     setStep(step + 1)
   }
+
+  function maskWhatsapp(value: string): string {
+    const digits = value.replace(/\D/g, "").slice(0, 11)
+    if (digits.length === 0) return ""
+    if (digits.length <= 2) return `(${digits}`
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+
+  const whatsappOk = /^\(\d{2}\) 9\d{4}-\d{4}$/.test(whatsapp)
+  const whatsappDirty = whatsapp.length > 0
 
   const prevStep = () => {
     setError("")
@@ -474,12 +490,34 @@ WHATSAPP: ${whatsapp}`
                   <label className="text-sm text-gray-200 font-medium pl-2">
                     WhatsApp com DDD
                   </label>
-                  <input
-                    value={whatsapp}
-                    onChange={(e) => setWhatsapp(e.target.value)}
-                    placeholder="Ex: (11) 99999-9999"
-                    className="w-full bg-black/40 border border-white/10 rounded-3xl px-6 py-5 text-lg outline-none focus:border-pink-500 transition-colors max-w-sm"
-                  />
+                  <div className="relative max-w-sm">
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(maskWhatsapp(e.target.value))}
+                      placeholder="(11) 99999-9999"
+                      maxLength={16}
+                      className="w-full bg-black/40 rounded-3xl px-6 py-5 text-lg outline-none transition-colors pr-12"
+                      style={{
+                        border: whatsappDirty
+                          ? whatsappOk
+                            ? "1px solid rgba(34,197,94,0.6)"
+                            : "1px solid rgba(240,25,107,0.6)"
+                          : "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    />
+                    {whatsappDirty && (
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-lg">
+                        {whatsappOk ? "✅" : "❌"}
+                      </span>
+                    )}
+                  </div>
+                  {whatsappDirty && !whatsappOk && (
+                    <p className="text-xs pl-2" style={{ color: "#f0196b" }}>
+                      Formato: (XX) 9XXXX-XXXX — somente celular
+                    </p>
+                  )}
                 </div>
               </div>
 
