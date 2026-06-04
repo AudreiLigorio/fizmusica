@@ -530,17 +530,8 @@ WHATSAPP: ${whatsapp}`
           {/* ===== STEP 5 — Resumo ===== */}
           {step === 5 && (
             <div>
-              <div className="text-center mb-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
-                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
-                  Revisão final
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
-                  Tudo pronto!
-                </h1>
-                <p className="text-white/60 text-base">
-                  Confira o resumo antes de finalizar.
-                </p>
+              <div className="mb-5">
+                <h1 className="text-xl font-bold tracking-tight">Confira o resumo antes de finalizar</h1>
               </div>
 
               <div className="grid md:grid-cols-3 gap-4 mb-8">
