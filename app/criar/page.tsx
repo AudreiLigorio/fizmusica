@@ -534,7 +534,7 @@ WHATSAPP: ${whatsapp}`
                 <h1 className="text-xl font-bold tracking-tight">Confira o resumo antes de finalizar</h1>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <div className="bg-pink-500/10 border border-pink-500/20 rounded-2xl p-5">
                   <p className="text-xs text-pink-400 font-medium mb-1 uppercase tracking-wider">
                     Ocasião
@@ -552,6 +552,12 @@ WHATSAPP: ${whatsapp}`
                     Emoção
                   </p>
                   <p className="font-semibold">{emotion}</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">
+                    Voz
+                  </p>
+                  <p className="font-semibold">{voiceType}</p>
                 </div>
               </div>
 
