@@ -440,17 +440,8 @@ WHATSAPP: ${whatsapp}`
           {/* ===== STEP 4 — Dados de contato ===== */}
           {step === 4 && (
             <div>
-              <div className="mb-10">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium mb-5"
-                     style={{ background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
-                  Seus dados
-                </div>
-                <h1 className="text-4xl lg:text-5xl font-bold mb-3 tracking-tight">
-                  Quase lá!
-                </h1>
-                <p className="text-white/60 text-base">
-                  Para entrarmos em contato e entregar sua música.
-                </p>
+              <div className="mb-5">
+                <h1 className="text-xl font-bold tracking-tight">Preencha os dados para o envio</h1>
               </div>
 
               <div className="grid md:grid-cols-2 gap-5">
