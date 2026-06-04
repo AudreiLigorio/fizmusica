@@ -23,7 +23,8 @@ async function getQueue() {
       musicalStyle, voiceType, emotion, honoreeName,
       status, paymentStatus, createdAt,
       products ( name ),
-      generated_music ( mp3_url, music_name )
+      generated_music ( mp3_url, music_name ),
+      product_delivery_options ( label, days )
     `)
     .eq("paymentStatus", "PAID")
     .neq("status", "ABANDONED")
@@ -95,6 +96,11 @@ export default async function AdminProducao() {
                   </div>
                   <div className="text-right text-xs shrink-0">
                     <p className="text-gray-400">{Array.isArray(order.products) ? order.products[0]?.name : (order.products as { name: string } | null)?.name}</p>
+                    {(order as any).product_delivery_options && (
+                      <p className="text-yellow-400 font-semibold mt-0.5">
+                        ⏱ {(order as any).product_delivery_options.label} · {(order as any).product_delivery_options.days}d úteis
+                      </p>
+                    )}
                     <p className="text-gray-600 mt-0.5">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</p>
                     <Link href={`/admin/pedidos/${order.id}`} className="text-blue-400 hover:underline mt-1 block">Ver pedido →</Link>
                   </div>

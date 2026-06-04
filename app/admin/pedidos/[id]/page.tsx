@@ -7,7 +7,7 @@ async function getOrder(id: string) {
   const supabase = createServerClient()
   const { data } = await supabase
     .from("orders")
-    .select(`*, order_answers(*), payments(*)`)
+    .select(`*, order_answers(*), payments(*), product_delivery_options(label, days)`)
     .eq("id", id)
     .single()
   return data
@@ -65,6 +65,14 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
               <span className="text-gray-500">Emoção</span>
               <span>{order.emotion}</span>
             </div>
+            {order.product_delivery_options && (
+              <div className="flex justify-between pt-2 mt-2 border-t border-white/10">
+                <span className="text-yellow-400 font-medium">⏱ Prazo</span>
+                <span className="text-yellow-300 font-semibold">
+                  {order.product_delivery_options.label} ({order.product_delivery_options.days} dias úteis)
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
