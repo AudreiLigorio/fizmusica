@@ -30,8 +30,8 @@ function SucessoContent() {
   useEffect(() => {
     if (!orderId) { setLoading(false); return }
 
-    // Se veio com status=approved, confirma o pagamento primeiro
     const confirm = async () => {
+      // 1. Confirma pagamento se aprovado
       if (statusQS === "approved" && mpPaymentId) {
         await fetch("/api/payments/confirm", {
           method: "POST",
@@ -40,13 +40,13 @@ function SucessoContent() {
         })
       }
 
-      fetch(`/api/orders/${orderId}`)
-        .then((r) => r.json())
-        .then((d) => { setOrder(d.order ?? null); setLoading(false) })
-        .catch(() => setLoading(false))
+      // 2. Busca pedido já atualizado
+      const d = await fetch(`/api/orders/${orderId}`).then((r) => r.json())
+      setOrder(d.order ?? null)
+      setLoading(false)
     }
 
-    confirm()
+    confirm().catch(() => setLoading(false))
   }, [orderId])
 
   const isPaid    = order?.paymentStatus === "PAID"
