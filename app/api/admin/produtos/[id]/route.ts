@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { createServerClient } from "@/lib/supabase"
 import { z } from "zod"
 
@@ -27,6 +28,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     if (error) throw error
 
+    revalidatePath("/admin/produtos")
     return NextResponse.json({ success: true })
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro desconhecido"

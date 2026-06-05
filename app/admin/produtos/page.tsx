@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { createServerClient } from "@/lib/supabase"
 import ProductForm from "./ProductForm"
 import DeliveryOptions from "./DeliveryOptions"
