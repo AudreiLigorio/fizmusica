@@ -20,8 +20,9 @@ function SucessoContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const orderId  = searchParams.get("orderId")
-  const statusQS = searchParams.get("status") // "pending" vindo do MP back_url
+  const orderId     = searchParams.get("orderId")
+  const statusQS    = searchParams.get("status")
+  const mpPaymentId = searchParams.get("mpPaymentId")
 
   const [order, setOrder] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -29,10 +30,23 @@ function SucessoContent() {
   useEffect(() => {
     if (!orderId) { setLoading(false); return }
 
-    fetch(`/api/orders/${orderId}`)
-      .then((r) => r.json())
-      .then((d) => { setOrder(d.order ?? null); setLoading(false) })
-      .catch(() => setLoading(false))
+    // Se veio com status=approved, confirma o pagamento primeiro
+    const confirm = async () => {
+      if (statusQS === "approved" && mpPaymentId) {
+        await fetch("/api/payments/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, mpPaymentId }),
+        })
+      }
+
+      fetch(`/api/orders/${orderId}`)
+        .then((r) => r.json())
+        .then((d) => { setOrder(d.order ?? null); setLoading(false) })
+        .catch(() => setLoading(false))
+    }
+
+    confirm()
   }, [orderId])
 
   const isPaid    = order?.paymentStatus === "PAID"

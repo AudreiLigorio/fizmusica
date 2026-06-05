@@ -115,8 +115,8 @@ function CheckoutContent() {
               return { error: data.error }
             }
 
-            // Redireciona para tela de sucesso
-            router.push(`/sucesso?orderId=${orderId}&status=${data.status}`)
+            // Redireciona para tela de sucesso com paymentId para confirmação
+            router.push(`/sucesso?orderId=${orderId}&status=${data.status}&mpPaymentId=${data.paymentId}`)
           } catch {
             setErrorMsg("Falha de conexão. Tente novamente.")
             setStatus("error")
