@@ -20,12 +20,7 @@ async function getQueue() {
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("orders")
-    .select(`
-      id, nome, email, whatsapp, context, subcategory,
-      musicalStyle, voiceType, emotion, honoreeName,
-      status, paymentStatus, createdAt,
-      product_delivery_options ( label, days )
-    `)
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt")
     .eq("paymentStatus", "PAID")
     .neq("status", "ABANDONED")
     .order("createdAt", { ascending: true })
@@ -90,11 +85,6 @@ export default async function AdminProducao() {
                     )}
                   </div>
                   <div className="text-right text-xs shrink-0">
-                    {(order as any).product_delivery_options && (
-                      <p className="text-yellow-400 font-semibold mt-0.5">
-                        ⏱ {(order as any).product_delivery_options.label} · {(order as any).product_delivery_options.days}d úteis
-                      </p>
-                    )}
                     <p className="text-gray-600 mt-0.5">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</p>
                     <Link href={`/admin/pedidos/${order.id}`} className="text-blue-400 hover:underline mt-1 block">Ver pedido →</Link>
                   </div>
