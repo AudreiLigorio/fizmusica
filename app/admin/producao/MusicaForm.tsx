@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
-import { supabase } from "@/lib/supabase"
 
 type MusicData = {
   mp3_url: string | null
@@ -57,15 +56,20 @@ export default function MusicaForm({
     setMsg("")
 
     try {
-      const fileName = `orders/${orderId}/${Date.now()}.mp3`
-      const { error: uploadError } = await supabase.storage
-        .from("songs")
-        .upload(fileName, file, { contentType: "audio/mpeg", upsert: true })
+      // 1. Pede URL assinada ao servidor (usa service_role, ignora RLS)
+      const res = await fetch(`/api/admin/producao/${orderId}/upload-url`, { method: "POST" })
+      const { signedUrl, publicUrl, error: urlError } = await res.json()
+      if (urlError) throw new Error(urlError)
 
-      if (uploadError) throw uploadError
+      // 2. Faz upload direto para o Supabase usando a URL assinada
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": "audio/mpeg" },
+      })
+      if (!uploadRes.ok) throw new Error(`Upload falhou: ${uploadRes.status}`)
 
-      const { data: urlData } = supabase.storage.from("songs").getPublicUrl(fileName)
-      setMp3Url(urlData.publicUrl)
+      setMp3Url(publicUrl)
       setMsg("✅ Upload concluído!")
     } catch (err: any) {
       setMsg(`❌ Erro: ${err.message ?? "Falha no upload"}`)
