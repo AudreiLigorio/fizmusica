@@ -16,10 +16,10 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
   const { id } = await params
   const supabase = createServerClient()
 
-  // Busca order + música
+  // Busca order
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select(`id, nome, email, whatsapp, subcategory, musicalStyle, generated_music(*)`)
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle")
     .eq("id", id)
     .single()
 
@@ -27,11 +27,14 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
     return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 })
   }
 
-  const music = Array.isArray(order.generated_music)
-    ? order.generated_music[0]
-    : order.generated_music
+  // Busca música separadamente
+  const { data: music } = await supabase
+    .from("generated_music")
+    .select("*")
+    .eq("orderId", id)
+    .maybeSingle()
 
-  if (!music?.mp3_url) {
+  if (!music?.mp3Url) {
     return NextResponse.json({ error: "Música ainda não produzida (sem MP3)." }, { status: 400 })
   }
 
@@ -42,7 +45,7 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
     const { error: slugError } = await supabase
       .from("generated_music")
       .update({ slug })
-      .eq("order_id", id)
+      .eq("orderId", id)
 
     if (slugError) {
       return NextResponse.json({ error: slugError.message }, { status: 500 })
@@ -56,7 +59,7 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
   await sendMusicDeliveryEmail({
     nome:      order.nome,
     email:     order.email,
-    musicName: music.music_name ?? "Sua música",
+    musicName: music.musicName ?? "Sua música",
     publicUrl,
     orderId:   id,
   })
@@ -76,7 +79,7 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
     answers:      [],
     createdAt:    new Date().toISOString(),
     publicUrl,
-    musicName:    music.music_name ?? "",
+    musicName:    music.musicName ?? "",
   } as Parameters<typeof triggerN8nWebhook>[0])
 
   // Marca pedido como DELIVERED

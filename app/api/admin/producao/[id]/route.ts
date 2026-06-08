@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: { params: Params }) {
   const { data, error } = await supabase
     .from("generated_music")
     .select("*")
-    .eq("order_id", id)
+    .eq("orderId", id)
     .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -28,15 +28,15 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     .from("generated_music")
     .upsert(
       {
-        order_id:    id,
-        mp3_url:     body.mp3Url   ?? null,
-        lyrics:      body.lyrics   ?? null,
-        music_name:  body.musicName ?? null,
-        person_name: body.personName ?? null,
-        published_at: body.mp3Url ? new Date().toISOString() : null,
-        updated_at:   new Date().toISOString(),
+        orderId:     id,
+        mp3Url:      body.mp3Url    ?? null,
+        lyrics:      body.lyrics    ?? null,
+        musicName:   body.musicName  ?? null,
+        personName:  body.personName ?? null,
+        publishedAt: body.mp3Url ? new Date().toISOString() : null,
+        updatedAt:   new Date().toISOString(),
       },
-      { onConflict: "order_id" }
+      { onConflict: "orderId" }
     )
     .select()
     .single()

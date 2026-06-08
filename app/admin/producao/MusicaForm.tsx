@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
 
 type MusicData = {
-  mp3_url: string | null
+  mp3Url: string | null
   lyrics: string | null
-  music_name: string | null
-  person_name: string | null
+  musicName: string | null
+  personName: string | null
   slug: string | null
 }
 
@@ -39,10 +39,10 @@ export default function MusicaForm({
     const d   = await res.json()
     if (d.music) {
       setMusic(d.music)
-      setMusicName(d.music.music_name ?? "")
-      setPersonName(d.music.person_name ?? honoreeName ?? nome)
+      setMusicName(d.music.musicName ?? "")
+      setPersonName(d.music.personName ?? honoreeName ?? nome)
       setLyrics(d.music.lyrics ?? "")
-      setMp3Url(d.music.mp3_url ?? "")
+      setMp3Url(d.music.mp3Url ?? "")
       if (d.music.slug) setPublicUrl(`${baseUrl}/m/${d.music.slug}`)
     }
   }
@@ -114,7 +114,7 @@ export default function MusicaForm({
     setDelivering(false)
   }
 
-  const isReady = !!music?.mp3_url
+  const isReady = !!music?.mp3Url
 
   return (
     <div className="mt-4 border-t border-white/5 pt-4">
