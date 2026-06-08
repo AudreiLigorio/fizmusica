@@ -4,12 +4,11 @@ import { useRef, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
 
 type MusicData = {
-  music_name: string | null
-  person_name: string | null
+  musicName: string | null
+  personName: string | null
   lyrics: string | null
-  mp3_url: string
-  image_url: string | null
-  orders: { nome: string; context: string; subcategory: string; musicalStyle: string } | null
+  mp3Url: string
+  order: { nome: string; context: string; subcategory: string; musicalStyle: string } | null
 }
 
 export default function PublicMusicPlayer({
@@ -19,21 +18,17 @@ export default function PublicMusicPlayer({
   music: MusicData
   publicUrl: string
 }) {
-  const audioRef             = useRef<HTMLAudioElement>(null)
-  const [playing, setPlaying] = useState(false)
+  const audioRef              = useRef<HTMLAudioElement>(null)
+  const [playing, setPlaying]   = useState(false)
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
-  const [copied, setCopied]   = useState(false)
-  const [showQr, setShowQr]   = useState(false)
+  const [copied, setCopied]     = useState(false)
+  const [showQr, setShowQr]     = useState(false)
 
   function togglePlay() {
     const audio = audioRef.current
     if (!audio) return
-    if (playing) {
-      audio.pause()
-    } else {
-      audio.play()
-    }
+    if (playing) { audio.pause() } else { audio.play() }
     setPlaying(!playing)
   }
 
@@ -64,8 +59,6 @@ export default function PublicMusicPlayer({
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const order = Array.isArray(music.orders) ? music.orders[0] : music.orders
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 py-16">
 
@@ -76,46 +69,36 @@ export default function PublicMusicPlayer({
           Feita com amor pela FizMusica ❤️
         </div>
 
-        {music.person_name && (
+        {music.personName && (
           <p className="text-gray-200 text-lg mb-2">Uma música especial para</p>
         )}
         <h1 className="text-4xl md:text-5xl font-bold leading-tight">
-          {music.person_name ? (
+          {music.personName ? (
             <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
-              {music.person_name}
+              {music.personName}
             </span>
           ) : (
-            music.music_name ?? "Sua música"
+            music.musicName ?? "Sua música"
           )}
         </h1>
-        {music.music_name && music.person_name && (
-          <p className="text-gray-300 mt-2 text-lg">"{music.music_name}"</p>
+        {music.musicName && music.personName && (
+          <p className="text-gray-300 mt-2 text-lg">"{music.musicName}"</p>
         )}
-        {order && (
-          <p className="text-gray-300 text-sm mt-2">{order.subcategory} · {order.musicalStyle}</p>
+        {music.order && (
+          <p className="text-gray-300 text-sm mt-2">{music.order.subcategory} · {music.order.musicalStyle}</p>
         )}
       </div>
 
       {/* PLAYER */}
       <div className="w-full max-w-lg bg-white/5 border border-white/10 rounded-[32px] p-8 backdrop-blur-xl mb-8">
 
-        {/* Imagem de capa */}
-        {music.image_url ? (
-          <img
-            src={music.image_url}
-            alt="Capa da música"
-            className="w-40 h-40 rounded-2xl mx-auto mb-6 object-cover shadow-2xl"
-          />
-        ) : (
-          <div className="w-40 h-40 rounded-2xl mx-auto mb-6 bg-gradient-to-br from-pink-500/30 to-fuchsia-500/30 border border-pink-500/20 flex items-center justify-center text-6xl">
-            🎵
-          </div>
-        )}
+        <div className="w-40 h-40 rounded-2xl mx-auto mb-6 bg-gradient-to-br from-pink-500/30 to-fuchsia-500/30 border border-pink-500/20 flex items-center justify-center text-6xl">
+          🎵
+        </div>
 
-        {/* Controles */}
         <audio
           ref={audioRef}
-          src={music.mp3_url}
+          src={music.mp3Url}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleTimeUpdate}
           onEnded={() => setPlaying(false)}
@@ -137,7 +120,6 @@ export default function PublicMusicPlayer({
           )}
         </button>
 
-        {/* Barra de progresso */}
         <div className="space-y-2">
           <input
             type="range"
@@ -194,7 +176,6 @@ export default function PublicMusicPlayer({
           </a>
         </div>
 
-        {/* QR Code */}
         <button
           onClick={() => setShowQr(!showQr)}
           className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 transition-all py-3 rounded-2xl text-sm font-medium"
@@ -205,12 +186,11 @@ export default function PublicMusicPlayer({
         {showQr && (
           <div className="flex flex-col items-center gap-3 bg-white p-6 rounded-2xl">
             <QRCodeSVG value={publicUrl} size={180} />
-            <p className="text-gray-300 text-xs text-center">Escaneie para ouvir a música</p>
+            <p className="text-gray-500 text-xs text-center">Escaneie para ouvir a música</p>
           </div>
         )}
       </div>
 
-      {/* RODAPÉ */}
       <div className="mt-12 text-center">
         <a href="/" className="text-pink-400 hover:text-pink-300 text-sm font-medium transition-colors">
           🎵 Criar minha música na FizMusica
