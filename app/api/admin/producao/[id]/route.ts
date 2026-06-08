@@ -30,6 +30,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       {
         orderId:     id,
         mp3Url:      body.mp3Url    ?? null,
+        imageUrl:    body.imageUrl  ?? null,
         lyrics:      body.lyrics    ?? null,
         musicName:   body.musicName  ?? null,
         personName:  body.personName ?? null,

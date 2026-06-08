@@ -8,7 +8,16 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   const { id } = await params
   const supabase = createServerClient()
 
-  const fileName = `orders/${id}/${Date.now()}.mp3`
+  // Extensão do arquivo (mp3 por padrão; imagens passam "jpg", "png", etc.)
+  let ext = "mp3"
+  try {
+    const body = await req.json()
+    if (body?.ext && /^[a-z0-9]{2,5}$/i.test(body.ext)) ext = body.ext.toLowerCase()
+  } catch {
+    // sem body — mantém mp3
+  }
+
+  const fileName = `orders/${id}/${Date.now()}.${ext}`
 
   const { data, error } = await supabase.storage
     .from("songs")

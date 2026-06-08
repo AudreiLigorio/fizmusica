@@ -8,6 +8,7 @@ type MusicData = {
   personName: string | null
   lyrics: string | null
   mp3Url: string
+  imageUrl: string | null
   order: { nome: string; context: string; subcategory: string; musicalStyle: string } | null
 }
 
@@ -92,9 +93,18 @@ export default function PublicMusicPlayer({
       {/* PLAYER */}
       <div className="w-full max-w-lg bg-white/5 border border-white/10 rounded-[32px] p-8 backdrop-blur-xl mb-8">
 
-        <div className="w-40 h-40 rounded-2xl mx-auto mb-6 bg-gradient-to-br from-pink-500/30 to-fuchsia-500/30 border border-pink-500/20 flex items-center justify-center text-6xl">
-          🎵
-        </div>
+        {music.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={music.imageUrl}
+            alt="Capa da música"
+            className="w-40 h-40 rounded-2xl mx-auto mb-6 object-cover shadow-2xl border border-white/10"
+          />
+        ) : (
+          <div className="w-40 h-40 rounded-2xl mx-auto mb-6 bg-gradient-to-br from-pink-500/30 to-fuchsia-500/30 border border-pink-500/20 flex items-center justify-center text-6xl">
+            🎵
+          </div>
+        )}
 
         <audio
           ref={audioRef}

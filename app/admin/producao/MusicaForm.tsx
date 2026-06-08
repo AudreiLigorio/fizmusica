@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react"
 
 type MusicData = {
   mp3Url: string | null
+  imageUrl: string | null
   lyrics: string | null
   musicName: string | null
   personName: string | null
@@ -26,12 +27,15 @@ export default function MusicaForm({
   const [personName, setPersonName] = useState(honoreeName ?? nome)
   const [lyrics, setLyrics]         = useState("")
   const [mp3Url, setMp3Url]         = useState("")
+  const [imageUrl, setImageUrl]     = useState("")
   const [uploading, setUploading]     = useState(false)
+  const [uploadingImg, setUploadingImg] = useState(false)
   const [saving, setSaving]           = useState(false)
   const [delivering, setDelivering]   = useState(false)
   const [publicUrl, setPublicUrl]     = useState<string | null>(null)
   const [msg, setMsg]                 = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
+  const imgRef  = useRef<HTMLInputElement>(null)
   const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
 
   async function load() {
@@ -43,6 +47,7 @@ export default function MusicaForm({
       setPersonName(d.music.personName ?? honoreeName ?? nome)
       setLyrics(d.music.lyrics ?? "")
       setMp3Url(d.music.mp3Url ?? "")
+      setImageUrl(d.music.imageUrl ?? "")
       if (d.music.slug) setPublicUrl(`${baseUrl}/m/${d.music.slug}`)
     }
   }
@@ -78,6 +83,38 @@ export default function MusicaForm({
     }
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImg(true)
+    setMsg("")
+
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase()
+      const res = await fetch(`/api/admin/producao/${orderId}/upload-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ext }),
+      })
+      const { signedUrl, publicUrl, error: urlError } = await res.json()
+      if (urlError) throw new Error(urlError)
+
+      const uploadRes = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type || "image/jpeg" },
+      })
+      if (!uploadRes.ok) throw new Error(`Upload falhou: ${uploadRes.status}`)
+
+      setImageUrl(publicUrl)
+      setMsg("✅ Imagem enviada! Clique em Salvar para confirmar.")
+    } catch (err: any) {
+      setMsg(`❌ Erro: ${err.message ?? "Falha no upload da imagem"}`)
+    } finally {
+      setUploadingImg(false)
+    }
+  }
+
   async function handleSave() {
     setSaving(true)
     setMsg("")
@@ -85,7 +122,7 @@ export default function MusicaForm({
     const res = await fetch(`/api/admin/producao/${orderId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mp3Url, lyrics, musicName, personName }),
+      body: JSON.stringify({ mp3Url, imageUrl, lyrics, musicName, personName }),
     })
     const data = await res.json()
 
@@ -209,6 +246,46 @@ export default function MusicaForm({
                     <span className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
                   )}
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* IMAGEM DE CAPA */}
+          <div className="bg-black/30 border border-white/10 rounded-xl p-4">
+            <label className="text-xs text-gray-500 mb-2 block">Imagem de capa (opcional)</label>
+
+            {imageUrl ? (
+              <div className="space-y-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl} alt="Capa" className="w-32 h-32 rounded-xl object-cover border border-white/10" />
+                <p className="text-xs text-gray-500 break-all">{imageUrl}</p>
+                <button
+                  onClick={() => { setImageUrl(""); if (imgRef.current) imgRef.current.value = "" }}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  Remover imagem
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <label className={`cursor-pointer text-xs px-3 py-2 rounded-lg border transition-colors ${
+                  uploadingImg
+                    ? "border-white/5 text-gray-600 cursor-not-allowed"
+                    : "border-pink-500/30 text-pink-400 hover:bg-pink-500/10"
+                }`}>
+                  {uploadingImg ? "Enviando…" : "🖼️ Selecionar imagem"}
+                  <input
+                    ref={imgRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImg}
+                    className="hidden"
+                  />
+                </label>
+                {uploadingImg && (
+                  <span className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                )}
               </div>
             )}
           </div>
