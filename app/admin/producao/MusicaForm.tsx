@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { QRCodeSVG } from "qrcode.react"
+import { supabase } from "@/lib/supabase"
 
 type MusicData = {
   mp3_url: string | null
@@ -55,19 +56,22 @@ export default function MusicaForm({
     setUploading(true)
     setMsg("")
 
-    const fd = new FormData()
-    fd.append("file", file)
+    try {
+      const fileName = `orders/${orderId}/${Date.now()}.mp3`
+      const { error: uploadError } = await supabase.storage
+        .from("songs")
+        .upload(fileName, file, { contentType: "audio/mpeg", upsert: true })
 
-    const res  = await fetch(`/api/admin/producao/${orderId}/upload`, { method: "POST", body: fd })
-    const data = await res.json()
+      if (uploadError) throw uploadError
 
-    if (data.url) {
-      setMp3Url(data.url)
+      const { data: urlData } = supabase.storage.from("songs").getPublicUrl(fileName)
+      setMp3Url(urlData.publicUrl)
       setMsg("✅ Upload concluído!")
-    } else {
-      setMsg(`❌ Erro: ${data.error}`)
+    } catch (err: any) {
+      setMsg(`❌ Erro: ${err.message ?? "Falha no upload"}`)
+    } finally {
+      setUploading(false)
     }
-    setUploading(false)
   }
 
   async function handleSave() {
