@@ -3,6 +3,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import QuestionActions from "./QuestionActions"
 
+export const dynamic = "force-dynamic"
+
 async function getData(occasionId: string, subcategoryId: string) {
   const supabase = createServerClient()
   const [occRes, subRes, qRes] = await Promise.all([

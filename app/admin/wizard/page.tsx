@@ -2,6 +2,8 @@ import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import OccasionActions from "./OccasionActions"
 
+export const dynamic = "force-dynamic"
+
 async function getOccasions() {
   const supabase = createServerClient()
   const { data } = await supabase
