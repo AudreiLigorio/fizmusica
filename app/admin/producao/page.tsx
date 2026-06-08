@@ -24,8 +24,6 @@ async function getQueue() {
       id, nome, email, whatsapp, context, subcategory,
       musicalStyle, voiceType, emotion, honoreeName,
       status, paymentStatus, createdAt,
-      products ( name ),
-      generated_music ( mp3_url, music_name ),
       product_delivery_options ( label, days )
     `)
     .eq("paymentStatus", "PAID")
@@ -72,14 +70,10 @@ export default async function AdminProducao() {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            const hasMusic = !!order.generated_music?.[0]?.mp3_url
-
             return (
               <div
                 key={order.id}
-                className={`bg-black/40 border rounded-2xl p-6 ${
-                  hasMusic ? "border-green-500/20" : "border-white/10"
-                }`}
+                className="bg-black/40 border border-white/10 rounded-2xl p-6"
               >
                 {/* Cabeçalho */}
                 <div className="flex items-start justify-between gap-3 mb-4">
@@ -89,11 +83,6 @@ export default async function AdminProducao() {
                       <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLOR[order.status] ?? ""}`}>
                         {STATUS_LABEL[order.status] ?? order.status}
                       </span>
-                      {hasMusic && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                          ✅ Pronta
-                        </span>
-                      )}
                     </div>
                     <p className="text-xs text-gray-400 truncate">{order.email} · {order.whatsapp}</p>
                     {order.honoreeName && (
@@ -101,7 +90,6 @@ export default async function AdminProducao() {
                     )}
                   </div>
                   <div className="text-right text-xs shrink-0">
-                    <p className="text-gray-400">{Array.isArray(order.products) ? order.products[0]?.name : (order.products as { name: string } | null)?.name}</p>
                     {(order as any).product_delivery_options && (
                       <p className="text-yellow-400 font-semibold mt-0.5">
                         ⏱ {(order as any).product_delivery_options.label} · {(order as any).product_delivery_options.days}d úteis
