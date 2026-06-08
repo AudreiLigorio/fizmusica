@@ -70,7 +70,7 @@ export default function MusicaForm({
       if (!uploadRes.ok) throw new Error(`Upload falhou: ${uploadRes.status}`)
 
       setMp3Url(publicUrl)
-      setMsg("✅ Upload concluído!")
+      setMsg("✅ Upload concluído! Clique em Salvar para confirmar.")
     } catch (err: any) {
       setMsg(`❌ Erro: ${err.message ?? "Falha no upload"}`)
     } finally {
