@@ -31,7 +31,6 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
         order_id:    id,
         mp3_url:     body.mp3Url   ?? null,
         lyrics:      body.lyrics   ?? null,
-        image_url:   body.imageUrl ?? null,
         music_name:  body.musicName ?? null,
         person_name: body.personName ?? null,
         published_at: body.mp3Url ? new Date().toISOString() : null,
