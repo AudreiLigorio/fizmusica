@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import Link from "next/link"
+
+export const dynamic = "force-dynamic"
 import UpdateStatusButton from "./UpdateStatusButton"
 
 async function getOrder(id: string) {
