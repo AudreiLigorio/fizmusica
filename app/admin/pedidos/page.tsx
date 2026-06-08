@@ -8,7 +8,7 @@ async function getOrders() {
   const { data } = await supabase
     .from("orders")
     .select("id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, status, paymentStatus, createdAt, product_delivery_options(label, days)")
-    .order("createdAt", { ascending: false })
+    .order("createdAt", { ascending: true })
   return data ?? []
 }
 
@@ -53,7 +53,7 @@ export default async function AdminPedidos() {
                 <th className="text-left px-6 py-4">Estilo</th>
                 <th className="text-left px-6 py-4">Status</th>
                 <th className="text-left px-6 py-4">Pagamento</th>
-                <th className="text-left px-6 py-4">Data</th>
+                <th className="text-left px-6 py-4">Data / Hora</th>
                 <th className="text-left px-6 py-4"></th>
               </tr>
             </thead>
@@ -90,7 +90,10 @@ export default async function AdminPedidos() {
                       {o.paymentStatus}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{new Date(o.createdAt).toLocaleDateString("pt-BR")}</td>
+                  <td className="px-6 py-4 text-gray-500">
+                    <div>{new Date(o.createdAt).toLocaleDateString("pt-BR")}</div>
+                    <div className="text-xs text-gray-600">{new Date(o.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
+                  </td>
                   <td className="px-6 py-4">
                     <Link href={`/admin/pedidos/${o.id}`} className="text-pink-400 hover:text-pink-300 text-xs font-medium">Ver →</Link>
                   </td>
@@ -126,7 +129,9 @@ export default async function AdminPedidos() {
                   <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${PAYMENT_COLOR[o.paymentStatus] ?? ""}`}>
                     {o.paymentStatus}
                   </span>
-                  <span className="text-gray-600 text-xs">{new Date(o.createdAt).toLocaleDateString("pt-BR")}</span>
+                  <span className="text-gray-600 text-xs">
+                    {new Date(o.createdAt).toLocaleDateString("pt-BR")} {new Date(o.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
                 </div>
               </div>
             </Link>
