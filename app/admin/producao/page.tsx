@@ -28,11 +28,11 @@ async function getQueue() {
   if (error) console.error("[producao] query error:", JSON.stringify(error))
   console.log("[producao] rows returned:", data?.length ?? 0)
 
-  return data ?? []
+  return { orders: data ?? [], error }
 }
 
 export default async function AdminProducao() {
-  const orders = await getQueue()
+  const { orders, error } = await getQueue()
 
   const waiting    = orders.filter((o) => o.status === "PENDING")
   const inProd     = orders.filter((o) => o.status === "IN_PRODUCTION")
@@ -42,6 +42,12 @@ export default async function AdminProducao() {
     <div className="p-4 lg:p-8 max-w-5xl">
       <h1 className="text-2xl lg:text-3xl font-bold mb-1">Fila de Produção</h1>
       <p className="text-gray-500 text-sm mb-6 lg:mb-8">Pedidos pagos aguardando produção da música</p>
+
+      {error && (
+        <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-300 rounded-xl px-4 py-3 text-sm">
+          ❌ Erro ao buscar pedidos: {error.message ?? JSON.stringify(error)}
+        </div>
+      )}
 
       {/* RESUMO */}
       <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-6 lg:mb-10">
