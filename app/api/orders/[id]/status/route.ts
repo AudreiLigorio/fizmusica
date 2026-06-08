@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { createServerClient } from "@/lib/supabase"
 import { z } from "zod"
 
@@ -22,6 +23,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .eq("id", id)
 
     if (error) throw error
+
+    revalidatePath("/admin/producao")
+    revalidatePath("/admin/pedidos")
 
     return NextResponse.json({ success: true })
   } catch (err) {

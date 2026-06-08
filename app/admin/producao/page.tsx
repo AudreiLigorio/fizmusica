@@ -2,6 +2,8 @@ import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import MusicaForm from "./MusicaForm"
 
+export const dynamic = "force-dynamic"
+
 const STATUS_COLOR: Record<string, string> = {
   PENDING:       "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
   IN_PRODUCTION: "bg-blue-500/10 text-blue-400 border-blue-500/20",
@@ -16,7 +18,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 async function getQueue() {
   const supabase = createServerClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("orders")
     .select(`
       id, nome, email, whatsapp, context, subcategory,
@@ -29,6 +31,10 @@ async function getQueue() {
     .eq("paymentStatus", "PAID")
     .neq("status", "ABANDONED")
     .order("createdAt", { ascending: true })
+
+  if (error) console.error("[producao] query error:", JSON.stringify(error))
+  console.log("[producao] rows returned:", data?.length ?? 0)
+
   return data ?? []
 }
 
