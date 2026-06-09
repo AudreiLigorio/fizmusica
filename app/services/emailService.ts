@@ -346,6 +346,77 @@ function buildRecoveryEmail(data: RecoveryEmailData, siteUrl: string): string {
 }
 
 // ============================================================
+// E-mail de solicitação de avaliação (NPS / feedback pós-entrega)
+// ============================================================
+
+interface FeedbackRequestEmailData {
+  nome:        string
+  email:       string
+  musicName:   string
+  feedbackUrl: string
+}
+
+export async function sendFeedbackRequestEmail(data: FeedbackRequestEmailData): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: `${data.nome.split(" ")[0]}, o que você achou da sua música? 🎵`,
+      html: buildFeedbackRequestEmail(data),
+    })
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      console.error("[email] Feedback request erro:", msg)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Solicitação de feedback enviada para ${data.email}`)
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
+function buildFeedbackRequestEmail(data: FeedbackRequestEmailData): string {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">💜</div>
+        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">O que você achou?</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:15px">Sua opinião faz toda a diferença pra nós!</p>
+      </div>
+      <div style="padding:40px 32px">
+        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! 🎵</p>
+        <p style="color:#999;margin:0 0 8px">
+          Sua música <strong style="color:#ec4899">"${data.musicName}"</strong> foi entregue e esperamos que tenha ficado incrível!
+        </p>
+        <p style="color:#999;margin:0 0 32px">
+          Queremos saber o que você achou — leva menos de 2 minutos e nos ajuda muito a continuar criando músicas especiais.
+        </p>
+
+        <div style="text-align:center;margin:32px 0">
+          <a href="${data.feedbackUrl}"
+            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:17px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
+            ⭐ Avaliar minha música
+          </a>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 20px;margin:24px 0">
+          <p style="color:#888;font-size:13px;margin:0 0 6px">3 perguntinhas rápidas:</p>
+          <p style="color:#ccc;font-size:13px;margin:4px 0">⭐ Nota geral de 1 a 5 estrelas</p>
+          <p style="color:#ccc;font-size:13px;margin:4px 0">💬 O que te emocionou na música</p>
+          <p style="color:#ccc;font-size:13px;margin:4px 0">🔧 Sugestão de melhoria (opcional)</p>
+        </div>
+
+        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222;text-align:center">
+          FizMusica — Músicas personalizadas feitas com amor ❤️<br>
+          <a href="https://fizmusica.com.br" style="color:#ec4899">fizmusica.com.br</a>
+        </p>
+      </div>
+    </div>
+  `
+}
+
+// ============================================================
 // E-mail em massa (admin envia para base de clientes)
 // ============================================================
 

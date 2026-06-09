@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 
+// ── Types ──────────────────────────────────────────────────────
+
 type UnpaidOrder = {
   id: string
   nome: string
@@ -17,6 +19,20 @@ type UnpaidOrder = {
 type InsightRow = { name: string; total: number; paid: number; rate: number }
 type Insights   = { occasions: InsightRow[]; styles: InsightRow[]; voices: InsightRow[]; emotions: InsightRow[] }
 
+type Feedback = {
+  id:          string
+  orderId:     string
+  rating:      number
+  highlight:   string
+  improvement: string | null
+  submittedAt: string
+  nome:        string
+  subcategory: string
+  musicalStyle:string
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const h = Math.floor(diff / 3600000)
@@ -25,6 +41,18 @@ function timeAgo(dateStr: string) {
   if (h > 0) return `há ${h}h`
   return "agora pouco"
 }
+
+function Stars({ rating, size = "text-base" }: { rating: number; size?: string }) {
+  return (
+    <span className={size}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <span key={n} style={{ filter: n <= rating ? "none" : "grayscale(1) opacity(0.25)" }}>⭐</span>
+      ))}
+    </span>
+  )
+}
+
+// ── Sub-components ─────────────────────────────────────────────
 
 function InsightTable({ title, col, rows }: { title: string; col: string; rows: InsightRow[] }) {
   const maxTotal = rows[0]?.total ?? 1
@@ -80,8 +108,7 @@ function InsightTable({ title, col, rows }: { title: string; col: string; rows: 
 }
 
 function RecoveryCard({
-  order, sent, sending, errors, onSend,
-  badge,
+  order, sent, sending, errors, onSend, badge,
 }: {
   order: UnpaidOrder
   sent: Record<string, boolean>
@@ -133,16 +160,20 @@ function RecoveryCard({
   )
 }
 
+// ── Main component ─────────────────────────────────────────────
+
 export default function CrmClient({
   unpaidOrders,
   abandonedOrders,
   insights,
+  feedbacks,
 }: {
-  unpaidOrders: UnpaidOrder[]
+  unpaidOrders:    UnpaidOrder[]
   abandonedOrders: UnpaidOrder[]
-  insights: Insights
+  insights:        Insights
+  feedbacks:       Feedback[]
 }) {
-  const [tab, setTab] = useState<"recovery" | "mass" | "insights">("recovery")
+  const [tab, setTab] = useState<"recovery" | "mass" | "insights" | "ratings">("recovery")
 
   // ── Repescagem ──
   const [sending, setSending] = useState<Record<string, boolean>>({})
@@ -191,22 +222,33 @@ export default function CrmClient({
     setMassLoading(false)
   }
 
+  // ── Avaliações — stats ──
+  const avgRating = feedbacks.length > 0
+    ? (feedbacks.reduce((s, f) => s + f.rating, 0) / feedbacks.length).toFixed(1)
+    : null
+
+  const ratingDist = [5, 4, 3, 2, 1].map(n => ({
+    stars: n,
+    count: feedbacks.filter(f => f.rating === n).length,
+  }))
+
   const totalRecovery = unpaidOrders.length + abandonedOrders.length
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl">
       <h1 className="text-2xl lg:text-3xl font-bold mb-1">CRM</h1>
-      <p className="text-gray-500 text-sm mb-6">Recuperação de clientes e campanhas de e-mail</p>
+      <p className="text-gray-500 text-sm mb-6">Recuperação de clientes, campanhas e avaliações</p>
 
       {/* Abas */}
-      <div className="flex gap-2 mb-6 border-b border-white/10">
+      <div className="flex gap-1 mb-6 border-b border-white/10 overflow-x-auto">
         {[
-          { key: "recovery",  label: "🔄 Repescagem",    badge: totalRecovery > 0 ? totalRecovery : null },
-          { key: "mass",      label: "📧 E-mail em massa", badge: null },
+          { key: "recovery",  label: "🔄 Repescagem",     badge: totalRecovery > 0 ? totalRecovery : null },
+          { key: "ratings",   label: "⭐ Avaliações",      badge: feedbacks.length > 0 ? feedbacks.length : null },
           { key: "insights",  label: "📊 Análises",        badge: null },
+          { key: "mass",      label: "📧 E-mail em massa", badge: null },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key as any)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px flex items-center gap-1.5 ${
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px flex items-center gap-1.5 whitespace-nowrap ${
               tab === t.key ? "border-pink-500 text-pink-400" : "border-transparent text-gray-500 hover:text-white"
             }`}>
             {t.label}
@@ -243,7 +285,6 @@ export default function CrmClient({
                   </div>
                 </div>
               )}
-
               {abandonedOrders.length > 0 && (
                 <div>
                   <p className="text-xs text-blue-400 uppercase tracking-wider mb-3 font-medium">
@@ -258,6 +299,113 @@ export default function CrmClient({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── ABA AVALIAÇÕES ── */}
+      {tab === "ratings" && (
+        <div className="space-y-6">
+          {feedbacks.length === 0 ? (
+            <div className="text-center py-20 text-gray-500">
+              <p className="text-4xl mb-4">⭐</p>
+              <p>Nenhuma avaliação recebida ainda.</p>
+              <p className="text-sm mt-2">As avaliações aparecem aqui quando os clientes respondem após a entrega.</p>
+            </div>
+          ) : (
+            <>
+              {/* Resumo */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-4 text-center">
+                  <p className="text-3xl font-bold text-pink-400">{avgRating}</p>
+                  <p className="text-xs text-gray-500 mt-1">Nota média</p>
+                  <Stars rating={Math.round(Number(avgRating))} size="text-sm" />
+                </div>
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-4 text-center">
+                  <p className="text-3xl font-bold">{feedbacks.length}</p>
+                  <p className="text-xs text-gray-500 mt-1">Avaliações</p>
+                </div>
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-4 text-center">
+                  <p className="text-3xl font-bold text-green-400">
+                    {Math.round((feedbacks.filter(f => f.rating >= 4).length / feedbacks.length) * 100)}%
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Satisfeitos (4–5⭐)</p>
+                </div>
+                <div className="bg-black/40 border border-white/10 rounded-2xl p-4 text-center">
+                  <p className="text-3xl font-bold text-yellow-400">
+                    {feedbacks.filter(f => f.improvement).length}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Com sugestão</p>
+                </div>
+              </div>
+
+              {/* Distribuição de estrelas */}
+              <div className="bg-black/40 border border-white/10 rounded-2xl p-5">
+                <p className="text-sm font-medium mb-4">Distribuição das notas</p>
+                <div className="space-y-2">
+                  {ratingDist.map(({ stars, count }) => (
+                    <div key={stars} className="flex items-center gap-3">
+                      <span className="text-sm w-6 text-right text-gray-400">{stars}</span>
+                      <span className="text-sm">⭐</span>
+                      <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 transition-all"
+                          style={{ width: feedbacks.length > 0 ? `${Math.round((count / feedbacks.length) * 100)}%` : "0%" }} />
+                      </div>
+                      <span className="text-xs text-gray-500 w-6">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Lista de feedbacks */}
+              <div className="space-y-4">
+                {feedbacks.map(f => (
+                  <div key={f.id} className="bg-black/40 border border-white/10 rounded-2xl p-5">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold">{f.nome}</p>
+                          <Stars rating={f.rating} />
+                        </div>
+                        <div className="flex gap-2 mt-1 flex-wrap">
+                          <span className="text-xs bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-400">{f.subcategory}</span>
+                          <span className="text-xs bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-400">{f.musicalStyle}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-500 shrink-0">{timeAgo(f.submittedAt)}</span>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="bg-green-500/5 border border-green-500/15 rounded-xl px-4 py-3">
+                        <p className="text-xs text-green-400 font-medium mb-1">💬 O que encantou</p>
+                        <p className="text-sm text-gray-300 leading-relaxed">{f.highlight}</p>
+                      </div>
+                      {f.improvement && (
+                        <div className="bg-yellow-500/5 border border-yellow-500/15 rounded-xl px-4 py-3">
+                          <p className="text-xs text-yellow-400 font-medium mb-1">🔧 Sugestão de melhoria</p>
+                          <p className="text-sm text-gray-300 leading-relaxed">{f.improvement}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── ABA ANÁLISES ── */}
+      {tab === "insights" && (
+        <div className="space-y-8">
+          <InsightTable title="🎯 Subcategorias mais pedidas" col="Subcategoria" rows={insights.occasions} />
+          <InsightTable title="🎵 Estilos musicais"           col="Estilo"       rows={insights.styles}    />
+          <InsightTable title="🎤 Tipo de voz"                col="Voz"          rows={insights.voices}    />
+          <InsightTable title="💫 Emoção da música"           col="Emoção"       rows={insights.emotions}  />
+          <div className="flex flex-wrap gap-4 text-xs text-gray-500 pt-2">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> ≥ 60% — ótimo</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> 30–59% — médio</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> &lt; 30% — baixo</span>
+          </div>
         </div>
       )}
 
@@ -319,21 +467,6 @@ export default function CrmClient({
               <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando para {recipientCount} destinatários…</>
             ) : <>📧 Enviar para {recipientCount ?? "..."} clientes</>}
           </button>
-        </div>
-      )}
-
-      {/* ── ABA ANÁLISES ── */}
-      {tab === "insights" && (
-        <div className="space-y-8">
-          <InsightTable title="🎯 Subcategorias mais pedidas" col="Subcategoria" rows={insights.occasions} />
-          <InsightTable title="🎵 Estilos musicais"           col="Estilo"       rows={insights.styles}    />
-          <InsightTable title="🎤 Tipo de voz"                col="Voz"          rows={insights.voices}    />
-          <InsightTable title="💫 Emoção da música"           col="Emoção"       rows={insights.emotions}  />
-          <div className="flex flex-wrap gap-4 text-xs text-gray-500 pt-2">
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> ≥ 60% — ótimo</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> 30–59% — médio</span>
-            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> &lt; 30% — baixo</span>
-          </div>
         </div>
       )}
     </div>

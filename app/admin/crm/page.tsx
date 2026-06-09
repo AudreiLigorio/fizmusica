@@ -5,10 +5,9 @@ export const dynamic = "force-dynamic"
 
 async function getUnpaidOrders() {
   const supabase = createServerClient()
-  const oneHourAgo  = new Date(Date.now() - 1  * 60 * 60 * 1000).toISOString()
+  const oneHourAgo   = new Date(Date.now() - 1  * 60 * 60 * 1000).toISOString()
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  // Pendentes (ainda não enviamos e-mail — cron ainda não rodou)
   const { data: pending } = await supabase
     .from("orders")
     .select("id, nome, email, whatsapp, subcategory, musicalStyle, createdAt, status")
@@ -18,7 +17,6 @@ async function getUnpaidOrders() {
     .gt("createdAt", sevenDaysAgo)
     .order("createdAt", { ascending: false })
 
-  // Abandonados recentes (já receberam e-mail automático)
   const { data: abandoned } = await supabase
     .from("orders")
     .select("id, nome, email, whatsapp, subcategory, musicalStyle, createdAt, status")
@@ -37,7 +35,6 @@ async function getUnpaidOrders() {
 async function getInsights() {
   const supabase = createServerClient()
 
-  // Busca todos os pedidos com paymentStatus
   const { data: orders } = await supabase
     .from("orders")
     .select("subcategory, musicalStyle, voiceType, emotion, paymentStatus")
@@ -78,7 +75,41 @@ async function getInsights() {
   }
 }
 
+async function getFeedbacks() {
+  const supabase = createServerClient()
+
+  const { data } = await supabase
+    .from("feedbacks")
+    .select("id, orderId, rating, highlight, improvement, submittedAt, createdAt, orders(nome, subcategory, musicalStyle)")
+    .not("submittedAt", "is", null)
+    .order("submittedAt", { ascending: false })
+    .limit(100)
+
+  return (data ?? []).map(f => ({
+    id:          f.id as string,
+    orderId:     f.orderId as string,
+    rating:      f.rating as number,
+    highlight:   f.highlight as string,
+    improvement: f.improvement as string | null,
+    submittedAt: f.submittedAt as string,
+    nome:        (f.orders as any)?.nome         ?? "—",
+    subcategory: (f.orders as any)?.subcategory  ?? "—",
+    musicalStyle:(f.orders as any)?.musicalStyle ?? "—",
+  }))
+}
+
 export default async function CrmPage() {
-  const [{ pending, abandoned }, insights] = await Promise.all([getUnpaidOrders(), getInsights()])
-  return <CrmClient unpaidOrders={pending} abandonedOrders={abandoned} insights={insights as any} />
+  const [{ pending, abandoned }, insights, feedbacks] = await Promise.all([
+    getUnpaidOrders(),
+    getInsights(),
+    getFeedbacks(),
+  ])
+  return (
+    <CrmClient
+      unpaidOrders={pending}
+      abandonedOrders={abandoned}
+      insights={insights as any}
+      feedbacks={feedbacks}
+    />
+  )
 }
