@@ -279,3 +279,113 @@ function buildAdminEmail(order: OrderEmailData): string {
     </div>
   `
 }
+
+// ============================================================
+// E-mail de recuperação de pedido não pago (repescagem)
+// ============================================================
+
+interface RecoveryEmailData {
+  nome:         string
+  email:        string
+  subcategory:  string
+  musicalStyle: string
+  orderId:      string
+}
+
+export async function sendRecoveryEmail(data: RecoveryEmailData): Promise<{ ok: boolean; error?: string }> {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: `${data.nome.split(" ")[0]}, sua música ainda está esperando por você 🎵`,
+      html: buildRecoveryEmail(data, siteUrl),
+    })
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Recuperação enviada para ${data.email}`)
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
+function buildRecoveryEmail(data: RecoveryEmailData, siteUrl: string): string {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">🎵</div>
+        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">Sua música está esperando!</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:15px">Você começou um pedido e não finalizou</p>
+      </div>
+      <div style="padding:40px 32px">
+        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! ❤️</p>
+        <p style="color:#999;margin:0 0 24px">
+          Notamos que você iniciou um pedido de <strong style="color:#ec4899">${data.subcategory}</strong>
+          no estilo <strong style="color:#ec4899">${data.musicalStyle}</strong>, mas não concluiu o pagamento.
+        </p>
+        <p style="color:#999;margin:0 0 32px">Sua música personalizada pode ser criada especialmente para você — basta finalizar o pedido!</p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${siteUrl}/criar"
+            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:17px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
+            🎵 Finalizar meu pedido
+          </a>
+        </div>
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:24px 0;text-align:center">
+          <p style="color:#666;font-size:13px;margin:0 0 4px">Dúvidas? Fale com a gente no WhatsApp</p>
+          <a href="https://wa.me/5511996645678" style="color:#ec4899;font-size:14px;font-weight:600">📱 (11) 99664-5678</a>
+        </div>
+        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
+          Se não quiser mais receber e-mails da FizMusica, ignore esta mensagem.
+        </p>
+      </div>
+    </div>
+  `
+}
+
+// ============================================================
+// E-mail em massa (admin envia para base de clientes)
+// ============================================================
+
+interface MassEmailRecipient { nome: string; email: string }
+
+export async function sendMassEmail(recipients: MassEmailRecipient[], subject: string, body: string): Promise<{ sent: number; failed: number; errors: string[] }> {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+  let sent = 0, failed = 0
+  const errors: string[] = []
+
+  for (const r of recipients) {
+    try {
+      const html = `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:24px 32px;text-align:center">
+            <span style="color:#fff;font-size:20px;font-weight:800">FizMusica ❤️</span>
+          </div>
+          <div style="padding:32px">
+            <p style="font-size:16px;margin:0 0 20px">Olá, <strong>${r.nome.split(" ")[0]}</strong>!</p>
+            <div style="color:#ccc;line-height:1.8;white-space:pre-wrap">${body}</div>
+            <div style="text-align:center;margin:32px 0">
+              <a href="${siteUrl}" style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:15px;font-weight:700">
+                🎵 Visitar FizMusica
+              </a>
+            </div>
+            <p style="color:#555;font-size:11px;margin:24px 0 0;padding-top:16px;border-top:1px solid #222;text-align:center">
+              FizMusica — Músicas personalizadas feitas com amor ❤️
+            </p>
+          </div>
+        </div>
+      `
+      const result = await resend.emails.send({ from: FROM_ADDRESS, to: r.email, subject, html })
+      if ((result as any).error) { failed++; errors.push(`${r.email}: ${(result as any).error?.message}`) }
+      else sent++
+    } catch (err: any) {
+      failed++; errors.push(`${r.email}: ${err?.message ?? "erro desconhecido"}`)
+    }
+    await new Promise(res => setTimeout(res, 50))
+  }
+
+  console.log(`[email] Massa: ${sent} enviados, ${failed} falharam`)
+  return { sent, failed, errors }
+}
