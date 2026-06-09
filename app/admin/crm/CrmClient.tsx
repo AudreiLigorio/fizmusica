@@ -14,7 +14,7 @@ type UnpaidOrder = {
 }
 
 type InsightRow = { name: string; total: number; paid: number; rate: number }
-type Insights   = { occasions: InsightRow[]; styles: InsightRow[] }
+type Insights   = { occasions: InsightRow[]; styles: InsightRow[]; voices: InsightRow[]; emotions: InsightRow[] }
 
 export default function CrmClient({ unpaidOrders, insights }: { unpaidOrders: UnpaidOrder[]; insights: Insights }) {
   const [tab, setTab] = useState<"recovery" | "mass" | "insights">("recovery")
@@ -75,6 +75,64 @@ export default function CrmClient({ unpaidOrders, insights }: { unpaidOrders: Un
       setBody("")
     }
     setMassLoading(false)
+  }
+
+  // ── componente de tabela de insights (definido dentro para acessar JSX)
+  function InsightTable({ title, col, rows }: { title: string; col: string; rows: InsightRow[] }) {
+    const maxTotal = rows[0]?.total ?? 1
+    return (
+      <div>
+        <h2 className="text-base font-semibold mb-3">{title}</h2>
+        {rows.length === 0 ? (
+          <p className="text-gray-500 text-sm">Sem dados ainda.</p>
+        ) : (
+          <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-gray-500 text-xs">
+                  <th className="text-left px-5 py-3">{col}</th>
+                  <th className="text-center px-4 py-3">Pedidos</th>
+                  <th className="text-center px-4 py-3">Pagos</th>
+                  <th className="text-left px-4 py-3 hidden lg:table-cell w-40">Volume</th>
+                  <th className="text-center px-4 py-3">Conversão</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, i) => (
+                  <tr key={row.name} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600 text-xs w-4 shrink-0">{i + 1}</span>
+                        <span className="font-medium">{row.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center text-gray-300">{row.total}</td>
+                    <td className="px-4 py-3 text-center text-green-400 font-medium">{row.paid}</td>
+                    <td className="px-4 py-3 hidden lg:table-cell">
+                      <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 transition-all"
+                          style={{ width: `${Math.round((row.total / maxTotal) * 100)}%` }}
+                        />
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                        row.rate >= 60 ? "bg-green-500/15 text-green-400" :
+                        row.rate >= 30 ? "bg-yellow-500/15 text-yellow-400" :
+                        "bg-red-500/15 text-red-400"
+                      }`}>
+                        {row.rate}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    )
   }
 
   function timeAgo(dateStr: string) {
@@ -207,118 +265,13 @@ export default function CrmClient({ unpaidOrders, insights }: { unpaidOrders: Un
       {tab === "insights" && (
         <div className="space-y-8">
 
-          {/* Ocasiões */}
-          <div>
-            <h2 className="text-base font-semibold mb-4">🎯 Ocasiões mais pedidas</h2>
-            {insights.occasions.length === 0 ? (
-              <p className="text-gray-500 text-sm">Sem dados ainda.</p>
-            ) : (
-              <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-white/10 text-gray-500 text-xs">
-                      <th className="text-left px-5 py-3">Ocasião</th>
-                      <th className="text-center px-4 py-3">Pedidos</th>
-                      <th className="text-center px-4 py-3">Pagos</th>
-                      <th className="text-left px-4 py-3 hidden lg:table-cell">Conversão</th>
-                      <th className="text-center px-4 py-3">Taxa</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {insights.occasions.map((row, i) => (
-                      <tr key={row.name} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-500 text-xs w-4">{i + 1}</span>
-                            <span className="font-medium text-sm">{row.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center text-gray-300">{row.total}</td>
-                        <td className="px-4 py-3 text-center text-green-400 font-medium">{row.paid}</td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500"
-                                style={{ width: `${row.rate}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
-                            row.rate >= 60 ? "bg-green-500/15 text-green-400" :
-                            row.rate >= 30 ? "bg-yellow-500/15 text-yellow-400" :
-                            "bg-red-500/15 text-red-400"
-                          }`}>
-                            {row.rate}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Estilos musicais */}
-          <div>
-            <h2 className="text-base font-semibold mb-4">🎵 Estilos musicais mais pedidos</h2>
-            {insights.styles.length === 0 ? (
-              <p className="text-gray-500 text-sm">Sem dados ainda.</p>
-            ) : (
-              <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-white/10 text-gray-500 text-xs">
-                      <th className="text-left px-5 py-3">Estilo</th>
-                      <th className="text-center px-4 py-3">Pedidos</th>
-                      <th className="text-center px-4 py-3">Pagos</th>
-                      <th className="text-left px-4 py-3 hidden lg:table-cell">Conversão</th>
-                      <th className="text-center px-4 py-3">Taxa</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {insights.styles.map((row, i) => (
-                      <tr key={row.name} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="text-gray-500 text-xs w-4">{i + 1}</span>
-                            <span className="font-medium text-sm">{row.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center text-gray-300">{row.total}</td>
-                        <td className="px-4 py-3 text-center text-green-400 font-medium">{row.paid}</td>
-                        <td className="px-4 py-3 hidden lg:table-cell">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500"
-                                style={{ width: `${row.rate}%` }}
-                              />
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
-                            row.rate >= 60 ? "bg-green-500/15 text-green-400" :
-                            row.rate >= 30 ? "bg-yellow-500/15 text-yellow-400" :
-                            "bg-red-500/15 text-red-400"
-                          }`}>
-                            {row.rate}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <InsightTable title="🎯 Subcategorias mais pedidas"  col="Subcategoria"    rows={insights.occasions} />
+          <InsightTable title="🎵 Estilos musicais"            col="Estilo"          rows={insights.styles}    />
+          <InsightTable title="🎤 Tipo de voz"                 col="Voz"             rows={insights.voices}    />
+          <InsightTable title="💫 Emoção da música"            col="Emoção"          rows={insights.emotions}  />
 
           {/* Legenda */}
-          <div className="flex gap-4 text-xs text-gray-500">
+          <div className="flex flex-wrap gap-4 text-xs text-gray-500 pt-2">
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> Taxa ≥ 60% — ótimo</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> Taxa 30–59% — médio</span>
             <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Taxa &lt; 30% — baixo</span>

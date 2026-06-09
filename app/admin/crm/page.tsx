@@ -22,44 +22,45 @@ async function getInsights() {
   // Busca todos os pedidos com paymentStatus
   const { data: orders } = await supabase
     .from("orders")
-    .select("subcategory, musicalStyle, paymentStatus")
+    .select("subcategory, musicalStyle, voiceType, emotion, paymentStatus")
     .neq("status", "ABANDONED")
 
-  if (!orders?.length) return { occasions: [], styles: [] }
+  if (!orders?.length) return { occasions: [], styles: [], voices: [], emotions: [] }
 
-  // Agrupa por subcategory
   const occasionMap = new Map<string, { total: number; paid: number }>()
   const styleMap    = new Map<string, { total: number; paid: number }>()
+  const voiceMap    = new Map<string, { total: number; paid: number }>()
+  const emotionMap  = new Map<string, { total: number; paid: number }>()
 
   for (const o of orders) {
-    // Ocasião
-    if (o.subcategory) {
-      const cur = occasionMap.get(o.subcategory) ?? { total: 0, paid: 0 }
+    const paid = o.paymentStatus === "PAID"
+    const add  = (map: typeof occasionMap, key: string | null) => {
+      if (!key) return
+      const cur = map.get(key) ?? { total: 0, paid: 0 }
       cur.total++
-      if (o.paymentStatus === "PAID") cur.paid++
-      occasionMap.set(o.subcategory, cur)
+      if (paid) cur.paid++
+      map.set(key, cur)
     }
-    // Estilo
-    if (o.musicalStyle) {
-      const cur = styleMap.get(o.musicalStyle) ?? { total: 0, paid: 0 }
-      cur.total++
-      if (o.paymentStatus === "PAID") cur.paid++
-      styleMap.set(o.musicalStyle, cur)
-    }
+    add(occasionMap, o.subcategory)
+    add(styleMap,    o.musicalStyle)
+    add(voiceMap,    o.voiceType)
+    add(emotionMap,  o.emotion)
   }
 
-  const occasions = Array.from(occasionMap.entries())
-    .map(([name, v]) => ({ name, ...v, rate: v.total > 0 ? Math.round((v.paid / v.total) * 100) : 0 }))
-    .sort((a, b) => b.total - a.total)
+  const toRows = (map: typeof occasionMap) =>
+    Array.from(map.entries())
+      .map(([name, v]) => ({ name, ...v, rate: v.total > 0 ? Math.round((v.paid / v.total) * 100) : 0 }))
+      .sort((a, b) => b.total - a.total)
 
-  const styles = Array.from(styleMap.entries())
-    .map(([name, v]) => ({ name, ...v, rate: v.total > 0 ? Math.round((v.paid / v.total) * 100) : 0 }))
-    .sort((a, b) => b.total - a.total)
-
-  return { occasions, styles }
+  return {
+    occasions: toRows(occasionMap),
+    styles:    toRows(styleMap),
+    voices:    toRows(voiceMap),
+    emotions:  toRows(emotionMap),
+  }
 }
 
 export default async function CrmPage() {
   const [unpaidOrders, insights] = await Promise.all([getUnpaidOrders(), getInsights()])
-  return <CrmClient unpaidOrders={unpaidOrders} insights={insights} />
+  return <CrmClient unpaidOrders={unpaidOrders} insights={insights as any} />
 }
