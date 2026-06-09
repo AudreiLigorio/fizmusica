@@ -15,17 +15,17 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServerClient()
 
-  // Janela de repescagem: pedidos entre 2h e 7 dias atrás
-  const twoHoursAgo  = new Date(Date.now() - 2  * 60 * 60 * 1000).toISOString()
+  // Janela de repescagem: pedidos entre 4h e 7 dias atrás (envia 1 vez apenas)
+  const fourHoursAgo = new Date(Date.now() - 4  * 60 * 60 * 1000).toISOString()
   const sevenDaysAgo = new Date(Date.now() - 7  * 24 * 60 * 60 * 1000).toISOString()
 
   const { data: orders, error } = await supabase
     .from("orders")
     .select("id, nome, email, subcategory, musicalStyle")
     .eq("paymentStatus", "UNPAID")
-    .neq("status", "ABANDONED")   // ainda não processado
-    .lt("createdAt", twoHoursAgo) // mais de 2h sem pagar
-    .gt("createdAt", sevenDaysAgo) // até 7 dias atrás (depois não faz sentido)
+    .neq("status", "ABANDONED")    // ainda não enviado (marca ABANDONED após envio)
+    .lt("createdAt", fourHoursAgo) // mais de 4h sem pagar
+    .gt("createdAt", sevenDaysAgo) // até 7 dias atrás
     .order("createdAt", { ascending: true })
     .limit(50) // segurança: máx 50 por execução
 
