@@ -3,7 +3,7 @@ import { Resend } from "resend"
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM_ADDRESS = "FizMusica <contato@fizmusica.com.br>"
-const ADMIN_EMAIL  = "contato@fizmusica.com.br"
+const ADMIN_EMAIL  = process.env.ADMIN_NOTIFY_EMAIL ?? "contato@fizmusica.com.br"
 
 // ============================================================
 // E-mail de entrega da música ao cliente
@@ -141,6 +141,68 @@ function buildClientEmail(order: OrderEmailData): string {
       </div>
     </div>
   `
+}
+
+// ============================================================
+// Notificação de pagamento confirmado (para o admin)
+// ============================================================
+
+interface PaymentNotificationData {
+  orderId:      string
+  nome:         string
+  email:        string
+  whatsapp:     string
+  subcategory:  string
+  musicalStyle: string
+  voiceType:    string
+  emotion:      string
+  honoreeName?: string | null
+  createdAt:    string
+}
+
+export async function sendNewOrderPaidNotification(order: PaymentNotificationData): Promise<void> {
+  const adminUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"}/admin/pedidos/${order.orderId}`
+
+  try {
+    await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      ADMIN_EMAIL,
+      subject: `💳 Novo pedido PAGO — ${order.nome} (${order.subcategory})`,
+      html: `
+        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+          <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:32px;text-align:center">
+            <div style="font-size:40px;margin-bottom:8px">💳✅</div>
+            <h1 style="color:#fff;margin:0;font-size:24px;font-weight:800">Novo pedido pago!</h1>
+          </div>
+
+          <div style="padding:32px">
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="padding:6px 0;color:#999;width:130px">Pedido</td><td style="padding:6px 0;font-family:monospace;color:#ec4899">#${order.orderId.slice(0, 8).toUpperCase()}</td></tr>
+              <tr><td style="padding:6px 0;color:#999">Cliente</td><td style="padding:6px 0;font-weight:600">${order.nome}</td></tr>
+              <tr><td style="padding:6px 0;color:#999">E-mail</td><td style="padding:6px 0"><a href="mailto:${order.email}" style="color:#ec4899">${order.email}</a></td></tr>
+              <tr><td style="padding:6px 0;color:#999">WhatsApp</td><td style="padding:6px 0">${order.whatsapp}</td></tr>
+              ${order.honoreeName ? `<tr><td style="padding:6px 0;color:#999">Homenageado</td><td style="padding:6px 0">${order.honoreeName}</td></tr>` : ""}
+              <tr><td style="padding:6px 0;color:#999">Ocasião</td><td style="padding:6px 0">${order.subcategory}</td></tr>
+              <tr><td style="padding:6px 0;color:#999">Estilo</td><td style="padding:6px 0">${order.musicalStyle}</td></tr>
+              <tr><td style="padding:6px 0;color:#999">Voz</td><td style="padding:6px 0">${order.voiceType}</td></tr>
+              <tr><td style="padding:6px 0;color:#999">Emoção</td><td style="padding:6px 0">${order.emotion}</td></tr>
+              <tr><td style="padding:6px 0;color:#999">Recebido em</td><td style="padding:6px 0">${new Date(order.createdAt).toLocaleString("pt-BR")}</td></tr>
+            </table>
+
+            <div style="text-align:center;margin:28px 0 0">
+              <a href="${adminUrl}"
+                style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:700">
+                Ver pedido no painel →
+              </a>
+            </div>
+          </div>
+        </div>
+      `,
+    })
+    console.log(`[email] Notificação de pagamento enviada para ${ADMIN_EMAIL}`)
+  } catch (err) {
+    console.error("[email] Falha ao notificar admin sobre pagamento:", err)
+  }
 }
 
 function buildAdminEmail(order: OrderEmailData): string {
