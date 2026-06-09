@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import { createOrder, triggerN8nWebhook } from "@/app/services/orderService"
 import { sendOrderConfirmationEmail, sendOrderNotificationEmail } from "@/app/services/emailService"
 import { createOrderSchema } from "@/lib/validators/order"
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     // Salva no banco
     const order = await createOrder(body)
 
-    // Dispara e-mails em background (não bloqueia a resposta)
+    // Dispara e-mails e n8n APÓS a resposta (after garante execução mesmo após response)
     const emailData = {
       orderId: order.id,
       nome: order.nome,
@@ -49,23 +49,23 @@ export async function POST(req: NextRequest) {
       emotion: order.emotion,
       createdAt: order.createdAt,
     }
-    sendOrderConfirmationEmail(emailData)
-    sendOrderNotificationEmail(emailData)
-
-    // Dispara n8n em background (não bloqueia a resposta)
-    triggerN8nWebhook({
-      event: "order.created",
-      orderId: order.id,
-      nome: order.nome,
-      whatsapp: order.whatsapp,
-      email: order.email,
-      context: order.context,
-      subcategory: order.subcategory,
-      musicalStyle: order.musicalStyle,
-      voiceType: order.voiceType,
-      emotion: order.emotion,
-      answers: body.answers,
-      createdAt: order.createdAt.toISOString(),
+    after(async () => {
+      await sendOrderConfirmationEmail(emailData)
+      await sendOrderNotificationEmail(emailData)
+      await triggerN8nWebhook({
+        event: "order.created",
+        orderId: order.id,
+        nome: order.nome,
+        whatsapp: order.whatsapp,
+        email: order.email,
+        context: order.context,
+        subcategory: order.subcategory,
+        musicalStyle: order.musicalStyle,
+        voiceType: order.voiceType,
+        emotion: order.emotion,
+        answers: body.answers,
+        createdAt: order.createdAt.toISOString(),
+      })
     })
 
     return NextResponse.json(

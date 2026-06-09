@@ -17,17 +17,25 @@ interface MusicDeliveryEmailData {
   orderId:   string
 }
 
-export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Promise<void> {
+export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Promise<{ ok: boolean; error?: string }> {
   try {
-    await resend.emails.send({
+    const result = await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      data.email,
       subject: `🎵 Sua música está pronta, ${data.nome.split(" ")[0]}!`,
       html:    buildDeliveryEmail(data),
     })
-    console.log(`[email] Entrega enviada para ${data.email}`)
-  } catch (err) {
-    console.error("[email] Falha ao enviar e-mail de entrega:", err)
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      console.error("[email] Resend erro na entrega:", msg)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Entrega enviada para ${data.email}`, result)
+    return { ok: true }
+  } catch (err: any) {
+    const msg = err?.message ?? String(err)
+    console.error("[email] Falha ao enviar e-mail de entrega:", msg)
+    return { ok: false, error: msg }
   }
 }
 

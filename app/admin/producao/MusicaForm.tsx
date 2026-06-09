@@ -144,7 +144,11 @@ export default function MusicaForm({
 
     if (data.ok) {
       setPublicUrl(data.publicUrl)
-      setMsg("✅ Música entregue! E-mail enviado ao cliente.")
+      if (data.emailSent === false) {
+        setMsg(`✅ Música entregue! ⚠️ E-mail falhou: ${data.emailError ?? "erro desconhecido"}`)
+      } else {
+        setMsg("✅ Música entregue! E-mail enviado ao cliente.")
+      }
     } else {
       setMsg(`❌ Erro: ${data.error}`)
     }

@@ -56,13 +56,16 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
   const publicUrl = `${baseUrl}/m/${slug}`
 
   // Envia e-mail ao cliente
-  await sendMusicDeliveryEmail({
+  const emailResult = await sendMusicDeliveryEmail({
     nome:      order.nome,
     email:     order.email,
     musicName: music.musicName ?? "Sua música",
     publicUrl,
     orderId:   id,
   })
+  if (!emailResult.ok) {
+    console.error("[entregar] e-mail falhou:", emailResult.error)
+  }
 
   // Dispara n8n (WhatsApp)
   await triggerN8nWebhook({
@@ -88,5 +91,11 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
     .update({ status: "DELIVERED", updatedAt: new Date().toISOString() })
     .eq("id", id)
 
-  return NextResponse.json({ ok: true, publicUrl, slug })
+  return NextResponse.json({
+    ok: true,
+    publicUrl,
+    slug,
+    emailSent: emailResult.ok,
+    emailError: emailResult.ok ? undefined : emailResult.error,
+  })
 }
