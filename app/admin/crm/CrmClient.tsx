@@ -13,8 +13,11 @@ type UnpaidOrder = {
   recoveryCount: number
 }
 
-export default function CrmClient({ unpaidOrders }: { unpaidOrders: UnpaidOrder[] }) {
-  const [tab, setTab] = useState<"recovery" | "mass">("recovery")
+type InsightRow = { name: string; total: number; paid: number; rate: number }
+type Insights   = { occasions: InsightRow[]; styles: InsightRow[] }
+
+export default function CrmClient({ unpaidOrders, insights }: { unpaidOrders: UnpaidOrder[]; insights: Insights }) {
+  const [tab, setTab] = useState<"recovery" | "mass" | "insights">("recovery")
 
   // ── Repescagem ──
   const [sending, setSending] = useState<Record<string, boolean>>({})
@@ -115,6 +118,16 @@ export default function CrmClient({ unpaidOrders }: { unpaidOrders: UnpaidOrder[
         >
           📧 E-mail em massa
         </button>
+        <button
+          onClick={() => setTab("insights")}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            tab === "insights"
+              ? "border-pink-500 text-pink-400"
+              : "border-transparent text-gray-500 hover:text-white"
+          }`}
+        >
+          📊 Análises
+        </button>
       </div>
 
       {/* ── ABA REPESCAGEM ── */}
@@ -187,6 +200,129 @@ export default function CrmClient({ unpaidOrders }: { unpaidOrders: UnpaidOrder[
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── ABA ANÁLISES ── */}
+      {tab === "insights" && (
+        <div className="space-y-8">
+
+          {/* Ocasiões */}
+          <div>
+            <h2 className="text-base font-semibold mb-4">🎯 Ocasiões mais pedidas</h2>
+            {insights.occasions.length === 0 ? (
+              <p className="text-gray-500 text-sm">Sem dados ainda.</p>
+            ) : (
+              <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-gray-500 text-xs">
+                      <th className="text-left px-5 py-3">Ocasião</th>
+                      <th className="text-center px-4 py-3">Pedidos</th>
+                      <th className="text-center px-4 py-3">Pagos</th>
+                      <th className="text-left px-4 py-3 hidden lg:table-cell">Conversão</th>
+                      <th className="text-center px-4 py-3">Taxa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {insights.occasions.map((row, i) => (
+                      <tr key={row.name} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-xs w-4">{i + 1}</span>
+                            <span className="font-medium text-sm">{row.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center text-gray-300">{row.total}</td>
+                        <td className="px-4 py-3 text-center text-green-400 font-medium">{row.paid}</td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500"
+                                style={{ width: `${row.rate}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                            row.rate >= 60 ? "bg-green-500/15 text-green-400" :
+                            row.rate >= 30 ? "bg-yellow-500/15 text-yellow-400" :
+                            "bg-red-500/15 text-red-400"
+                          }`}>
+                            {row.rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Estilos musicais */}
+          <div>
+            <h2 className="text-base font-semibold mb-4">🎵 Estilos musicais mais pedidos</h2>
+            {insights.styles.length === 0 ? (
+              <p className="text-gray-500 text-sm">Sem dados ainda.</p>
+            ) : (
+              <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-gray-500 text-xs">
+                      <th className="text-left px-5 py-3">Estilo</th>
+                      <th className="text-center px-4 py-3">Pedidos</th>
+                      <th className="text-center px-4 py-3">Pagos</th>
+                      <th className="text-left px-4 py-3 hidden lg:table-cell">Conversão</th>
+                      <th className="text-center px-4 py-3">Taxa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {insights.styles.map((row, i) => (
+                      <tr key={row.name} className="border-b border-white/5 hover:bg-white/3 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-500 text-xs w-4">{i + 1}</span>
+                            <span className="font-medium text-sm">{row.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center text-gray-300">{row.total}</td>
+                        <td className="px-4 py-3 text-center text-green-400 font-medium">{row.paid}</td>
+                        <td className="px-4 py-3 hidden lg:table-cell">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500"
+                                style={{ width: `${row.rate}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+                            row.rate >= 60 ? "bg-green-500/15 text-green-400" :
+                            row.rate >= 30 ? "bg-yellow-500/15 text-yellow-400" :
+                            "bg-red-500/15 text-red-400"
+                          }`}>
+                            {row.rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Legenda */}
+          <div className="flex gap-4 text-xs text-gray-500">
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-green-400 inline-block" /> Taxa ≥ 60% — ótimo</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> Taxa 30–59% — médio</span>
+            <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-400 inline-block" /> Taxa &lt; 30% — baixo</span>
+          </div>
         </div>
       )}
 
