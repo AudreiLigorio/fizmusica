@@ -392,9 +392,9 @@ WHATSAPP: ${whatsapp}`
                   className="w-full rounded-xl px-4 py-3 font-medium outline-none appearance-none cursor-pointer transition-colors"
                   style={{
                     fontSize: "16px", /* evita zoom no iOS Safari */
-                    background: musicalStyle ? "rgba(240,25,107,0.08)" : "rgba(0,0,0,0.3)",
-                    border: musicalStyle ? "1px solid rgba(240,25,107,0.5)" : "1px solid rgba(255,255,255,0.1)",
-                    color: musicalStyle ? "white" : "rgba(255,255,255,0.4)",
+                    background: musicalStyle ? "rgba(240,25,107,0.08)" : "rgba(255,255,255,0.07)",
+                    border: musicalStyle ? "1px solid rgba(240,25,107,0.5)" : "1px solid rgba(255,255,255,0.25)",
+                    color: musicalStyle ? "white" : "rgba(255,255,255,0.75)",
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23f0196b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
                     backgroundRepeat: "no-repeat",
                     backgroundPosition: "right 14px center",
