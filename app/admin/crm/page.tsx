@@ -5,15 +5,33 @@ export const dynamic = "force-dynamic"
 
 async function getUnpaidOrders() {
   const supabase = createServerClient()
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  const { data } = await supabase
+  const oneHourAgo  = new Date(Date.now() - 1  * 60 * 60 * 1000).toISOString()
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
+  // Pendentes (ainda não enviamos e-mail — cron ainda não rodou)
+  const { data: pending } = await supabase
     .from("orders")
-    .select("id, nome, email, whatsapp, subcategory, musicalStyle, createdAt")
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle, createdAt, status")
     .eq("paymentStatus", "UNPAID")
     .neq("status", "ABANDONED")
     .lt("createdAt", oneHourAgo)
+    .gt("createdAt", sevenDaysAgo)
     .order("createdAt", { ascending: false })
-  return (data ?? []).map(o => ({ ...o, recoveryCount: 0 }))
+
+  // Abandonados recentes (já receberam e-mail automático)
+  const { data: abandoned } = await supabase
+    .from("orders")
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle, createdAt, status")
+    .eq("paymentStatus", "UNPAID")
+    .eq("status", "ABANDONED")
+    .gt("createdAt", sevenDaysAgo)
+    .order("createdAt", { ascending: false })
+    .limit(20)
+
+  return {
+    pending:   (pending   ?? []).map(o => ({ ...o, recoveryCount: 0 })),
+    abandoned: (abandoned ?? []).map(o => ({ ...o, recoveryCount: 1 })),
+  }
 }
 
 async function getInsights() {
@@ -61,6 +79,6 @@ async function getInsights() {
 }
 
 export default async function CrmPage() {
-  const [unpaidOrders, insights] = await Promise.all([getUnpaidOrders(), getInsights()])
-  return <CrmClient unpaidOrders={unpaidOrders} insights={insights as any} />
+  const [{ pending, abandoned }, insights] = await Promise.all([getUnpaidOrders(), getInsights()])
+  return <CrmClient unpaidOrders={pending} abandonedOrders={abandoned} insights={insights as any} />
 }
