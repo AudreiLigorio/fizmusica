@@ -43,3 +43,5 @@ next-env.d.ts
 # IDE / editor
 .vscode/
 .claude/
+
+.vercel

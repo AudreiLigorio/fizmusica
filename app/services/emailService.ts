@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import QRCode from "qrcode"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -15,16 +16,50 @@ interface MusicDeliveryEmailData {
   musicName: string
   publicUrl: string
   orderId:   string
+  mp3Url?:   string | null
 }
 
 export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Promise<{ ok: boolean; error?: string }> {
   try {
-    const result = await resend.emails.send({
-      from:    FROM_ADDRESS,
-      to:      data.email,
-      subject: `🎵 Sua música está pronta, ${data.nome.split(" ")[0]}!`,
-      html:    buildDeliveryEmail(data),
+    // Gera QR Code como PNG base64
+    const qrDataUrl = await QRCode.toDataURL(data.publicUrl, {
+      width: 200,
+      margin: 2,
+      color: { dark: "#000000", light: "#ffffff" },
     })
+    // Remove prefixo "data:image/png;base64," para usar como cid embed
+    const qrBase64 = qrDataUrl.replace(/^data:image\/png;base64,/, "")
+
+    // Busca MP3 como buffer para anexar (máx 20 MB)
+    const attachments: Array<{ filename: string; content: string }> = []
+    if (data.mp3Url) {
+      try {
+        const mp3Res = await fetch(data.mp3Url, { signal: AbortSignal.timeout(15000) })
+        if (mp3Res.ok) {
+          const buffer = await mp3Res.arrayBuffer()
+          const sizeMB = buffer.byteLength / 1024 / 1024
+          if (sizeMB <= 20) {
+            attachments.push({
+              filename: `${data.musicName ?? "musica"}.mp3`.replace(/[^a-zA-Z0-9\-_.áéíóúãõâêôçÁÉÍÓÚÃÕÂÊÔÇ ]/g, "").trim() + ".mp3",
+              content:  Buffer.from(buffer).toString("base64"),
+            })
+          } else {
+            console.warn(`[email] MP3 muito grande (${sizeMB.toFixed(1)} MB) — não anexado`)
+          }
+        }
+      } catch (mp3Err) {
+        console.warn("[email] Não foi possível baixar o MP3 para anexo:", mp3Err)
+      }
+    }
+
+    const result = await resend.emails.send({
+      from:        FROM_ADDRESS,
+      to:          data.email,
+      subject:     `🎵 Sua música está pronta, ${data.nome.split(" ")[0]}!`,
+      html:        buildDeliveryEmail(data, qrBase64),
+      attachments: attachments.length > 0 ? attachments : undefined,
+    })
+
     if ((result as any).error) {
       const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
       console.error("[email] Resend erro na entrega:", msg)
@@ -39,7 +74,7 @@ export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Prom
   }
 }
 
-function buildDeliveryEmail(data: MusicDeliveryEmailData): string {
+function buildDeliveryEmail(data: MusicDeliveryEmailData, qrBase64: string): string {
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
       <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
@@ -61,13 +96,24 @@ function buildDeliveryEmail(data: MusicDeliveryEmailData): string {
           </a>
         </div>
 
-        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;text-align:center;margin:24px 0">
-          <p style="color:#666;font-size:12px;margin:0 0 8px">Ou acesse o link:</p>
-          <a href="${data.publicUrl}" style="color:#ec4899;font-size:14px;word-break:break-all">${data.publicUrl}</a>
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:20px;text-align:center;margin:24px 0">
+          <p style="color:#999;font-size:13px;margin:0 0 12px">📱 Escaneie para ouvir no celular</p>
+          <img src="data:image/png;base64,${qrBase64}" alt="QR Code" width="160" height="160"
+            style="display:block;margin:0 auto;border-radius:8px;border:4px solid #fff" />
+          <p style="color:#666;font-size:11px;margin:12px 0 0;word-break:break-all">
+            <a href="${data.publicUrl}" style="color:#ec4899">${data.publicUrl}</a>
+          </p>
         </div>
 
+        ${data.mp3Url ? `
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:16px 0">
+          <p style="color:#999;font-size:13px;margin:0 0 4px">🎧 O arquivo MP3 também está em anexo neste e-mail.</p>
+          <p style="color:#666;font-size:11px;margin:0">Salve no seu celular para ouvir sem internet!</p>
+        </div>
+        ` : ""}
+
         <p style="color:#666;font-size:14px;margin:24px 0 0">
-          Você também pode compartilhar essa música com quem quiser — a página tem QR Code para facilitar! ❤️
+          Compartilhe com quem quiser — basta enviar o link ou mostrar o QR Code! ❤️
         </p>
 
         <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">

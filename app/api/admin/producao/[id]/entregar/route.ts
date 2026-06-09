@@ -62,6 +62,7 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
     musicName: music.musicName ?? "Sua música",
     publicUrl,
     orderId:   id,
+    mp3Url:    music.mp3Url ?? null,
   })
   if (!emailResult.ok) {
     console.error("[entregar] e-mail falhou:", emailResult.error)
