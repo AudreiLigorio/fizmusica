@@ -111,8 +111,11 @@ export async function POST(req: Request) {
       paymentId: result.id,
     })
   } catch (err: any) {
-    console.error("[POST /api/payments/create]", err)
+    // Extrai mensagem detalhada do MP (400 Bad Request)
+    const mpError = err?.cause ?? err?.error ?? err
+    const details = typeof mpError === "object" ? JSON.stringify(mpError, null, 2) : String(mpError)
+    console.error("[POST /api/payments/create] ERRO COMPLETO:", details)
     const msg = err?.cause?.message ?? err?.message ?? "Erro ao processar pagamento."
-    return NextResponse.json({ success: false, error: msg }, { status: 500 })
+    return NextResponse.json({ success: false, error: msg, details }, { status: 500 })
   }
 }
