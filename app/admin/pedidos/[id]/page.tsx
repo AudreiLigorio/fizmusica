@@ -4,6 +4,7 @@ import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 import UpdateStatusButton from "./UpdateStatusButton"
+import SyncPaymentButton from "./SyncPaymentButton"
 
 async function getOrder(id: string) {
   const supabase = createServerClient()
@@ -106,6 +107,9 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
             </div>
           ) : (
             <p className="text-gray-600 text-sm">Sem pagamento registrado.</p>
+          )}
+          {payment && payment.status !== "PAID" && (
+            <SyncPaymentButton orderId={order.id} />
           )}
         </div>
       </div>
