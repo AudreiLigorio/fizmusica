@@ -28,6 +28,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: "Pedido não encontrado." }, { status: 404 })
     }
 
+    // Resolve um e-mail VÁLIDO para o pagador.
+    // Prioriza o e-mail do pedido (validado na criação); usa o do Brick como fallback.
+    const isValidEmail = (e?: string | null) => !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())
+    const brickEmail   = (formData?.payer?.email ?? "").trim().toLowerCase()
+    const orderEmail   = (order.email ?? "").trim().toLowerCase()
+    const payerEmail   = isValidEmail(orderEmail) ? orderEmail
+                       : isValidEmail(brickEmail) ? brickEmail
+                       : ""
+
+    if (!payerEmail) {
+      console.error("[create] e-mail inválido — order:", order.email, "brick:", formData?.payer?.email)
+      return NextResponse.json({ success: false, error: "E-mail do cliente inválido. Verifique o cadastro do pedido." }, { status: 400 })
+    }
+
     // Busca acréscimo do prazo escolhido
     let priceExtra = 0
     if (deliveryOptionId) {
@@ -55,8 +69,8 @@ export async function POST(req: Request) {
         ...(!isLocalhost ? { notification_url: `${baseUrl}/api/payments/webhook` } : {}),
         payer: {
           ...formData.payer,
-          email: formData.payer?.email || order.email,
-          first_name: order.nome.split(" ")[0],
+          email: payerEmail,
+          first_name: order.nome.split(" ")[0] || "Cliente",
           last_name: order.nome.split(" ").slice(1).join(" ") || ".",
         },
       },
