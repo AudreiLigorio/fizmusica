@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import OccasionActions from "./OccasionActions"
+import OccasionReorder from "./OccasionReorder"
 
 export const dynamic = "force-dynamic"
 
@@ -22,16 +23,18 @@ export default async function AdminWizard() {
         <h1 className="text-2xl lg:text-3xl font-bold">Wizard Manager</h1>
         <OccasionActions mode="create" />
       </div>
-      <p className="text-gray-500 text-sm mb-6 lg:mb-8">Gerencie ocasiões, subcategorias e perguntas do formulário</p>
+      <p className="text-gray-500 text-sm mb-2">Gerencie ocasiões, subcategorias e perguntas do formulário</p>
+      <p className="text-gray-600 text-xs mb-6 lg:mb-8">💡 Use as setas ▲▼ para definir a ordem em que as ocasiões aparecem no wizard.</p>
 
       <div className="space-y-3">
-        {occasions.map((o) => {
+        {occasions.map((o, i) => {
           const count = (o.wizard_subcategories as unknown as { count: number }[])[0]?.count ?? 0
           return (
             <div
               key={o.id}
               className="bg-black/40 border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-4"
             >
+              <OccasionReorder occasions={occasions.map((x) => ({ id: x.id }))} index={i} />
               <span className="text-2xl w-8">{o.emoji}</span>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
