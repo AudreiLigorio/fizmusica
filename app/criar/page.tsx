@@ -284,12 +284,31 @@ WHATSAPP: ${whatsapp}`
                           selectedContext === occasion.label ? "" : occasion.label
                         )
                       }
-                      className="w-full px-4 py-3.5 flex items-center justify-between text-left"
+                      className="w-full px-4 py-3.5 flex items-start justify-between text-left gap-3"
                     >
-                      <h2 className="text-base font-semibold">
-                        {occasion.emoji} {occasion.label}
-                      </h2>
-                      <span className="text-lg text-pink-500 shrink-0 ml-2">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-base font-semibold mb-1.5">
+                          {occasion.emoji} {occasion.label}
+                        </h2>
+                        {selectedContext !== occasion.label && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {occasion.wizard_subcategories.slice(0, 4).map(sub => (
+                              <span key={sub.id}
+                                className="text-[11px] px-2 py-0.5 rounded-full border"
+                                style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.04)" }}>
+                                {sub.emoji} {sub.label}
+                              </span>
+                            ))}
+                            {occasion.wizard_subcategories.length > 4 && (
+                              <span className="text-[11px] px-2 py-0.5 rounded-full"
+                                style={{ color: "rgba(240,25,107,0.7)", background: "rgba(240,25,107,0.08)" }}>
+                                +{occasion.wizard_subcategories.length - 4} mais
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-lg text-pink-500 shrink-0 mt-0.5">
                         {selectedContext === occasion.label ? "−" : "+"}
                       </span>
                     </button>
