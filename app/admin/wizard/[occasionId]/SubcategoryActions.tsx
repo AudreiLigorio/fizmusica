@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation"
 
 type Sub = { id: string; label: string; emoji?: string; slug: string; active: boolean }
 
+// Converte qualquer texto em slug válido
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+}
+
 export default function SubcategoryActions({
   mode, occasionId, subcategory,
 }: {
@@ -16,6 +25,7 @@ export default function SubcategoryActions({
   const [label, setLabel] = useState(subcategory?.label ?? "")
   const [emoji, setEmoji] = useState(subcategory?.emoji ?? "")
   const [slug, setSlug] = useState(subcategory?.slug ?? "")
+  const [slugTouched, setSlugTouched] = useState(false)
   const [active, setActive] = useState(subcategory?.active ?? true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
@@ -78,8 +88,11 @@ export default function SubcategoryActions({
       </h3>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-500 mb-1 block">Label</label>
-          <input value={label} onChange={(e) => setLabel(e.target.value)}
+          <label className="text-xs text-gray-500 mb-1 block">Nome da subcategoria</label>
+          <input value={label} onChange={(e) => {
+              setLabel(e.target.value)
+              if (!slugTouched) setSlug(slugify(e.target.value))
+            }}
             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500" />
         </div>
         <div>
@@ -88,9 +101,11 @@ export default function SubcategoryActions({
             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500" />
         </div>
         <div className="col-span-2">
-          <label className="text-xs text-gray-500 mb-1 block">Slug</label>
-          <input value={slug} onChange={(e) => setSlug(e.target.value)}
+          <label className="text-xs text-gray-500 mb-1 block">Slug — identificador na URL (gerado automaticamente)</label>
+          <input value={slug} onChange={(e) => { setSlugTouched(true); setSlug(slugify(e.target.value)) }}
+            placeholder="ex: dia-dos-namorados"
             className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500 font-mono" />
+          <p className="text-[11px] text-gray-600 mt-1">Só letras minúsculas, números e hífens. Preenche sozinho conforme o nome.</p>
         </div>
       </div>
       <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
