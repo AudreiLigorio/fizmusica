@@ -292,16 +292,15 @@ WHATSAPP: ${whatsapp}`
                         </h2>
                         {selectedContext !== occasion.label && (
                           <div className="flex flex-wrap gap-1.5">
-                            {occasion.wizard_subcategories.slice(0, 4).map(sub => (
-                              <span key={sub.id}
-                                className="text-[11px] px-2 py-0.5 rounded-full border"
-                                style={{ borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.04)" }}>
-                                {sub.emoji} {sub.label}
+                            {occasion.wizard_subcategories.slice(0, 4).map((sub, i) => (
+                              <span key={sub.id} className="text-[10px]"
+                                style={{ color: "rgba(255,255,255,0.35)" }}>
+                                {sub.label}{i < Math.min(3, occasion.wizard_subcategories.length - 1) ? " ·" : ""}
                               </span>
                             ))}
                             {occasion.wizard_subcategories.length > 4 && (
-                              <span className="text-[11px] px-2 py-0.5 rounded-full"
-                                style={{ color: "rgba(240,25,107,0.7)", background: "rgba(240,25,107,0.08)" }}>
+                              <span className="text-[10px]"
+                                style={{ color: "rgba(240,25,107,0.55)" }}>
                                 +{occasion.wizard_subcategories.length - 4} mais
                               </span>
                             )}
