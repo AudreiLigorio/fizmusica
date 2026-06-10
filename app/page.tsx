@@ -255,11 +255,17 @@ export default function Home() {
               {/* header card */}
               <div className="px-5 pt-5 pb-4 border-b border-white/[0.06]"
                    style={{ background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)" }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full"
+                    style={{ background: "rgba(255,255,255,0.22)", color: "#fff", letterSpacing: "0.12em" }}>
+                    🎧 exemplos
+                  </span>
+                </div>
                 <p className="font-semibold text-base mb-0.5" style={displayFont}>
-                  Escute agora algumas histórias:
+                  Ouça como ficam as músicas:
                 </p>
                 <p className="text-white/75 text-xs" style={bodyFont}>
-                  Exemplos reais criados para nossos clientes
+                  Músicas reais já entregues — a sua será única e personalizada
                 </p>
               </div>
 
@@ -286,20 +292,28 @@ export default function Home() {
 
                       {/* text */}
                       <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <p
+                            className="truncate leading-snug"
+                            style={{
+                              ...bodyFont,
+                              fontSize: "0.8125rem",
+                              fontWeight: 500,
+                              color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
+                              letterSpacing: "0.01em",
+                            }}
+                          >
+                            {d.title}
+                          </p>
+                          <span
+                            className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                            style={{ background: "rgba(240,25,107,0.18)", color: "rgba(240,25,107,0.8)", letterSpacing: "0.1em" }}
+                          >
+                            exemplo
+                          </span>
+                        </div>
                         <p
-                          className="truncate leading-snug"
-                          style={{
-                            ...bodyFont,
-                            fontSize: "0.8125rem",
-                            fontWeight: 500,
-                            color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
-                            letterSpacing: "0.01em",
-                          }}
-                        >
-                          {d.title}
-                        </p>
-                        <p
-                          className="truncate mt-0.5"
+                          className="truncate"
                           style={{
                             ...bodyFont,
                             fontSize: "0.68rem",
