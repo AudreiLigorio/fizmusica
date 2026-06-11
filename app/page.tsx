@@ -441,14 +441,14 @@ export default function Home() {
           </p>
           <h2 className="font-light leading-tight mb-8 text-white/90"
               style={{ ...displayFont, fontSize: "clamp(2rem, 3.5vw, 3rem)" }}>
-            Veja a emoção de transformar{" "}
+            Veja como é fácil transformar{" "}
             <em style={{ color: "#f0196b" }}>sentimentos em música.</em>
           </h2>
           <div className="space-y-5">
             {[
-              "Imagine a reação ao ouvir uma música feita especialmente para ela.",
+              "Imagine criar uma música para o momento certo.",
               "Mais do que um presente — uma lembrança para a vida toda.",
-              "Nós te entregamos emoção e amor em cada nota.",
+              "Nós te entregamos mais do que emoção, tem história e outras \"surpresas\".",
             ].map((t, i) => (
               <div key={i} className="flex items-start gap-4">
                 <div className="shrink-0 w-px h-12 mt-1 rounded-full" style={{ background: "rgba(240,25,107,0.3)" }} />
