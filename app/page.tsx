@@ -293,26 +293,18 @@ export default function Home() {
 
                       {/* text */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
-                          <p
-                            className="truncate leading-snug min-w-0"
-                            style={{
-                              ...bodyFont,
-                              fontSize: "0.8125rem",
-                              fontWeight: 500,
-                              color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
-                              letterSpacing: "0.01em",
-                            }}
-                          >
-                            {d.title}
-                          </p>
-                          <span
-                            className="shrink-0 text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                            style={{ background: "rgba(240,25,107,0.18)", color: "rgba(240,25,107,0.8)", letterSpacing: "0.1em" }}
-                          >
-                            exemplo
-                          </span>
-                        </div>
+                        <p
+                          className="truncate leading-snug mb-0.5"
+                          style={{
+                            ...bodyFont,
+                            fontSize: "0.8125rem",
+                            fontWeight: 500,
+                            color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
+                            letterSpacing: "0.01em",
+                          }}
+                        >
+                          {d.title}
+                        </p>
                         <p
                           className="truncate"
                           style={{
