@@ -293,9 +293,9 @@ export default function Home() {
 
                       {/* text */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className="flex items-center gap-1.5 mb-0.5 min-w-0">
                           <p
-                            className="truncate leading-snug"
+                            className="truncate leading-snug min-w-0"
                             style={{
                               ...bodyFont,
                               fontSize: "0.8125rem",
