@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import FizMusicaCarousel from "./components/FizMusicaCarousel"
 import Header from "./components/Header"
 import Footer from "./components/Footer"
+import ExperienceVideo from "./components/ExperienceVideo"
 
 const DEMOS = [
   { id: "namoro",    src: "/namoro_2anos.mp3",          title: "Homenagem Dia dos Namorados", meta: "Maria Eduarda · Sertanejo romântico · 3:12", emoji: "💖" },
@@ -458,15 +459,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="relative rounded-3xl overflow-hidden aspect-video flex items-center justify-center cursor-pointer group"
-             style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="absolute inset-0"
-               style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.1) 0%, rgba(217,70,239,0.06) 100%)" }} />
-          <div className="relative w-16 h-16 rounded-full flex items-center justify-center text-xl transition-all duration-300 group-hover:scale-110"
-               style={{ background: "rgba(255,255,255,0.1)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.1)" }}>
-            ▶
-          </div>
-        </div>
+        <ExperienceVideo />
 
       </section>
 
