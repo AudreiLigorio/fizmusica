@@ -164,7 +164,7 @@ export default function Home() {
   const bodyFont    = { fontFamily: "'DM Sans', system-ui, sans-serif" }
 
   return (
-    <div className="noise min-h-screen text-white" style={{ backgroundColor: "#07060d", ...bodyFont }}>
+    <div className="noise min-h-screen text-white overflow-x-hidden" style={{ backgroundColor: "#07060d", ...bodyFont }}>
       <Header />
 
       {/* ═══════════════════════════════════════════
