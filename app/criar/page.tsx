@@ -61,12 +61,13 @@ export default function CriarMusicaPage() {
   const [resumeBanner, setResumeBanner] = useState<SessionData | null>(null)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Lead capture (após 1ª pergunta respondida)
+  // Lead capture (após 3ª pergunta respondida)
   const [showLeadCapture, setShowLeadCapture] = useState(false)
   const [leadCaptured, setLeadCaptured] = useState(false)
   const [leadNome, setLeadNome] = useState("")
   const [leadEmail, setLeadEmail] = useState("")
   const [leadWhatsapp, setLeadWhatsapp] = useState("")
+  const [leadHonoreeName, setLeadHonoreeName] = useState("")
   const [leadError, setLeadError] = useState("")
 
   const leadWhatsappOk = /^\(\d{2}\) 9\d{4}-\d{4}$/.test(leadWhatsapp)
@@ -208,6 +209,7 @@ export default function CriarMusicaPage() {
     setNome(leadNome)
     setEmail(leadEmail)
     setWhatsapp(leadWhatsapp)
+    setHonoreeName(leadHonoreeName)
     setLeadCaptured(true)
     setShowLeadCapture(false)
 
@@ -216,6 +218,7 @@ export default function CriarMusicaPage() {
       nome: leadNome,
       email: leadEmail,
       whatsapp: leadWhatsapp,
+      honoreeName: leadHonoreeName,
       leadCaptured: true,
     })
     saveSession(data, step)
@@ -598,6 +601,21 @@ WHATSAPP: ${whatsapp}`
                     </p>
                   )}
                 </div>
+
+                {/* Nome do homenageado — destaque especial */}
+                <div className="space-y-2 rounded-2xl p-4" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
+                  <label className="text-sm font-semibold pl-1 flex items-center gap-2" style={{ color: "#f0196b" }}>
+                    🎵 Para quem é essa música?
+                  </label>
+                  <p className="text-xs text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
+                  <input
+                    value={leadHonoreeName}
+                    onChange={(e) => setLeadHonoreeName(e.target.value)}
+                    placeholder="Ex: Maria, Vovó Lúcia, Papai…"
+                    className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
+                    style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
+                  />
+                </div>
               </div>
 
               {leadError && (
@@ -912,7 +930,22 @@ WHATSAPP: ${whatsapp}`
                 </div>
               </div>
 
-              <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-200 leading-relaxed">
+              {/* Nome do homenageado — destaque especial */}
+              <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
+                <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
+                  🎵 Para quem é essa música?
+                </label>
+                <p className="text-xs text-white/40 mb-3">Nome de quem vai receber a homenagem</p>
+                <input
+                  value={honoreeName}
+                  onChange={(e) => setHonoreeName(e.target.value)}
+                  placeholder="Ex: Maria, Vovó Lúcia, Papai…"
+                  className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
+                  style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
+                />
+              </div>
+
+              <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-200 leading-relaxed">
                 🔒 Seus dados são privados e usados exclusivamente para entrega da sua música.
               </div>
             </div>

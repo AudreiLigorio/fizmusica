@@ -24,7 +24,7 @@ export default function MusicaForm({
   const [open, setOpen]             = useState(false)
   const [music, setMusic]           = useState<MusicData | null>(null)
   const [musicName, setMusicName]   = useState("")
-  const [personName, setPersonName] = useState(honoreeName ?? nome)
+  const personName = honoreeName ?? nome
   const [lyrics, setLyrics]         = useState("")
   const [lyricsLrc, setLyricsLrc]   = useState("")
   const [mp3Url, setMp3Url]         = useState("")
@@ -113,7 +113,7 @@ export default function MusicaForm({
     if (d.music) {
       setMusic(d.music)
       setMusicName(d.music.musicName ?? "")
-      setPersonName(d.music.personName ?? honoreeName ?? nome)
+      // personName vem do pedido (honoreeName ?? nome), não do banco
       setLyrics(d.music.lyrics ?? "")
       setLyricsLrc(d.music.lyricsLrc ?? "")
       setMp3Url(d.music.mp3Url ?? "")
@@ -302,7 +302,7 @@ export default function MusicaForm({
 
       {open && (
         <div className="mt-4 space-y-4">
-          {/* Nome da música */}
+          {/* Nome da música + homenageado */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Título da música</label>
@@ -315,12 +315,11 @@ export default function MusicaForm({
             </div>
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Nome do homenageado</label>
-              <input
-                value={personName}
-                onChange={(e) => setPersonName(e.target.value)}
-                placeholder="Ex: Ana"
-                className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500"
-              />
+              <div className="w-full bg-black/30 border border-pink-500/20 rounded-xl px-3 py-2 text-sm text-pink-300 flex items-center gap-2">
+                <span>🎵</span>
+                <span>{honoreeName ?? nome ?? "—"}</span>
+              </div>
+              <p className="text-[10px] text-gray-600 mt-1 pl-1">Informado pelo cliente no wizard</p>
             </div>
           </div>
 
