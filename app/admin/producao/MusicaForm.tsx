@@ -35,10 +35,57 @@ export default function MusicaForm({
   const [delivering, setDelivering]   = useState(false)
   const [publicUrl, setPublicUrl]     = useState<string | null>(null)
   const [msg, setMsg]                 = useState("")
-  const fileRef  = useRef<HTMLInputElement>(null)
-  const imgRef   = useRef<HTMLInputElement>(null)
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const baseUrl  = typeof window !== "undefined" ? window.location.origin : ""
+  const [tapping, setTapping]         = useState(false)
+  const [tapIndex, setTapIndex]       = useState(0)
+  const [tapTimes, setTapTimes]       = useState<number[]>([])
+  const fileRef   = useRef<HTMLInputElement>(null)
+  const imgRef    = useRef<HTMLInputElement>(null)
+  const audioRef  = useRef<HTMLAudioElement>(null)
+  const tapAudio  = useRef<HTMLAudioElement>(null)
+  const baseUrl   = typeof window !== "undefined" ? window.location.origin : ""
+
+  // linhas reais da letra (sem marcadores de seção)
+  const tapLines = lyrics.split("\n").map((l) => l.trim()).filter((l) => l && !/^\[.*\]$/.test(l))
+
+  function startTap() {
+    if (!mp3Url) { setMsg("❌ Anexe o MP3 antes de sincronizar."); return }
+    if (tapLines.length === 0) { setMsg("❌ Preencha a letra antes de sincronizar."); return }
+    setTapIndex(0)
+    setTapTimes([])
+    setTapping(true)
+    setTimeout(() => tapAudio.current?.play(), 100)
+  }
+
+  function handleTap() {
+    const t = tapAudio.current?.currentTime ?? 0
+    const newTimes = [...tapTimes, t]
+    setTapTimes(newTimes)
+    const nextIndex = tapIndex + 1
+    if (nextIndex >= tapLines.length) {
+      finalizeTap(newTimes)
+    } else {
+      setTapIndex(nextIndex)
+    }
+  }
+
+  function finalizeTap(times: number[]) {
+    tapAudio.current?.pause()
+    const lrc = tapLines.map((linha, i) => {
+      const t  = times[i] ?? 0
+      const mm = Math.floor(t / 60).toString().padStart(2, "0")
+      const ss = Math.floor(t % 60).toString().padStart(2, "0")
+      const cs = Math.floor((t % 1) * 100).toString().padStart(2, "0")
+      return `[${mm}:${ss}.${cs}]${linha}`
+    }).join("\n")
+    setLyricsLrc(lrc)
+    setTapping(false)
+    setMsg("✅ LRC sincronizado! Clique em Salvar.")
+  }
+
+  function cancelTap() {
+    tapAudio.current?.pause()
+    setTapping(false)
+  }
 
   function gerarLrc() {
     const linhas = lyrics.split("\n").map((l) => l.trim()).filter(Boolean)
@@ -181,6 +228,66 @@ export default function MusicaForm({
   const isReady = !!music?.mp3Url
 
   return (
+    <>
+    {/* AUDIO oculto para o tap */}
+    <audio ref={tapAudio} src={mp3Url || undefined} preload="auto" />
+
+    {/* MODAL TIME-TAP */}
+    {tapping && (
+      <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-6">
+        <p className="text-gray-400 text-xs mb-2 tracking-widest uppercase">
+          Linha {tapIndex + 1} de {tapLines.length}
+        </p>
+
+        {/* Linha anterior */}
+        {tapIndex > 0 && (
+          <p className="text-gray-600 text-sm mb-4 italic">
+            {tapLines[tapIndex - 1]}
+          </p>
+        )}
+
+        {/* Linha atual */}
+        <p className="text-white text-2xl font-bold text-center mb-2 max-w-xl leading-snug">
+          {tapLines[tapIndex]}
+        </p>
+
+        {/* Próxima linha */}
+        {tapIndex + 1 < tapLines.length && (
+          <p className="text-gray-500 text-sm mt-2 mb-8">
+            A seguir: {tapLines[tapIndex + 1]}
+          </p>
+        )}
+        {tapIndex + 1 >= tapLines.length && (
+          <p className="text-yellow-400 text-sm mt-2 mb-8">Última linha!</p>
+        )}
+
+        {/* Botão TAP */}
+        <button
+          onClick={handleTap}
+          className="w-48 h-48 rounded-full bg-pink-500 hover:bg-pink-400 active:scale-95 active:bg-pink-600 transition-all flex flex-col items-center justify-center shadow-2xl shadow-pink-500/40 select-none"
+        >
+          <span className="text-4xl mb-1">🥁</span>
+          <span className="text-white font-bold text-lg">TAP</span>
+          <span className="text-pink-200 text-xs mt-1">clique quando esta linha começar</span>
+        </button>
+
+        {/* Barra de progresso da sessão */}
+        <div className="mt-8 w-full max-w-xs bg-white/10 rounded-full h-1.5">
+          <div
+            className="bg-pink-500 h-1.5 rounded-full transition-all"
+            style={{ width: `${(tapIndex / tapLines.length) * 100}%` }}
+          />
+        </div>
+
+        <button
+          onClick={cancelTap}
+          className="mt-6 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          Cancelar
+        </button>
+      </div>
+    )}
+
     <div className="mt-4 border-t border-white/5 pt-4">
       <button
         onClick={() => setOpen(!open)}
@@ -239,13 +346,22 @@ export default function MusicaForm({
               Formato: <code className="bg-white/5 px-1 rounded">[mm:ss.xx]Linha da letra</code>
               {" "}— ou use o botão abaixo para gerar automaticamente a partir da letra simples.
             </p>
-            <button
-              type="button"
-              onClick={gerarLrc}
-              className="mb-2 text-xs px-3 py-1.5 rounded-lg border border-pink-500/30 text-pink-400 hover:bg-pink-500/10 transition-colors"
-            >
-              ✨ Gerar LRC automaticamente
-            </button>
+            <div className="flex gap-2 mb-2 flex-wrap">
+              <button
+                type="button"
+                onClick={gerarLrc}
+                className="text-xs px-3 py-1.5 rounded-lg border border-pink-500/30 text-pink-400 hover:bg-pink-500/10 transition-colors"
+              >
+                ✨ Gerar automaticamente
+              </button>
+              <button
+                type="button"
+                onClick={startTap}
+                className="text-xs px-3 py-1.5 rounded-lg border border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10 transition-colors"
+              >
+                🥁 Sincronizar com tap
+              </button>
+            </div>
             <textarea
               rows={8}
               value={lyricsLrc}
@@ -403,5 +519,6 @@ export default function MusicaForm({
         </div>
       )}
     </div>
+    </>
   )
 }
