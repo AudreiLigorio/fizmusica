@@ -229,6 +229,7 @@ function CriarMusicaInner() {
     if (!leadNome.trim()) { setLeadError("Informe seu nome."); return }
     if (!leadEmail.trim() || !leadEmailOk) { setLeadError("E-mail inválido."); return }
     if (!leadWhatsappOk) { setLeadError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX."); return }
+    if (!leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
 
     // Preenche os campos finais para não repetir digitação
     setNome(leadNome)
@@ -333,6 +334,10 @@ function CriarMusicaInner() {
     if (step === 4) {
       if (!nome.trim() || !email.trim() || !whatsapp.trim()) {
         setError("Preencha todos os seus dados.")
+        return
+      }
+      if (!honoreeName.trim()) {
+        setError("Informe para quem é essa música.")
         return
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
