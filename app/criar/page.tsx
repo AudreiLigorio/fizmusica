@@ -23,9 +23,18 @@ type SessionData = {
   email: string
   whatsapp: string
   honoreeName: string
+  leadCaptured?: boolean
 }
 
 const SESSION_KEY = "fizmusica_session_id"
+
+function maskWhatsapp(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (digits.length === 0) return ""
+  if (digits.length <= 2) return `(${digits}`
+  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+}
 
 export default function CriarMusicaPage() {
 
@@ -52,6 +61,19 @@ export default function CriarMusicaPage() {
   const [resumeBanner, setResumeBanner] = useState<SessionData | null>(null)
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Lead capture (após 1ª pergunta respondida)
+  const [showLeadCapture, setShowLeadCapture] = useState(false)
+  const [leadCaptured, setLeadCaptured] = useState(false)
+  const [leadNome, setLeadNome] = useState("")
+  const [leadEmail, setLeadEmail] = useState("")
+  const [leadWhatsapp, setLeadWhatsapp] = useState("")
+  const [leadError, setLeadError] = useState("")
+
+  const leadWhatsappOk = /^\(\d{2}\) 9\d{4}-\d{4}$/.test(leadWhatsapp)
+  const leadWhatsappDirty = leadWhatsapp.length > 0
+  const leadEmailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail)
+  const leadEmailDirty = leadEmail.length > 0
+
   useEffect(() => {
     fetch("/api/wizard")
       .then((r) => r.json())
@@ -71,7 +93,6 @@ export default function CriarMusicaPage() {
           setSessionId(storedId)
           return
         }
-        // Sessão com progresso: exibe banner de retomada
         setResumeBanner({ ...s.data, step: s.step })
       })
       .catch(() => {})
@@ -95,6 +116,7 @@ export default function CriarMusicaPage() {
       email,
       whatsapp,
       honoreeName,
+      leadCaptured,
       ...overrides,
     }
   }
@@ -144,6 +166,7 @@ export default function CriarMusicaPage() {
     setEmail(s.email ?? "")
     setWhatsapp(s.whatsapp ?? "")
     setHonoreeName(s.honoreeName ?? "")
+    setLeadCaptured(s.leadCaptured ?? false)
     setResumeBanner(null)
     const storedId = localStorage.getItem(SESSION_KEY)
     if (storedId) setSessionId(storedId)
@@ -164,8 +187,47 @@ export default function CriarMusicaPage() {
     setEmail("")
     setWhatsapp("")
     setHonoreeName("")
+    setLeadCaptured(false)
+    setShowLeadCapture(false)
     const newId = crypto.randomUUID()
     initSession(newId)
+  }
+
+  /* ================================================= */
+  /* LEAD CAPTURE                                      */
+  /* ================================================= */
+
+  function handleLeadSave() {
+    setLeadError("")
+
+    if (!leadNome.trim()) { setLeadError("Informe seu nome."); return }
+    if (!leadEmail.trim() || !leadEmailOk) { setLeadError("E-mail inválido."); return }
+    if (!leadWhatsappOk) { setLeadError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX."); return }
+
+    // Preenche os campos finais para não repetir digitação
+    setNome(leadNome)
+    setEmail(leadEmail)
+    setWhatsapp(leadWhatsapp)
+    setLeadCaptured(true)
+    setShowLeadCapture(false)
+
+    // Salva o lead na sessão imediatamente
+    const data = buildSessionData({
+      nome: leadNome,
+      email: leadEmail,
+      whatsapp: leadWhatsapp,
+      leadCaptured: true,
+    })
+    saveSession(data, step)
+
+    // Avança para a próxima pergunta
+    advanceQuestion()
+  }
+
+  function handleLeadSkip() {
+    setLeadCaptured(true) // não mostra mais
+    setShowLeadCapture(false)
+    advanceQuestion()
   }
 
   /* ================================================= */
@@ -195,6 +257,18 @@ export default function CriarMusicaPage() {
   /* NEXT STEP                                         */
   /* ================================================= */
 
+  function advanceQuestion() {
+    if (questionStep < questions.length - 1) {
+      const nextQ = questionStep + 1
+      setQuestionStep(nextQ)
+      saveSession(buildSessionData({ questionStep: nextQ }), step)
+    } else {
+      const nextSt = 3
+      setStep(nextSt)
+      saveSession(buildSessionData({ step: nextSt }), nextSt)
+    }
+  }
+
   const nextStep = () => {
     setError("")
 
@@ -206,24 +280,19 @@ export default function CriarMusicaPage() {
     }
 
     if (step === 2) {
-      if (
-        !answers[currentQuestion] ||
-        answers[currentQuestion].trim().length < 3
-      ) {
+      if (!answers[currentQuestion] || answers[currentQuestion].trim().length < 3) {
         setError("Responda a pergunta para continuar.")
         return
       }
-      if (questionStep < questions.length - 1) {
-        const nextQ = questionStep + 1
-        setQuestionStep(nextQ)
-        saveSession(buildSessionData({ questionStep: nextQ }), step)
-        return
-      } else {
-        const nextSt = 3
-        setStep(nextSt)
-        saveSession(buildSessionData({ step: nextSt, questionStep }), nextSt)
+
+      // Exibe captura de lead após a 1ª pergunta (progresso ~30%), apenas uma vez
+      if (questionStep === 0 && !leadCaptured) {
+        setShowLeadCapture(true)
         return
       }
+
+      advanceQuestion()
+      return
     }
 
     if (step === 3) {
@@ -253,14 +322,6 @@ export default function CriarMusicaPage() {
     const nextSt = step + 1
     setStep(nextSt)
     saveSession(buildSessionData({ step: nextSt }), nextSt)
-  }
-
-  function maskWhatsapp(value: string): string {
-    const digits = value.replace(/\D/g, "").slice(0, 11)
-    if (digits.length === 0) return ""
-    if (digits.length <= 2) return `(${digits}`
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
   }
 
   const whatsappOk = /^\(\d{2}\) 9\d{4}-\d{4}$/.test(whatsapp)
@@ -311,7 +372,7 @@ export default function CriarMusicaPage() {
   }
 
   /* ================================================= */
-  /* FINALIZAR — salva no banco e vai para produtos    */
+  /* FINALIZAR                                         */
   /* ================================================= */
 
   const handleFinalizar = async () => {
@@ -384,7 +445,6 @@ WHATSAPP: ${whatsapp}`
   return (
     <div className="text-white font-sans" style={{ background: "#07060d" }}>
 
-      {/* Gradiente de fundo — fixo atrás de tudo */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute top-[-10%] left-[-5%] w-[55vw] h-[55vw] rounded-full blur-[120px] opacity-30"
              style={{ background: "radial-gradient(circle, #f0196b 0%, transparent 70%)" }} />
@@ -394,7 +454,6 @@ WHATSAPP: ${whatsapp}`
              style={{ background: "radial-gradient(circle, #f0196b 0%, transparent 70%)" }} />
       </div>
 
-      {/* Header — desktop only */}
       <div className="hidden lg:block">
         <Header showButton={false} progress={progress} />
       </div>
@@ -409,7 +468,7 @@ WHATSAPP: ${whatsapp}`
                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
           </div>
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
-            {step > 1 ? (
+            {step > 1 && !showLeadCapture ? (
               <button onClick={prevStep} disabled={submitting}
                       className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
             ) : <div />}
@@ -453,8 +512,120 @@ WHATSAPP: ${whatsapp}`
             <div className="wizard-card">
               <div className="py-2 lg:py-0">
 
+          {/* ===== LEAD CAPTURE — aparece após 1ª pergunta ===== */}
+          {showLeadCapture && (
+            <div>
+              <div className="mb-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-xs font-semibold"
+                     style={{ background: "rgba(240,25,107,0.15)", color: "#f0196b" }}>
+                  ✨ Sua história já está sendo construída
+                </div>
+                <h1 className="text-xl font-bold tracking-tight mb-2">
+                  Informe seu contato para continuar de qualquer dispositivo
+                </h1>
+                <p className="text-white/50 text-sm">
+                  Assim suas respostas ficam salvas e você não perde nada se precisar pausar.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {/* Nome */}
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-200 font-medium pl-2">Seu nome completo</label>
+                  <input
+                    value={leadNome}
+                    onChange={(e) => setLeadNome(e.target.value)}
+                    placeholder="Ex: João Silva"
+                    className="w-full bg-black/40 border border-white/10 rounded-3xl px-6 py-4 text-base outline-none focus:border-pink-500 transition-colors"
+                  />
+                </div>
+
+                {/* E-mail */}
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-200 font-medium pl-2">Seu e-mail</label>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      value={leadEmail}
+                      onChange={(e) => setLeadEmail(e.target.value)}
+                      placeholder="Ex: joao@email.com"
+                      className="w-full bg-black/40 rounded-3xl px-6 py-4 text-base outline-none transition-colors pr-12"
+                      style={{
+                        border: leadEmailDirty
+                          ? leadEmailOk
+                            ? "1px solid rgba(34,197,94,0.6)"
+                            : "1px solid rgba(240,25,107,0.6)"
+                          : "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    />
+                    {leadEmailDirty && (
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-lg">
+                        {leadEmailOk ? "✅" : "❌"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* WhatsApp */}
+                <div className="space-y-2">
+                  <label className="text-sm text-gray-200 font-medium pl-2">WhatsApp com DDD</label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      value={leadWhatsapp}
+                      onChange={(e) => setLeadWhatsapp(maskWhatsapp(e.target.value))}
+                      placeholder="(11) 99999-9999"
+                      maxLength={16}
+                      className="w-full bg-black/40 rounded-3xl px-6 py-4 text-base outline-none transition-colors pr-12"
+                      style={{
+                        border: leadWhatsappDirty
+                          ? leadWhatsappOk
+                            ? "1px solid rgba(34,197,94,0.6)"
+                            : "1px solid rgba(240,25,107,0.6)"
+                          : "1px solid rgba(255,255,255,0.1)",
+                      }}
+                    />
+                    {leadWhatsappDirty && (
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-lg">
+                        {leadWhatsappOk ? "✅" : "❌"}
+                      </span>
+                    )}
+                  </div>
+                  {leadWhatsappDirty && !leadWhatsappOk && (
+                    <p className="text-xs pl-2" style={{ color: "#f0196b" }}>
+                      Formato: (XX) 9XXXX-XXXX — somente celular
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {leadError && (
+                <div className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
+                  ⚠️ {leadError}
+                </div>
+              )}
+
+              <div className="mt-6 flex flex-col gap-3">
+                <button
+                  onClick={handleLeadSave}
+                  className="w-full py-4 rounded-2xl text-sm font-semibold text-white"
+                  style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
+                >
+                  Salvar e continuar →
+                </button>
+                <button
+                  onClick={handleLeadSkip}
+                  className="w-full py-3 rounded-2xl text-sm text-white/40 hover:text-white/60 transition-colors"
+                >
+                  Pular por agora
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ===== STEP 1 — Ocasião ===== */}
-          {step === 1 && (
+          {!showLeadCapture && step === 1 && (
             <div>
               <div className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
@@ -535,7 +706,7 @@ WHATSAPP: ${whatsapp}`
           )}
 
           {/* ===== STEP 2 — Perguntas ===== */}
-          {step === 2 && (
+          {!showLeadCapture && step === 2 && (
             <div>
               <div className="mb-5">
                 <h1 className="text-xl font-bold tracking-tight">Conte sua história</h1>
@@ -586,7 +757,7 @@ WHATSAPP: ${whatsapp}`
           )}
 
           {/* ===== STEP 3 — Estilo musical ===== */}
-          {step === 3 && (
+          {!showLeadCapture && step === 3 && (
             <div>
               <div className="mb-4">
                 <h1 className="text-xl font-bold tracking-tight">Defina o estilo</h1>
@@ -669,10 +840,15 @@ WHATSAPP: ${whatsapp}`
           )}
 
           {/* ===== STEP 4 — Dados de contato ===== */}
-          {step === 4 && (
+          {!showLeadCapture && step === 4 && (
             <div>
               <div className="mb-5">
-                <h1 className="text-xl font-bold tracking-tight">Preencha os dados para o envio</h1>
+                <h1 className="text-xl font-bold tracking-tight">
+                  {leadCaptured && nome ? "Confirme seus dados para o envio" : "Preencha os dados para o envio"}
+                </h1>
+                {leadCaptured && nome && (
+                  <p className="text-white/50 text-sm mt-1">Seus dados foram preenchidos automaticamente ✓</p>
+                )}
               </div>
 
               <div className="grid md:grid-cols-2 gap-5">
@@ -743,7 +919,7 @@ WHATSAPP: ${whatsapp}`
           )}
 
           {/* ===== STEP 5 — Resumo ===== */}
-          {step === 5 && (
+          {!showLeadCapture && step === 5 && (
             <div>
               <div className="mb-5">
                 <h1 className="text-xl font-bold tracking-tight">Confira o resumo antes de finalizar</h1>
@@ -751,27 +927,19 @@ WHATSAPP: ${whatsapp}`
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 <div className="bg-pink-500/10 border border-pink-500/20 rounded-2xl p-5">
-                  <p className="text-xs text-pink-400 font-medium mb-1 uppercase tracking-wider">
-                    Ocasião
-                  </p>
+                  <p className="text-xs text-pink-400 font-medium mb-1 uppercase tracking-wider">Ocasião</p>
                   <p className="font-semibold">{selectedSubcategory}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">
-                    Estilo
-                  </p>
+                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">Estilo</p>
                   <p className="font-semibold">{musicalStyle}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">
-                    Emoção
-                  </p>
+                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">Emoção</p>
                   <p className="font-semibold">{emotion}</p>
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">
-                    Voz
-                  </p>
+                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">Voz</p>
                   <p className="font-semibold">{voiceType}</p>
                 </div>
               </div>
@@ -789,48 +957,50 @@ WHATSAPP: ${whatsapp}`
             </div>
           )}
 
-            </div>{/* fecha wizard-card inner */}
-            </div>{/* fecha wizard-card */}
+            </div>
+            </div>
 
             {/* Erro */}
-            {error && (
+            {!showLeadCapture && error && (
               <div className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
                 ⚠️ {error}
               </div>
             )}
 
             {/* Botões de navegação — desktop */}
-            <div className="hidden lg:flex justify-between items-center mt-10">
-              {step > 1 ? (
-                <button onClick={prevStep} disabled={submitting}
-                        className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
-                        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
-                  ← Voltar
-                </button>
-              ) : <div />}
-              {step !== 1 && step < 5 && (
-                <button onClick={nextStep}
-                        className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white"
-                        style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
-                  Continuar →
-                </button>
-              )}
-              {step === 5 && (
-                <button onClick={handleFinalizar} disabled={submitting}
-                        className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center gap-3"
-                        style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
-                  {submitting ? (
-                    <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
-                  ) : "Finalizar e escolher produto →"}
-                </button>
-              )}
-            </div>
+            {!showLeadCapture && (
+              <div className="hidden lg:flex justify-between items-center mt-10">
+                {step > 1 ? (
+                  <button onClick={prevStep} disabled={submitting}
+                          className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
+                          style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
+                    ← Voltar
+                  </button>
+                ) : <div />}
+                {step !== 1 && step < 5 && (
+                  <button onClick={nextStep}
+                          className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white"
+                          style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
+                    Continuar →
+                  </button>
+                )}
+                {step === 5 && (
+                  <button onClick={handleFinalizar} disabled={submitting}
+                          className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center gap-3"
+                          style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
+                    {submitting ? (
+                      <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
+                    ) : "Finalizar e escolher produto →"}
+                  </button>
+                )}
+              </div>
+            )}
 
-          </div>{/* fecha px-5/lg:max-w-3xl */}
-        </div>{/* fecha flex-1 overflow-y-auto */}
+          </div>
+        </div>
 
         {/* Botão fixo no rodapé — mobile */}
-        {step !== 1 && step !== 2 && (
+        {!showLeadCapture && step !== 1 && step !== 2 && (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
             {step < 5 ? (
@@ -851,12 +1021,11 @@ WHATSAPP: ${whatsapp}`
           </div>
         )}
 
-        {/* Footer — desktop only */}
         <div className="hidden lg:block">
           <Footer />
         </div>
 
-      </div>{/* fecha container adaptativo */}
+      </div>
     </div>
   )
 }
