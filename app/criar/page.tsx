@@ -285,8 +285,8 @@ export default function CriarMusicaPage() {
         return
       }
 
-      // Exibe captura de lead após a 1ª pergunta (progresso ~30%), apenas uma vez
-      if (questionStep === 0 && !leadCaptured) {
+      // Exibe captura de lead após a 3ª pergunta, apenas uma vez
+      if (questionStep === 2 && !leadCaptured) {
         setShowLeadCapture(true)
         return
       }
