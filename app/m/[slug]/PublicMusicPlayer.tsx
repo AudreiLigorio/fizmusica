@@ -104,9 +104,9 @@ export default function PublicMusicPlayer({
   }
 
   return (
-    <div className="relative h-[100dvh] flex flex-col overflow-hidden bg-black text-white">
+    <div className="relative min-h-[100dvh] flex flex-col bg-black text-white">
 
-      {/* BACKGROUND — foto em tela cheia com overlay */}
+      {/* BACKGROUND — foto fixa, cobre a tela toda, ancorada no topo */}
       {music.imageUrl ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -114,19 +114,18 @@ export default function PublicMusicPlayer({
             src={music.imageUrl}
             alt=""
             aria-hidden
-            className="absolute inset-0 w-full h-full object-cover"
+            className="fixed inset-0 w-full h-full object-cover object-top"
           />
-          {/* overlay gradiente: escurece topo e base, preserva a foto no meio */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-black/85" />
+          <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/25 to-black/90" />
         </>
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-black to-zinc-900" />
+        <div className="fixed inset-0 bg-gradient-to-br from-zinc-900 via-black to-zinc-900" />
       )}
 
-      {/* CONTEÚDO */}
-      <div className="relative z-10 flex flex-col h-full overflow-y-auto">
+      {/* CONTEÚDO — scroll natural da página, sem corte */}
+      <div className="relative z-10 flex flex-col min-h-[100dvh]">
 
-        {/* TOPO — badge + destinatário + título */}
+        {/* TOPO — destinatário + título */}
         <div className="pt-10 px-6 text-center shrink-0">
           {music.personName && (
             <p className="text-gray-300 text-sm mb-1">Uma música especial para</p>
@@ -145,8 +144,8 @@ export default function PublicMusicPlayer({
           )}
         </div>
 
-        {/* espaço que deixa a foto do fundo aparecer */}
-        <div className="flex-1" />
+        {/* espaço que deixa a foto aparecer entre o topo e os controles */}
+        <div className="flex-1 min-h-[30vw] md:min-h-[15vw]" />
 
         {/* AUDIO */}
         <audio
