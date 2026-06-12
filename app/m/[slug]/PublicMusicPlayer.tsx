@@ -314,26 +314,72 @@ export default function PublicMusicPlayer({
                 <div className="flex gap-3">
                   <button
                     onClick={() => {
-                      const qr = document.getElementById("qr-print-card")?.innerHTML ?? ""
-                      const win = window.open("", "_blank", "width=500,height=750")
+                      // Pega o SVG do QR já renderizado no DOM
+                      const qrSvg = document.getElementById("qr-print-card")?.querySelector("svg")?.outerHTML ?? ""
+                      const win = window.open("", "_blank", "width=480,height=720")
                       if (!win) return
-                      win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR Code - FizMúsica</title>
+                      win.document.write(`<!DOCTYPE html><html><head>
+                      <meta charset="utf-8">
+                      <title>QR Code - FizMúsica</title>
+                      <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
                       <style>
-                        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap');
-                        *{box-sizing:border-box;margin:0;padding:0}
-                        body{background:#f0e8df;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'EB Garamond',Georgia,serif}
-                        .card{background:#FBF5EE;border-radius:16px;border:2px dashed #C8B99A88;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:40px 32px;width:380px;min-height:520px}
-                        .sep{display:flex;align-items:center;gap:12px;color:#B8963E;font-size:20px}
-                        .sep span{display:block;height:1px;width:32px;background:#B8963E}
-                        .title{color:#2C2216;font-size:28px;text-align:center;line-height:1.35;margin:16px 0}
-                        .subtitle{color:#B8963E;font-style:italic;font-size:20px;margin-top:4px}
-                        .qr-box{border:2px solid #C8B99A;border-radius:12px;padding:20px;background:#fff;display:flex;align-items:center;justify-content:center;margin:20px 0}
-                        .footer{display:flex;flex-direction:column;align-items:center;gap:4px}
-                        .brand{color:#2C2216;letter-spacing:.2em;font-size:12px;font-family:sans-serif;font-weight:600;margin-top:4px}
-                        .tagline{color:#9A8A76;letter-spacing:.15em;font-size:10px;font-family:sans-serif}
+                        * { box-sizing: border-box; margin: 0; padding: 0; }
+                        @media print { body { margin: 0; } }
+                        body {
+                          background: #EDE0D4;
+                          display: flex; align-items: center; justify-content: center;
+                          min-height: 100vh;
+                          font-family: 'EB Garamond', Georgia, serif;
+                        }
+                        .card {
+                          background: #FBF5EE;
+                          border-radius: 18px;
+                          border: 2px dashed #C8B99A;
+                          display: flex; flex-direction: column;
+                          align-items: center; justify-content: space-between;
+                          padding: 44px 40px;
+                          width: 360px;
+                          min-height: 500px;
+                          gap: 8px;
+                        }
+                        .sep {
+                          display: flex; align-items: center; gap: 10px;
+                          color: #B8963E;
+                        }
+                        .sep-line { display: block; height: 1px; width: 30px; background: #B8963E; }
+                        .heart { font-size: 16px; }
+                        .title {
+                          color: #2C2216; font-size: 30px;
+                          text-align: center; line-height: 1.35;
+                          margin: 4px 0;
+                        }
+                        .subtitle {
+                          color: #B8963E; font-style: italic;
+                          font-size: 20px; margin: 4px 0 8px;
+                        }
+                        .qr-box {
+                          border: 2px solid #C8B99A; border-radius: 12px;
+                          padding: 18px; background: #fff;
+                          display: flex; align-items: center; justify-content: center;
+                        }
+                        .footer { display: flex; flex-direction: column; align-items: center; gap: 3px; margin-top: 4px; }
+                        .heart-outline { font-size: 20px; color: transparent; -webkit-text-stroke: 1.5px #B8963E; }
+                        .brand { color: #2C2216; letter-spacing: .2em; font-size: 11px; font-family: sans-serif; font-weight: 700; }
+                        .tagline { color: #9A8A76; letter-spacing: .12em; font-size: 9px; font-family: sans-serif; }
                       </style></head><body>
-                      <div class="card">${qr}</div>
-                      <script>window.onload=()=>{window.print();window.close()}<\/script>
+                      <div class="card">
+                        <div class="sep"><span class="sep-line"></span><span class="heart">♥</span><span class="sep-line"></span></div>
+                        <p class="title">Existe algo que<br>eu gostaria de<br>te dizer.</p>
+                        <div class="sep"><span class="sep-line"></span><span class="heart">♥</span><span class="sep-line"></span></div>
+                        <p class="subtitle">Escaneie e descubra.</p>
+                        <div class="qr-box">${qrSvg}</div>
+                        <div class="footer">
+                          <span class="heart-outline">♡</span>
+                          <p class="brand">FIZMÚSICA</p>
+                          <p class="tagline">SUA HISTÓRIA. SUA MÚSICA.</p>
+                        </div>
+                      </div>
+                      <script>window.onload=()=>{ setTimeout(()=>{ window.print(); window.close() }, 800) }<\/script>
                       </body></html>`)
                       win.document.close()
                     }}
