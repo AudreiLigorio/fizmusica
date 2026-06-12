@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useEffect, useCallback } from "react"
+import { useRef, useState, useEffect } from "react"
 import { QRCodeSVG } from "qrcode.react"
 
 type MusicData = {
@@ -55,12 +55,6 @@ export default function PublicMusicPlayer({
     .filter((l) => l && !/^\[.*\]$/.test(l))
   const lines = lrcLines ? lrcLines.map((l) => l.text) : plainLines
 
-  // refs estáveis para uso dentro do callback sem stale closure
-  const lrcLinesRef   = useRef(lrcLines)
-  const plainLinesRef = useRef(plainLines)
-  useEffect(() => { lrcLinesRef.current = lrcLines }, [lrcLines])
-  useEffect(() => { plainLinesRef.current = plainLines }, [plainLines])
-
   function togglePlay() {
     const audio = audioRef.current
     if (!audio) return
@@ -68,26 +62,24 @@ export default function PublicMusicPlayer({
     setPlaying(!playing)
   }
 
-  const handleTimeUpdate = useCallback(() => {
+  function handleTimeUpdate() {
     const audio = audioRef.current
     if (!audio) return
     const t = audio.currentTime
     const d = audio.duration || 0
     setProgress(t)
     setDuration(d)
-    const lrc   = lrcLinesRef.current
-    const plain = plainLinesRef.current
-    if (lrc && lrc.length > 0) {
+    if (lrcLines && lrcLines.length > 0) {
       let idx = 0
-      for (let i = 0; i < lrc.length; i++) {
-        if (t >= lrc[i].time) idx = i
+      for (let i = 0; i < lrcLines.length; i++) {
+        if (t >= lrcLines[i].time) idx = i
         else break
       }
       setActiveLine(idx)
-    } else if (plain.length > 0 && d > 0) {
-      setActiveLine(Math.min(Math.floor((t / d) * plain.length), plain.length - 1))
+    } else if (plainLines.length > 0 && d > 0) {
+      setActiveLine(Math.min(Math.floor((t / d) * plainLines.length), plainLines.length - 1))
     }
-  }, [])
+  }
 
   useEffect(() => {
     activeLineRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
