@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
 import type { CreateOrderDTO } from "@/app/types/order"
@@ -39,6 +39,7 @@ function maskWhatsapp(value: string): string {
 export default function CriarMusicaPage() {
 
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [occasions, setOccasions] = useState<WizardOccasion[]>([])
   const [step, setStep] = useState(1)
@@ -81,22 +82,34 @@ export default function CriarMusicaPage() {
       .then((d) => setOccasions(d.occasions ?? []))
   }, [])
 
-  // Ao montar: verifica se há sessão salva no localStorage
+  // Ao montar: verifica ?sessao=UUID (link de e-mail de recuperação) ou localStorage
   useEffect(() => {
-    const storedId = localStorage.getItem(SESSION_KEY)
+    const urlSessionId = searchParams.get("sessao")
+    const storedId = urlSessionId ?? localStorage.getItem(SESSION_KEY)
     if (!storedId) return
 
     fetch(`/api/wizard-session?id=${storedId}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((json) => {
         const s = json?.session
-        if (!s || !s.data || s.step <= 1) {
+        if (!s || !s.data) return
+
+        if (urlSessionId) {
+          // Veio pelo link do e-mail — restaura diretamente sem banner
+          localStorage.setItem(SESSION_KEY, urlSessionId)
+          setSessionId(urlSessionId)
+          resumeSessionData(s.data, s.step)
+          return
+        }
+
+        if (s.step <= 1) {
           setSessionId(storedId)
           return
         }
         setResumeBanner({ ...s.data, step: s.step })
       })
       .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /* ================================================= */
@@ -154,20 +167,24 @@ export default function CriarMusicaPage() {
     setSessionId(null)
   }
 
+  function resumeSessionData(data: Partial<SessionData>, step: number) {
+    setStep(step)
+    setQuestionStep(data.questionStep ?? 0)
+    setSelectedContext(data.selectedContext ?? "")
+    setSelectedSubcategory(data.selectedSubcategory ?? "")
+    setAnswers(data.answers ?? {})
+    setMusicalStyle(data.musicalStyle ?? "")
+    setVoiceType(data.voiceType ?? "")
+    setEmotion(data.emotion ?? "")
+    setNome(data.nome ?? "")
+    setEmail(data.email ?? "")
+    setWhatsapp(data.whatsapp ?? "")
+    setHonoreeName(data.honoreeName ?? "")
+    setLeadCaptured(data.leadCaptured ?? false)
+  }
+
   function resumeSession(s: SessionData) {
-    setStep(s.step)
-    setQuestionStep(s.questionStep ?? 0)
-    setSelectedContext(s.selectedContext ?? "")
-    setSelectedSubcategory(s.selectedSubcategory ?? "")
-    setAnswers(s.answers ?? {})
-    setMusicalStyle(s.musicalStyle ?? "")
-    setVoiceType(s.voiceType ?? "")
-    setEmotion(s.emotion ?? "")
-    setNome(s.nome ?? "")
-    setEmail(s.email ?? "")
-    setWhatsapp(s.whatsapp ?? "")
-    setHonoreeName(s.honoreeName ?? "")
-    setLeadCaptured(s.leadCaptured ?? false)
+    resumeSessionData(s, s.step)
     setResumeBanner(null)
     const storedId = localStorage.getItem(SESSION_KEY)
     if (storedId) setSessionId(storedId)

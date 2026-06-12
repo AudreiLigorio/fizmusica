@@ -175,10 +175,38 @@ export default function CrmClient({
 }) {
   const [tab, setTab] = useState<"recovery" | "mass" | "insights" | "ratings">("recovery")
 
-  // ── Repescagem ──
+  // ── Repescagem (pedidos) ──
   const [sending, setSending] = useState<Record<string, boolean>>({})
   const [sent, setSent]       = useState<Record<string, boolean>>({})
   const [errors, setErrors]   = useState<Record<string, string>>({})
+
+  // ── Leads do wizard abandonados ──
+  type WizardLead = { id: string; nome: string; email: string; subcategory: string; musicalStyle: string; updatedAt: string }
+  const [wizardLeads, setWizardLeads]           = useState<WizardLead[] | null>(null)
+  const [wizardLoading, setWizardLoading]       = useState(false)
+  const [wizardSending, setWizardSending]       = useState(false)
+  const [wizardResult, setWizardResult]         = useState<{ enviados: number; falhas: number } | null>(null)
+
+  async function loadWizardLeads() {
+    setWizardLoading(true)
+    const res = await fetch("/api/admin/wizard-recovery?horas=2")
+    const data = await res.json()
+    setWizardLeads(data.leads ?? [])
+    setWizardLoading(false)
+  }
+
+  async function handleWizardRecovery() {
+    setWizardSending(true)
+    const res = await fetch("/api/admin/wizard-recovery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ horasMin: 2 }),
+    })
+    const data = await res.json()
+    setWizardResult({ enviados: data.enviados, falhas: data.falhas })
+    setWizardLeads(null) // recarrega
+    setWizardSending(false)
+  }
 
   async function handleRecovery(orderId: string) {
     setSending(s => ({ ...s, [orderId]: true }))
@@ -298,6 +326,66 @@ export default function CrmClient({
                 </div>
               )}
             </div>
+          )}
+        </div>
+      )}
+
+      {/* ── LEADS DO WIZARD ── (dentro da aba recovery) */}
+      {tab === "recovery" && (
+        <div className="mt-8 border-t border-white/10 pt-6">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white">🎵 Leads do wizard abandonados</p>
+              <p className="text-xs text-gray-500 mt-0.5">Pessoas que informaram e-mail no formulário mas não finalizaram o pedido</p>
+            </div>
+            <button
+              onClick={loadWizardLeads}
+              disabled={wizardLoading}
+              className="text-xs px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:border-pink-500 hover:text-white transition-colors disabled:opacity-50"
+            >
+              {wizardLoading ? "Carregando…" : "🔍 Ver leads elegíveis"}
+            </button>
+          </div>
+
+          {wizardResult && (
+            <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 text-sm text-green-300">
+              ✅ {wizardResult.enviados} e-mail{wizardResult.enviados !== 1 ? "s" : ""} enviado{wizardResult.enviados !== 1 ? "s" : ""}
+              {wizardResult.falhas > 0 && ` · ${wizardResult.falhas} falha${wizardResult.falhas !== 1 ? "s" : ""}`}
+            </div>
+          )}
+
+          {wizardLeads !== null && (
+            wizardLeads.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhum lead elegível no momento (abandono &gt; 2h sem e-mail enviado).</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl px-4 py-3 text-sm text-blue-300 flex items-center justify-between gap-4 flex-wrap">
+                  <span>{wizardLeads.length} lead{wizardLeads.length !== 1 ? "s" : ""} elegível{wizardLeads.length !== 1 ? "s" : ""} — e-mail com link de retomada</span>
+                  <button
+                    onClick={handleWizardRecovery}
+                    disabled={wizardSending}
+                    className="text-xs bg-pink-500 hover:bg-pink-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                  >
+                    {wizardSending ? (
+                      <><span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
+                    ) : `📧 Disparar para todos (${wizardLeads.length})`}
+                  </button>
+                </div>
+                {wizardLeads.map(lead => (
+                  <div key={lead.id} className="bg-black/40 border border-white/10 rounded-xl p-4 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-sm">{lead.nome}</p>
+                      <p className="text-xs text-gray-400">{lead.email}</p>
+                      <div className="flex gap-2 mt-1.5 flex-wrap">
+                        {lead.subcategory && <span className="text-xs bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-300">{lead.subcategory}</span>}
+                        {lead.musicalStyle && <span className="text-xs bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-300">{lead.musicalStyle}</span>}
+                        <span className="text-xs text-gray-600">{timeAgo(lead.updatedAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       )}

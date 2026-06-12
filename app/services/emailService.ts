@@ -137,6 +137,75 @@ interface OrderEmailData {
   createdAt: Date
 }
 
+// ============================================================
+// E-mail de recuperação de abandono do wizard (lead capturado)
+// ============================================================
+
+interface WizardAbandonmentEmailData {
+  nome:        string
+  email:       string
+  subcategory: string
+  musicalStyle?: string
+  sessionId:   string
+}
+
+export async function sendWizardAbandonmentEmail(data: WizardAbandonmentEmailData): Promise<{ ok: boolean; error?: string }> {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+  const resumeUrl = `${siteUrl}/criar?sessao=${data.sessionId}`
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: `${data.nome.split(" ")[0]}, sua música especial ainda não está pronta 🎵`,
+      html: buildWizardAbandonmentEmail(data, resumeUrl),
+    })
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Recuperação wizard enviada para ${data.email}`)
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
+function buildWizardAbandonmentEmail(data: WizardAbandonmentEmailData, resumeUrl: string): string {
+  const firstName = data.nome.split(" ")[0]
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">🎵</div>
+        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">Sua história ainda está aqui!</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:15px">Você começou a criar algo especial</p>
+      </div>
+      <div style="padding:40px 32px">
+        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${firstName}</strong>! ❤️</p>
+        <p style="color:#999;margin:0 0 16px">
+          Você começou a criar uma música de <strong style="color:#ec4899">${data.subcategory}</strong>${data.musicalStyle ? ` no estilo <strong style="color:#ec4899">${data.musicalStyle}</strong>` : ""} mas não finalizou o pedido.
+        </p>
+        <p style="color:#999;margin:0 0 32px">Suas respostas ficaram salvas — é só clicar abaixo para continuar de onde parou!</p>
+
+        <div style="text-align:center;margin:32px 0">
+          <a href="${resumeUrl}"
+            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:17px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
+            🎵 Continuar minha música
+          </a>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 20px;margin:24px 0">
+          <p style="color:#777;font-size:13px;margin:0 0 8px">🔒 Suas respostas foram preservadas</p>
+          <p style="color:#555;font-size:12px;margin:0">O link acima recarrega exatamente de onde você parou, em qualquer dispositivo.</p>
+        </div>
+
+        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
+          Dúvidas? Fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a>
+        </p>
+      </div>
+    </div>
+  `
+}
+
 export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise<void> {
   try {
     await resend.emails.send({
@@ -166,6 +235,8 @@ export async function sendOrderNotificationEmail(order: OrderEmailData): Promise
 }
 
 function buildClientEmail(order: OrderEmailData): string {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+  const paymentUrl = `${siteUrl}/produtos?orderId=${order.orderId}`
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a">
       <div style="background:#7c3aed;padding:32px;text-align:center;border-radius:8px 8px 0 0">
@@ -188,6 +259,15 @@ function buildClientEmail(order: OrderEmailData): string {
           <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Voz</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.voiceType}</td></tr>
           <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Emoção</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.emotion}</td></tr>
         </table>
+
+        <!-- Botão de pagamento -->
+        <div style="text-align:center;margin:32px 0">
+          <a href="${paymentUrl}"
+            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:16px 36px;border-radius:50px;font-size:16px;font-weight:700;box-shadow:0 6px 24px rgba(124,58,237,0.35)">
+            💳 Ir para o pagamento →
+          </a>
+          <p style="font-size:12px;color:#9ca3af;margin:10px 0 0">Clique para escolher o produto e finalizar seu pedido</p>
+        </div>
 
         <p style="font-size:14px;color:#6b7280">Em breve entraremos em contato pelo WhatsApp <strong>${order.whatsapp}</strong> com mais detalhes.</p>
 
