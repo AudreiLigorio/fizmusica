@@ -30,7 +30,7 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
 
   const { data: music } = await supabase
     .from("generated_music")
-    .select("id, musicName, personName, lyrics, mp3Url, imageUrl, orderId")
+    .select("id, musicName, personName, lyrics, lyricsLrc, mp3Url, imageUrl, orderId")
     .eq("slug", slug)
     .single()
 
@@ -53,6 +53,7 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
           musicName: music.musicName,
           personName: music.personName,
           lyrics: music.lyrics,
+          lyricsLrc: music.lyricsLrc,
           mp3Url: music.mp3Url,
           imageUrl: music.imageUrl,
           order: order ?? null,

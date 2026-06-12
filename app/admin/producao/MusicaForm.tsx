@@ -26,6 +26,7 @@ export default function MusicaForm({
   const [musicName, setMusicName]   = useState("")
   const [personName, setPersonName] = useState(honoreeName ?? nome)
   const [lyrics, setLyrics]         = useState("")
+  const [lyricsLrc, setLyricsLrc]   = useState("")
   const [mp3Url, setMp3Url]         = useState("")
   const [imageUrl, setImageUrl]     = useState("")
   const [uploading, setUploading]     = useState(false)
@@ -46,6 +47,7 @@ export default function MusicaForm({
       setMusicName(d.music.musicName ?? "")
       setPersonName(d.music.personName ?? honoreeName ?? nome)
       setLyrics(d.music.lyrics ?? "")
+      setLyricsLrc(d.music.lyricsLrc ?? "")
       setMp3Url(d.music.mp3Url ?? "")
       setImageUrl(d.music.imageUrl ?? "")
       if (d.music.slug) setPublicUrl(`${baseUrl}/m/${d.music.slug}`)
@@ -122,7 +124,7 @@ export default function MusicaForm({
     const res = await fetch(`/api/admin/producao/${orderId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mp3Url, imageUrl, lyrics, musicName, personName }),
+      body: JSON.stringify({ mp3Url, imageUrl, lyrics, lyricsLrc, musicName, personName }),
     })
     const data = await res.json()
 
@@ -203,6 +205,25 @@ export default function MusicaForm({
               onChange={(e) => setLyrics(e.target.value)}
               placeholder="Cole a letra aqui…"
               className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500 resize-none"
+            />
+          </div>
+
+          {/* Letra LRC com timestamps */}
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">
+              Letra com timestamps (LRC) —{" "}
+              <span className="text-gray-600">sincronização perfeita com a música</span>
+            </label>
+            <p className="text-xs text-gray-600 mb-2">
+              Formato: <code className="bg-white/5 px-1 rounded">[mm:ss.xx]Linha da letra</code>
+              {" "}ex: <code className="bg-white/5 px-1 rounded">[00:12.50]Quando alguém te enche de coragem</code>
+            </p>
+            <textarea
+              rows={8}
+              value={lyricsLrc}
+              onChange={(e) => setLyricsLrc(e.target.value)}
+              placeholder={"[00:00.00]Primeira linha\n[00:05.20]Segunda linha\n[00:10.80]Terceira linha"}
+              className="w-full bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500 resize-none font-mono"
             />
           </div>
 

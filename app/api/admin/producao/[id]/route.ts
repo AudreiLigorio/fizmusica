@@ -32,6 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
         mp3Url:      body.mp3Url    ?? null,
         imageUrl:    body.imageUrl  ?? null,
         lyrics:      body.lyrics    ?? null,
+        lyricsLrc:   body.lyricsLrc ?? null,
         musicName:   body.musicName  ?? null,
         personName:  body.personName ?? null,
         publishedAt: body.mp3Url ? new Date().toISOString() : null,

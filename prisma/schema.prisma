@@ -121,6 +121,7 @@ model GeneratedMusic {
 
   mp3Url     String?
   lyrics     String? @db.Text
+  lyricsLrc  String? @db.Text
   imageUrl   String?
   personName String?
   musicName  String?

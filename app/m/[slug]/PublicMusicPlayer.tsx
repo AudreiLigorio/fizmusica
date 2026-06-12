@@ -7,9 +7,26 @@ type MusicData = {
   musicName: string | null
   personName: string | null
   lyrics: string | null
+  lyricsLrc: string | null
   mp3Url: string
   imageUrl: string | null
   order: { nome: string; context: string; subcategory: string; musicalStyle: string } | null
+}
+
+type LrcLine = { time: number; text: string }
+
+function parseLrc(lrc: string): LrcLine[] {
+  const result: LrcLine[] = []
+  for (const raw of lrc.split("\n")) {
+    const line = raw.trim()
+    const match = line.match(/^\[(\d{2}):(\d{2})\.(\d{1,3})\](.*)$/)
+    if (!match) continue
+    const minutes = parseInt(match[1])
+    const seconds = parseInt(match[2])
+    const ms      = parseInt(match[3].padEnd(3, "0"))
+    result.push({ time: minutes * 60 + seconds + ms / 1000, text: match[4].trim() })
+  }
+  return result.sort((a, b) => a.time - b.time).filter((l) => l.text)
 }
 
 export default function PublicMusicPlayer({
@@ -29,10 +46,13 @@ export default function PublicMusicPlayer({
   const [showQr, setShowQr]         = useState(false)
   const [activeLine, setActiveLine] = useState(0)
 
-  const lines = (music.lyrics ?? "")
+  // LRC tem prioridade; fallback para letra simples distribuída proporcionalmente
+  const lrcLines: LrcLine[] | null = music.lyricsLrc ? parseLrc(music.lyricsLrc) : null
+  const plainLines = (music.lyrics ?? "")
     .split("\n")
     .map((l) => l.trim())
     .filter(Boolean)
+  const lines = lrcLines ? lrcLines.map((l) => l.text) : plainLines
 
   function togglePlay() {
     const audio = audioRef.current
@@ -48,8 +68,17 @@ export default function PublicMusicPlayer({
     const d = audio.duration || 0
     setProgress(t)
     setDuration(d)
-    if (lines.length > 0 && d > 0) {
-      setActiveLine(Math.min(Math.floor((t / d) * lines.length), lines.length - 1))
+    if (lrcLines && lrcLines.length > 0) {
+      // Sync exato por timestamp LRC
+      let idx = 0
+      for (let i = 0; i < lrcLines.length; i++) {
+        if (t >= lrcLines[i].time) idx = i
+        else break
+      }
+      setActiveLine(idx)
+    } else if (plainLines.length > 0 && d > 0) {
+      // Fallback proporcional
+      setActiveLine(Math.min(Math.floor((t / d) * plainLines.length), plainLines.length - 1))
     }
   }, [lines.length])
 
