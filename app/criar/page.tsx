@@ -1,6 +1,6 @@
-﻿"use client"
+"use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
@@ -9,6 +9,23 @@ import type { CreateOrderDTO } from "@/app/types/order"
 type WizardQuestion    = { id: string; label: string; sort_order: number }
 type WizardSubcategory = { id: string; label: string; emoji: string; slug: string; sort_order: number; wizard_questions: WizardQuestion[] }
 type WizardOccasion    = { id: string; label: string; emoji: string; slug: string; wizard_subcategories: WizardSubcategory[] }
+
+type SessionData = {
+  step: number
+  questionStep: number
+  selectedContext: string
+  selectedSubcategory: string
+  answers: Record<string, string>
+  musicalStyle: string
+  voiceType: string
+  emotion: string
+  nome: string
+  email: string
+  whatsapp: string
+  honoreeName: string
+}
+
+const SESSION_KEY = "fizmusica_session_id"
 
 export default function CriarMusicaPage() {
 
@@ -30,11 +47,126 @@ export default function CriarMusicaPage() {
   const [questionStep, setQuestionStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
 
+  // Session persistence
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [resumeBanner, setResumeBanner] = useState<SessionData | null>(null)
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   useEffect(() => {
     fetch("/api/wizard")
       .then((r) => r.json())
       .then((d) => setOccasions(d.occasions ?? []))
   }, [])
+
+  // Ao montar: verifica se há sessão salva no localStorage
+  useEffect(() => {
+    const storedId = localStorage.getItem(SESSION_KEY)
+    if (!storedId) return
+
+    fetch(`/api/wizard-session?id=${storedId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        const s = json?.session
+        if (!s || !s.data || s.step <= 1) {
+          setSessionId(storedId)
+          return
+        }
+        // Sessão com progresso: exibe banner de retomada
+        setResumeBanner({ ...s.data, step: s.step })
+      })
+      .catch(() => {})
+  }, [])
+
+  /* ================================================= */
+  /* SESSION HELPERS                                   */
+  /* ================================================= */
+
+  function buildSessionData(overrides: Partial<SessionData> = {}): SessionData {
+    return {
+      step,
+      questionStep,
+      selectedContext,
+      selectedSubcategory,
+      answers,
+      musicalStyle,
+      voiceType,
+      emotion,
+      nome,
+      email,
+      whatsapp,
+      honoreeName,
+      ...overrides,
+    }
+  }
+
+  function initSession(id: string) {
+    localStorage.setItem(SESSION_KEY, id)
+    setSessionId(id)
+    fetch("/api/wizard-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, step: 1, data: {} }),
+    }).catch(() => {})
+  }
+
+  function saveSession(data: SessionData, currentStep: number, id?: string) {
+    const sid = id ?? sessionId
+    if (!sid) return
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    saveTimeout.current = setTimeout(() => {
+      fetch("/api/wizard-session", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sid, step: currentStep, data }),
+      }).catch(() => {})
+    }, 500)
+  }
+
+  function clearSession() {
+    const sid = localStorage.getItem(SESSION_KEY)
+    localStorage.removeItem(SESSION_KEY)
+    if (sid) {
+      fetch(`/api/wizard-session?id=${sid}`, { method: "DELETE" }).catch(() => {})
+    }
+    setSessionId(null)
+  }
+
+  function resumeSession(s: SessionData) {
+    setStep(s.step)
+    setQuestionStep(s.questionStep ?? 0)
+    setSelectedContext(s.selectedContext ?? "")
+    setSelectedSubcategory(s.selectedSubcategory ?? "")
+    setAnswers(s.answers ?? {})
+    setMusicalStyle(s.musicalStyle ?? "")
+    setVoiceType(s.voiceType ?? "")
+    setEmotion(s.emotion ?? "")
+    setNome(s.nome ?? "")
+    setEmail(s.email ?? "")
+    setWhatsapp(s.whatsapp ?? "")
+    setHonoreeName(s.honoreeName ?? "")
+    setResumeBanner(null)
+    const storedId = localStorage.getItem(SESSION_KEY)
+    if (storedId) setSessionId(storedId)
+  }
+
+  function startFresh() {
+    clearSession()
+    setResumeBanner(null)
+    setStep(1)
+    setQuestionStep(0)
+    setSelectedContext("")
+    setSelectedSubcategory("")
+    setAnswers({})
+    setMusicalStyle("")
+    setVoiceType("")
+    setEmotion("")
+    setNome("")
+    setEmail("")
+    setWhatsapp("")
+    setHonoreeName("")
+    const newId = crypto.randomUUID()
+    initSession(newId)
+  }
 
   /* ================================================= */
   /* QUESTIONS                                         */
@@ -82,10 +214,14 @@ export default function CriarMusicaPage() {
         return
       }
       if (questionStep < questions.length - 1) {
-        setQuestionStep(questionStep + 1)
+        const nextQ = questionStep + 1
+        setQuestionStep(nextQ)
+        saveSession(buildSessionData({ questionStep: nextQ }), step)
         return
       } else {
-        setStep(3)
+        const nextSt = 3
+        setStep(nextSt)
+        saveSession(buildSessionData({ step: nextSt, questionStep }), nextSt)
         return
       }
     }
@@ -114,7 +250,9 @@ export default function CriarMusicaPage() {
       }
     }
 
-    setStep(step + 1)
+    const nextSt = step + 1
+    setStep(nextSt)
+    saveSession(buildSessionData({ step: nextSt }), nextSt)
   }
 
   function maskWhatsapp(value: string): string {
@@ -131,10 +269,45 @@ export default function CriarMusicaPage() {
   const prevStep = () => {
     setError("")
     if (step === 2 && questionStep > 0) {
-      setQuestionStep(questionStep - 1)
+      const prevQ = questionStep - 1
+      setQuestionStep(prevQ)
+      saveSession(buildSessionData({ questionStep: prevQ }), step)
     } else {
-      setStep(step - 1)
+      const prevSt = step - 1
+      setStep(prevSt)
+      saveSession(buildSessionData({ step: prevSt }), prevSt)
     }
+  }
+
+  /* ================================================= */
+  /* INIT SESSION on first subcategory click           */
+  /* ================================================= */
+
+  function handleSubcategoryClick(sub: WizardSubcategory, contextLabel: string) {
+    setSelectedSubcategory(sub.label)
+    setQuestionStep(0)
+    setAnswers({})
+
+    let sid = sessionId
+    if (!sid) {
+      sid = crypto.randomUUID()
+      initSession(sid)
+    }
+
+    setTimeout(() => {
+      setStep(2)
+      saveSession(
+        buildSessionData({
+          step: 2,
+          questionStep: 0,
+          answers: {},
+          selectedContext: contextLabel,
+          selectedSubcategory: sub.label,
+        }),
+        2,
+        sid!,
+      )
+    }, 150)
   }
 
   /* ================================================= */
@@ -179,7 +352,7 @@ export default function CriarMusicaPage() {
         return
       }
 
-      // Redireciona para escolha de produto
+      clearSession()
       router.push(`/produtos?orderId=${data.orderId}`)
     } catch {
       setError("Falha de conexão. Verifique sua internet.")
@@ -226,11 +399,6 @@ WHATSAPP: ${whatsapp}`
         <Header showButton={false} progress={progress} />
       </div>
 
-      {/*
-        Container único adaptativo:
-        Mobile  → fixed tela cheia, flex-col
-        Desktop → static, fluxo normal, pt-40
-      */}
       <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
            style={{ background: "#07060d", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
 
@@ -253,6 +421,35 @@ WHATSAPP: ${whatsapp}`
         {/* ── Área de conteúdo ── */}
         <div className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12" style={{ width: "100%", boxSizing: "border-box" }}>
+
+            {/* ── Banner de retomada ── */}
+            {resumeBanner && (
+              <div className="mb-6 rounded-2xl p-5 border"
+                   style={{ background: "rgba(240,25,107,0.08)", borderColor: "rgba(240,25,107,0.3)" }}>
+                <p className="text-sm font-semibold text-white mb-1">
+                  🎵 Encontramos sua música em andamento!
+                </p>
+                <p className="text-xs text-white/60 mb-4">
+                  Você já havia respondido parte do formulário. Deseja continuar de onde parou?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => resumeSession(resumeBanner)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+                  >
+                    Continuar de onde parei
+                  </button>
+                  <button
+                    onClick={startFresh}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white/60 border border-white/10"
+                  >
+                    Começar do zero
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="wizard-card">
               <div className="py-2 lg:py-0">
 
@@ -318,12 +515,7 @@ WHATSAPP: ${whatsapp}`
                         {occasion.wizard_subcategories.map((sub) => (
                           <button
                             key={sub.id}
-                            onClick={() => {
-                              setSelectedSubcategory(sub.label)
-                              setQuestionStep(0)
-                              setAnswers({})
-                              setTimeout(() => setStep(2), 150)
-                            }}
+                            onClick={() => handleSubcategoryClick(sub, occasion.label)}
                             className={`rounded-2xl p-5 border transition-all text-left ${
                               selectedSubcategory === sub.label
                                 ? "border-pink-500 bg-pink-500/10"
@@ -382,7 +574,6 @@ WHATSAPP: ${whatsapp}`
                   className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-pink-500 resize-none transition-colors placeholder:text-white/30"
                 />
 
-                {/* Botão inline — sobe junto com o teclado no mobile */}
                 <button
                   onClick={nextStep}
                   className="lg:hidden w-full mt-3 py-3.5 rounded-2xl text-sm font-semibold text-white"
@@ -401,7 +592,6 @@ WHATSAPP: ${whatsapp}`
                 <h1 className="text-xl font-bold tracking-tight">Defina o estilo</h1>
               </div>
 
-              {/* Estilo */}
               <div className="mb-4">
                 <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
                 <select
@@ -409,7 +599,7 @@ WHATSAPP: ${whatsapp}`
                   onChange={(e) => setMusicalStyle(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 font-medium outline-none appearance-none cursor-pointer transition-colors"
                   style={{
-                    fontSize: "16px", /* evita zoom no iOS Safari */
+                    fontSize: "16px",
                     background: musicalStyle ? "rgba(240,25,107,0.08)" : "rgba(255,255,255,0.07)",
                     border: musicalStyle ? "1px solid rgba(240,25,107,0.5)" : "1px solid rgba(255,255,255,0.25)",
                     color: musicalStyle ? "white" : "rgba(255,255,255,0.75)",
@@ -432,7 +622,6 @@ WHATSAPP: ${whatsapp}`
                 </select>
               </div>
 
-              {/* Voz */}
               <div className="mb-4">
                 <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Tipo de voz</h2>
                 <div className="grid grid-cols-2 gap-2 overflow-hidden">
@@ -452,7 +641,6 @@ WHATSAPP: ${whatsapp}`
                 </div>
               </div>
 
-              {/* Emoção */}
               <div>
                 <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Emoção da música</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
@@ -641,7 +829,7 @@ WHATSAPP: ${whatsapp}`
           </div>{/* fecha px-5/lg:max-w-3xl */}
         </div>{/* fecha flex-1 overflow-y-auto */}
 
-        {/* Botão fixo no rodapé — mobile (oculto no step 2 pois o botão fica inline junto ao textarea) */}
+        {/* Botão fixo no rodapé — mobile */}
         {step !== 1 && step !== 2 && (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
@@ -672,4 +860,3 @@ WHATSAPP: ${whatsapp}`
     </div>
   )
 }
-

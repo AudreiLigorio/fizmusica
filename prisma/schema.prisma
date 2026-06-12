@@ -136,6 +136,20 @@ model GeneratedMusic {
 }
 
 // ============================================================
+// SESSÕES ANÔNIMAS DO WIZARD (sem login)
+// ============================================================
+
+model WizardSession {
+  id        String   @id @db.Uuid
+  step      Int      @default(1)
+  data      Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("wizard_sessions")
+}
+
+// ============================================================
 // ENUMS
 // ============================================================
 
