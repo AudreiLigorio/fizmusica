@@ -263,10 +263,69 @@ export default function PublicMusicPlayer({
             📱 Imprimir QR Code
           </button>
 
+          {/* MODAL DO CARD DE IMPRESSÃO */}
           {showQr && (
-            <div className="flex flex-col items-center gap-3 bg-white p-6 rounded-2xl">
-              <QRCodeSVG value={publicUrl} size={180} />
-              <p className="text-gray-500 text-xs text-center">Escaneie para ouvir a música</p>
+            <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 print:p-0 print:bg-white print:inset-auto">
+              <div className="flex flex-col items-center gap-4 w-full max-w-sm">
+
+                {/* CARD — estilo do template */}
+                <div
+                  id="qr-print-card"
+                  className="relative w-full bg-[#FBF5EE] rounded-2xl border-2 border-dashed border-[#C8B99A]/50 flex flex-col items-center justify-between py-10 px-8 print:rounded-none print:border-none print:shadow-none"
+                  style={{ minHeight: 520 }}
+                >
+                  {/* Topo — coração dourado */}
+                  <div className="flex flex-col items-center gap-5">
+                    <div className="flex items-center gap-3">
+                      <span className="block h-px w-8 bg-[#B8963E]" />
+                      <span className="text-[#B8963E] text-xl">♥</span>
+                      <span className="block h-px w-8 bg-[#B8963E]" />
+                    </div>
+
+                    <p className="text-[#2C2216] text-center font-serif leading-snug" style={{ fontSize: "1.6rem" }}>
+                      Existe algo que<br />eu gostaria de<br />te dizer.
+                    </p>
+
+                    <div className="flex items-center gap-3">
+                      <span className="block h-px w-8 bg-[#B8963E]" />
+                      <span className="text-[#B8963E] text-xl">♥</span>
+                      <span className="block h-px w-8 bg-[#B8963E]" />
+                    </div>
+
+                    <p className="text-[#B8963E] italic text-lg font-serif">Escaneie e descubra.</p>
+                  </div>
+
+                  {/* QR CODE no retângulo */}
+                  <div className="my-6 border-2 border-[#C8B99A] rounded-xl p-5 bg-white flex items-center justify-center">
+                    <QRCodeSVG value={publicUrl} size={160} />
+                  </div>
+
+                  {/* Rodapé FizMúsica */}
+                  <div className="flex flex-col items-center gap-1">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B8963E" strokeWidth="1.5">
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    <p className="text-[#2C2216] tracking-[0.2em] text-xs font-semibold mt-1">FIZMÚSICA</p>
+                    <p className="text-[#9A8A76] tracking-widest text-[10px]">SUA HISTÓRIA. SUA MÚSICA.</p>
+                  </div>
+                </div>
+
+                {/* Botões fora do card */}
+                <div className="flex gap-3 print:hidden">
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center gap-2 bg-[#B8963E] hover:bg-[#9A7D35] text-white px-6 py-3 rounded-2xl text-sm font-semibold transition-all"
+                  >
+                    🖨️ Imprimir
+                  </button>
+                  <button
+                    onClick={() => setShowQr(false)}
+                    className="flex items-center gap-2 bg-white/10 border border-white/20 hover:bg-white/20 text-white px-5 py-3 rounded-2xl text-sm transition-all"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
