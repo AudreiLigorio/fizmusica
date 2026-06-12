@@ -409,7 +409,7 @@ export default function PublicMusicPlayer({
         </div>
 
         {/* FOOTER */}
-        <div className="shrink-0 pb-8 flex flex-col items-center gap-4">
+        <div className="shrink-0 pb-8 flex flex-row items-center justify-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo_fizmusica.png" alt="FizMusica" className="h-8 opacity-80" />
           <a
