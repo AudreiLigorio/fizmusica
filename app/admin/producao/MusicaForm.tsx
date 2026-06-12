@@ -35,9 +35,30 @@ export default function MusicaForm({
   const [delivering, setDelivering]   = useState(false)
   const [publicUrl, setPublicUrl]     = useState<string | null>(null)
   const [msg, setMsg]                 = useState("")
-  const fileRef = useRef<HTMLInputElement>(null)
-  const imgRef  = useRef<HTMLInputElement>(null)
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
+  const fileRef  = useRef<HTMLInputElement>(null)
+  const imgRef   = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const baseUrl  = typeof window !== "undefined" ? window.location.origin : ""
+
+  function gerarLrc() {
+    const linhas = lyrics.split("\n").map((l) => l.trim()).filter(Boolean)
+    if (linhas.length === 0) { setMsg("❌ Preencha a letra antes de gerar o LRC."); return }
+    const duracao = audioRef.current?.duration
+    if (!duracao || isNaN(duracao)) { setMsg("❌ Aguarde o áudio carregar para gerar o LRC."); return }
+
+    // Distribui timestamps uniformemente, com 80% do tempo (reserva silêncio final)
+    const intervalo = (duracao * 0.85) / linhas.length
+    const lrc = linhas.map((linha, i) => {
+      const t = i * intervalo
+      const mm = Math.floor(t / 60).toString().padStart(2, "0")
+      const ss = Math.floor(t % 60).toString().padStart(2, "0")
+      const cs = Math.floor((t % 1) * 100).toString().padStart(2, "0")
+      return `[${mm}:${ss}.${cs}]${linha}`
+    }).join("\n")
+
+    setLyricsLrc(lrc)
+    setMsg("✅ LRC gerado! Revise os timestamps e clique em Salvar.")
+  }
 
   async function load() {
     const res = await fetch(`/api/admin/producao/${orderId}`)
@@ -216,8 +237,15 @@ export default function MusicaForm({
             </label>
             <p className="text-xs text-gray-600 mb-2">
               Formato: <code className="bg-white/5 px-1 rounded">[mm:ss.xx]Linha da letra</code>
-              {" "}ex: <code className="bg-white/5 px-1 rounded">[00:12.50]Quando alguém te enche de coragem</code>
+              {" "}— ou use o botão abaixo para gerar automaticamente a partir da letra simples.
             </p>
+            <button
+              type="button"
+              onClick={gerarLrc}
+              className="mb-2 text-xs px-3 py-1.5 rounded-lg border border-pink-500/30 text-pink-400 hover:bg-pink-500/10 transition-colors"
+            >
+              ✨ Gerar LRC automaticamente
+            </button>
             <textarea
               rows={8}
               value={lyricsLrc}
@@ -233,7 +261,7 @@ export default function MusicaForm({
 
             {mp3Url ? (
               <div className="space-y-2">
-                <audio controls src={mp3Url} className="w-full h-10" />
+                <audio ref={audioRef} controls src={mp3Url} className="w-full h-10" />
                 <p className="text-xs text-gray-500 break-all">{mp3Url}</p>
                 <button
                   onClick={() => { setMp3Url(""); if (fileRef.current) fileRef.current.value = "" }}
