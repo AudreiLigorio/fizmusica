@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
@@ -37,6 +37,14 @@ function maskWhatsapp(value: string): string {
 }
 
 export default function CriarMusicaPage() {
+  return (
+    <Suspense fallback={null}>
+      <CriarMusicaInner />
+    </Suspense>
+  )
+}
+
+function CriarMusicaInner() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
