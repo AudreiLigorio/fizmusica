@@ -26,7 +26,8 @@ function parseLrc(lrc: string): LrcLine[] {
     const ms      = parseInt(match[3].padEnd(3, "0"))
     result.push({ time: minutes * 60 + seconds + ms / 1000, text: match[4].trim() })
   }
-  return result.sort((a, b) => a.time - b.time).filter((l) => l.text)
+  // filtra linhas vazias e marcadores de seção como [Verse 1], [Chorus], etc.
+  return result.sort((a, b) => a.time - b.time).filter((l) => l.text && !/^\[.*\]$/.test(l.text))
 }
 
 export default function PublicMusicPlayer({
@@ -51,8 +52,14 @@ export default function PublicMusicPlayer({
   const plainLines = (music.lyrics ?? "")
     .split("\n")
     .map((l) => l.trim())
-    .filter(Boolean)
+    .filter((l) => l && !/^\[.*\]$/.test(l))
   const lines = lrcLines ? lrcLines.map((l) => l.text) : plainLines
+
+  // refs estáveis para uso dentro do callback sem stale closure
+  const lrcLinesRef   = useRef(lrcLines)
+  const plainLinesRef = useRef(plainLines)
+  useEffect(() => { lrcLinesRef.current = lrcLines }, [lrcLines])
+  useEffect(() => { plainLinesRef.current = plainLines }, [plainLines])
 
   function togglePlay() {
     const audio = audioRef.current
@@ -68,19 +75,19 @@ export default function PublicMusicPlayer({
     const d = audio.duration || 0
     setProgress(t)
     setDuration(d)
-    if (lrcLines && lrcLines.length > 0) {
-      // Sync exato por timestamp LRC
+    const lrc   = lrcLinesRef.current
+    const plain = plainLinesRef.current
+    if (lrc && lrc.length > 0) {
       let idx = 0
-      for (let i = 0; i < lrcLines.length; i++) {
-        if (t >= lrcLines[i].time) idx = i
+      for (let i = 0; i < lrc.length; i++) {
+        if (t >= lrc[i].time) idx = i
         else break
       }
       setActiveLine(idx)
-    } else if (plainLines.length > 0 && d > 0) {
-      // Fallback proporcional
-      setActiveLine(Math.min(Math.floor((t / d) * plainLines.length), plainLines.length - 1))
+    } else if (plain.length > 0 && d > 0) {
+      setActiveLine(Math.min(Math.floor((t / d) * plain.length), plain.length - 1))
     }
-  }, [lines.length])
+  }, [])
 
   useEffect(() => {
     activeLineRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
