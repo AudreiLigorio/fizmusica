@@ -439,7 +439,7 @@ EMOÇÃO: ${emotion}
 
 NOME: ${nome}
 E-MAIL: ${email}
-WHATSAPP: ${whatsapp}`
+WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
   /* ================================================= */
   /* RENDER                                            */
