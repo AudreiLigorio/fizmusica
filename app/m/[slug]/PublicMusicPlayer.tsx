@@ -106,7 +106,7 @@ export default function PublicMusicPlayer({
   return (
     <div className="relative min-h-[100dvh] flex flex-col bg-black text-white">
 
-      {/* BACKGROUND — foto fixa, cobre a tela toda, ancorada no topo */}
+      {/* BACKGROUND — camada 1: foto borrada cobrindo tudo */}
       {music.imageUrl ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -114,9 +114,19 @@ export default function PublicMusicPlayer({
             src={music.imageUrl}
             alt=""
             aria-hidden
-            className="fixed inset-0 w-full h-full object-cover object-top"
+            className="fixed inset-0 w-full h-full object-cover object-center scale-110"
+            style={{ filter: "blur(40px) brightness(0.3) saturate(1.4)" }}
           />
-          <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/25 to-black/90" />
+          {/* camada 2: foto nítida centralizada, altura completa, sem corte lateral */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={music.imageUrl}
+            alt=""
+            aria-hidden
+            className="fixed top-0 left-1/2 -translate-x-1/2 h-full w-auto object-cover"
+            style={{ maxWidth: "100vw" }}
+          />
+          <div className="fixed inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/85" />
         </>
       ) : (
         <div className="fixed inset-0 bg-gradient-to-br from-zinc-900 via-black to-zinc-900" />
