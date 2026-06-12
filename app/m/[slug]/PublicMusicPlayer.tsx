@@ -114,7 +114,7 @@ export default function PublicMusicPlayer({
             src={music.imageUrl}
             alt=""
             aria-hidden
-            className="fixed inset-0 w-full h-full object-cover object-top"
+            className="fixed inset-0 w-full h-full object-contain object-center"
           />
           <div className="fixed inset-0 bg-gradient-to-b from-black/60 via-black/25 to-black/90" />
         </>
