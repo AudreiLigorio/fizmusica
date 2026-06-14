@@ -20,8 +20,29 @@ export default function ProductForm({ product }: { product: Product }) {
   const [active, setActive] = useState(product.active)
   const [featured, setFeatured] = useState(product.featured)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null)
   const router = useRouter()
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/produtos/${product.id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        setFeedback({ ok: false, msg: data.error ?? "Erro ao excluir." })
+        setConfirmDelete(false)
+      } else {
+        window.location.reload()
+      }
+    } catch {
+      setFeedback({ ok: false, msg: "Falha de conexão." })
+      setConfirmDelete(false)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -102,17 +123,47 @@ export default function ProductForm({ product }: { product: Product }) {
           {feedback.ok ? "✅ " : "❌ "}{feedback.msg}
         </p>
       )}
-      <div className="flex gap-3 justify-end">
-        <button onClick={() => setOpen(false)} className="text-sm text-gray-500 hover:text-white px-4 py-2 rounded-xl border border-white/10 transition-all">
-          Cancelar
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="text-sm bg-pink-500 hover:bg-pink-600 disabled:opacity-40 px-5 py-2 rounded-xl font-semibold transition-all"
-        >
-          {saving ? "Salvando…" : "Salvar"}
-        </button>
+      <div className="flex gap-3 justify-between items-center">
+        {/* Excluir */}
+        {!confirmDelete ? (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="text-xs text-red-400 hover:text-red-300 border border-red-500/20 hover:border-red-500/50 px-3 py-2 rounded-xl transition-all"
+          >
+            🗑 Excluir
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-red-400">Tem certeza?</span>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-xs bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white px-3 py-1.5 rounded-lg font-semibold transition-all"
+            >
+              {deleting ? "Excluindo…" : "Confirmar"}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="text-xs text-gray-500 hover:text-white px-3 py-1.5 rounded-lg border border-white/10 transition-all"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {/* Salvar / Cancelar */}
+        <div className="flex gap-3">
+          <button onClick={() => { setOpen(false); setConfirmDelete(false) }} className="text-sm text-gray-500 hover:text-white px-4 py-2 rounded-xl border border-white/10 transition-all">
+            Cancelar
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="text-sm bg-pink-500 hover:bg-pink-600 disabled:opacity-40 px-5 py-2 rounded-xl font-semibold transition-all"
+          >
+            {saving ? "Salvando…" : "Salvar"}
+          </button>
+        </div>
       </div>
     </div>
   )

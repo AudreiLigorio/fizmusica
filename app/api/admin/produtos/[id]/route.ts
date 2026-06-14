@@ -11,6 +11,20 @@ const schema = z.object({
   featured:    z.boolean().optional(),
 })
 
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params
+    const supabase = createServerClient()
+    const { error } = await supabase.from("products").delete().eq("id", id)
+    if (error) throw error
+    revalidatePath("/admin/produtos")
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Erro desconhecido"
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
