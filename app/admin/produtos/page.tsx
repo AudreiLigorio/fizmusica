@@ -49,7 +49,15 @@ export default async function AdminProdutos() {
               </div>
               <ProductForm product={p} />
             </div>
-            <DeliveryOptions productId={p.id} />
+            {p.category !== "DIGITAL_PHYSICAL" ? (
+              <DeliveryOptions productId={p.id} />
+            ) : (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <p className="text-xs text-gray-500">
+                  📦 Produto físico — o cliente preencherá os dados de envio (nome, CEP, endereço, etc.) ao selecionar este produto. Prazos de entrega não se aplicam.
+                </p>
+              </div>
+            )}
           </div>
         ))}
       </div>

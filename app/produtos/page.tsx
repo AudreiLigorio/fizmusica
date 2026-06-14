@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 
 type DeliveryOption = {
   id: string
@@ -21,6 +22,7 @@ type Product = {
   price: number
   imageUrl: string | null
   featured: boolean
+  category?: string | null
   product_delivery_options: DeliveryOption[]
 }
 
@@ -64,6 +66,10 @@ function ProdutosContent() {
   const [step, setStep]             = useState<1 | 2>(1)
   const [selected, setSelected]     = useState<Product | null>(null)
   const [delivery, setDelivery]     = useState<DeliveryOption | null>(null)
+  const [shipping, setShipping]     = useState<ShippingData>(EMPTY_SHIPPING)
+  const [savingShipping, setSavingShipping] = useState(false)
+
+  const isPhysical = selected?.category === "DIGITAL_PHYSICAL"
 
   useEffect(() => {
     fetch("/api/produtos")
@@ -75,16 +81,37 @@ function ProdutosContent() {
   function handleSelectProduct(product: Product) {
     setSelected(product)
     setDelivery(null)
-    // Auto-avança para step 2 se houver opções de prazo
-    if (product.product_delivery_options.length > 0) {
+    // Auto-avança para step 2 se for físico ou houver opções de prazo
+    if (product.category === "DIGITAL_PHYSICAL" || product.product_delivery_options.length > 0) {
       setStep(2)
     }
   }
 
-  function handleContinuar() {
+  async function handleContinuar() {
     if (!selected || !orderId) return
 
-    // Vai para a página de checkout com o Payment Brick
+    // Produto físico: salva dados de envio antes de seguir
+    if (isPhysical) {
+      if (!isShippingValid(shipping)) return
+      setSavingShipping(true)
+      try {
+        const res = await fetch(`/api/orders/${orderId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(shipping),
+        })
+        if (!res.ok) {
+          alert("Erro ao salvar dados de envio. Tente novamente.")
+          setSavingShipping(false)
+          return
+        }
+      } catch {
+        alert("Erro de conexão.")
+        setSavingShipping(false)
+        return
+      }
+    }
+
     const params = new URLSearchParams({
       orderId,
       productId:   selected.id,
@@ -95,6 +122,10 @@ function ProdutosContent() {
 
     window.location.href = `/checkout?${params.toString()}`
   }
+
+  const canContinue = isPhysical
+    ? isShippingValid(shipping)
+    : (step === 2 ? !!delivery : (selected && selected.product_delivery_options.length === 0))
 
   const finalPrice = selected
     ? selected.price + (delivery?.price_extra ?? 0)
@@ -150,7 +181,7 @@ function ProdutosContent() {
             <div className="hidden lg:flex items-center justify-center gap-3 mb-10">
               {[
                 { n: 1, label: "Produto" },
-                { n: 2, label: "Prazo de entrega" },
+                { n: 2, label: isPhysical ? "Dados de envio" : "Prazo de entrega" },
               ].map(({ n, label }, i, arr) => (
                 <div key={n} className="flex items-center gap-3">
                   <button
@@ -257,6 +288,13 @@ function ProdutosContent() {
               <span className="text-pink-400 font-bold">R$ {fmt(selected.price)}</span>
             </div>
 
+            {isPhysical ? (
+              <>
+                <h2 className="text-2xl font-bold mb-2">📦 Dados para envio</h2>
+                <p className="text-gray-200 mb-6">Preencha os dados de quem vai receber o produto.</p>
+                <ShippingForm value={shipping} onChange={setShipping} />
+              </>
+            ) : (<>
             <h2 className="text-2xl font-bold mb-2">⏱ Escolha o prazo de entrega</h2>
             <p className="text-gray-200 mb-6">Quanto mais urgente, mais rápido entregamos.</p>
 
@@ -301,6 +339,7 @@ function ProdutosContent() {
                 )
               })}
             </div>
+            </>)}
           </div>
         )}
 
@@ -318,11 +357,14 @@ function ProdutosContent() {
               {step === 2 && (
                 <button
                   onClick={handleContinuar}
-                  disabled={!delivery}
+                  disabled={!canContinue || savingShipping}
                   className="px-12 py-5 rounded-3xl text-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: delivery ? "linear-gradient(135deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.08)", boxShadow: delivery ? "0 8px 32px rgba(240,25,107,0.35)" : "none", color: delivery ? "white" : "rgba(255,255,255,0.3)" }}
+                  style={{ background: canContinue ? "linear-gradient(135deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.08)", boxShadow: canContinue ? "0 8px 32px rgba(240,25,107,0.35)" : "none", color: canContinue ? "white" : "rgba(255,255,255,0.3)" }}
                 >
-                  {delivery ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` : "Selecione um prazo para continuar"}
+                  {savingShipping ? "Salvando…" :
+                    isPhysical
+                      ? (canContinue ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` : "Preencha todos os campos")
+                      : (delivery ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` : "Selecione um prazo para continuar")}
                 </button>
               )}
               <div className="flex gap-8 text-sm text-gray-300">
@@ -339,15 +381,15 @@ function ProdutosContent() {
         {(step === 1 && selected && selected.product_delivery_options.length === 0) || step === 2 ? (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
-            {step === 2 && !delivery ? (
+            {step === 2 && !canContinue ? (
               <div className="w-full py-4 rounded-2xl text-sm font-semibold text-center text-white/55"
                    style={{ background: "rgba(255,255,255,0.06)" }}>
-                Selecione um prazo para continuar
+                {isPhysical ? "Preencha todos os campos de envio" : "Selecione um prazo para continuar"}
               </div>
             ) : (
               <button
                 onClick={handleContinuar}
-                disabled={step === 2 && !delivery}
+                disabled={(step === 2 && !canContinue) || savingShipping}
                 className="w-full py-4 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
                 style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
               >
