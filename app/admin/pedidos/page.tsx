@@ -7,7 +7,7 @@ async function getOrders() {
   const supabase = createServerClient()
   const { data } = await supabase
     .from("orders")
-    .select("id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, status, paymentStatus, createdAt, product_delivery_options(label, days)")
+    .select("id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, status, paymentStatus, createdAt, products(name), product_delivery_options(label, days)")
     .order("createdAt", { ascending: true })
   return data ?? []
 }
@@ -79,7 +79,12 @@ export default async function AdminPedidos() {
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-gray-400 text-xs">{o.musicalStyle}</td>
+                  <td className="px-6 py-4 text-gray-400 text-xs">
+                    <div>{o.musicalStyle}</div>
+                    {(o as any).products?.name && (
+                      <div className="text-pink-400 mt-0.5">📦 {(o as any).products.name}</div>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${STATUS_COLOR[o.status] ?? ""}`}>
                       {STATUS_LABEL[o.status] ?? o.status}
@@ -115,6 +120,9 @@ export default async function AdminPedidos() {
                 <div className="min-w-0">
                   <p className="font-medium text-sm">{o.nome}</p>
                   <p className="text-gray-500 text-xs mt-0.5">{o.subcategory} · {o.musicalStyle}</p>
+                  {(o as any).products?.name && (
+                    <p className="text-pink-400 text-xs mt-0.5">📦 {(o as any).products.name}</p>
+                  )}
                   {(o as any).product_delivery_options && (
                     <p className="text-yellow-400 text-xs mt-0.5">⏱ {(o as any).product_delivery_options.label}</p>
                   )}

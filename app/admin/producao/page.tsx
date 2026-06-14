@@ -20,7 +20,7 @@ async function getQueue() {
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("orders")
-    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt")
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, products(name)")
     .eq("paymentStatus", "PAID")
     .neq("status", "ABANDONED")
     .order("createdAt", { ascending: true })
@@ -101,6 +101,7 @@ export default async function AdminProducao() {
                 {/* Briefing */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {[
+                    { label: "Produto",    value: (order as any).products?.name },
                     { label: "Ocasião",    value: order.subcategory },
                     { label: "Estilo",     value: order.musicalStyle },
                     { label: "Voz",        value: order.voiceType },
