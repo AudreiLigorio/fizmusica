@@ -10,6 +10,7 @@ type Product = {
   price: number
   active: boolean
   featured: boolean
+  category?: string | null
 }
 
 export default function ProductForm({ product }: { product: Product }) {
@@ -19,6 +20,9 @@ export default function ProductForm({ product }: { product: Product }) {
   const [price, setPrice] = useState(String(product.price))
   const [active, setActive] = useState(product.active)
   const [featured, setFeatured] = useState(product.featured)
+  const [category, setCategory] = useState<"DIGITAL" | "DIGITAL_PHYSICAL">(
+    product.category === "DIGITAL_PHYSICAL" ? "DIGITAL_PHYSICAL" : "DIGITAL"
+  )
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -51,7 +55,7 @@ export default function ProductForm({ product }: { product: Product }) {
       const res = await fetch(`/api/admin/produtos/${product.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, price: Number(price), active, featured }),
+        body: JSON.stringify({ name, description, price: Number(price), active, featured, category }),
       })
       const data = await res.json()
       if (!res.ok || !data.success) {
@@ -98,6 +102,17 @@ export default function ProductForm({ product }: { product: Product }) {
             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
           />
         </div>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">Categoria do produto</label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value as "DIGITAL" | "DIGITAL_PHYSICAL")}
+          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
+        >
+          <option value="DIGITAL">Produto digital</option>
+          <option value="DIGITAL_PHYSICAL">Produto digital e físico</option>
+        </select>
       </div>
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Descrição</label>

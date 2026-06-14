@@ -9,6 +9,7 @@ const schema = z.object({
   price:       z.number().positive().optional(),
   active:      z.boolean().optional(),
   featured:    z.boolean().optional(),
+  category:    z.enum(["DIGITAL", "DIGITAL_PHYSICAL"]).optional(),
 })
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
