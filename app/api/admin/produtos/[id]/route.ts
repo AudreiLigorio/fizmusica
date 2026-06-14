@@ -28,6 +28,16 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     )
   }
 
+  // Remove opções de entrega vinculadas antes de excluir o produto
+  const { error: delOpts } = await supabase
+    .from("product_delivery_options")
+    .delete()
+    .eq("product_id", id)
+
+  if (delOpts) {
+    return NextResponse.json({ error: delOpts.message ?? "Erro ao excluir opções de entrega." }, { status: 500 })
+  }
+
   const { error } = await supabase.from("products").delete().eq("id", id)
   if (error) {
     return NextResponse.json({ error: error.message ?? "Erro ao excluir produto." }, { status: 500 })
