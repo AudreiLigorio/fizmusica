@@ -49,6 +49,7 @@ export default async function AdminPedidos() {
               <tr className="border-b border-white/10 text-gray-500">
                 <th className="text-left px-6 py-4">Cliente</th>
                 <th className="text-left px-6 py-4">Contato</th>
+                <th className="text-left px-6 py-4">Produto</th>
                 <th className="text-left px-6 py-4">Ocasião</th>
                 <th className="text-left px-6 py-4">Estilo</th>
                 <th className="text-left px-6 py-4">Status</th>
@@ -59,7 +60,7 @@ export default async function AdminPedidos() {
             </thead>
             <tbody>
               {orders.length === 0 && (
-                <tr><td colSpan={8} className="px-6 py-12 text-center text-gray-600">Nenhum pedido ainda.</td></tr>
+                <tr><td colSpan={9} className="px-6 py-12 text-center text-gray-600">Nenhum pedido ainda.</td></tr>
               )}
               {orders.map((o) => (
                 <tr key={o.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
@@ -71,6 +72,11 @@ export default async function AdminPedidos() {
                     <div>{o.email}</div>
                     <div className="text-xs">{o.whatsapp}</div>
                   </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs font-medium text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-1 rounded-lg">
+                      {(o as any).products?.name ?? "—"}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 text-gray-300">
                     <div>{o.subcategory}</div>
                     {(o as any).product_delivery_options && (
@@ -80,10 +86,7 @@ export default async function AdminPedidos() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-gray-400 text-xs">
-                    <div>{o.musicalStyle}</div>
-                    {(o as any).products?.name && (
-                      <div className="text-pink-400 mt-0.5">📦 {(o as any).products.name}</div>
-                    )}
+                    {o.musicalStyle}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${STATUS_COLOR[o.status] ?? ""}`}>
@@ -119,10 +122,10 @@ export default async function AdminPedidos() {
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0">
                   <p className="font-medium text-sm">{o.nome}</p>
+                  <span className="inline-block text-xs font-medium text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-md mt-1">
+                    {(o as any).products?.name ?? "—"}
+                  </span>
                   <p className="text-gray-500 text-xs mt-0.5">{o.subcategory} · {o.musicalStyle}</p>
-                  {(o as any).products?.name && (
-                    <p className="text-pink-400 text-xs mt-0.5">📦 {(o as any).products.name}</p>
-                  )}
                   {(o as any).product_delivery_options && (
                     <p className="text-yellow-400 text-xs mt-0.5">⏱ {(o as any).product_delivery_options.label}</p>
                   )}
