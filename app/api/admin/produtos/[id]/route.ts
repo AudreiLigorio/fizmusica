@@ -28,6 +28,26 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     )
   }
 
+  // Busca IDs das opções de entrega deste produto
+  const { data: opts } = await supabase
+    .from("product_delivery_options")
+    .select("id")
+    .eq("product_id", id)
+
+  const optIds = (opts ?? []).map((o) => o.id)
+
+  // Limpa referência em orders.deliveryOptionId
+  if (optIds.length > 0) {
+    const { error: clrOrders } = await supabase
+      .from("orders")
+      .update({ deliveryOptionId: null })
+      .in("deliveryOptionId", optIds)
+
+    if (clrOrders) {
+      return NextResponse.json({ error: clrOrders.message ?? "Erro ao limpar referências de entrega." }, { status: 500 })
+    }
+  }
+
   // Remove opções de entrega vinculadas antes de excluir o produto
   const { error: delOpts } = await supabase
     .from("product_delivery_options")
