@@ -12,6 +12,25 @@ type EffectName = "slide" | "fade" | "cards" | "coverflow"
 
 const MODULES = [Autoplay, EffectFade, EffectCards, EffectCoverflow]
 
+/* Mostra a foto INTEIRA (object-contain) sobre uma cópia borrada que preenche
+   o quadro — assim nenhum efeito corta a imagem e não fica barra vazia feia. */
+function Frame({ url }: { url: string }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 w-full h-full object-cover scale-110"
+        style={{ filter: "blur(28px) brightness(0.55)" }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" className="absolute inset-0 w-full h-full object-contain" />
+    </div>
+  )
+}
+
 export default function PhotoCarousel({
   photos,
   effect = "slide",
@@ -21,8 +40,6 @@ export default function PhotoCarousel({
 }) {
   if (!photos || photos.length === 0) return null
 
-  // Cards e Coverflow ficam melhores como "pôster" centralizado;
-  // Slide e Fade preenchem o fundo inteiro.
   const isDeck = effect === "cards" || effect === "coverflow"
 
   const common = {
@@ -52,8 +69,7 @@ export default function PhotoCarousel({
           >
             {photos.map((url, i) => (
               <SwiperSlide key={i} className="rounded-3xl overflow-hidden">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <Frame url={url} />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -73,8 +89,7 @@ export default function PhotoCarousel({
       >
         {photos.map((url, i) => (
           <SwiperSlide key={i}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={url} alt="" className="w-full h-full object-cover object-center" />
+            <Frame url={url} />
           </SwiperSlide>
         ))}
       </Swiper>
