@@ -339,7 +339,7 @@ export default function PublicMusicPlayer({
       </div>
 
       {/* ===================== MOBILE — imersivo + bottom sheet ===================== */}
-      <div className="lg:hidden relative min-h-[100dvh]">
+      <div className="lg:hidden relative h-[100dvh] overflow-hidden">
         <div className="absolute inset-0 z-0">{photoPanel}</div>
         <div className="absolute inset-0 z-[5] pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 30%, transparent 45%, rgba(0,0,0,0.85) 100%)" }} />
 
@@ -348,7 +348,7 @@ export default function PublicMusicPlayer({
 
         {/* Bottom sheet */}
         <div
-          className="absolute left-0 right-0 bottom-0 z-20 h-[84vh] rounded-t-3xl border-t border-white/10 transition-transform duration-300 ease-out flex flex-col"
+          className="absolute left-0 right-0 bottom-0 z-20 h-[86dvh] rounded-t-3xl border-t border-white/10 transition-transform duration-300 ease-out flex flex-col"
           style={{
             background: "linear-gradient(180deg, rgba(20,10,28,0.86) 0%, rgba(10,9,18,0.96) 40%)",
             backdropFilter: "blur(18px)",
@@ -384,7 +384,7 @@ export default function PublicMusicPlayer({
           </div>
 
           {/* Botões fixos embaixo — sempre visíveis */}
-          <div className="shrink-0 px-6 pt-3 pb-6 space-y-3 border-t border-white/10">
+          <div className="shrink-0 px-6 pt-3 space-y-3 border-t border-white/10" style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
             {shareButtons}
             <div className="flex items-center justify-center gap-4 pt-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
