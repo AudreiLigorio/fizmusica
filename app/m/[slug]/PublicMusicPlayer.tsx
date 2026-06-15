@@ -281,7 +281,7 @@ export default function PublicMusicPlayer({
   }
 
   return (
-    <div className="relative min-h-[100dvh] bg-[#07060d] text-white overflow-hidden">
+    <div className="relative isolate min-h-[100dvh] bg-[#07060d] text-white overflow-hidden">
       <AnimatedBg />
 
       <audio
