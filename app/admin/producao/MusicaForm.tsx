@@ -32,6 +32,7 @@ export default function MusicaForm({
   const [uploading, setUploading]     = useState(false)
   const [uploadingImg, setUploadingImg] = useState(false)
   const [saving, setSaving]           = useState(false)
+  const [simulating, setSimulating]   = useState(false)
   const [delivering, setDelivering]   = useState(false)
   const [publicUrl, setPublicUrl]     = useState<string | null>(null)
   const [msg, setMsg]                 = useState("")
@@ -203,6 +204,25 @@ export default function MusicaForm({
       setMsg(`❌ Erro: ${data.error}`)
     }
     setSaving(false)
+  }
+
+  async function handleSimular() {
+    setSimulating(true)
+    setMsg("")
+    // Salva o rascunho antes para a prévia refletir o estado atual
+    const res = await fetch(`/api/admin/producao/${orderId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mp3Url, imageUrl, lyrics, lyricsLrc, musicName, personName }),
+    })
+    const data = await res.json()
+    setSimulating(false)
+    if (data.music) {
+      setMusic(data.music)
+      window.open(`/admin/producao/preview/${orderId}`, "_blank", "noopener")
+    } else {
+      setMsg(`❌ Erro ao preparar prévia: ${data.error}`)
+    }
   }
 
   async function handleEntregar() {
@@ -480,6 +500,20 @@ export default function MusicaForm({
                   Salvando…
                 </>
               ) : "Salvar"}
+            </button>
+
+            <button
+              onClick={handleSimular}
+              disabled={simulating}
+              className="bg-white/10 hover:bg-white/15 border border-white/15 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2"
+              title="Salva o rascunho e abre a prévia do player em nova aba"
+            >
+              {simulating ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Abrindo…
+                </>
+              ) : "👁 Simular player"}
             </button>
 
             {mp3Url && (
