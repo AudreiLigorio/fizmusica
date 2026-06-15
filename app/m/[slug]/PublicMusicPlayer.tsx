@@ -81,6 +81,7 @@ export default function PublicMusicPlayer({
   const audioRef          = useRef<HTMLAudioElement>(null)
   const activeLineRef       = useRef<HTMLParagraphElement>(null)
   const activeLineRefMobile = useRef<HTMLParagraphElement>(null)
+  const mobileScrollRef     = useRef<HTMLDivElement>(null)
   const [playing, setPlaying]       = useState(false)
   const [progress, setProgress]     = useState(0)
   const [duration, setDuration]     = useState(0)
@@ -127,10 +128,19 @@ export default function PublicMusicPlayer({
   }
 
   useEffect(() => {
-    // rola a linha ativa apenas na letra visível (desktop ou mobile)
-    for (const r of [activeLineRef, activeLineRefMobile]) {
-      const el = r.current
-      if (el && el.offsetParent !== null) el.scrollIntoView({ behavior: "smooth", block: "center" })
+    // Desktop: a letra tem scroll próprio (não move a página) — usa scrollIntoView
+    const deskEl = activeLineRef.current
+    if (deskEl && deskEl.offsetParent !== null) {
+      deskEl.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
+    // Mobile: rola APENAS o container do painel (nunca a página) para a foto não sumir
+    const c = mobileScrollRef.current
+    const el = activeLineRefMobile.current
+    if (c && el && el.offsetParent !== null) {
+      const cRect = c.getBoundingClientRect()
+      const eRect = el.getBoundingClientRect()
+      const delta = (eRect.top - cRect.top) - (c.clientHeight / 2 - eRect.height / 2)
+      c.scrollBy({ top: delta, behavior: "smooth" })
     }
   }, [activeLine])
 
@@ -366,7 +376,7 @@ export default function PublicMusicPlayer({
           </div>
 
           {/* Conteúdo expandido — UM único scroll, sem aninhamento */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-10 pt-2">
+          <div ref={mobileScrollRef} className="flex-1 min-h-0 overflow-y-auto px-6 pb-10 pt-2">
             <div className="flex flex-col gap-5">
               {progressBar}
               {renderLyrics(activeLineRefMobile, false)}
