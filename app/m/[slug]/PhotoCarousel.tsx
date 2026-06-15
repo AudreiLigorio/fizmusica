@@ -36,7 +36,7 @@ export default function PhotoCarousel({
 
   if (isDeck) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center px-6">
+      <div className="absolute inset-0 flex items-center justify-center px-6">
         <div className="w-[78vw] max-w-[420px] aspect-[3/4]">
           <Swiper
             {...common}
@@ -62,9 +62,9 @@ export default function PhotoCarousel({
     )
   }
 
-  // slide | fade — fundo de tela cheia
+  // slide | fade — preenche o container (relative pai)
   return (
-    <div className="fixed inset-0">
+    <div className="absolute inset-0">
       <Swiper
         {...common}
         effect={effect === "fade" ? "fade" : "slide"}
