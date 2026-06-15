@@ -311,17 +311,27 @@ function ProdutosContent() {
         {step === 2 && selected && (
           <div className="mb-10">
             {/* Resumo do produto selecionado */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{PRODUCT_ICONS[selected.name] ?? "🎶"}</span>
+            <div className="border border-pink-500 bg-pink-500/10 shadow-[0_0_40px_rgba(236,72,153,0.15)] rounded-[32px] p-6 flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                     style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
+                  {PRODUCT_ICONS[selected.name] ?? "🎶"}
+                </div>
                 <div>
-                  <p className="font-semibold">{selected.name}</p>
-                  <button onClick={() => setStep(1)} className="text-xs text-pink-400 hover:underline">
+                  <p className="font-bold text-lg leading-tight">{selected.name}</p>
+                  <button onClick={() => setStep(1)} className="text-xs text-pink-400 hover:underline mt-0.5">
                     Trocar produto
                   </button>
                 </div>
               </div>
-              <span className="text-pink-400 font-bold">R$ {fmt(selected.price)}</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="text-pink-400 font-bold text-xl">R$ {fmt(selected.price)}</span>
+                <div className="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
             </div>
 
             {isPhysical ? (
