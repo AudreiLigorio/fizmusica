@@ -47,7 +47,7 @@ export default function ProductGallery({ images, name }: { images: ProductImage[
           <img
             src={current.url}
             alt={name}
-            className="w-full h-full object-cover transition-opacity duration-300"
+            className="w-full h-full object-contain transition-opacity duration-300"
           />
           {all.length > 1 && (
             <span className="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
