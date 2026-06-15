@@ -78,6 +78,10 @@ model Product {
   featured    Boolean @default(false)
   sortOrder   Int     @default(0)
   category    String  @default("DIGITAL")
+  weight_g    Int?
+  height_cm   Int?
+  width_cm    Int?
+  length_cm   Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -10,6 +10,10 @@ const schema = z.object({
   active:      z.boolean().optional(),
   featured:    z.boolean().optional(),
   category:    z.enum(["DIGITAL", "DIGITAL_PHYSICAL"]).optional(),
+  weight_g:    z.number().int().positive().optional().nullable(),
+  height_cm:   z.number().int().positive().optional().nullable(),
+  width_cm:    z.number().int().positive().optional().nullable(),
+  length_cm:   z.number().int().positive().optional().nullable(),
 })
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {

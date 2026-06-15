@@ -11,6 +11,10 @@ type Product = {
   active: boolean
   featured: boolean
   category?: string | null
+  weight_g?: number | null
+  height_cm?: number | null
+  width_cm?: number | null
+  length_cm?: number | null
 }
 
 export default function ProductForm({ product }: { product: Product }) {
@@ -23,6 +27,10 @@ export default function ProductForm({ product }: { product: Product }) {
   const [category, setCategory] = useState<"DIGITAL" | "DIGITAL_PHYSICAL">(
     product.category === "DIGITAL_PHYSICAL" ? "DIGITAL_PHYSICAL" : "DIGITAL"
   )
+  const [weightG, setWeightG]     = useState(String(product.weight_g ?? ""))
+  const [heightCm, setHeightCm]   = useState(String(product.height_cm ?? ""))
+  const [widthCm, setWidthCm]     = useState(String(product.width_cm ?? ""))
+  const [lengthCm, setLengthCm]   = useState(String(product.length_cm ?? ""))
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -55,7 +63,15 @@ export default function ProductForm({ product }: { product: Product }) {
       const res = await fetch(`/api/admin/produtos/${product.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, price: Number(price), active, featured, category }),
+        body: JSON.stringify({
+          name, description, price: Number(price), active, featured, category,
+          ...(category === "DIGITAL_PHYSICAL" ? {
+            weight_g:  weightG  ? Number(weightG)  : null,
+            height_cm: heightCm ? Number(heightCm) : null,
+            width_cm:  widthCm  ? Number(widthCm)  : null,
+            length_cm: lengthCm ? Number(lengthCm) : null,
+          } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.success) {
@@ -114,6 +130,49 @@ export default function ProductForm({ product }: { product: Product }) {
           <option value="DIGITAL_PHYSICAL">Produto digital e físico</option>
         </select>
       </div>
+      {category === "DIGITAL_PHYSICAL" && (
+        <div className="border border-white/10 rounded-xl p-4 space-y-3 bg-white/3">
+          <p className="text-xs text-gray-400 font-medium">📦 Dimensões físicas (para cálculo de frete)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Peso (g)</label>
+              <input
+                type="number" min="1" value={weightG}
+                onChange={(e) => setWeightG(e.target.value)}
+                placeholder="ex: 500"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Altura (cm)</label>
+              <input
+                type="number" min="1" value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+                placeholder="ex: 10"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Largura (cm)</label>
+              <input
+                type="number" min="1" value={widthCm}
+                onChange={(e) => setWidthCm(e.target.value)}
+                placeholder="ex: 15"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Comprimento (cm)</label>
+              <input
+                type="number" min="1" value={lengthCm}
+                onChange={(e) => setLengthCm(e.target.value)}
+                placeholder="ex: 20"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Descrição</label>
         <textarea
