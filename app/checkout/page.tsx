@@ -142,14 +142,24 @@ function CheckoutContent() {
              style={{ background: "radial-gradient(circle, #d946ef 0%, transparent 70%)" }} />
       </div>
 
+      {/* Barra superior mobile */}
+      <div className="lg:hidden relative z-10 px-5 pt-4 pb-2">
+        <button
+          onClick={() => router.back()}
+          className="text-white/50 text-sm hover:text-white transition-colors"
+        >
+          ← Voltar
+        </button>
+      </div>
+
       <div className="relative z-10 min-h-screen lg:pt-24">
-        <div className="max-w-2xl mx-auto px-5 py-8 lg:py-12">
+        <div className="max-w-2xl mx-auto px-5 py-4 lg:py-12">
 
           {/* Cabeçalho */}
           <div className="mb-6">
             <button
               onClick={() => router.back()}
-              className="transition-all px-5 py-2.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white mb-5 inline-block"
+              className="hidden lg:inline-block transition-all px-5 py-2.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white mb-5"
               style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
             >
               ← Voltar
