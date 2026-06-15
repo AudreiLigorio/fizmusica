@@ -274,7 +274,7 @@ function ProdutosContent() {
                     <p className="text-gray-200 leading-relaxed mb-4">{product.description}</p>
                   )}
 
-                  {product.product_delivery_options.length > 0 && (
+                  {product.category !== "DIGITAL_PHYSICAL" && product.product_delivery_options.length > 0 && (
                     <p className="text-xs text-gray-300">
                       ⏱ Prazo: a partir de {product.product_delivery_options[0].days} dias úteis
                     </p>
