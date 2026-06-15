@@ -156,10 +156,7 @@ function ProdutosContent() {
            style={{ background: "#07060d" }}>
 
         {/* Mobile: barra de step no topo */}
-        <div className="lg:hidden shrink-0 px-5 pt-4 pb-2 flex items-center justify-between">
-          {step === 2 ? (
-            <button onClick={() => setStep(1)} className="text-white/50 text-sm">← Voltar</button>
-          ) : <div />}
+        <div className="lg:hidden shrink-0 px-5 pt-4 pb-2 flex items-center justify-center">
           <div className="flex items-center gap-2">
             {[1, 2].map((n) => (
               <div key={n} className={`h-1 rounded-full transition-all duration-300 ${
@@ -167,31 +164,12 @@ function ProdutosContent() {
               }`} style={{ background: n <= step ? "linear-gradient(90deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.1)" }} />
             ))}
           </div>
-          <div />
         </div>
 
         {/* Área de conteúdo */}
         <div className="flex-1 overflow-y-auto lg:overflow-visible">
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-5xl lg:mx-auto lg:px-6 lg:py-12">
 
-            {/* Voltar */}
-            <div className="mb-4 lg:mb-6">
-              {step === 1 ? (
-                <button
-                  onClick={() => router.push("/criar")}
-                  className="text-sm text-gray-300 hover:text-white inline-flex items-center gap-1.5 transition-colors"
-                >
-                  ← Voltar para o wizard e revisar respostas
-                </button>
-              ) : (
-                <button
-                  onClick={() => setStep(1)}
-                  className="text-sm text-gray-300 hover:text-white inline-flex items-center gap-1.5 transition-colors"
-                >
-                  ← Voltar para seleção do produto
-                </button>
-              )}
-            </div>
 
             {/* TOPO — só no step 1 */}
             {step === 1 && (
@@ -390,62 +368,74 @@ function ProdutosContent() {
           </div>
         )}
 
-            {/* BOTÃO CONTINUAR — desktop */}
-            <div className="hidden lg:flex flex-col items-center gap-4 mt-4">
-              {step === 1 && selected && selected.product_delivery_options.length === 0 && (
-                <button
-                  onClick={handleContinuar}
-                  className="px-12 py-5 rounded-3xl text-xl font-bold hover:brightness-110 transition-all"
-                  style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 32px rgba(240,25,107,0.35)" }}
-                >
-                  Ir para pagamento ❤️
-                </button>
-              )}
-              {step === 2 && (
-                <button
-                  onClick={handleContinuar}
-                  disabled={!canContinue || savingShipping}
-                  className="px-12 py-5 rounded-3xl text-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={{ background: canContinue ? "linear-gradient(135deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.08)", boxShadow: canContinue ? "0 8px 32px rgba(240,25,107,0.35)" : "none", color: canContinue ? "white" : "rgba(255,255,255,0.3)" }}
-                >
-                  {savingShipping ? "Salvando…" :
-                    isPhysical
-                      ? (canContinue ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` : "Preencha todos os campos")
-                      : (delivery ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` : "Selecione um prazo para continuar")}
-                </button>
-              )}
-              <div className="flex gap-8 text-sm text-gray-300">
-                <span>🔒 Pagamento seguro</span>
-                <span>⚡ Confirmação imediata</span>
-                <span>💬 Suporte via WhatsApp</span>
+            {/* RODAPÉ — desktop */}
+            <div className="hidden lg:flex justify-between items-center mt-10">
+              <button
+                onClick={step === 1 ? () => router.push("/criar") : () => setStep(1)}
+                className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white"
+                style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
+              >
+                ← Voltar
+              </button>
+              <div className="flex flex-col items-end gap-3">
+                {((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) && (
+                  <button
+                    onClick={handleContinuar}
+                    disabled={!canContinue || savingShipping}
+                    className="px-10 py-4 rounded-2xl text-base font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    style={{
+                      background: canContinue ? "linear-gradient(135deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.08)",
+                      boxShadow: canContinue ? "0 8px 32px rgba(240,25,107,0.35)" : "none",
+                      color: canContinue ? "white" : "rgba(255,255,255,0.3)",
+                    }}
+                  >
+                    {savingShipping ? "Salvando…" :
+                      canContinue ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` :
+                      isPhysical ? "Preencha todos os campos" : "Selecione um prazo para continuar"}
+                  </button>
+                )}
+                <div className="flex gap-6 text-xs text-gray-500">
+                  <span>🔒 Pagamento seguro</span>
+                  <span>⚡ Confirmação imediata</span>
+                  <span>💬 Suporte via WhatsApp</span>
+                </div>
               </div>
             </div>
 
           </div>{/* fecha px-5 / lg:max-w-5xl */}
         </div>{/* fecha flex-1 overflow-y-auto */}
 
-        {/* BOTÃO FIXO NO RODAPÉ — mobile */}
-        {(step === 1 && selected && selected.product_delivery_options.length === 0) || step === 2 ? (
-          <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
-               style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
-            {step === 2 && !canContinue ? (
-              <div className="w-full py-4 rounded-2xl text-sm font-semibold text-center text-white/55"
-                   style={{ background: "rgba(255,255,255,0.06)" }}>
-                {isPhysical ? "Preencha todos os campos de envio" : "Selecione um prazo para continuar"}
-              </div>
-            ) : (
-              <button
-                onClick={handleContinuar}
-                disabled={(step === 2 && !canContinue) || savingShipping}
-                className="w-full py-4 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
-                style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
-              >
-                Ir para pagamento ❤️
-              </button>
-            )}
-            <p className="text-center text-xs text-white/25 mt-2">🔒 Pagamento seguro · ⚡ Confirmação imediata</p>
+        {/* RODAPÉ FIXO — mobile */}
+        <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
+             style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={step === 1 ? () => router.push("/criar") : () => setStep(1)}
+              className="transition-all px-5 py-3 rounded-2xl text-sm font-medium text-white/60 hover:text-white shrink-0"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
+            >
+              ← Voltar
+            </button>
+            {((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) ? (
+              canContinue ? (
+                <button
+                  onClick={handleContinuar}
+                  disabled={savingShipping}
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
+                  style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
+                >
+                  {savingShipping ? "Salvando…" : "Ir para pagamento ❤️"}
+                </button>
+              ) : (
+                <div className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center text-white/40"
+                     style={{ background: "rgba(255,255,255,0.05)" }}>
+                  {isPhysical ? "Preencha os campos" : "Selecione um prazo"}
+                </div>
+              )
+            ) : <div className="flex-1" />}
           </div>
-        ) : null}
+          <p className="text-center text-xs text-white/25 mt-2">🔒 Pagamento seguro · ⚡ Confirmação imediata</p>
+        </div>
 
         {/* Footer — desktop only */}
         <div className="hidden lg:block">
