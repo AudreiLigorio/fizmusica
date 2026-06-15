@@ -196,7 +196,7 @@ function ProdutosContent() {
             {/* TOPO — só no step 1 */}
             {step === 1 && (
               <div className="mb-6 lg:text-center lg:mb-14">
-                <h1 className="text-xl lg:text-4xl font-bold mb-1 leading-tight">
+                <h1 className="text-2xl lg:text-3xl font-bold mb-1 leading-tight tracking-tight">
                   Selecione o produto ideal para transformar esse momento inesquecível
                 </h1>
               </div>
