@@ -58,7 +58,7 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
   const publicUrl = `${baseUrl}/m/${slug}`
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
+    <div className="bg-[#07060d] text-white font-sans">
       <PublicMusicPlayer
         music={{
           musicName: music.musicName,
