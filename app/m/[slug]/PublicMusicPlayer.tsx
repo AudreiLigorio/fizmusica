@@ -34,6 +34,18 @@ function parseLrc(lrc: string): LrcLine[] {
   return result.sort((a, b) => a.time - b.time).filter((l) => l.text && !/^\[.*\]$/.test(l.text))
 }
 
+/* Fundo animado com as cores da identidade — blobs lentos rosa/roxo/fúcsia */
+function AnimatedBg() {
+  return (
+    <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none" style={{ background: "#07060d" }} aria-hidden>
+      <style>{`@keyframes fizb1{0%,100%{transform:translate(-8%,-6%) scale(1)}50%{transform:translate(12%,8%) scale(1.25)}}@keyframes fizb2{0%,100%{transform:translate(10%,18%) scale(1.1)}50%{transform:translate(-6%,-8%) scale(1)}}@keyframes fizb3{0%,100%{transform:translate(-4%,28%) scale(1)}50%{transform:translate(16%,2%) scale(1.2)}}`}</style>
+      <div style={{ position: "absolute", top: "-12%", left: "-12%", width: "72%", height: "72%", borderRadius: "50%", background: "radial-gradient(circle, rgba(240,25,107,0.60), transparent 70%)", filter: "blur(70px)", animation: "fizb1 20s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", bottom: "-18%", right: "-10%", width: "78%", height: "78%", borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.55), transparent 70%)", filter: "blur(80px)", animation: "fizb2 26s ease-in-out infinite" }} />
+      <div style={{ position: "absolute", top: "28%", left: "18%", width: "58%", height: "58%", borderRadius: "50%", background: "radial-gradient(circle, rgba(217,70,239,0.45), transparent 70%)", filter: "blur(90px)", animation: "fizb3 30s ease-in-out infinite" }} />
+    </div>
+  )
+}
+
 /* Equalizador animado (o "efeito de som") — dança quando toca, congela ao pausar */
 function Equalizer({ playing, size = 22 }: { playing: boolean; size?: number }) {
   const bars = [0, 1, 2, 3, 4]
@@ -137,13 +149,6 @@ export default function PublicMusicPlayer({
   }
 
   /* ───────────────────── blocos reutilizáveis ───────────────────── */
-
-  const brandBg = (
-    <div className="absolute inset-0 -z-10 pointer-events-none" style={{ background: "#07060d" }}>
-      <div className="absolute inset-0" style={{ background: "radial-gradient(60% 50% at 18% 12%, rgba(240,25,107,0.45) 0%, transparent 60%)" }} />
-      <div className="absolute inset-0" style={{ background: "radial-gradient(60% 55% at 85% 95%, rgba(168,85,247,0.40) 0%, transparent 62%)" }} />
-    </div>
-  )
 
   const titleBlock = (
     <div className="text-center">
@@ -276,8 +281,8 @@ export default function PublicMusicPlayer({
   }
 
   return (
-    <div className="relative min-h-[100dvh] bg-black text-white overflow-hidden">
-      {brandBg}
+    <div className="relative min-h-[100dvh] bg-[#07060d] text-white overflow-hidden">
+      <AnimatedBg />
 
       <audio
         ref={audioRef}
@@ -290,38 +295,44 @@ export default function PublicMusicPlayer({
       {/* ===================== DESKTOP — split screen ===================== */}
       <div className="hidden lg:grid lg:grid-cols-[42%_58%] h-[100dvh]">
         {/* Painel esquerdo — controles */}
-        <div className="relative flex flex-col px-10 py-10 min-h-0">
-          {brandBg}
+        <div className="relative z-10 flex flex-col px-10 py-8 min-h-0">
           <div className="shrink-0">{titleBlock}</div>
-          <div className="flex-1 min-h-0 flex flex-col justify-center my-4">{lyricsBlock}</div>
-          <div className="shrink-0 space-y-5 max-w-md mx-auto w-full">
+          <div className="flex-1 min-h-0 flex flex-col justify-center my-3">{lyricsBlock}</div>
+          <div className="shrink-0 space-y-4 max-w-md mx-auto w-full">
             {progressBar}
             <div className="flex items-center justify-center gap-5">
               {playButton}
               <Equalizer playing={playing} size={26} />
             </div>
             {shareButtons}
+            <div className="flex items-center justify-center gap-3 pt-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo_fizmusica.png" alt="FizMusica" className="h-6 opacity-70" />
+              <a href="/" className="bg-pink-500 hover:bg-pink-600 transition-all px-4 py-2 rounded-xl text-xs font-semibold text-white">
+                🎵 Criar minha música
+              </a>
+            </div>
           </div>
         </div>
 
         {/* Painel direito — fotos */}
         <div className="relative bg-black">
           {photoPanel}
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(90deg, rgba(7,6,13,0.85) 0%, transparent 22%)" }} />
+          <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: "linear-gradient(90deg, rgba(7,6,13,0.85) 0%, transparent 22%)" }} />
         </div>
       </div>
 
       {/* ===================== MOBILE — imersivo + bottom sheet ===================== */}
       <div className="lg:hidden relative min-h-[100dvh]">
-        <div className="absolute inset-0">{photoPanel}</div>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 30%, transparent 45%, rgba(0,0,0,0.85) 100%)" }} />
+        <div className="absolute inset-0 z-0">{photoPanel}</div>
+        <div className="absolute inset-0 z-[5] pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 30%, transparent 45%, rgba(0,0,0,0.85) 100%)" }} />
 
         {/* Topo — nome */}
-        <div className="relative pt-10 px-6">{titleBlock}</div>
+        <div className="relative z-10 pt-10 px-6">{titleBlock}</div>
 
         {/* Bottom sheet */}
         <div
-          className="absolute left-0 right-0 bottom-0 h-[84vh] rounded-t-3xl border-t border-white/10 transition-transform duration-300 ease-out flex flex-col"
+          className="absolute left-0 right-0 bottom-0 z-20 h-[84vh] rounded-t-3xl border-t border-white/10 transition-transform duration-300 ease-out flex flex-col"
           style={{
             background: "linear-gradient(180deg, rgba(20,10,28,0.86) 0%, rgba(10,9,18,0.96) 40%)",
             backdropFilter: "blur(18px)",
@@ -362,15 +373,6 @@ export default function PublicMusicPlayer({
             </div>
           </div>
         </div>
-      </div>
-
-      {/* ===================== Rodapé desktop (criar) ===================== */}
-      <div className="hidden lg:flex absolute bottom-6 left-10 z-20 items-center gap-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo_fizmusica.png" alt="FizMusica" className="h-7 opacity-70" />
-        <a href="/" className="bg-pink-500 hover:bg-pink-600 transition-all px-5 py-2.5 rounded-2xl text-sm font-semibold text-white shadow-lg shadow-pink-500/30">
-          🎵 Criar minha música
-        </a>
       </div>
 
       {/* ===================== MODAL QR (impressão) ===================== */}
