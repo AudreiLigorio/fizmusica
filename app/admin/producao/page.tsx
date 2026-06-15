@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import MusicaForm from "./MusicaForm"
 import PhotoEffectSelect from "./PhotoEffectSelect"
+import OrderPhotosAdmin from "./OrderPhotosAdmin"
 
 export const dynamic = "force-dynamic"
 
@@ -114,33 +115,11 @@ export default async function AdminProducao() {
                   ))}
                 </div>
 
-                {/* Fotos enviadas pelo cliente */}
-                {Array.isArray((order as any).order_photos) && (order as any).order_photos.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">📸 Fotos do cliente ({(order as any).order_photos.length})</p>
-                    <div className="flex flex-wrap gap-2">
-                      {[...(order as any).order_photos]
-                        .sort((a: any, b: any) => Number(b.is_cover) - Number(a.is_cover) || a.sort_order - b.sort_order)
-                        .map((p: { id: string; url: string; is_cover: boolean }) => (
-                          <a
-                            key={p.id}
-                            href={p.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`relative block w-20 h-20 rounded-xl overflow-hidden border-2 transition-all hover:opacity-90 ${
-                              p.is_cover ? "border-pink-500 shadow-[0_0_16px_rgba(236,72,153,0.25)]" : "border-white/10"
-                            }`}
-                          >
-                            <img src={p.url} alt="Foto do cliente" className="w-full h-full object-cover" />
-                            {p.is_cover && (
-                              <span className="absolute top-1 left-1 text-[9px] font-bold bg-pink-500 text-white px-1.5 py-0.5 rounded-full">★</span>
-                            )}
-                          </a>
-                        ))}
-                    </div>
-                    <PhotoEffectSelect orderId={order.id} current={(order as any).photo_effect ?? "slide"} />
-                  </div>
-                )}
+                {/* Fotos do cliente — gerenciáveis pelo admin */}
+                <div className="mb-4 bg-black/20 border border-white/10 rounded-xl p-4">
+                  <OrderPhotosAdmin orderId={order.id} />
+                  <PhotoEffectSelect orderId={order.id} current={(order as any).photo_effect ?? "slide"} />
+                </div>
 
                 {/* Form de produção */}
                 <MusicaForm
