@@ -363,7 +363,7 @@ export default function PublicMusicPlayer({
             <span className="text-[11px] text-white/50 mt-1.5">{sheetOpen ? "arraste para baixo" : "arraste para cima"}</span>
           </button>
 
-          {/* Linha recolhida — play + título + equalizador */}
+          {/* Topo fixo — play + título + equalizador */}
           <div className="shrink-0 flex items-center gap-3 px-6 py-2">
             {playButton}
             <div className="min-w-0 flex-1">
@@ -375,19 +375,23 @@ export default function PublicMusicPlayer({
             <Equalizer playing={playing} size={22} />
           </div>
 
-          {/* Conteúdo expandido — UM único scroll, sem aninhamento */}
-          <div ref={mobileScrollRef} className="flex-1 min-h-0 overflow-y-auto px-6 pb-10 pt-2">
-            <div className="flex flex-col gap-5">
-              {progressBar}
-              {renderLyrics(activeLineRefMobile, false)}
-              {shareButtons}
-              <div className="flex items-center justify-center gap-4 pt-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo_fizmusica.png" alt="FizMusica" className="h-7 opacity-80" />
-                <a href="/" className="bg-pink-500 hover:bg-pink-600 transition-all px-5 py-2.5 rounded-2xl text-sm font-semibold text-white">
-                  🎵 Criar minha música
-                </a>
-              </div>
+          {/* Progresso fixo */}
+          <div className="shrink-0 px-6 pt-1">{progressBar}</div>
+
+          {/* Letra — única área que rola */}
+          <div ref={mobileScrollRef} className="flex-1 min-h-0 overflow-y-auto px-6 py-2">
+            {renderLyrics(activeLineRefMobile, false)}
+          </div>
+
+          {/* Botões fixos embaixo — sempre visíveis */}
+          <div className="shrink-0 px-6 pt-3 pb-6 space-y-3 border-t border-white/10">
+            {shareButtons}
+            <div className="flex items-center justify-center gap-4 pt-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo_fizmusica.png" alt="FizMusica" className="h-6 opacity-80" />
+              <a href="/" className="bg-pink-500 hover:bg-pink-600 transition-all px-4 py-2 rounded-xl text-xs font-semibold text-white">
+                🎵 Criar minha música
+              </a>
             </div>
           </div>
         </div>
