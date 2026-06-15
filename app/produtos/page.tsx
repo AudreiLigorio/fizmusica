@@ -174,22 +174,33 @@ function ProdutosContent() {
         <div className="flex-1 overflow-y-auto lg:overflow-visible">
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-5xl lg:mx-auto lg:px-6 lg:py-12">
 
-            {/* Voltar ao wizard */}
+            {/* Voltar */}
             <div className="mb-4 lg:mb-6">
-              <button
-                onClick={() => router.push("/criar")}
-                className="text-sm text-gray-300 hover:text-white inline-flex items-center gap-1.5 transition-colors"
-              >
-                ← Voltar para o wizard e revisar respostas
-              </button>
+              {step === 1 ? (
+                <button
+                  onClick={() => router.push("/criar")}
+                  className="text-sm text-gray-300 hover:text-white inline-flex items-center gap-1.5 transition-colors"
+                >
+                  ← Voltar para o wizard e revisar respostas
+                </button>
+              ) : (
+                <button
+                  onClick={() => setStep(1)}
+                  className="text-sm text-gray-300 hover:text-white inline-flex items-center gap-1.5 transition-colors"
+                >
+                  ← Voltar para seleção do produto
+                </button>
+              )}
             </div>
 
-            {/* TOPO */}
-            <div className="mb-6 lg:text-center lg:mb-14">
-              <h1 className="text-xl lg:text-4xl font-bold mb-1 leading-tight">
-                Selecione o produto ideal para transformar esse momento inesquecível
-              </h1>
-            </div>
+            {/* TOPO — só no step 1 */}
+            {step === 1 && (
+              <div className="mb-6 lg:text-center lg:mb-14">
+                <h1 className="text-xl lg:text-4xl font-bold mb-1 leading-tight">
+                  Selecione o produto ideal para transformar esse momento inesquecível
+                </h1>
+              </div>
+            )}
 
             {/* INDICADOR DE STEPS — desktop only */}
             <div className="hidden lg:flex items-center justify-center gap-3 mb-10">
