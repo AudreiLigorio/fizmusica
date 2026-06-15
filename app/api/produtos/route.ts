@@ -11,6 +11,9 @@ export async function GET() {
         id, name, description, price, imageUrl, featured, category,
         product_delivery_options (
           id, label, days, price_extra, sort_order
+        ),
+        product_images (
+          id, url, is_cover, sort_order
         )
       `)
       .eq("active", true)
@@ -23,6 +26,10 @@ export async function GET() {
       ...p,
       product_delivery_options: (p.product_delivery_options ?? [])
         .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order),
+      product_images: (p.product_images ?? [])
+        .sort((a: { is_cover: boolean; sort_order: number }, b: { is_cover: boolean; sort_order: number }) =>
+          a.is_cover === b.is_cover ? a.sort_order - b.sort_order : a.is_cover ? -1 : 1
+        ),
     }))
 
     return NextResponse.json({ products })

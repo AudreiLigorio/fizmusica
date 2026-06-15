@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 import { createServerClient } from "@/lib/supabase"
 import ProductForm from "./ProductForm"
 import DeliveryOptions from "./DeliveryOptions"
+import ProductImages from "./ProductImages"
 
 async function getProducts() {
   const supabase = createServerClient()
@@ -49,6 +50,7 @@ export default async function AdminProdutos() {
               </div>
               <ProductForm product={p} />
             </div>
+            <ProductImages productId={p.id} />
             {p.category !== "DIGITAL_PHYSICAL" ? (
               <DeliveryOptions productId={p.id} />
             ) : (

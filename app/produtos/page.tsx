@@ -6,6 +6,7 @@ import { Suspense } from "react"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
+import ProductGallery from "./ProductGallery"
 
 type DeliveryOption = {
   id: string
@@ -14,6 +15,8 @@ type DeliveryOption = {
   price_extra: number
   sort_order: number
 }
+
+type ProductImage = { id: string; url: string; is_cover: boolean; sort_order: number }
 
 type Product = {
   id: string
@@ -24,6 +27,7 @@ type Product = {
   featured: boolean
   category?: string | null
   product_delivery_options: DeliveryOption[]
+  product_images: ProductImage[]
 }
 
 const PRODUCT_ICONS: Record<string, React.ReactNode> = {
@@ -243,10 +247,16 @@ function ProdutosContent() {
                     </div>
                   )}
 
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
-                       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
-                    {icon}
-                  </div>
+                  {product.product_images?.length > 0 ? (
+                    <div className="mb-5" onClick={(e) => e.stopPropagation()}>
+                      <ProductGallery images={product.product_images} name={product.name} />
+                    </div>
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
+                         style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
+                      {icon}
+                    </div>
+                  )}
 
                   <div className="flex items-start justify-between mb-4 gap-4">
                     <h3 className="text-2xl font-bold leading-tight">{product.name}</h3>
