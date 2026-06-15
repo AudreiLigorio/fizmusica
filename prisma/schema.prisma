@@ -37,12 +37,35 @@ model Order {
   productId String?
   product   Product? @relation(fields: [productId], references: [id])
 
+  // Token de acesso à página de upload de fotos (sem login), gerado no pagamento
+  photo_token String? @unique @db.Uuid
+
   // Relações
   answers        OrderAnswer[]
   payment        Payment?
   generatedMusic GeneratedMusic?
+  photos         OrderPhoto[]
 
   @@map("orders")
+}
+
+// ============================================================
+// FOTOS DO CLIENTE (exibidas no player) — upload pós-pagamento
+// ============================================================
+
+model OrderPhoto {
+  id           String   @id @default(uuid()) @db.Uuid
+  orderId      String
+  url          String
+  storage_path String
+  is_cover     Boolean  @default(false)
+  sort_order   Int      @default(0)
+  created_at   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_photos")
 }
 
 // ============================================================

@@ -12,6 +12,7 @@ type OrderData = {
   nome: string
   paymentStatus: string
   status: string
+  photo_token?: string | null
   products?: { name: string; price: number } | null
   payments?: { amount: number; status: string; mpStatus: string | null } | null
 }
@@ -148,6 +149,25 @@ function SucessoContent() {
                 ))}
               </div>
             </div>
+
+            {/* ANEXAR FOTOS (só após pagamento confirmado) */}
+            {isPaid && order?.photo_token && (
+              <a
+                href={`/pedido/${order.photo_token}/fotos`}
+                className="block bg-pink-500/10 border border-pink-500/30 rounded-2xl p-5 mb-6 hover:bg-pink-500/15 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl shrink-0">📸</span>
+                  <div className="flex-1">
+                    <p className="font-bold mb-0.5">Adicione fotos à sua música</p>
+                    <p className="text-sm text-gray-300">
+                      Até 5 fotos que vão aparecer no player — é opcional. Enviamos o link também no seu e-mail.
+                    </p>
+                  </div>
+                  <span className="text-pink-400 text-xl shrink-0">→</span>
+                </div>
+              </a>
+            )}
 
             {/* NÚMERO DO PEDIDO */}
             {orderId && (

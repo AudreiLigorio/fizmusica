@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
+import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
-import { sendNewOrderPaidNotification } from "@/app/services/emailService"
+import { sendNewOrderPaidNotification, sendPhotoUploadEmail } from "@/app/services/emailService"
 import { triggerN8nWebhook } from "@/app/services/orderService"
 
 // Confirma pagamento aprovado diretamente no Supabase
@@ -30,11 +31,31 @@ export async function POST(req: Request) {
     // Busca dados do pedido para notificação
     const { data: order } = await supabase
       .from("orders")
-      .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, createdAt")
+      .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, createdAt, photo_token")
       .eq("id", orderId)
       .single()
 
     if (order) {
+      // ── Convite para anexar fotos (link tokenizado, sem login) ──
+      // Gera o token na primeira confirmação; idempotente em reentregas do webhook.
+      let photoToken: string | null = (order as any).photo_token ?? null
+      if (!photoToken) {
+        photoToken = crypto.randomUUID()
+        const { error: tokErr } = await supabase
+          .from("orders")
+          .update({ photo_token: photoToken })
+          .eq("id", orderId)
+        if (tokErr) {
+          console.error("[confirm] falha ao gerar photo_token:", tokErr.message)
+          photoToken = null
+        } else {
+          const baseUrl   = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+          const uploadUrl = `${baseUrl}/pedido/${photoToken}/fotos`
+          const r = await sendPhotoUploadEmail({ nome: order.nome, email: order.email, uploadUrl })
+          if (!r.ok) console.error("[confirm] e-mail de fotos falhou:", r.error)
+        }
+      }
+
       // Notifica admin por e-mail
       await sendNewOrderPaidNotification({
         orderId:      order.id,

@@ -124,6 +124,80 @@ function buildDeliveryEmail(data: MusicDeliveryEmailData, qrBase64: string): str
   `
 }
 
+// ============================================================
+// E-mail: convite para anexar fotos (exibidas no player)
+// Enviado após o pagamento confirmado, com link tokenizado
+// ============================================================
+
+interface PhotoUploadEmailData {
+  nome:      string
+  email:     string
+  uploadUrl: string
+}
+
+export async function sendPhotoUploadEmail(data: PhotoUploadEmailData): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: `📸 ${data.nome.split(" ")[0]}, adicione fotos à sua música!`,
+      html:    buildPhotoUploadEmail(data),
+    })
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      console.error("[email] Resend erro no convite de fotos:", msg)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Convite de fotos enviado para ${data.email}`)
+    return { ok: true }
+  } catch (err: any) {
+    const msg = err?.message ?? String(err)
+    console.error("[email] Falha ao enviar convite de fotos:", msg)
+    return { ok: false, error: msg }
+  }
+}
+
+function buildPhotoUploadEmail(data: PhotoUploadEmailData): string {
+  return `
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">📸</div>
+        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">Deixe sua música ainda mais especial</h1>
+        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:16px">Adicione fotos que aparecerão no player</p>
+      </div>
+
+      <div style="padding:40px 32px">
+        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! ❤️</p>
+        <p style="color:#999;margin:0 0 28px">
+          Pagamento confirmado! Agora você pode anexar até <strong style="color:#ec4899">5 fotos</strong> que serão exibidas junto da sua música —
+          escolha uma delas como <strong>capa</strong>. É opcional, mas deixa tudo com a sua cara.
+        </p>
+
+        <div style="text-align:center;margin:32px 0">
+          <a href="${data.uploadUrl}"
+            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:18px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
+            📸 Anexar minhas fotos
+          </a>
+        </div>
+
+        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:16px 0">
+          <p style="color:#999;font-size:13px;margin:0">
+            Guarde este e-mail: o link acima é o seu acesso para adicionar ou trocar as fotos a qualquer momento, sem precisar de senha.
+          </p>
+        </div>
+
+        <p style="color:#666;font-size:12px;margin:8px 0 0">
+          Formatos aceitos: JPG, PNG ou WebP · até 8 MB por foto.
+        </p>
+
+        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
+          Dúvidas? Fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a>
+        </p>
+      </div>
+    </div>
+  `
+}
+
 interface OrderEmailData {
   orderId: string
   nome: string
