@@ -36,6 +36,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Wizard (edição via "Voltar ao wizard")
     "nome", "email", "whatsapp", "context", "subcategory",
     "musicalStyle", "voiceType", "emotion", "honoreeName",
+    // Produção
+    "photo_effect",
   ]
   for (const f of fields) if (f in body) allowed[f] = body[f]
 

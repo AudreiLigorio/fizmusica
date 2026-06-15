@@ -2,6 +2,9 @@
 
 import { useRef, useState, useEffect } from "react"
 import { QRCodeSVG } from "qrcode.react"
+import PhotoCarousel from "./PhotoCarousel"
+
+type EffectName = "slide" | "fade" | "cards" | "coverflow"
 
 type MusicData = {
   musicName: string | null
@@ -10,6 +13,8 @@ type MusicData = {
   lyricsLrc: string | null
   mp3Url: string
   imageUrl: string | null
+  photos?: string[]
+  photoEffect?: EffectName
   order: { nome: string; context: string; subcategory: string; musicalStyle: string } | null
 }
 
@@ -106,8 +111,14 @@ export default function PublicMusicPlayer({
   return (
     <div className="relative min-h-[100dvh] flex flex-col bg-black text-white">
 
-      {/* BACKGROUND — camada 1: foto borrada cobrindo tudo */}
-      {music.imageUrl ? (
+      {/* BACKGROUND — carrossel das fotos do cliente (se houver) */}
+      {music.photos && music.photos.length > 0 ? (
+        <>
+          <div className="fixed inset-0 bg-black" />
+          <PhotoCarousel photos={music.photos} effect={music.photoEffect ?? "slide"} />
+          <div className="fixed inset-0 bg-gradient-to-b from-black/55 via-black/20 to-black/85 pointer-events-none" />
+        </>
+      ) : music.imageUrl ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

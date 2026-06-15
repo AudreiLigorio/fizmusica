@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import MusicaForm from "./MusicaForm"
+import PhotoEffectSelect from "./PhotoEffectSelect"
 
 export const dynamic = "force-dynamic"
 
@@ -20,7 +21,7 @@ async function getQueue() {
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("orders")
-    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, products(name), order_photos(id, url, is_cover, sort_order)")
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_effect, products(name), order_photos(id, url, is_cover, sort_order)")
     .eq("paymentStatus", "PAID")
     .neq("status", "ABANDONED")
     .order("createdAt", { ascending: true })
@@ -137,6 +138,7 @@ export default async function AdminProducao() {
                           </a>
                         ))}
                     </div>
+                    <PhotoEffectSelect orderId={order.id} current={(order as any).photo_effect ?? "slide"} />
                   </div>
                 )}
 

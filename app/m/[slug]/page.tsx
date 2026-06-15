@@ -39,9 +39,20 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
   // Busca order separadamente (sem JOIN — FK não configurada)
   const { data: order } = await supabase
     .from("orders")
-    .select("nome, context, subcategory, musicalStyle")
+    .select("nome, context, subcategory, musicalStyle, photo_effect")
     .eq("id", music.orderId)
     .single()
+
+  // Fotos do cliente (capa primeiro) para o carrossel do player
+  const { data: photoRows } = await supabase
+    .from("order_photos")
+    .select("url, is_cover, sort_order")
+    .eq("orderId", music.orderId)
+    .order("is_cover", { ascending: false })
+    .order("sort_order", { ascending: true })
+
+  const photos = (photoRows ?? []).map((p) => p.url as string)
+  const photoEffect = (order?.photo_effect ?? "slide") as "slide" | "fade" | "cards" | "coverflow"
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
   const publicUrl = `${baseUrl}/m/${slug}`
@@ -56,6 +67,8 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
           lyricsLrc: music.lyricsLrc,
           mp3Url: music.mp3Url,
           imageUrl: music.imageUrl,
+          photos,
+          photoEffect,
           order: order ?? null,
         }}
         publicUrl={publicUrl}
