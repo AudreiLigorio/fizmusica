@@ -99,8 +99,8 @@ export default async function AdminPedidos() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-gray-500">
-                    <div>{new Date(o.createdAt).toLocaleDateString("pt-BR")}</div>
-                    <div className="text-xs text-gray-600">{new Date(o.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
+                    <div>{new Date(o.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</div>
+                    <div className="text-xs text-gray-600">{new Date(o.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}</div>
                   </td>
                   <td className="px-6 py-4">
                     <Link href={`/admin/pedidos/${o.id}`} className="text-pink-400 hover:text-pink-300 text-xs font-medium">Ver →</Link>
@@ -141,7 +141,7 @@ export default async function AdminPedidos() {
                     {o.paymentStatus}
                   </span>
                   <span className="text-gray-600 text-xs">
-                    {new Date(o.createdAt).toLocaleDateString("pt-BR")} {new Date(o.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(o.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} {new Date(o.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}
                   </span>
                 </div>
               </div>

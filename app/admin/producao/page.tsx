@@ -92,8 +92,8 @@ export default async function AdminProducao() {
                   </div>
                   <div className="text-right text-xs shrink-0">
                     <p className="text-gray-400 font-mono">#{order.id.slice(0, 8).toUpperCase()}</p>
-                    <p className="text-gray-500 mt-0.5">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</p>
-                    <p className="text-gray-600">{new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
+                    <p className="text-gray-500 mt-0.5">{new Date(order.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
+                    <p className="text-gray-600">{new Date(order.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}</p>
                     <Link href={`/admin/pedidos/${order.id}`} className="text-blue-400 hover:underline mt-1 block">Ver pedido →</Link>
                   </div>
                 </div>

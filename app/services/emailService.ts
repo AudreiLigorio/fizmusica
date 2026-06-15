@@ -394,7 +394,7 @@ export async function sendNewOrderPaidNotification(order: PaymentNotificationDat
               <tr><td style="padding:6px 0;color:#999">Estilo</td><td style="padding:6px 0">${order.musicalStyle}</td></tr>
               <tr><td style="padding:6px 0;color:#999">Voz</td><td style="padding:6px 0">${order.voiceType}</td></tr>
               <tr><td style="padding:6px 0;color:#999">Emoção</td><td style="padding:6px 0">${order.emotion}</td></tr>
-              <tr><td style="padding:6px 0;color:#999">Recebido em</td><td style="padding:6px 0">${new Date(order.createdAt).toLocaleString("pt-BR")}</td></tr>
+              <tr><td style="padding:6px 0;color:#999">Recebido em</td><td style="padding:6px 0">${new Date(order.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td></tr>
             </table>
 
             <div style="text-align:center;margin:28px 0 0">
@@ -428,7 +428,7 @@ function buildAdminEmail(order: OrderEmailData): string {
         <tr><td style="padding:6px 0;color:#6b7280">Estilo</td><td style="padding:6px 0">${order.musicalStyle}</td></tr>
         <tr><td style="padding:6px 0;color:#6b7280">Voz</td><td style="padding:6px 0">${order.voiceType}</td></tr>
         <tr><td style="padding:6px 0;color:#6b7280">Emoção</td><td style="padding:6px 0">${order.emotion}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Data</td><td style="padding:6px 0">${order.createdAt.toLocaleString("pt-BR")}</td></tr>
+        <tr><td style="padding:6px 0;color:#6b7280">Data</td><td style="padding:6px 0">${order.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td></tr>
       </table>
     </div>
   `
