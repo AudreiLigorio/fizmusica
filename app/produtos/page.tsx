@@ -241,22 +241,27 @@ function ProdutosContent() {
                       : "border-white/10 bg-white/5 hover:border-pink-500/40"
                   }`}
                 >
+                  {product.product_images?.length > 0 ? (
+                    <div className="relative mb-5" onClick={(e) => e.stopPropagation()}>
+                      {product.featured && (
+                        <div className="absolute top-3 right-3 z-10 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full pointer-events-none">
+                          MAIS POPULAR
+                        </div>
+                      )}
+                      <ProductGallery images={product.product_images} name={product.name} />
+                    </div>
+                  ) : (
+                  <>
                   {product.featured && (
                     <div className="absolute top-5 right-5 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                       MAIS POPULAR
                     </div>
                   )}
-
-                  {product.product_images?.length > 0 ? (
-                    <div className="mb-5" onClick={(e) => e.stopPropagation()}>
-                      <ProductGallery images={product.product_images} name={product.name} />
-                    </div>
-                  ) : (
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
                          style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
                       {icon}
                     </div>
-                  )}
+                  </>)}
 
                   <div className="flex items-start justify-between mb-4 gap-4">
                     <h3 className="text-2xl font-bold leading-tight">{product.name}</h3>
