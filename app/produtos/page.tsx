@@ -82,9 +82,24 @@ function ProdutosContent() {
       .catch(() => setLoading(false))
   }, [])
 
+  // O botão "Salvando…" é transitório: só vale durante o PATCH em andamento.
+  // Ao voltar do checkout pelo botão do navegador, o Chrome restaura a página do
+  // bfcache com o estado JS congelado (savingShipping=true). O evento `pageshow`
+  // dispara nessa restauração; `focus` cobre a reativação da aba. Limpamos em ambos.
+  useEffect(() => {
+    const clearSaving = () => setSavingShipping(false)
+    window.addEventListener("pageshow", clearSaving)
+    window.addEventListener("focus", clearSaving)
+    return () => {
+      window.removeEventListener("pageshow", clearSaving)
+      window.removeEventListener("focus", clearSaving)
+    }
+  }, [])
+
   function handleSelectProduct(product: Product) {
     setSelected(product)
     setDelivery(null)
+    setSavingShipping(false)
     // Auto-avança para step 2 se for físico ou houver opções de prazo
     if (product.category === "DIGITAL_PHYSICAL" || product.product_delivery_options.length > 0) {
       setStep(2)
@@ -106,13 +121,13 @@ function ProdutosContent() {
         })
         if (!res.ok) {
           alert("Erro ao salvar dados de envio. Tente novamente.")
-          setSavingShipping(false)
           return
         }
       } catch {
         alert("Erro de conexão.")
-        setSavingShipping(false)
         return
+      } finally {
+        setSavingShipping(false)
       }
     }
 
@@ -371,7 +386,7 @@ function ProdutosContent() {
             {/* RODAPÉ — desktop */}
             <div className="hidden lg:flex justify-between items-center mt-10">
               <button
-                onClick={step === 1 ? () => router.push("/criar") : () => setStep(1)}
+                onClick={step === 1 ? () => router.push("/criar?editar=1") : () => setStep(1)}
                 className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
               >
@@ -381,7 +396,7 @@ function ProdutosContent() {
                 {((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) && (
                   <button
                     onClick={handleContinuar}
-                    disabled={!canContinue || savingShipping}
+                    disabled={!canContinue || (savingShipping && isPhysical)}
                     className="px-10 py-4 rounded-2xl text-base font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                     style={{
                       background: canContinue ? "linear-gradient(135deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.08)",
@@ -389,7 +404,7 @@ function ProdutosContent() {
                       color: canContinue ? "white" : "rgba(255,255,255,0.3)",
                     }}
                   >
-                    {savingShipping ? "Salvando…" :
+                    {(savingShipping && isPhysical) ? "Salvando…" :
                       canContinue ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` :
                       isPhysical ? "Preencha todos os campos" : "Selecione um prazo para continuar"}
                   </button>
@@ -420,11 +435,11 @@ function ProdutosContent() {
               canContinue ? (
                 <button
                   onClick={handleContinuar}
-                  disabled={savingShipping}
+                  disabled={savingShipping && isPhysical}
                   className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
                   style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
                 >
-                  {savingShipping ? "Salvando…" : "Ir para pagamento ❤️"}
+                  {(savingShipping && isPhysical) ? "Salvando…" : "Ir para pagamento ❤️"}
                 </button>
               ) : (
                 <div className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center text-white/40"

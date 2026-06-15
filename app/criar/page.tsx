@@ -104,8 +104,10 @@ function CriarMusicaInner() {
         const s = json?.session
         if (!s || !s.data) return
 
-        // Se a sessão tem orderId (cliente voltou de /produtos), pula banner e vai direto pro resumo
-        if (s.data.orderId) {
+        // Só pula direto pro resumo quando o cliente clicou em "Voltar" na tela /produtos
+        // (fluxo "voltar e atualizar"). Numa visita nova ao wizard, mesmo com orderId
+        // salvo, deve cair no banner de retomada (continuar pedido vs. começar novo).
+        if (s.data.orderId && searchParams.get("editar") === "1") {
           localStorage.setItem(SESSION_KEY, storedId)
           setSessionId(storedId)
           resumeSessionData(s.data, 5)
@@ -225,6 +227,7 @@ function CriarMusicaInner() {
     setEmail("")
     setWhatsapp("")
     setHonoreeName("")
+    setOrderId(null)
     setLeadCaptured(false)
     setShowLeadCapture(false)
     const newId = crypto.randomUUID()
