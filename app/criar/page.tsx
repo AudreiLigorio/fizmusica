@@ -1042,11 +1042,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 {resumo}
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-4 text-sm text-gray-200">
-                <span className="text-2xl">👤</span>
-                <span>
-                  <strong className="text-white">{nome}</strong> · {email} · {whatsapp}
-                </span>
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex items-start gap-4 text-sm text-gray-200">
+                <span className="text-2xl mt-0.5">👤</span>
+                <div className="space-y-1">
+                  <p><strong className="text-white">{nome}</strong> · {email} · {whatsapp}</p>
+                  {honoreeName && (
+                    <p className="text-pink-400 font-medium">🎁 Homenageado: <span className="text-white">{honoreeName}</span></p>
+                  )}
+                </div>
               </div>
             </div>
           )}
