@@ -79,8 +79,8 @@ export default function PublicMusicPlayer({
   publicUrl: string
 }) {
   const audioRef          = useRef<HTMLAudioElement>(null)
-  const lyricsRef         = useRef<HTMLDivElement>(null)
-  const activeLineRef     = useRef<HTMLParagraphElement>(null)
+  const activeLineRef       = useRef<HTMLParagraphElement>(null)
+  const activeLineRefMobile = useRef<HTMLParagraphElement>(null)
   const [playing, setPlaying]       = useState(false)
   const [progress, setProgress]     = useState(0)
   const [duration, setDuration]     = useState(0)
@@ -127,7 +127,11 @@ export default function PublicMusicPlayer({
   }
 
   useEffect(() => {
-    activeLineRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    // rola a linha ativa apenas na letra visível (desktop ou mobile)
+    for (const r of [activeLineRef, activeLineRefMobile]) {
+      const el = r.current
+      if (el && el.offsetParent !== null) el.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
   }, [activeLine])
 
   function handleSeek(e: React.ChangeEvent<HTMLInputElement>) {
@@ -168,35 +172,37 @@ export default function PublicMusicPlayer({
     </div>
   )
 
-  const lyricsBlock = lines.length > 0 && (
-    <div
-      ref={lyricsRef}
-      className="overflow-y-auto px-2 w-full"
-      style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)" }}
-    >
-      <div className="flex flex-col gap-3 py-6">
-        {lines.map((line, i) => {
-          const isActive = i === activeLine
-          const isNear = Math.abs(i - activeLine) <= 1
-          return (
-            <p
-              key={i}
-              ref={isActive ? activeLineRef : undefined}
-              className="text-center leading-snug transition-all duration-500 select-none"
-              style={{
-                fontSize: isActive ? "1.2rem" : isNear ? "1rem" : "0.875rem",
-                fontWeight: isActive ? 700 : isNear ? 500 : 400,
-                color: isActive ? "#fff" : isNear ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)",
-                textShadow: isActive ? "0 0 20px rgba(236,72,153,0.6)" : "none",
-              }}
-            >
-              {line}
-            </p>
-          )
-        })}
+  function renderLyrics(ref: React.RefObject<HTMLParagraphElement | null>, boxed: boolean) {
+    if (lines.length === 0) return null
+    return (
+      <div
+        className={boxed ? "overflow-y-auto px-2 w-full" : "px-2 w-full"}
+        style={boxed ? { maskImage: "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)" } : undefined}
+      >
+        <div className={`flex flex-col gap-3 ${boxed ? "py-6" : "py-2"}`}>
+          {lines.map((line, i) => {
+            const isActive = i === activeLine
+            const isNear = Math.abs(i - activeLine) <= 1
+            return (
+              <p
+                key={i}
+                ref={isActive ? ref : undefined}
+                className="text-center leading-snug transition-all duration-500 select-none"
+                style={{
+                  fontSize: isActive ? "1.2rem" : isNear ? "1rem" : "0.875rem",
+                  fontWeight: isActive ? 700 : isNear ? 500 : 400,
+                  color: isActive ? "#fff" : isNear ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)",
+                  textShadow: isActive ? "0 0 20px rgba(236,72,153,0.6)" : "none",
+                }}
+              >
+                {line}
+              </p>
+            )
+          })}
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const progressBar = (
     <div className="w-full">
@@ -297,7 +303,7 @@ export default function PublicMusicPlayer({
         {/* Painel esquerdo — controles */}
         <div className="relative z-10 flex flex-col px-10 py-8 min-h-0">
           <div className="shrink-0">{titleBlock}</div>
-          <div className="flex-1 min-h-0 flex flex-col justify-center my-3">{lyricsBlock}</div>
+          <div className="flex-1 min-h-0 flex flex-col justify-center my-3">{renderLyrics(activeLineRef, true)}</div>
           <div className="shrink-0 space-y-4 max-w-md mx-auto w-full">
             {progressBar}
             <div className="flex items-center justify-center gap-5">
@@ -359,17 +365,19 @@ export default function PublicMusicPlayer({
             <Equalizer playing={playing} size={22} />
           </div>
 
-          {/* Conteúdo expandido */}
-          <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-8 pt-2 flex flex-col gap-5">
-            {progressBar}
-            <div className="flex-1 min-h-0">{lyricsBlock}</div>
-            {shareButtons}
-            <div className="flex items-center justify-center gap-4 pt-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo_fizmusica.png" alt="FizMusica" className="h-7 opacity-80" />
-              <a href="/" className="bg-pink-500 hover:bg-pink-600 transition-all px-5 py-2.5 rounded-2xl text-sm font-semibold text-white">
-                🎵 Criar minha música
-              </a>
+          {/* Conteúdo expandido — UM único scroll, sem aninhamento */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-10 pt-2">
+            <div className="flex flex-col gap-5">
+              {progressBar}
+              {renderLyrics(activeLineRefMobile, false)}
+              {shareButtons}
+              <div className="flex items-center justify-center gap-4 pt-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo_fizmusica.png" alt="FizMusica" className="h-7 opacity-80" />
+                <a href="/" className="bg-pink-500 hover:bg-pink-600 transition-all px-5 py-2.5 rounded-2xl text-sm font-semibold text-white">
+                  🎵 Criar minha música
+                </a>
+              </div>
             </div>
           </div>
         </div>
