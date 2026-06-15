@@ -1,18 +1,37 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 type ProductImage = { id: string; url: string; is_cover: boolean; sort_order: number }
 
 export default function ProductGallery({ images, name }: { images: ProductImage[]; name: string }) {
   const [active, setActive] = useState(0)
   const [lightbox, setLightbox] = useState(false)
+  const touchStartX = useRef<number | null>(null)
+  const touchStartY = useRef<number | null>(null)
 
   if (!images || images.length === 0) return null
 
   const cover = images.find((i) => i.is_cover) ?? images[0]
   const all = [cover, ...images.filter((i) => !i.is_cover)]
   const current = all[active] ?? all[0]
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null || touchStartY.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = e.changedTouches[0].clientY - touchStartY.current
+    // Só swipe horizontal com pelo menos 40px e dominante sobre o vertical
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return
+    if (dx < 0) setActive((prev) => (prev + 1) % all.length)
+    else setActive((prev) => (prev - 1 + all.length) % all.length)
+    touchStartX.current = null
+    touchStartY.current = null
+  }
 
   return (
     <>
@@ -22,6 +41,8 @@ export default function ProductGallery({ images, name }: { images: ProductImage[
           className="relative w-full rounded-2xl overflow-hidden cursor-zoom-in mb-2"
           style={{ aspectRatio: "4/3" }}
           onClick={() => setLightbox(true)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <img
             src={current.url}
