@@ -178,7 +178,7 @@ export default function ProductImages({ productId }: { productId: string }) {
             }}
           />
         </div>
-        <p className="text-xs text-gray-600 mt-2">JPG, PNG ou WebP · máx. 5 MB por foto</p>
+        <p className="text-xs text-gray-600 mt-2">JPG, PNG ou WebP · máx. 5 MB · tamanho ideal: <span className="text-gray-400">1200 × 900 px (proporção 4:3)</span></p>
       </div>
 
       {loading && <p className="text-xs text-gray-600">Carregando…</p>}
