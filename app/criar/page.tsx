@@ -24,6 +24,7 @@ type SessionData = {
   whatsapp: string
   honoreeName: string
   leadCaptured?: boolean
+  orderId?: string
 }
 
 const SESSION_KEY = "fizmusica_session_id"
@@ -61,6 +62,7 @@ function CriarMusicaInner() {
   const [email, setEmail] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
   const [honoreeName, setHonoreeName] = useState("")
+  const [orderId, setOrderId] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [questionStep, setQuestionStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -102,6 +104,14 @@ function CriarMusicaInner() {
         const s = json?.session
         if (!s || !s.data) return
 
+        // Se a sessão tem orderId (cliente voltou de /produtos), pula banner e vai direto pro resumo
+        if (s.data.orderId) {
+          localStorage.setItem(SESSION_KEY, storedId)
+          setSessionId(storedId)
+          resumeSessionData(s.data, 5)
+          return
+        }
+
         if (urlSessionId) {
           // Veio pelo link do e-mail — restaura diretamente sem banner
           localStorage.setItem(SESSION_KEY, urlSessionId)
@@ -139,6 +149,7 @@ function CriarMusicaInner() {
       whatsapp,
       honoreeName,
       leadCaptured,
+      orderId: orderId ?? undefined,
       ...overrides,
     }
   }
@@ -189,6 +200,7 @@ function CriarMusicaInner() {
     setWhatsapp(data.whatsapp ?? "")
     setHonoreeName(data.honoreeName ?? "")
     setLeadCaptured(data.leadCaptured ?? false)
+    setOrderId(data.orderId ?? null)
   }
 
   function resumeSession(s: SessionData) {
@@ -432,22 +444,34 @@ function CriarMusicaInner() {
     }
 
     try {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
+      const isEditing = !!orderId
+      const res = await fetch(
+        isEditing ? `/api/orders/${orderId}` : "/api/orders",
+        {
+          method: isEditing ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      )
 
       const data = await res.json()
 
-      if (!res.ok || !data.success) {
+      if (!res.ok || (!isEditing && !data.success) || (isEditing && !data.success)) {
         setError(data.error ?? "Erro ao enviar. Tente novamente.")
         setSubmitting(false)
         return
       }
 
-      clearSession()
-      router.push(`/produtos?orderId=${data.orderId}`)
+      const finalOrderId = isEditing ? orderId! : data.orderId
+
+      // Salva orderId na sessão para o cliente conseguir voltar e editar
+      if (!isEditing) {
+        setOrderId(finalOrderId)
+        const updated = buildSessionData({ orderId: finalOrderId })
+        saveSession(updated, step)
+      }
+
+      router.push(`/produtos?orderId=${finalOrderId}`)
     } catch {
       setError("Falha de conexão. Verifique sua internet.")
       setSubmitting(false)

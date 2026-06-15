@@ -29,18 +29,41 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const allowed: Record<string, unknown> = {}
   const fields = [
+    // Envio físico
     "shipping_name", "shipping_cep", "shipping_address", "shipping_number",
     "shipping_complement", "shipping_neighborhood", "shipping_city",
     "shipping_state", "shipping_phone",
+    // Wizard (edição via "Voltar ao wizard")
+    "nome", "email", "whatsapp", "context", "subcategory",
+    "musicalStyle", "voiceType", "emotion", "honoreeName",
   ]
   for (const f of fields) if (f in body) allowed[f] = body[f]
 
-  if (Object.keys(allowed).length === 0) {
+  const hasAnswers = Array.isArray(body.answers) && body.answers.length > 0
+
+  if (Object.keys(allowed).length === 0 && !hasAnswers) {
     return NextResponse.json({ error: "Nenhum campo válido." }, { status: 400 })
   }
 
-  const { error } = await supabase.from("orders").update(allowed).eq("id", id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (Object.keys(allowed).length > 0) {
+    const { error } = await supabase.from("orders").update(allowed).eq("id", id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (hasAnswers) {
+    // Substitui as respostas: apaga as antigas e insere as novas
+    await supabase.from("order_answers").delete().eq("orderId", id)
+    const rows = body.answers.map((a: { question: string; answer: string; position: number; context: string; subcategory: string }) => ({
+      orderId: id,
+      question: a.question,
+      answer: a.answer,
+      position: a.position,
+      context: a.context,
+      subcategory: a.subcategory,
+    }))
+    const { error: ansErr } = await supabase.from("order_answers").insert(rows)
+    if (ansErr) return NextResponse.json({ error: ansErr.message }, { status: 500 })
+  }
 
   return NextResponse.json({ success: true })
 }
