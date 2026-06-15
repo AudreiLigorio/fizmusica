@@ -147,7 +147,13 @@ function CheckoutContent() {
 
           {/* Cabeçalho */}
           <div className="mb-6">
-            <button onClick={() => router.back()} className="text-white/50 text-sm mb-4 block">← Voltar</button>
+            <button
+              onClick={() => router.back()}
+              className="transition-all px-5 py-2.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white mb-5 inline-block"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
+            >
+              ← Voltar
+            </button>
             <h1 className="text-2xl font-bold mb-1">Finalizar pagamento</h1>
             <div className="flex items-center justify-between">
               <p className="text-white/55 text-sm">{productName}</p>
