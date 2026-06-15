@@ -464,11 +464,18 @@ function CriarMusicaInner() {
 
       const finalOrderId = isEditing ? orderId! : data.orderId
 
-      // Salva orderId na sessão para o cliente conseguir voltar e editar
-      if (!isEditing) {
+      // Salva orderId na sessão (sem debounce, antes de navegar)
+      if (!isEditing && sessionId) {
         setOrderId(finalOrderId)
-        const updated = buildSessionData({ orderId: finalOrderId })
-        saveSession(updated, step)
+        const updated = buildSessionData({ orderId: finalOrderId, step })
+        if (saveTimeout.current) clearTimeout(saveTimeout.current)
+        try {
+          await fetch("/api/wizard-session", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: sessionId, step, data: updated }),
+          })
+        } catch {}
       }
 
       router.push(`/produtos?orderId=${finalOrderId}`)
