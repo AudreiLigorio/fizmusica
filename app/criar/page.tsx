@@ -1020,22 +1020,17 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                <div className="bg-pink-500/10 border border-pink-500/20 rounded-2xl p-5">
-                  <p className="text-xs text-pink-400 font-medium mb-1 uppercase tracking-wider">Ocasião</p>
-                  <p className="font-semibold">{selectedSubcategory}</p>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">Estilo</p>
-                  <p className="font-semibold">{musicalStyle}</p>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">Emoção</p>
-                  <p className="font-semibold">{emotion}</p>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                  <p className="text-xs text-gray-200 font-medium mb-1 uppercase tracking-wider">Voz</p>
-                  <p className="font-semibold">{voiceType}</p>
-                </div>
+                {[
+                  { label: "Ocasião", value: selectedSubcategory },
+                  { label: "Estilo",  value: musicalStyle },
+                  { label: "Emoção",  value: emotion },
+                  { label: "Voz",     value: voiceType },
+                ].map(({ label, value }) => (
+                  <div key={label} className="border border-pink-500/40 bg-pink-500/10 shadow-[0_0_24px_rgba(236,72,153,0.12)] rounded-2xl p-5">
+                    <p className="text-xs text-pink-400 font-medium mb-1 uppercase tracking-wider">{label}</p>
+                    <p className="font-semibold text-white">{value}</p>
+                  </div>
+                ))}
               </div>
 
               <div className="bg-black/40 border border-white/10 rounded-[28px] p-8 whitespace-pre-wrap text-gray-300 leading-relaxed text-sm max-h-80 overflow-y-auto mb-6">
