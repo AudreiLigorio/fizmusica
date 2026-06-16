@@ -20,12 +20,20 @@ export async function POST(req: Request) {
     // Busca dados do cliente
     const { data: order } = await supabase
       .from("orders")
-      .select("nome, email")
+      .select("nome, email, paymentStatus")
       .eq("id", orderId)
       .single()
 
     if (!order) {
       return NextResponse.json({ success: false, error: "Pedido não encontrado." }, { status: 404 })
+    }
+
+    // Anti-duplo-pagamento: se o pedido já está pago, não cria nova cobrança no MP
+    if (order.paymentStatus === "PAID") {
+      return NextResponse.json(
+        { success: false, alreadyPaid: true, error: "Este pedido já foi pago." },
+        { status: 409 }
+      )
     }
 
     // Resolve um e-mail VÁLIDO para o pagador.

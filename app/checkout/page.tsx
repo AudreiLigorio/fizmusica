@@ -34,18 +34,35 @@ function CheckoutContent() {
       return
     }
 
-    // Carrega o SDK do MP no browser
-    const script = document.createElement("script")
-    script.src = "https://sdk.mercadopago.com/js/v2"
-    script.async = true
-    script.onload = () => initBrick(publicKey)
-    script.onerror = () => {
-      setErrorMsg("Falha ao carregar SDK de pagamento.")
-      setStatus("error")
-    }
-    document.head.appendChild(script)
+    let cancelled = false
+
+    // Anti-duplo-pagamento: se o pedido já está pago, vai direto pro sucesso
+    ;(async () => {
+      try {
+        const d = await fetch(`/api/orders/${orderId}`).then((r) => r.json())
+        if (d?.order?.paymentStatus === "PAID") {
+          router.replace(`/sucesso?orderId=${orderId}&status=approved`)
+          return
+        }
+      } catch {
+        // se a checagem falhar, segue o fluxo (a guarda do servidor ainda protege)
+      }
+      if (cancelled) return
+
+      // Carrega o SDK do MP no browser
+      const script = document.createElement("script")
+      script.src = "https://sdk.mercadopago.com/js/v2"
+      script.async = true
+      script.onload = () => initBrick(publicKey)
+      script.onerror = () => {
+        setErrorMsg("Falha ao carregar SDK de pagamento.")
+        setStatus("error")
+      }
+      document.head.appendChild(script)
+    })()
 
     return () => {
+      cancelled = true
       controllerRef.current?.unmount()
     }
   }, [orderId, price])
@@ -108,6 +125,12 @@ function CheckoutContent() {
             })
 
             const data = await res.json()
+
+            // Pedido já estava pago (corrida): manda pro sucesso em vez de erro
+            if (data.alreadyPaid) {
+              router.replace(`/sucesso?orderId=${orderId}&status=approved`)
+              return
+            }
 
             if (!res.ok || !data.success) {
               setErrorMsg(data.error ?? "Erro ao processar pagamento.")
