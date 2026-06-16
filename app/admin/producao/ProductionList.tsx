@@ -23,7 +23,7 @@ type Order = {
   payments?: { mpPaymentId: string | null; mpStatus: string | null }[] | null
 }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 30
 
 const STATUS_COLOR: Record<string, string> = {
   PENDING:       "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
