@@ -112,7 +112,14 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
                 <div className="pt-2 mt-1 border-t border-white/10">
                   <p className="text-gray-500 mb-1">ID do pagamento (Mercado Pago)</p>
                   <p className="font-mono text-xs text-pink-300 break-all select-all">{payment.mpPaymentId}</p>
-                  <p className="text-[11px] text-gray-600 mt-1">Use este número para localizar a transação no painel do Mercado Pago.</p>
+                  <a
+                    href={`https://www.mercadopago.com.br/activities/1/detail?id=${payment.mpPaymentId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs text-blue-400 hover:text-blue-300"
+                  >
+                    Abrir transação no Mercado Pago ↗
+                  </a>
                 </div>
               )}
               {payment.mpPreferenceId && (
