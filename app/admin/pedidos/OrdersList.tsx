@@ -39,6 +39,7 @@ const fmtTime = (d: string) => new Date(d).toLocaleTimeString("pt-BR", { hour: "
 export default function OrdersList({ orders }: { orders: Order[] }) {
   const [search, setSearch]   = useState("")
   const [status, setStatus]   = useState("")
+  const [payment, setPayment] = useState("")
   const [product, setProduct] = useState("")
   const [from, setFrom]       = useState("")
   const [to, setTo]           = useState("")
@@ -55,6 +56,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
 
     return orders.filter((o) => {
       if (status && o.status !== status) return false
+      if (payment && o.paymentStatus !== payment) return false
       if (product && (o.products?.name ?? "") !== product) return false
       const ts = new Date(o.createdAt).getTime()
       if (fromTs !== null && ts < fromTs) return false
@@ -65,12 +67,12 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
       }
       return true
     })
-  }, [orders, search, status, product, from, to])
+  }, [orders, search, status, payment, product, from, to])
 
-  const hasFilters = search || status || product || from || to
+  const hasFilters = search || status || payment || product || from || to
 
   const [page, setPage] = useState(0)
-  useEffect(() => { setPage(0) }, [search, status, product, from, to])
+  useEffect(() => { setPage(0) }, [search, status, payment, product, from, to])
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, pageCount - 1)
   const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE)
@@ -97,6 +99,16 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
           </select>
         </div>
         <div>
+          <label className="block text-xs text-gray-500 mb-1">Pagamento</label>
+          <select value={payment} onChange={(e) => setPayment(e.target.value)}
+            className="bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500">
+            <option value="">Todos</option>
+            <option value="PAID">Pago</option>
+            <option value="UNPAID">Não pago</option>
+            <option value="REFUNDED">Reembolsado</option>
+          </select>
+        </div>
+        <div>
           <label className="block text-xs text-gray-500 mb-1">Produto</label>
           <select value={product} onChange={(e) => setProduct(e.target.value)}
             className="bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500">
@@ -116,7 +128,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
         </div>
         {hasFilters && (
           <button
-            onClick={() => { setSearch(""); setStatus(""); setProduct(""); setFrom(""); setTo("") }}
+            onClick={() => { setSearch(""); setStatus(""); setPayment(""); setProduct(""); setFrom(""); setTo("") }}
             className="text-xs text-gray-400 hover:text-white px-3 py-2 rounded-xl border border-white/10"
           >
             Limpar
