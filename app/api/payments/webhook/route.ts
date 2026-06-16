@@ -3,6 +3,7 @@ import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { sendNewOrderPaidNotification } from "@/app/services/emailService"
 import { triggerN8nWebhook } from "@/app/services/orderService"
+import { detectDuplicatePayment } from "@/lib/paymentAlerts"
 
 const client = new MercadoPago({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -29,6 +30,15 @@ export async function POST(req: Request) {
     }
 
     const supabase = createServerClient()
+
+    // Anti-duplicidade: pagamento aprovado para pedido já pago, com ID diferente
+    if (status === "approved") {
+      const dup = await detectDuplicatePayment(supabase, orderId, paymentId, payment.transaction_amount)
+      if (dup) {
+        // Não sobrescreve o pagamento original; alerta já foi registrado/enviado
+        return NextResponse.json({ received: true, duplicate: true })
+      }
+    }
 
     // Salva/atualiza na tabela payments
     await supabase.from("payments").upsert(

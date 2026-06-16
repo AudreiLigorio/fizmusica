@@ -198,6 +198,46 @@ function buildPhotoUploadEmail(data: PhotoUploadEmailData): string {
   `
 }
 
+// ============================================================
+// E-mail: alerta de possível pagamento duplicado (para o admin)
+// ============================================================
+
+interface DuplicatePaymentAlertData {
+  orderId:             string
+  nome?:               string
+  mpPaymentId:         string
+  previousMpPaymentId: string
+  amount?:             number
+}
+
+export async function sendDuplicatePaymentAlert(data: DuplicatePaymentAlertData): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      ADMIN_EMAIL,
+      subject: `⚠️ Possível pagamento duplicado — pedido ${data.orderId.slice(0, 8).toUpperCase()}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:560px;margin:0 auto">
+          <h2 style="color:#b91c1c">⚠️ Possível pagamento duplicado</h2>
+          <p>Chegou um pagamento aprovado para um pedido que <strong>já estava pago</strong>, com um ID diferente. Verifique no Mercado Pago e estorne se for cobrança em duplicidade.</p>
+          <table style="border-collapse:collapse;font-size:14px">
+            <tr><td style="padding:4px 8px;color:#666">Pedido</td><td style="padding:4px 8px"><strong>${data.orderId.slice(0, 8).toUpperCase()}</strong> (${data.orderId})</td></tr>
+            ${data.nome ? `<tr><td style="padding:4px 8px;color:#666">Cliente</td><td style="padding:4px 8px">${data.nome}</td></tr>` : ""}
+            <tr><td style="padding:4px 8px;color:#666">Pagamento já registrado</td><td style="padding:4px 8px">${data.previousMpPaymentId}</td></tr>
+            <tr><td style="padding:4px 8px;color:#666">Novo pagamento (duplicado?)</td><td style="padding:4px 8px"><strong style="color:#b91c1c">${data.mpPaymentId}</strong></td></tr>
+            ${data.amount ? `<tr><td style="padding:4px 8px;color:#666">Valor</td><td style="padding:4px 8px">R$ ${Number(data.amount).toFixed(2).replace(".", ",")}</td></tr>` : ""}
+          </table>
+          <p style="margin-top:16px"><a href="https://www.mercadopago.com.br/activities/1/detail?id=${data.mpPaymentId}" style="color:#2563eb">Abrir transação no Mercado Pago ↗</a></p>
+        </div>
+      `,
+    })
+    if ((result as any).error) return { ok: false, error: (result as any).error?.message ?? "erro" }
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
 interface OrderEmailData {
   orderId: string
   nome: string
