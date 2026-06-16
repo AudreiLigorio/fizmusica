@@ -1,7 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
+
+const PAGE_SIZE = 50
 
 type Order = {
   id: string
@@ -66,6 +68,12 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
   }, [orders, search, status, product, from, to])
 
   const hasFilters = search || status || product || from || to
+
+  const [page, setPage] = useState(0)
+  useEffect(() => { setPage(0) }, [search, status, product, from, to])
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, pageCount - 1)
+  const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE)
 
   return (
     <>
@@ -141,7 +149,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
               {filtered.length === 0 && (
                 <tr><td colSpan={9} className="px-6 py-12 text-center text-gray-600">Nenhum pedido encontrado.</td></tr>
               )}
-              {filtered.map((o) => (
+              {paged.map((o) => (
                 <tr key={o.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-medium">{o.nome}</div>
@@ -189,7 +197,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
           {filtered.length === 0 && (
             <p className="px-4 py-10 text-center text-gray-600 text-sm">Nenhum pedido encontrado.</p>
           )}
-          {filtered.map((o) => (
+          {paged.map((o) => (
             <Link key={o.id} href={`/admin/pedidos/${o.id}`} className="block px-4 py-4 hover:bg-white/3 transition-colors">
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0">
@@ -217,6 +225,27 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
           ))}
         </div>
       </div>
+
+      {/* Paginação */}
+      {pageCount > 1 && (
+        <div className="flex items-center justify-center gap-3 mt-4">
+          <button
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            className="px-3 py-2 rounded-xl text-sm border border-white/10 text-gray-300 disabled:opacity-30 hover:bg-white/5 transition-colors"
+          >
+            ← Anterior
+          </button>
+          <span className="text-sm text-gray-400">Página {safePage + 1} de {pageCount}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            disabled={safePage >= pageCount - 1}
+            className="px-3 py-2 rounded-xl text-sm border border-white/10 text-gray-300 disabled:opacity-30 hover:bg-white/5 transition-colors"
+          >
+            Próxima →
+          </button>
+        </div>
+      )}
     </>
   )
 }
