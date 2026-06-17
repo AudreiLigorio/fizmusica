@@ -20,6 +20,7 @@ type Order = {
   createdAt: string
   photo_effect?: string | null
   products?: { name: string } | null
+  product_delivery_options?: { label: string; days: number } | null
   payments?: { mpPaymentId: string | null; mpStatus: string | null }[] | null
 }
 
@@ -163,6 +164,11 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
                     <p className="text-xs text-gray-400 truncate">{order.email} · {order.whatsapp}</p>
                     {order.honoreeName && (
                       <p className="text-xs text-pink-400 mt-0.5">🎁 Para: {order.honoreeName}</p>
+                    )}
+                    {order.product_delivery_options && (
+                      <p className="text-xs text-yellow-400 mt-0.5">
+                        ⏱ Prazo: {order.product_delivery_options.label} ({order.product_delivery_options.days} dias úteis)
+                      </p>
                     )}
                   </div>
                   <div className="text-right text-xs shrink-0">
