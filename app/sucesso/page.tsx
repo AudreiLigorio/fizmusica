@@ -130,15 +130,6 @@ function SucessoContent() {
                   </button>
                 )}
 
-                {/* Alternativa sem login: adicionar fotos pelo link */}
-                {isPaid && order?.photo_token && (
-                  <a
-                    href={`/pedido/${order.photo_token}/fotos`}
-                    className="block text-center text-sm text-pink-400 hover:text-pink-300 transition-colors mb-6"
-                  >
-                    📸 Prefere não entrar agora? Adicione as fotos por aqui
-                  </a>
-                )}
 
                 {/* PRODUTO + VALOR */}
                 {order?.products && (
