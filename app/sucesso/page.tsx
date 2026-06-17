@@ -102,11 +102,11 @@ function SucessoContent() {
                   </p>
                 </div>
 
-                {/* ⭐ DESTAQUE: ANEXAR FOTOS */}
-                {isPaid && order?.photo_token && (
-                  <a
-                    href={`/pedido/${order.photo_token}/fotos`}
-                    className="group block rounded-3xl p-7 mb-6 relative overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.99]"
+                {/* ⭐ DESTAQUE: ENTRAR NA ÁREA (acompanhar + fotos) */}
+                {isPaid && (
+                  <button
+                    onClick={() => router.push(`/minha-musica?orderId=${orderId ?? ""}`)}
+                    className="group block w-full text-left rounded-3xl p-7 mb-4 relative overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.99]"
                     style={{
                       background: "linear-gradient(135deg, #f0196b 0%, #d946ef 55%, #a855f7 100%)",
                       boxShadow: "0 16px 50px rgba(217,70,239,0.35)",
@@ -115,19 +115,28 @@ function SucessoContent() {
                     <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
                     <div className="relative">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">📸</span>
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">Deixe com a sua cara</span>
+                        <span className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">🎧</span>
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">Sua área</span>
                       </div>
-                      <h2 className="text-2xl font-bold leading-tight mb-1">Adicione fotos à sua música</h2>
+                      <h2 className="text-2xl font-bold leading-tight mb-1">Acompanhe seu pedido e adicione fotos</h2>
                       <p className="text-white/85 text-sm leading-relaxed mb-5">
-                        Até <strong>5 fotos</strong> que vão aparecer no player enquanto a música toca. Escolha uma como capa. É rápido e opcional.
+                        Entre na sua área (com Google ou e-mail, <strong>sem senha</strong>) para acompanhar o status, <strong>adicionar até 5 fotos</strong> ao player e ouvir sua música quando ficar pronta.
                       </p>
                       <span className="inline-flex items-center gap-2 bg-white text-pink-600 font-bold text-sm px-6 py-3 rounded-2xl shadow-lg group-hover:gap-3 transition-all">
-                        📸 Anexar minhas fotos
+                        🎧 Entrar na minha área
                         <span className="transition-transform group-hover:translate-x-0.5">→</span>
                       </span>
-                      <p className="text-white/60 text-[11px] mt-3">Enviamos esse link também no seu e-mail — dá pra fazer depois.</p>
                     </div>
+                  </button>
+                )}
+
+                {/* Alternativa sem login: adicionar fotos pelo link */}
+                {isPaid && order?.photo_token && (
+                  <a
+                    href={`/pedido/${order.photo_token}/fotos`}
+                    className="block text-center text-sm text-pink-400 hover:text-pink-300 transition-colors mb-6"
+                  >
+                    📸 Prefere não entrar agora? Adicione as fotos por aqui
                   </a>
                 )}
 
@@ -192,16 +201,6 @@ function SucessoContent() {
                   </svg>
                   Falar no WhatsApp
                 </a>
-
-                {/* MINHA ÁREA */}
-                {isPaid && (
-                  <button
-                    onClick={() => router.push(`/minha-musica?orderId=${orderId ?? ""}`)}
-                    className="w-full mt-3 bg-white/[0.06] border border-white/15 hover:bg-white/10 transition-all py-4 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
-                  >
-                    🎧 Entrar na minha área — acompanhar e ouvir
-                  </button>
-                )}
 
                 {/* LINKS */}
                 <div className="text-center mt-5 space-y-2">
