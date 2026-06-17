@@ -193,9 +193,19 @@ function SucessoContent() {
                   Falar no WhatsApp
                 </a>
 
+                {/* MINHA ÁREA */}
+                {isPaid && (
+                  <button
+                    onClick={() => router.push(`/minha-musica?orderId=${orderId ?? ""}`)}
+                    className="w-full mt-3 bg-white/[0.06] border border-white/15 hover:bg-white/10 transition-all py-4 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2"
+                  >
+                    🎧 Entrar na minha área — acompanhar e ouvir
+                  </button>
+                )}
+
                 {/* LINKS */}
                 <div className="text-center mt-5 space-y-2">
-                  {orderId && (
+                  {orderId && !isPaid && (
                     <button
                       onClick={() => router.push(`/minha-musica?orderId=${orderId}`)}
                       className="block w-full text-pink-400 hover:text-pink-300 transition-colors text-sm font-medium"

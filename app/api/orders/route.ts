@@ -11,12 +11,25 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("orders")
-    .select(`id, context, subcategory, status, paymentStatus, createdAt, products(name, price), payments(amount, mpStatus)`)
+    .select(`id, context, subcategory, status, paymentStatus, createdAt, photo_token, products(name, price), payments(amount, mpStatus)`)
     .eq("email", email)
     .order("createdAt", { ascending: false })
 
   if (error) return NextResponse.json({ orders: [] })
-  return NextResponse.json({ orders: data ?? [] })
+
+  // Anexa o slug da música (quando publicada) para o botão "Ouvir"
+  const ids = (data ?? []).map((o) => o.id)
+  const slugByOrder: Record<string, string> = {}
+  if (ids.length) {
+    const { data: gm } = await supabase
+      .from("generated_music")
+      .select("orderId, slug")
+      .in("orderId", ids)
+    for (const g of gm ?? []) if (g.slug) slugByOrder[g.orderId as string] = g.slug as string
+  }
+
+  const orders = (data ?? []).map((o) => ({ ...o, slug: slugByOrder[o.id] ?? null }))
+  return NextResponse.json({ orders })
 }
 
 export async function POST(req: NextRequest) {
