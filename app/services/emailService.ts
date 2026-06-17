@@ -125,72 +125,74 @@ function buildDeliveryEmail(data: MusicDeliveryEmailData, qrBase64: string): str
 }
 
 // ============================================================
-// E-mail: convite para anexar fotos (exibidas no player)
-// Enviado após o pagamento confirmado, com link tokenizado
+// E-mail: pagamento confirmado → acesse a área (status + fotos)
 // ============================================================
 
-interface PhotoUploadEmailData {
-  nome:      string
-  email:     string
-  uploadUrl: string
+interface PaymentConfirmedEmailData {
+  nome:    string
+  email:   string
+  areaUrl: string
 }
 
-export async function sendPhotoUploadEmail(data: PhotoUploadEmailData): Promise<{ ok: boolean; error?: string }> {
+export async function sendPaymentConfirmedEmail(data: PaymentConfirmedEmailData): Promise<{ ok: boolean; error?: string }> {
   try {
     const result = await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      data.email,
-      subject: `📸 ${data.nome.split(" ")[0]}, adicione fotos à sua música!`,
-      html:    buildPhotoUploadEmail(data),
+      subject: `✅ Pagamento confirmado, ${data.nome.split(" ")[0]}! Acompanhe sua música`,
+      html:    buildPaymentConfirmedEmail(data),
     })
     if ((result as any).error) {
       const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
-      console.error("[email] Resend erro no convite de fotos:", msg)
+      console.error("[email] Resend erro no e-mail de pagamento confirmado:", msg)
       return { ok: false, error: msg }
     }
-    console.log(`[email] Convite de fotos enviado para ${data.email}`)
+    console.log(`[email] Pagamento confirmado enviado para ${data.email}`)
     return { ok: true }
   } catch (err: any) {
     const msg = err?.message ?? String(err)
-    console.error("[email] Falha ao enviar convite de fotos:", msg)
+    console.error("[email] Falha ao enviar e-mail de pagamento confirmado:", msg)
     return { ok: false, error: msg }
   }
 }
 
-function buildPhotoUploadEmail(data: PhotoUploadEmailData): string {
+function buildPaymentConfirmedEmail(data: PaymentConfirmedEmailData): string {
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">📸</div>
-        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">Deixe sua música ainda mais especial</h1>
-        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:16px">Adicione fotos que aparecerão no player</p>
+      <div style="background-color:#c026d3;background-image:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:bold">Pagamento confirmado!</h1>
+        <p style="color:#ffffff;margin:12px 0 0;font-size:16px">Sua música já entrou na fila de produção</p>
       </div>
 
       <div style="padding:40px 32px">
         <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! ❤️</p>
-        <p style="color:#999;margin:0 0 28px">
-          Pagamento confirmado! Agora você pode anexar até <strong style="color:#ec4899">5 fotos</strong> que serão exibidas junto da sua música —
-          escolha uma delas como <strong>capa</strong>. É opcional, mas deixa tudo com a sua cara.
+        <p style="color:#999;margin:0 0 24px">
+          Recebemos seu pagamento com sucesso. Agora você tem uma <strong>área exclusiva</strong> onde pode
+          <strong style="color:#ec4899">acompanhar o status da criação</strong> e <strong style="color:#ec4899">cadastrar todas as suas fotos</strong>,
+          que vão aparecer no player junto da música.
         </p>
 
-        <div style="text-align:center;margin:32px 0">
-          <a href="${data.uploadUrl}"
-            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:18px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
-            📸 Anexar minhas fotos
-          </a>
-        </div>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto">
+          <tr><td align="center" bgcolor="#ec4899" style="border-radius:50px">
+            <a href="${data.areaUrl}" style="display:inline-block;padding:16px 40px;color:#fff;text-decoration:none;font-family:sans-serif;font-size:16px;font-weight:bold;border-radius:50px">
+              Acessar minha área
+            </a>
+          </td></tr>
+        </table>
 
-        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:16px 0">
-          <p style="color:#999;font-size:13px;margin:0">
-            Guarde este e-mail: o link acima é o seu acesso para adicionar ou trocar as fotos a qualquer momento, sem precisar de senha.
+        <div style="background:#2a1015;border:1px solid #5b2230;border-radius:12px;padding:16px;margin:8px 0 0">
+          <p style="color:#f6a7c6;font-size:14px;margin:0;font-weight:bold">⏱ Dica importante</p>
+          <p style="margin:6px 0 0;font-size:13px;color:#d8a9b6">
+            Quanto antes você cadastrar as fotos, melhor — elas entram na produção junto com a música. Se deixar pra depois, podem não dar tempo de entrar.
           </p>
         </div>
 
-        <p style="color:#666;font-size:12px;margin:8px 0 0">
-          Formatos aceitos: JPG, PNG ou WebP · até 8 MB por foto.
+        <p style="color:#888;font-size:13px;margin:24px 0 0">
+          Na área você entra <strong>sem senha</strong> — com sua conta Google ou um link enviado para o seu e-mail.
         </p>
 
-        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
+        <p style="color:#555;font-size:12px;margin:28px 0 0;padding-top:24px;border-top:1px solid #222">
           Dúvidas? Fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a>
         </p>
       </div>

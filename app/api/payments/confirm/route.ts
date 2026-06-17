@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
-import { sendNewOrderPaidNotification, sendPhotoUploadEmail } from "@/app/services/emailService"
+import { sendNewOrderPaidNotification, sendPaymentConfirmedEmail } from "@/app/services/emailService"
 import { triggerN8nWebhook } from "@/app/services/orderService"
 
 // Confirma pagamento aprovado diretamente no Supabase
@@ -49,10 +49,10 @@ export async function POST(req: Request) {
           console.error("[confirm] falha ao gerar photo_token:", tokErr.message)
           photoToken = null
         } else {
-          const baseUrl   = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
-          const uploadUrl = `${baseUrl}/pedido/${photoToken}/fotos`
-          const r = await sendPhotoUploadEmail({ nome: order.nome, email: order.email, uploadUrl })
-          if (!r.ok) console.error("[confirm] e-mail de fotos falhou:", r.error)
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+          const areaUrl = `${baseUrl}/minha-musica?orderId=${orderId}`
+          const r = await sendPaymentConfirmedEmail({ nome: order.nome, email: order.email, areaUrl })
+          if (!r.ok) console.error("[confirm] e-mail de pagamento confirmado falhou:", r.error)
         }
       }
 
