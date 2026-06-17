@@ -22,6 +22,7 @@ function CheckoutContent() {
   const [pixData, setPixData] = useState<{ qrCodeBase64: string; qrCode: string; ticketUrl: string | null } | null>(null)
   const [pixCopied, setPixCopied] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const payerEmailRef = useRef<string>("")
 
   function startPixPolling() {
     if (pollRef.current) clearInterval(pollRef.current)
@@ -65,6 +66,7 @@ function CheckoutContent() {
     ;(async () => {
       try {
         const d = await fetch(`/api/orders/${orderId}`).then((r) => r.json())
+        if (d?.order?.email) payerEmailRef.current = d.order.email
         if (d?.order?.paymentStatus === "PAID") {
           router.replace(`/sucesso?orderId=${orderId}&status=approved`)
           return
@@ -99,6 +101,8 @@ function CheckoutContent() {
     const settings = {
       initialization: {
         amount: price,
+        // Pré-preenche o pagador (e-mail do pedido) para o Brick NÃO pedir o e-mail no PIX
+        ...(payerEmailRef.current ? { payer: { email: payerEmailRef.current } } : {}),
       },
       customization: {
         paymentMethods: {
