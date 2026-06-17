@@ -7,6 +7,57 @@ const FROM_ADDRESS = "FizMusica <contato@fizmusica.com.br>"
 const ADMIN_EMAIL  = process.env.ADMIN_NOTIFY_EMAIL ?? "contato@fizmusica.com.br"
 
 // ============================================================
+// Layout padrão dos e-mails (marca FizMusica)
+// - header com gradiente rosa/roxo + cor sólida de reserva (Gmail apaga gradiente)
+// - botão "à prova de e-mail" (tabela + bgcolor)
+// - rodapé padrão
+// ============================================================
+function emailShell(o: {
+  emoji: string
+  title: string
+  subtitle?: string
+  body: string
+  button?: { text: string; url: string }
+  afterButton?: string
+  note?: { label?: string; text: string }
+}): string {
+  return `
+  <div style="font-family:Helvetica,Arial,sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+    <div style="background-color:#c026d3;background-image:linear-gradient(135deg,#ec4899,#a855f7);padding:38px 32px;text-align:center">
+      <div style="font-size:44px;line-height:1;margin-bottom:10px">${o.emoji}</div>
+      <h1 style="color:#ffffff;margin:0;font-size:25px;font-weight:bold;line-height:1.25">${o.title}</h1>
+      ${o.subtitle ? `<p style="color:#ffffff;margin:10px 0 0;font-size:15px;opacity:0.9">${o.subtitle}</p>` : ""}
+    </div>
+    <div style="padding:36px 32px">
+      ${o.body}
+      ${o.button ? `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px auto">
+        <tr><td align="center" bgcolor="#ec4899" style="border-radius:50px">
+          <a href="${o.button.url}" style="display:inline-block;padding:16px 40px;color:#ffffff;text-decoration:none;font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:bold;border-radius:50px">${o.button.text}</a>
+        </td></tr>
+      </table>` : ""}
+      ${o.afterButton ?? ""}
+      ${o.note ? `
+      <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 18px;margin:20px 0">
+        ${o.note.label ? `<p style="color:#f6a7c6;font-size:13px;margin:0 0 6px;font-weight:bold">${o.note.label}</p>` : ""}
+        <p style="color:#aaaaaa;font-size:13px;margin:0;line-height:1.6">${o.note.text}</p>
+      </div>` : ""}
+      <p style="color:#666666;font-size:12px;margin:30px 0 0;padding-top:22px;border-top:1px solid #222222;text-align:center;line-height:1.7">
+        <strong style="color:#ec4899">FizMusica</strong> — Sua história, sua música ❤️<br>
+        Dúvidas? <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a> · <a href="https://fizmusica.com.br" style="color:#ec4899">fizmusica.com.br</a>
+      </p>
+    </div>
+  </div>`
+}
+
+const para = (html: string) => `<p style="color:#bbbbbb;font-size:15px;line-height:1.7;margin:0 0 16px">${html}</p>`
+const strong = (text: string) => `<strong style="color:#ec4899">${text}</strong>`
+const adminRows = (rows: [string, string][]) =>
+  `<table style="width:100%;border-collapse:collapse">${rows
+    .map(([k, v]) => `<tr><td style="padding:7px 0;color:#888;font-size:14px;width:130px;vertical-align:top">${k}</td><td style="padding:7px 0;font-size:14px;color:#eee">${v}</td></tr>`)
+    .join("")}</table>`
+
+// ============================================================
 // E-mail de entrega da música ao cliente
 // ============================================================
 
@@ -75,53 +126,28 @@ export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Prom
 }
 
 function buildDeliveryEmail(data: MusicDeliveryEmailData, qrBase64: string): string {
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">🎵</div>
-        <h1 style="color:#fff;margin:0;font-size:28px;font-weight:800">Sua música está pronta!</h1>
-        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:16px">Feita com amor especialmente para você</p>
-      </div>
-
-      <div style="padding:40px 32px">
-        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! ❤️</p>
-        <p style="color:#999;margin:0 0 32px">
-          Sua música personalizada <strong style="color:#ec4899">"${data.musicName}"</strong> ficou incrível e está pronta para você ouvir!
-        </p>
-
-        <div style="text-align:center;margin:32px 0">
-          <a href="${data.publicUrl}"
-            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:18px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
-            ▶ Ouvir minha música
-          </a>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:20px;text-align:center;margin:24px 0">
-          <p style="color:#999;font-size:13px;margin:0 0 12px">📱 Escaneie para ouvir no celular</p>
-          <img src="data:image/png;base64,${qrBase64}" alt="QR Code" width="160" height="160"
-            style="display:block;margin:0 auto;border-radius:8px;border:4px solid #fff" />
-          <p style="color:#666;font-size:11px;margin:12px 0 0;word-break:break-all">
-            <a href="${data.publicUrl}" style="color:#ec4899">${data.publicUrl}</a>
-          </p>
-        </div>
-
-        ${data.mp3Url ? `
-        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:16px 0">
-          <p style="color:#999;font-size:13px;margin:0 0 4px">🎧 O arquivo MP3 também está em anexo neste e-mail.</p>
-          <p style="color:#666;font-size:11px;margin:0">Salve no seu celular para ouvir sem internet!</p>
-        </div>
-        ` : ""}
-
-        <p style="color:#666;font-size:14px;margin:24px 0 0">
-          Compartilhe com quem quiser — basta enviar o link ou mostrar o QR Code! ❤️
-        </p>
-
-        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
-          Dúvidas? Fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a>
-        </p>
-      </div>
+  const qrBox = `
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:20px;text-align:center;margin:20px 0">
+      <p style="color:#999;font-size:13px;margin:0 0 12px">📱 Escaneie para ouvir no celular</p>
+      <img src="data:image/png;base64,${qrBase64}" alt="QR Code" width="160" height="160" style="display:block;margin:0 auto;border-radius:8px;border:4px solid #fff" />
+      <p style="color:#666;font-size:11px;margin:12px 0 0;word-break:break-all"><a href="${data.publicUrl}" style="color:#ec4899">${data.publicUrl}</a></p>
     </div>
-  `
+    ${data.mp3Url ? `
+    <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:12px 0">
+      <p style="color:#bbb;font-size:13px;margin:0 0 4px">🎧 O arquivo MP3 também está em anexo neste e-mail.</p>
+      <p style="color:#777;font-size:11px;margin:0">Salve no seu celular para ouvir sem internet!</p>
+    </div>` : ""}
+    ${para("Compartilhe com quem quiser — basta enviar o link ou mostrar o QR Code! ❤️")}`
+  return emailShell({
+    emoji: "🎵",
+    title: "Sua música está pronta!",
+    subtitle: "Feita com amor especialmente para você",
+    body:
+      para(`Olá, ${strong(data.nome.split(" ")[0])}! ❤️`) +
+      para(`Sua música personalizada ${strong(`"${data.musicName}"`)} ficou incrível e está pronta para você ouvir!`),
+    button: { text: "▶ Ouvir minha música", url: data.publicUrl },
+    afterButton: qrBox,
+  })
 }
 
 // ============================================================
@@ -157,47 +183,20 @@ export async function sendPaymentConfirmedEmail(data: PaymentConfirmedEmailData)
 }
 
 function buildPaymentConfirmedEmail(data: PaymentConfirmedEmailData): string {
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-      <div style="background-color:#c026d3;background-image:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">✅</div>
-        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:bold">Pagamento confirmado!</h1>
-        <p style="color:#ffffff;margin:12px 0 0;font-size:16px">Sua música já entrou na fila de produção</p>
-      </div>
-
-      <div style="padding:40px 32px">
-        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! ❤️</p>
-        <p style="color:#999;margin:0 0 24px">
-          Recebemos seu pagamento com sucesso. Agora você tem uma <strong>área exclusiva</strong> onde pode
-          <strong style="color:#ec4899">acompanhar o status da criação</strong> e <strong style="color:#ec4899">cadastrar todas as suas fotos</strong>,
-          que vão aparecer no player junto da música.
-        </p>
-
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px auto">
-          <tr><td align="center" bgcolor="#ec4899" style="border-radius:50px">
-            <a href="${data.areaUrl}" style="display:inline-block;padding:16px 40px;color:#fff;text-decoration:none;font-family:sans-serif;font-size:16px;font-weight:bold;border-radius:50px">
-              Acessar minha área
-            </a>
-          </td></tr>
-        </table>
-
-        <div style="background:#2a1015;border:1px solid #5b2230;border-radius:12px;padding:16px;margin:8px 0 0">
-          <p style="color:#f6a7c6;font-size:14px;margin:0;font-weight:bold">⏱ Dica importante</p>
-          <p style="margin:6px 0 0;font-size:13px;color:#d8a9b6">
-            Quanto antes você cadastrar as fotos, melhor — elas entram na produção junto com a música. Se deixar pra depois, podem não dar tempo de entrar.
-          </p>
-        </div>
-
-        <p style="color:#888;font-size:13px;margin:24px 0 0">
-          Na área você entra <strong>sem senha</strong> — com sua conta Google ou um link enviado para o seu e-mail.
-        </p>
-
-        <p style="color:#555;font-size:12px;margin:28px 0 0;padding-top:24px;border-top:1px solid #222">
-          Dúvidas? Fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a>
-        </p>
-      </div>
-    </div>
-  `
+  return emailShell({
+    emoji: "✅",
+    title: "Pagamento confirmado!",
+    subtitle: "Sua música já entrou na fila de produção",
+    body:
+      para(`Olá, ${strong(data.nome.split(" ")[0])}! ❤️`) +
+      para(`Recebemos seu pagamento com sucesso. Agora você tem uma <strong>área exclusiva</strong> onde pode ${strong("acompanhar o status da criação")} e ${strong("cadastrar todas as suas fotos")}, que vão aparecer no player junto da música.`),
+    button: { text: "Acessar minha área", url: data.areaUrl },
+    note: {
+      label: "⏱ Dica importante",
+      text: "Quanto antes você cadastrar as fotos, melhor — elas entram na produção junto com a música. Se deixar pra depois, podem não dar tempo de entrar.",
+    },
+    afterButton: para(`Na área você entra <strong>sem senha</strong> — com sua conta Google ou um link enviado para o seu e-mail.`),
+  })
 }
 
 // ============================================================
@@ -218,20 +217,20 @@ export async function sendDuplicatePaymentAlert(data: DuplicatePaymentAlertData)
       from:    FROM_ADDRESS,
       to:      ADMIN_EMAIL,
       subject: `⚠️ Possível pagamento duplicado — pedido ${data.orderId.slice(0, 8).toUpperCase()}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:560px;margin:0 auto">
-          <h2 style="color:#b91c1c">⚠️ Possível pagamento duplicado</h2>
-          <p>Chegou um pagamento aprovado para um pedido que <strong>já estava pago</strong>, com um ID diferente. Verifique no Mercado Pago e estorne se for cobrança em duplicidade.</p>
-          <table style="border-collapse:collapse;font-size:14px">
-            <tr><td style="padding:4px 8px;color:#666">Pedido</td><td style="padding:4px 8px"><strong>${data.orderId.slice(0, 8).toUpperCase()}</strong> (${data.orderId})</td></tr>
-            ${data.nome ? `<tr><td style="padding:4px 8px;color:#666">Cliente</td><td style="padding:4px 8px">${data.nome}</td></tr>` : ""}
-            <tr><td style="padding:4px 8px;color:#666">Pagamento já registrado</td><td style="padding:4px 8px">${data.previousMpPaymentId}</td></tr>
-            <tr><td style="padding:4px 8px;color:#666">Novo pagamento (duplicado?)</td><td style="padding:4px 8px"><strong style="color:#b91c1c">${data.mpPaymentId}</strong></td></tr>
-            ${data.amount ? `<tr><td style="padding:4px 8px;color:#666">Valor</td><td style="padding:4px 8px">R$ ${Number(data.amount).toFixed(2).replace(".", ",")}</td></tr>` : ""}
-          </table>
-          <p style="margin-top:16px"><a href="https://www.mercadopago.com.br/activities/1/detail?id=${data.mpPaymentId}" style="color:#2563eb">Abrir transação no Mercado Pago ↗</a></p>
-        </div>
-      `,
+      html: emailShell({
+        emoji: "⚠️",
+        title: "Possível pagamento duplicado",
+        body:
+          para("Chegou um pagamento aprovado para um pedido que <strong>já estava pago</strong>, com um ID diferente. Verifique no Mercado Pago e estorne se for cobrança em duplicidade.") +
+          adminRows([
+            ["Pedido", `<strong style="color:#ec4899">#${data.orderId.slice(0, 8).toUpperCase()}</strong>`],
+            ...(data.nome ? [["Cliente", data.nome] as [string, string]] : []),
+            ["Já registrado", `<span style="font-family:monospace">${data.previousMpPaymentId}</span>`],
+            ["Novo (duplicado?)", `<span style="font-family:monospace;color:#f87171">${data.mpPaymentId}</span>`],
+            ...(data.amount ? [["Valor", `R$ ${Number(data.amount).toFixed(2).replace(".", ",")}`] as [string, string]] : []),
+          ]),
+        button: { text: "Abrir transação no Mercado Pago ↗", url: `https://www.mercadopago.com.br/activities/1/detail?id=${data.mpPaymentId}` },
+      }),
     })
     if ((result as any).error) return { ok: false, error: (result as any).error?.message ?? "erro" }
     return { ok: true }
@@ -256,27 +255,14 @@ export async function sendClaimConfirmationEmail(data: ClaimEmailData): Promise<
       from:    FROM_ADDRESS,
       to:      data.email,
       subject: `Confirme que o pedido ${data.code} é seu — FizMusica`,
-      html: `
-        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-          <div style="background-color:#c026d3;background-image:linear-gradient(135deg,#ec4899,#a855f7);padding:32px;text-align:center">
-            <div style="font-size:36px">🔗</div>
-            <h1 style="color:#fff;margin:8px 0 0;font-size:22px;font-weight:bold">Vincular pedido à sua conta</h1>
-          </div>
-          <div style="padding:32px">
-            <p style="color:#999;margin:0 0 24px">
-              Alguém (provavelmente você) pediu para vincular o pedido <strong style="color:#ec4899">${data.code}</strong> a uma conta do FizMusica. Se foi você, confirme abaixo. O pedido passará a aparecer na sua área.
-            </p>
-            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto">
-              <tr><td align="center" bgcolor="#ec4899" style="border-radius:50px">
-                <a href="${data.confirmUrl}" style="display:inline-block;padding:15px 36px;color:#fff;text-decoration:none;font-family:sans-serif;font-size:15px;font-weight:bold;border-radius:50px">
-                  Confirmar e vincular
-                </a>
-              </td></tr>
-            </table>
-            <p style="color:#666;font-size:12px;margin:24px 0 0">Se você não fez esse pedido, ignore este e-mail — nada será vinculado.</p>
-          </div>
-        </div>
-      `,
+      html: emailShell({
+        emoji: "🔗",
+        title: "Vincular pedido à sua conta",
+        body:
+          para(`Alguém (provavelmente você) pediu para vincular o pedido ${strong(data.code)} a uma conta do FizMusica. Se foi você, confirme abaixo — o pedido passará a aparecer na sua área.`),
+        button: { text: "Confirmar e vincular", url: data.confirmUrl },
+        note: { text: "Se você não fez esse pedido, ignore este e-mail — nada será vinculado." },
+      }),
     })
     if ((result as any).error) return { ok: false, error: (result as any).error?.message ?? "erro" }
     return { ok: true }
@@ -333,38 +319,17 @@ export async function sendWizardAbandonmentEmail(data: WizardAbandonmentEmailDat
 
 function buildWizardAbandonmentEmail(data: WizardAbandonmentEmailData, resumeUrl: string): string {
   const firstName = data.nome.split(" ")[0]
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">🎵</div>
-        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">Sua história ainda está aqui!</h1>
-        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:15px">Você começou a criar algo especial</p>
-      </div>
-      <div style="padding:40px 32px">
-        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${firstName}</strong>! ❤️</p>
-        <p style="color:#999;margin:0 0 16px">
-          Você começou a criar uma música de <strong style="color:#ec4899">${data.subcategory}</strong>${data.musicalStyle ? ` no estilo <strong style="color:#ec4899">${data.musicalStyle}</strong>` : ""} mas não finalizou o pedido.
-        </p>
-        <p style="color:#999;margin:0 0 32px">Suas respostas ficaram salvas — é só clicar abaixo para continuar de onde parou!</p>
-
-        <div style="text-align:center;margin:32px 0">
-          <a href="${resumeUrl}"
-            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:17px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
-            🎵 Continuar minha música
-          </a>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 20px;margin:24px 0">
-          <p style="color:#777;font-size:13px;margin:0 0 8px">🔒 Suas respostas foram preservadas</p>
-          <p style="color:#555;font-size:12px;margin:0">O link acima recarrega exatamente de onde você parou, em qualquer dispositivo.</p>
-        </div>
-
-        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
-          Dúvidas? Fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a>
-        </p>
-      </div>
-    </div>
-  `
+  return emailShell({
+    emoji: "🎵",
+    title: "Sua história ainda está aqui!",
+    subtitle: "Você começou a criar algo especial",
+    body:
+      para(`Olá, ${strong(firstName)}! ❤️`) +
+      para(`Você começou a criar uma música de ${strong(data.subcategory)}${data.musicalStyle ? ` no estilo ${strong(data.musicalStyle)}` : ""}, mas não finalizou o pedido.`) +
+      para("Suas respostas ficaram salvas — é só clicar abaixo para continuar de onde parou!"),
+    button: { text: "🎵 Continuar minha música", url: resumeUrl },
+    note: { label: "🔒 Suas respostas foram preservadas", text: "O link acima recarrega exatamente de onde você parou, em qualquer dispositivo." },
+  })
 }
 
 export async function sendOrderConfirmationEmail(order: OrderEmailData): Promise<void> {
@@ -398,44 +363,28 @@ export async function sendOrderNotificationEmail(order: OrderEmailData): Promise
 function buildClientEmail(order: OrderEmailData): string {
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
   const paymentUrl = `${siteUrl}/produtos?orderId=${order.orderId}`
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a">
-      <div style="background:#7c3aed;padding:32px;text-align:center;border-radius:8px 8px 0 0">
-        <h1 style="color:#fff;margin:0;font-size:24px">FizMusica</h1>
-        <p style="color:#e9d5ff;margin:8px 0 0">Sua música personalizada está a caminho!</p>
+  const detailsRow = (k: string, v: string) =>
+    `<tr><td style="padding:7px 0;color:#888;font-size:14px">${k}</td><td style="padding:7px 0;font-size:14px;font-weight:500;color:#eee;text-align:right">${v}</td></tr>`
+  return emailShell({
+    emoji: "🎵",
+    title: "Pedido recebido!",
+    subtitle: "Sua música personalizada está a caminho",
+    body:
+      para(`Olá, ${strong(order.nome)}! ❤️`) +
+      para("Recebemos seu pedido com sucesso. Falta só finalizar o pagamento para nossa equipe começar a produção.") +
+      `<div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:14px 18px;margin:18px 0">
+        <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.06em">Número do pedido</p>
+        <p style="margin:0;font-size:18px;font-weight:bold;color:#ec4899;font-family:monospace">#${order.orderId.slice(0, 8).toUpperCase()}</p>
       </div>
-
-      <div style="background:#fff;padding:32px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px">
-        <p>Olá, <strong>${order.nome}</strong>!</p>
-        <p>Recebemos seu pedido com sucesso. Nossa equipe já está trabalhando na sua música especial.</p>
-
-        <div style="background:#f5f3ff;border-left:4px solid #7c3aed;padding:16px;border-radius:4px;margin:24px 0">
-          <p style="margin:0 0 8px;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em">Número do pedido</p>
-          <p style="margin:0;font-size:18px;font-weight:700;color:#7c3aed;font-family:monospace">#${order.orderId.slice(0, 8).toUpperCase()}</p>
-        </div>
-
-        <table style="width:100%;border-collapse:collapse;margin:24px 0">
-          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Ocasião</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.subcategory}</td></tr>
-          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Estilo musical</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.musicalStyle}</td></tr>
-          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Voz</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.voiceType}</td></tr>
-          <tr><td style="padding:8px 0;color:#6b7280;font-size:14px">Emoção</td><td style="padding:8px 0;font-size:14px;font-weight:500">${order.emotion}</td></tr>
-        </table>
-
-        <!-- Botão de pagamento -->
-        <div style="text-align:center;margin:32px 0">
-          <a href="${paymentUrl}"
-            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:16px 36px;border-radius:50px;font-size:16px;font-weight:700;box-shadow:0 6px 24px rgba(124,58,237,0.35)">
-            💳 Ir para o pagamento →
-          </a>
-          <p style="font-size:12px;color:#9ca3af;margin:10px 0 0">Clique para escolher o produto e finalizar seu pedido</p>
-        </div>
-
-        <p style="font-size:14px;color:#6b7280">Em breve entraremos em contato pelo WhatsApp <strong>${order.whatsapp}</strong> com mais detalhes.</p>
-
-        <p style="font-size:14px;color:#6b7280;margin-top:32px">Dúvidas? Responda este e-mail ou fale conosco em <a href="mailto:contato@fizmusica.com.br" style="color:#7c3aed">contato@fizmusica.com.br</a></p>
-      </div>
-    </div>
-  `
+      <table style="width:100%;border-collapse:collapse;margin:8px 0">
+        ${detailsRow("Ocasião", order.subcategory)}
+        ${detailsRow("Estilo musical", order.musicalStyle)}
+        ${detailsRow("Voz", order.voiceType)}
+        ${detailsRow("Emoção", order.emotion)}
+      </table>`,
+    button: { text: "💳 Ir para o pagamento", url: paymentUrl },
+    note: { text: `Em breve entraremos em contato pelo WhatsApp <strong>${order.whatsapp}</strong> com mais detalhes.` },
+  })
 }
 
 // ============================================================
@@ -463,36 +412,23 @@ export async function sendNewOrderPaidNotification(order: PaymentNotificationDat
       from:    FROM_ADDRESS,
       to:      ADMIN_EMAIL,
       subject: `💳 Novo pedido PAGO — ${order.nome} (${order.subcategory})`,
-      html: `
-        <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-          <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:32px;text-align:center">
-            <div style="font-size:40px;margin-bottom:8px">💳✅</div>
-            <h1 style="color:#fff;margin:0;font-size:24px;font-weight:800">Novo pedido pago!</h1>
-          </div>
-
-          <div style="padding:32px">
-            <table style="width:100%;border-collapse:collapse">
-              <tr><td style="padding:6px 0;color:#999;width:130px">Pedido</td><td style="padding:6px 0;font-family:monospace;color:#ec4899">#${order.orderId.slice(0, 8).toUpperCase()}</td></tr>
-              <tr><td style="padding:6px 0;color:#999">Cliente</td><td style="padding:6px 0;font-weight:600">${order.nome}</td></tr>
-              <tr><td style="padding:6px 0;color:#999">E-mail</td><td style="padding:6px 0"><a href="mailto:${order.email}" style="color:#ec4899">${order.email}</a></td></tr>
-              <tr><td style="padding:6px 0;color:#999">WhatsApp</td><td style="padding:6px 0">${order.whatsapp}</td></tr>
-              ${order.honoreeName ? `<tr><td style="padding:6px 0;color:#999">Homenageado</td><td style="padding:6px 0">${order.honoreeName}</td></tr>` : ""}
-              <tr><td style="padding:6px 0;color:#999">Ocasião</td><td style="padding:6px 0">${order.subcategory}</td></tr>
-              <tr><td style="padding:6px 0;color:#999">Estilo</td><td style="padding:6px 0">${order.musicalStyle}</td></tr>
-              <tr><td style="padding:6px 0;color:#999">Voz</td><td style="padding:6px 0">${order.voiceType}</td></tr>
-              <tr><td style="padding:6px 0;color:#999">Emoção</td><td style="padding:6px 0">${order.emotion}</td></tr>
-              <tr><td style="padding:6px 0;color:#999">Recebido em</td><td style="padding:6px 0">${new Date(order.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td></tr>
-            </table>
-
-            <div style="text-align:center;margin:28px 0 0">
-              <a href="${adminUrl}"
-                style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:14px 32px;border-radius:50px;font-size:16px;font-weight:700">
-                Ver pedido no painel →
-              </a>
-            </div>
-          </div>
-        </div>
-      `,
+      html: emailShell({
+        emoji: "💳",
+        title: "Novo pedido pago!",
+        body: adminRows([
+          ["Pedido", `<span style="font-family:monospace;color:#ec4899">#${order.orderId.slice(0, 8).toUpperCase()}</span>`],
+          ["Cliente", order.nome],
+          ["E-mail", `<a href="mailto:${order.email}" style="color:#ec4899">${order.email}</a>`],
+          ["WhatsApp", order.whatsapp],
+          ...(order.honoreeName ? [["Homenageado", order.honoreeName] as [string, string]] : []),
+          ["Ocasião", order.subcategory],
+          ["Estilo", order.musicalStyle],
+          ["Voz", order.voiceType],
+          ["Emoção", order.emotion],
+          ["Recebido em", new Date(order.createdAt).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })],
+        ]),
+        button: { text: "Ver pedido no painel →", url: adminUrl },
+      }),
     })
     console.log(`[email] Notificação de pagamento enviada para ${ADMIN_EMAIL}`)
   } catch (err) {
@@ -501,24 +437,22 @@ export async function sendNewOrderPaidNotification(order: PaymentNotificationDat
 }
 
 function buildAdminEmail(order: OrderEmailData): string {
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;color:#1a1a1a">
-      <h2 style="color:#7c3aed">Novo pedido recebido</h2>
-
-      <table style="width:100%;border-collapse:collapse">
-        <tr><td style="padding:6px 0;color:#6b7280;width:140px">ID</td><td style="padding:6px 0;font-family:monospace">${order.orderId}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Nome</td><td style="padding:6px 0">${order.nome}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">E-mail</td><td style="padding:6px 0"><a href="mailto:${order.email}">${order.email}</a></td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">WhatsApp</td><td style="padding:6px 0">${order.whatsapp}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Contexto</td><td style="padding:6px 0">${order.context}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Ocasião</td><td style="padding:6px 0">${order.subcategory}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Estilo</td><td style="padding:6px 0">${order.musicalStyle}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Voz</td><td style="padding:6px 0">${order.voiceType}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Emoção</td><td style="padding:6px 0">${order.emotion}</td></tr>
-        <tr><td style="padding:6px 0;color:#6b7280">Data</td><td style="padding:6px 0">${order.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td></tr>
-      </table>
-    </div>
-  `
+  return emailShell({
+    emoji: "🆕",
+    title: "Novo pedido recebido",
+    body: adminRows([
+      ["ID", `<span style="font-family:monospace;color:#ec4899">#${order.orderId.slice(0, 8).toUpperCase()}</span>`],
+      ["Nome", order.nome],
+      ["E-mail", `<a href="mailto:${order.email}" style="color:#ec4899">${order.email}</a>`],
+      ["WhatsApp", order.whatsapp],
+      ["Contexto", order.context],
+      ["Ocasião", order.subcategory],
+      ["Estilo", order.musicalStyle],
+      ["Voz", order.voiceType],
+      ["Emoção", order.emotion],
+      ["Data", order.createdAt.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })],
+    ]),
+  })
 }
 
 // ============================================================
@@ -554,36 +488,17 @@ export async function sendRecoveryEmail(data: RecoveryEmailData): Promise<{ ok: 
 }
 
 function buildRecoveryEmail(data: RecoveryEmailData, siteUrl: string): string {
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">🎵</div>
-        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">Sua música está esperando!</h1>
-        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:15px">Você começou um pedido e não finalizou</p>
-      </div>
-      <div style="padding:40px 32px">
-        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! ❤️</p>
-        <p style="color:#999;margin:0 0 24px">
-          Notamos que você iniciou um pedido de <strong style="color:#ec4899">${data.subcategory}</strong>
-          no estilo <strong style="color:#ec4899">${data.musicalStyle}</strong>, mas não concluiu o pagamento.
-        </p>
-        <p style="color:#999;margin:0 0 32px">Sua música personalizada pode ser criada especialmente para você — basta finalizar o pedido!</p>
-        <div style="text-align:center;margin:32px 0">
-          <a href="${siteUrl}/criar"
-            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:17px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
-            🎵 Finalizar meu pedido
-          </a>
-        </div>
-        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:24px 0;text-align:center">
-          <p style="color:#666;font-size:13px;margin:0 0 4px">Dúvidas? Fale com a gente no WhatsApp</p>
-          <a href="https://wa.me/5511996645678" style="color:#ec4899;font-size:14px;font-weight:600">📱 (11) 99664-5678</a>
-        </div>
-        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222">
-          Se não quiser mais receber e-mails da FizMusica, ignore esta mensagem.
-        </p>
-      </div>
-    </div>
-  `
+  return emailShell({
+    emoji: "🎵",
+    title: "Sua música está esperando!",
+    subtitle: "Você começou um pedido e não finalizou",
+    body:
+      para(`Olá, ${strong(data.nome.split(" ")[0])}! ❤️`) +
+      para(`Notamos que você iniciou um pedido de ${strong(data.subcategory)} no estilo ${strong(data.musicalStyle)}, mas não concluiu o pagamento.`) +
+      para("Sua música personalizada pode ser criada especialmente para você — basta finalizar o pedido!"),
+    button: { text: "🎵 Finalizar meu pedido", url: `${siteUrl}/criar` },
+    note: { text: `Dúvidas? Fale com a gente no WhatsApp: <a href="https://wa.me/5511996645678" style="color:#ec4899;font-weight:bold">📱 (11) 99664-5678</a>` },
+  })
 }
 
 // ============================================================
@@ -618,43 +533,20 @@ export async function sendFeedbackRequestEmail(data: FeedbackRequestEmailData): 
 }
 
 function buildFeedbackRequestEmail(data: FeedbackRequestEmailData): string {
-  return `
-    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
-      <div style="background:linear-gradient(135deg,#ec4899,#a855f7);padding:40px 32px;text-align:center">
-        <div style="font-size:48px;margin-bottom:12px">💜</div>
-        <h1 style="color:#fff;margin:0;font-size:26px;font-weight:800">O que você achou?</h1>
-        <p style="color:rgba(255,255,255,0.85);margin:12px 0 0;font-size:15px">Sua opinião faz toda a diferença pra nós!</p>
-      </div>
-      <div style="padding:40px 32px">
-        <p style="font-size:18px;margin:0 0 8px">Olá, <strong>${data.nome.split(" ")[0]}</strong>! 🎵</p>
-        <p style="color:#999;margin:0 0 8px">
-          Sua música <strong style="color:#ec4899">"${data.musicName}"</strong> foi entregue e esperamos que tenha ficado incrível!
-        </p>
-        <p style="color:#999;margin:0 0 32px">
-          Queremos saber o que você achou — leva menos de 2 minutos e nos ajuda muito a continuar criando músicas especiais.
-        </p>
-
-        <div style="text-align:center;margin:32px 0">
-          <a href="${data.feedbackUrl}"
-            style="display:inline-block;background:linear-gradient(135deg,#ec4899,#a855f7);color:#fff;text-decoration:none;padding:18px 40px;border-radius:50px;font-size:17px;font-weight:700;box-shadow:0 8px 32px rgba(236,72,153,0.4)">
-            ⭐ Avaliar minha música
-          </a>
-        </div>
-
-        <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 20px;margin:24px 0">
-          <p style="color:#888;font-size:13px;margin:0 0 6px">3 perguntinhas rápidas:</p>
-          <p style="color:#ccc;font-size:13px;margin:4px 0">⭐ Nota geral de 1 a 5 estrelas</p>
-          <p style="color:#ccc;font-size:13px;margin:4px 0">💬 O que te emocionou na música</p>
-          <p style="color:#ccc;font-size:13px;margin:4px 0">🔧 Sugestão de melhoria (opcional)</p>
-        </div>
-
-        <p style="color:#555;font-size:12px;margin:32px 0 0;padding-top:24px;border-top:1px solid #222;text-align:center">
-          FizMusica — Músicas personalizadas feitas com amor ❤️<br>
-          <a href="https://fizmusica.com.br" style="color:#ec4899">fizmusica.com.br</a>
-        </p>
-      </div>
-    </div>
-  `
+  return emailShell({
+    emoji: "💜",
+    title: "O que você achou?",
+    subtitle: "Sua opinião faz toda a diferença pra nós!",
+    body:
+      para(`Olá, ${strong(data.nome.split(" ")[0])}! 🎵`) +
+      para(`Sua música ${strong(`"${data.musicName}"`)} foi entregue e esperamos que tenha ficado incrível!`) +
+      para("Queremos saber o que você achou — leva menos de 2 minutos e nos ajuda muito a continuar criando músicas especiais."),
+    button: { text: "⭐ Avaliar minha música", url: data.feedbackUrl },
+    note: {
+      label: "3 perguntinhas rápidas",
+      text: "⭐ Nota geral de 1 a 5 estrelas<br>💬 O que te emocionou na música<br>🔧 Sugestão de melhoria (opcional)",
+    },
+  })
 }
 
 // ============================================================
