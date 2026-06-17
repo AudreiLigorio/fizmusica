@@ -50,6 +50,8 @@ function MinhaMusicaContent() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [linkPrompt, setLinkPrompt] = useState<{ code: string; maskedEmail: string } | null>(null)
+  const [linking, setLinking]       = useState(false)
   const [claimOpen, setClaimOpen]   = useState(false)
   const [claimEmail, setClaimEmail] = useState("")
   const [claimMsg, setClaimMsg]     = useState<{ ok: boolean; text: string } | null>(null)
@@ -102,8 +104,31 @@ function MinhaMusicaContent() {
   useEffect(() => {
     if (!user) return
     loadOrders().catch(() => setLoading(false))
+    // Pedido recém-comprado com e-mail diferente do login? Oferece vincular.
+    if (orderId) {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        const r = await fetch(`/api/conta/link-order?orderId=${orderId}`, {
+          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+          cache: "no-store",
+        }).then((res) => res.json()).catch(() => null)
+        if (r?.status === "linkable") setLinkPrompt({ code: r.code, maskedEmail: r.maskedEmail })
+      })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  async function confirmLink() {
+    setLinking(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch("/api/conta/link-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
+      body: JSON.stringify({ orderId }),
+    })
+    setLinking(false)
+    setLinkPrompt(null)
+    if (res.ok) await loadOrders()
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -127,6 +152,32 @@ function MinhaMusicaContent() {
         <div className="absolute inset-0" style={{ background: "radial-gradient(55% 45% at 12% 6%, rgba(240,25,107,0.26) 0%, transparent 60%)" }} />
         <div className="absolute inset-0" style={{ background: "radial-gradient(55% 50% at 90% 96%, rgba(168,85,247,0.24) 0%, transparent 62%)" }} />
       </div>
+
+      {/* Popup: vincular pedido recém-comprado com e-mail diferente */}
+      {linkPrompt && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5">
+          <div className="bg-[#15131d] border border-white/10 rounded-3xl p-7 max-w-sm w-full text-center">
+            <div className="text-4xl mb-3">🔗</div>
+            <h2 className="text-xl font-bold mb-2">Vincular seu pedido?</h2>
+            <p className="text-gray-300 text-sm leading-relaxed mb-5">
+              Você entrou com <strong>{user.email}</strong>, mas o pedido <strong className="text-pink-300">#{linkPrompt.code}</strong> foi feito com <strong>{linkPrompt.maskedEmail}</strong>.
+              Quer vincular este pedido a esta conta e usar <strong>{user.email}</strong> daqui pra frente?
+            </p>
+            <div className="space-y-2">
+              <button
+                onClick={confirmLink}
+                disabled={linking}
+                className="w-full bg-pink-500 hover:bg-pink-600 disabled:opacity-50 py-3 rounded-2xl font-semibold transition-colors"
+              >
+                {linking ? "Vinculando…" : "Sim, vincular à minha conta"}
+              </button>
+              <button onClick={() => setLinkPrompt(null)} className="w-full text-gray-400 hover:text-white text-sm py-2">
+                Agora não
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10">
         <Header showButton={false} />
