@@ -77,6 +77,25 @@ function CheckoutContent() {
       }
       if (cancelled) return
 
+      // Se já existe um PIX pendente para este pedido, retoma o MESMO QR (não gera outro)
+      try {
+        const s = await fetch(`/api/payments/status?orderId=${orderId}`, { cache: "no-store" }).then((r) => r.json())
+        if (s?.paid) {
+          const mp = s.mpPaymentId ? `&mpPaymentId=${s.mpPaymentId}` : ""
+          router.replace(`/sucesso?orderId=${orderId}&status=approved${mp}`)
+          return
+        }
+        if (s?.pix?.qrCodeBase64) {
+          setPixData(s.pix)
+          setStatus("pix")
+          startPixPolling()
+          return
+        }
+      } catch {
+        // segue para o formulário normal
+      }
+      if (cancelled) return
+
       // Carrega o SDK do MP no browser
       const script = document.createElement("script")
       script.src = "https://sdk.mercadopago.com/js/v2"

@@ -22,10 +22,16 @@ export async function GET(req: Request) {
     .from("payments").select("mpPaymentId").eq("orderId", orderId).maybeSingle()
 
   let mpStatus: string | null = null
+  let pix: { qrCodeBase64: string; qrCode: string } | null = null
   if (pay?.mpPaymentId) {
     try {
       const p = await new Payment(client).get({ id: pay.mpPaymentId })
       mpStatus = p.status ?? null
+      // Se for um PIX ainda pendente, devolve o QR para a tela retomar sem gerar outro
+      const tx = (p as any)?.point_of_interaction?.transaction_data
+      if (mpStatus === "pending" && tx?.qr_code_base64) {
+        pix = { qrCodeBase64: tx.qr_code_base64, qrCode: tx.qr_code }
+      }
     } catch {
       // ignora — cai no status do banco
     }
@@ -33,7 +39,7 @@ export async function GET(req: Request) {
 
   const paid = order?.paymentStatus === "PAID" || mpStatus === "approved"
 
-  const res = NextResponse.json({ paid, mpStatus, mpPaymentId: pay?.mpPaymentId ?? null })
+  const res = NextResponse.json({ paid, mpStatus, mpPaymentId: pay?.mpPaymentId ?? null, pix })
   res.headers.set("Cache-Control", "no-store")
   return res
 }
