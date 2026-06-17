@@ -5,6 +5,7 @@ import Link from "next/link"
 export const dynamic = "force-dynamic"
 import UpdateStatusButton from "./UpdateStatusButton"
 import SyncPaymentButton from "./SyncPaymentButton"
+import EditEmail from "./EditEmail"
 
 async function getOrder(id: string) {
   const supabase = createServerClient()
@@ -48,6 +49,7 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
           <div className="space-y-2">
             <p className="font-semibold text-lg">{order.nome}</p>
             <p className="text-gray-400">{order.email}</p>
+            <EditEmail orderId={order.id} current={order.email} />
             <p className="text-gray-400">{order.whatsapp}</p>
           </div>
         </div>

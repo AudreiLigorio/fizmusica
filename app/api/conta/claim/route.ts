@@ -20,34 +20,29 @@ export async function POST(req: NextRequest) {
   const user = await getUserFromAuth(req)
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
 
-  const { code, purchaseEmail } = await req.json().catch(() => ({}))
-  const cleanCode = String(code ?? "").trim().replace(/^#/, "").toLowerCase()
+  const { purchaseEmail } = await req.json().catch(() => ({}))
   const cleanEmail = String(purchaseEmail ?? "").trim().toLowerCase()
-  if (cleanCode.length < 4 || !cleanEmail.includes("@")) {
-    return NextResponse.json({ error: "Informe o código do pedido e o e-mail da compra." }, { status: 400 })
+  if (!cleanEmail.includes("@")) {
+    return NextResponse.json({ error: "Informe o e-mail usado na compra." }, { status: 400 })
   }
 
   const supabase = createServerClient()
 
-  // Acha o pedido pelo prefixo do id (código) + e-mail da compra
+  // Acha pedidos pelo e-mail da compra que ainda não são desta conta
   const { data: orders } = await supabase
     .from("orders")
     .select("id, email, userId")
-    .ilike("id", `${cleanCode}%`)
     .ilike("email", cleanEmail)
 
-  const order = orders?.[0]
-  if (!order) {
-    return NextResponse.json({ error: "Nenhum pedido encontrado com esse código e e-mail." }, { status: 404 })
-  }
-  if (order.userId === user.id) {
-    return NextResponse.json({ error: "Este pedido já está na sua conta." }, { status: 409 })
+  const claimable = (orders ?? []).filter((o) => o.userId !== user.id)
+  if (claimable.length === 0) {
+    return NextResponse.json({ error: "Nenhum pedido encontrado com esse e-mail (ou já estão na sua conta)." }, { status: 404 })
   }
 
-  // Cria a reivindicação (token de confirmação)
+  // Cria a reivindicação por e-mail (ao confirmar, vincula todos os pedidos desse e-mail)
   const { data: claim, error: claimErr } = await supabase
     .from("order_claims")
-    .insert({ orderId: order.id, userId: user.id, email: order.email })
+    .insert({ orderId: claimable[0].id, userId: user.id, email: cleanEmail })
     .select("token")
     .single()
 
@@ -57,10 +52,13 @@ export async function POST(req: NextRequest) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
   const confirmUrl = `${baseUrl}/api/conta/claim/confirm?token=${claim.token}`
-  const code8 = order.id.slice(0, 8).toUpperCase()
 
-  const r = await sendClaimConfirmationEmail({ email: order.email, code: code8, confirmUrl })
+  const r = await sendClaimConfirmationEmail({
+    email: cleanEmail,
+    code: `${claimable.length} pedido${claimable.length !== 1 ? "s" : ""}`,
+    confirmUrl,
+  })
   if (!r.ok) return NextResponse.json({ error: "Não foi possível enviar o e-mail de confirmação." }, { status: 500 })
 
-  return NextResponse.json({ ok: true, sentTo: order.email })
+  return NextResponse.json({ ok: true, sentTo: cleanEmail })
 }

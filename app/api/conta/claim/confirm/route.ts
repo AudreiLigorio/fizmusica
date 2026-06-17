@@ -13,14 +13,15 @@ export async function GET(req: NextRequest) {
 
   const { data: claim } = await supabase
     .from("order_claims")
-    .select("id, orderId, userId, confirmedAt")
+    .select("id, email, userId, confirmedAt")
     .eq("token", token)
     .maybeSingle()
 
   if (!claim) return NextResponse.redirect(`${baseUrl}/minha-musica?reivindicado=erro`)
 
   if (!claim.confirmedAt) {
-    await supabase.from("orders").update({ userId: claim.userId }).eq("id", claim.orderId)
+    // Vincula TODOS os pedidos do e-mail confirmado à conta
+    await supabase.from("orders").update({ userId: claim.userId }).ilike("email", claim.email)
     await supabase.from("order_claims").update({ confirmedAt: new Date().toISOString() }).eq("id", claim.id)
   }
 

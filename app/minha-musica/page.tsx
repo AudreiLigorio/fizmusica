@@ -51,7 +51,6 @@ function MinhaMusicaContent() {
   const [loading, setLoading] = useState(true)
 
   const [claimOpen, setClaimOpen]   = useState(false)
-  const [claimCode, setClaimCode]   = useState("")
   const [claimEmail, setClaimEmail] = useState("")
   const [claimMsg, setClaimMsg]     = useState<{ ok: boolean; text: string } | null>(null)
   const [claiming, setClaiming]     = useState(false)
@@ -76,13 +75,13 @@ function MinhaMusicaContent() {
     const res = await fetch("/api/conta/claim", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
-      body: JSON.stringify({ code: claimCode, purchaseEmail: claimEmail }),
+      body: JSON.stringify({ purchaseEmail: claimEmail }),
     })
     const d = await res.json()
     setClaiming(false)
     if (res.ok) {
       setClaimMsg({ ok: true, text: `Enviamos um e-mail de confirmação para ${d.sentTo}. Clique no link de lá para vincular o pedido.` })
-      setClaimCode(""); setClaimEmail("")
+      setClaimEmail("")
     } else {
       setClaimMsg({ ok: false, text: d.error ?? "Erro ao reivindicar." })
     }
@@ -255,13 +254,8 @@ function MinhaMusicaContent() {
               </button>
             ) : (
               <form onSubmit={submitClaim} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-3">
-                <p className="text-sm font-medium">Vincular um pedido feito com outro e-mail</p>
-                <p className="text-xs text-gray-500">Enviaremos um e-mail de confirmação para o e-mail usado na compra.</p>
-                <input
-                  value={claimCode} onChange={(e) => setClaimCode(e.target.value)}
-                  placeholder="Código do pedido (ex: 4CB42FE3)"
-                  className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500"
-                />
+                <p className="text-sm font-medium">Vincular pedidos feitos com outro e-mail</p>
+                <p className="text-xs text-gray-500">Enviaremos um e-mail de confirmação para o e-mail usado na compra. Ao confirmar, todos os pedidos daquele e-mail entram na sua conta.</p>
                 <input
                   type="email" value={claimEmail} onChange={(e) => setClaimEmail(e.target.value)}
                   placeholder="E-mail usado na compra"

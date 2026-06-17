@@ -6,6 +6,30 @@ import Header from "../components/Header"
 import Footer from "../components/Footer"
 import type { CreateOrderDTO } from "@/app/types/order"
 
+// Detecta erros de digitação comuns no domínio do e-mail e sugere correção
+const COMMON_EMAIL_DOMAINS = [
+  "gmail.com", "hotmail.com", "outlook.com", "yahoo.com", "yahoo.com.br",
+  "icloud.com", "live.com", "bol.com.br", "uol.com.br", "terra.com.br",
+]
+function levenshtein(a: string, b: string): number {
+  const m = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
+  for (let j = 1; j <= b.length; j++) m[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++)
+      m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return m[a.length][b.length]
+}
+function suggestEmailTypo(email: string): string | null {
+  const match = email.trim().toLowerCase().match(/^([^@\s]+)@([^@\s]+)$/)
+  if (!match) return null
+  const [, local, domain] = match
+  if (COMMON_EMAIL_DOMAINS.includes(domain)) return null
+  let fixed = domain.replace(/\.con$/, ".com").replace(/\.cmo$/, ".com").replace(/\.comm$/, ".com")
+  if (COMMON_EMAIL_DOMAINS.includes(fixed)) return `${local}@${fixed}`
+  const near = COMMON_EMAIL_DOMAINS.find((d) => levenshtein(d, domain) === 1)
+  return near ? `${local}@${near}` : null
+}
+
 type WizardQuestion    = { id: string; label: string; sort_order: number }
 type WizardSubcategory = { id: string; label: string; emoji: string; slug: string; sort_order: number; wizard_questions: WizardQuestion[] }
 type WizardOccasion    = { id: string; label: string; emoji: string; slug: string; wizard_subcategories: WizardSubcategory[] }
@@ -85,6 +109,7 @@ function CriarMusicaInner() {
   const leadWhatsappDirty = leadWhatsapp.length > 0
   const leadEmailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(leadEmail)
   const leadEmailDirty = leadEmail.length > 0
+  const emailSuggestion = leadEmailDirty ? suggestEmailTypo(leadEmail) : null
 
   useEffect(() => {
     fetch("/api/wizard")
@@ -631,6 +656,15 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       </span>
                     )}
                   </div>
+                  {emailSuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => setLeadEmail(emailSuggestion)}
+                      className="text-xs text-yellow-400 hover:text-yellow-300 pl-2 text-left"
+                    >
+                      Você quis dizer <span className="underline font-medium">{emailSuggestion}</span>? Toque para corrigir.
+                    </button>
+                  )}
                 </div>
 
                 {/* WhatsApp */}
