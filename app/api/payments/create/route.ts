@@ -137,10 +137,21 @@ export async function POST(req: Request) {
 
     console.log(`[create] payment ${result.id} — status: ${mpStatus} — order: ${orderId}`)
 
+    // Dados do PIX (QR na tela): o MP devolve o QR pronto na resposta do pagamento
+    const txData = (result as any)?.point_of_interaction?.transaction_data
+    const pix = txData?.qr_code_base64
+      ? {
+          qrCodeBase64: txData.qr_code_base64 as string,
+          qrCode:       txData.qr_code as string,
+          ticketUrl:    (txData.ticket_url as string) ?? null,
+        }
+      : null
+
     return NextResponse.json({
       success: true,
       status: mpStatus,
       paymentId: result.id,
+      pix,
     })
   } catch (err: any) {
     // Extrai mensagem detalhada do MP (400 Bad Request)
