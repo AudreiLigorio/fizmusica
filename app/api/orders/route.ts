@@ -1,18 +1,33 @@
 import { NextRequest, NextResponse, after } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 import { createOrder, triggerN8nWebhook } from "@/app/services/orderService"
 import { sendOrderConfirmationEmail, sendOrderNotificationEmail } from "@/app/services/emailService"
 import { createOrderSchema } from "@/lib/validators/order"
 import { createServerClient } from "@/lib/supabase"
 
 export async function GET(req: NextRequest) {
-  const email = req.nextUrl.searchParams.get("email")
-  if (!email) return NextResponse.json({ orders: [] })
+  // Identidade: prioriza o token de login (Bearer) — busca por e-mail OU userId
+  // (pedidos reivindicados). Sem token, mantém o modo legado por ?email=.
+  const auth = req.headers.get("authorization") ?? ""
+  const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null
+  let userId: string | null = null
+  let email = req.nextUrl.searchParams.get("email")
+
+  if (bearer) {
+    const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    const { data } = await anon.auth.getUser(bearer)
+    if (data.user) { userId = data.user.id; email = data.user.email ?? email }
+  }
+
+  if (!email && !userId) return NextResponse.json({ orders: [] })
 
   const supabase = createServerClient()
+  const filter = [email ? `email.eq.${email}` : null, userId ? `userId.eq.${userId}` : null].filter(Boolean).join(",")
+
   const { data, error } = await supabase
     .from("orders")
     .select(`id, context, subcategory, status, paymentStatus, createdAt, photo_token, products(name, price), payments(amount, mpStatus)`)
-    .eq("email", email)
+    .or(filter)
     .order("createdAt", { ascending: false })
 
   if (error) return NextResponse.json({ orders: [] })

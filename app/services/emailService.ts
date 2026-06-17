@@ -238,6 +238,51 @@ export async function sendDuplicatePaymentAlert(data: DuplicatePaymentAlertData)
   }
 }
 
+// ============================================================
+// E-mail: confirmação de reivindicação de pedido (e-mail divergente)
+// ============================================================
+
+interface ClaimEmailData {
+  email:      string
+  code:       string
+  confirmUrl: string
+}
+
+export async function sendClaimConfirmationEmail(data: ClaimEmailData): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: `Confirme que o pedido ${data.code} é seu — FizMusica`,
+      html: `
+        <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#0a0a0a;color:#f0f0f0;border-radius:16px;overflow:hidden">
+          <div style="background-color:#c026d3;background-image:linear-gradient(135deg,#ec4899,#a855f7);padding:32px;text-align:center">
+            <div style="font-size:36px">🔗</div>
+            <h1 style="color:#fff;margin:8px 0 0;font-size:22px;font-weight:bold">Vincular pedido à sua conta</h1>
+          </div>
+          <div style="padding:32px">
+            <p style="color:#999;margin:0 0 24px">
+              Alguém (provavelmente você) pediu para vincular o pedido <strong style="color:#ec4899">${data.code}</strong> a uma conta do FizMusica. Se foi você, confirme abaixo. O pedido passará a aparecer na sua área.
+            </p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto">
+              <tr><td align="center" bgcolor="#ec4899" style="border-radius:50px">
+                <a href="${data.confirmUrl}" style="display:inline-block;padding:15px 36px;color:#fff;text-decoration:none;font-family:sans-serif;font-size:15px;font-weight:bold;border-radius:50px">
+                  Confirmar e vincular
+                </a>
+              </td></tr>
+            </table>
+            <p style="color:#666;font-size:12px;margin:24px 0 0">Se você não fez esse pedido, ignore este e-mail — nada será vinculado.</p>
+          </div>
+        </div>
+      `,
+    })
+    if ((result as any).error) return { ok: false, error: (result as any).error?.message ?? "erro" }
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
 interface OrderEmailData {
   orderId: string
   nome: string

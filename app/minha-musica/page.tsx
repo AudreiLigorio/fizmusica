@@ -50,6 +50,44 @@ function MinhaMusicaContent() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [claimOpen, setClaimOpen]   = useState(false)
+  const [claimCode, setClaimCode]   = useState("")
+  const [claimEmail, setClaimEmail] = useState("")
+  const [claimMsg, setClaimMsg]     = useState<{ ok: boolean; text: string } | null>(null)
+  const [claiming, setClaiming]     = useState(false)
+  const claimed = searchParams.get("reivindicado")
+
+  async function loadOrders() {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/orders`, {
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      cache: "no-store",
+    })
+    const d = await res.json()
+    setOrders(d.orders ?? [])
+    setLoading(false)
+  }
+
+  async function submitClaim(e: React.FormEvent) {
+    e.preventDefault()
+    setClaiming(true)
+    setClaimMsg(null)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch("/api/conta/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
+      body: JSON.stringify({ code: claimCode, purchaseEmail: claimEmail }),
+    })
+    const d = await res.json()
+    setClaiming(false)
+    if (res.ok) {
+      setClaimMsg({ ok: true, text: `Enviamos um e-mail de confirmação para ${d.sentTo}. Clique no link de lá para vincular o pedido.` })
+      setClaimCode(""); setClaimEmail("")
+    } else {
+      setClaimMsg({ ok: false, text: d.error ?? "Erro ao reivindicar." })
+    }
+  }
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user) setUser(data.session.user)
@@ -64,10 +102,8 @@ function MinhaMusicaContent() {
 
   useEffect(() => {
     if (!user) return
-    fetch(`/api/orders?email=${encodeURIComponent(user.email!)}`)
-      .then((r) => r.json())
-      .then((d) => { setOrders(d.orders ?? []); setLoading(false) })
-      .catch(() => setLoading(false))
+    loadOrders().catch(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   async function handleLogout() {
@@ -120,6 +156,17 @@ function MinhaMusicaContent() {
             </div>
             <span className="text-2xl">🎵</span>
           </button>
+
+          {claimed === "ok" && (
+            <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-300 rounded-2xl px-4 py-3 text-sm">
+              ✅ Pedido vinculado à sua conta com sucesso!
+            </div>
+          )}
+          {claimed === "erro" && (
+            <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl px-4 py-3 text-sm">
+              ❌ Link de vinculação inválido ou expirado.
+            </div>
+          )}
 
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-3">Meus pedidos</p>
 
@@ -199,6 +246,45 @@ function MinhaMusicaContent() {
               })}
             </div>
           )}
+
+          {/* Reivindicar pedido feito com outro e-mail */}
+          <div className="mt-8 border-t border-white/10 pt-6">
+            {!claimOpen ? (
+              <button onClick={() => setClaimOpen(true)} className="text-sm text-gray-400 hover:text-white transition-colors">
+                Fez um pedido com outro e-mail? <span className="text-pink-400">Vincular aqui →</span>
+              </button>
+            ) : (
+              <form onSubmit={submitClaim} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-3">
+                <p className="text-sm font-medium">Vincular um pedido feito com outro e-mail</p>
+                <p className="text-xs text-gray-500">Enviaremos um e-mail de confirmação para o e-mail usado na compra.</p>
+                <input
+                  value={claimCode} onChange={(e) => setClaimCode(e.target.value)}
+                  placeholder="Código do pedido (ex: 4CB42FE3)"
+                  className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500"
+                />
+                <input
+                  type="email" value={claimEmail} onChange={(e) => setClaimEmail(e.target.value)}
+                  placeholder="E-mail usado na compra"
+                  className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500"
+                />
+                {claimMsg && (
+                  <p className={`text-xs px-3 py-2 rounded-lg ${claimMsg.ok ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300"}`}>
+                    {claimMsg.text}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button type="submit" disabled={claiming}
+                    className="bg-pink-500 hover:bg-pink-600 disabled:opacity-50 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                    {claiming ? "Enviando…" : "Enviar confirmação"}
+                  </button>
+                  <button type="button" onClick={() => { setClaimOpen(false); setClaimMsg(null) }}
+                    className="px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white border border-white/10">
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </section>
 
         <Footer />
