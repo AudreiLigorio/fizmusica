@@ -28,10 +28,11 @@ function CheckoutContent() {
     if (pollRef.current) clearInterval(pollRef.current)
     pollRef.current = setInterval(async () => {
       try {
-        const d = await fetch(`/api/orders/${orderId}`).then((r) => r.json())
-        if (d?.order?.paymentStatus === "PAID") {
+        const d = await fetch(`/api/payments/status?orderId=${orderId}`, { cache: "no-store" }).then((r) => r.json())
+        if (d?.paid) {
           if (pollRef.current) clearInterval(pollRef.current)
-          router.replace(`/sucesso?orderId=${orderId}&status=approved`)
+          const mp = d.mpPaymentId ? `&mpPaymentId=${d.mpPaymentId}` : ""
+          router.replace(`/sucesso?orderId=${orderId}&status=approved${mp}`)
         }
       } catch {}
     }, 4000)
@@ -65,7 +66,7 @@ function CheckoutContent() {
     // Anti-duplo-pagamento: se o pedido já está pago, vai direto pro sucesso
     ;(async () => {
       try {
-        const d = await fetch(`/api/orders/${orderId}`).then((r) => r.json())
+        const d = await fetch(`/api/orders/${orderId}`, { cache: "no-store" }).then((r) => r.json())
         if (d?.order?.email) payerEmailRef.current = d.order.email
         if (d?.order?.paymentStatus === "PAID") {
           router.replace(`/sucesso?orderId=${orderId}&status=approved`)
