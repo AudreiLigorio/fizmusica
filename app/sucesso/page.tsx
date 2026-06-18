@@ -149,29 +149,20 @@ function SucessoContent() {
 
                 {/* PRÓXIMOS PASSOS */}
                 <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 mb-4">
-                  <h2 className="text-base font-bold mb-4">Próximos passos ❤️</h2>
-                  <div className="space-y-3">
-                    {(isPaid
-                      ? [
-                          ["✅", "Pagamento confirmado — obrigado!"],
-                          ["🎵", "Nossa equipe inicia a produção da sua música"],
-                          ["📞", "Entraremos em contato pelo WhatsApp em breve"],
-                          ["🎶", "Sua música personalizada chegará via WhatsApp"],
-                        ]
-                      : [
-                          ["1️⃣", "Nossa equipe receberá seus dados e analisará sua história"],
-                          ["2️⃣", "Entraremos em contato pelo WhatsApp em breve"],
-                          ["3️⃣", isPending ? "Aguardando confirmação do pagamento" : "Você receberá o link de pagamento seguro"],
-                          ["4️⃣", "Após confirmação, iniciamos a produção da música"],
-                          ["5️⃣", "Sua música personalizada chegará via WhatsApp 🎶"],
-                        ]
-                    ).map(([emoji, text]) => (
-                      <div key={emoji} className="flex gap-3 items-start">
-                        <span className="text-lg shrink-0">{emoji}</span>
-                        <p className="text-gray-300 text-sm leading-relaxed">{text}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <h2 className="text-base font-bold mb-3">Próximos passos ❤️</h2>
+                  <p className="text-gray-300 text-sm leading-relaxed">
+                    {isPaid
+                      ? <>Sua música ficará <strong className="text-white">disponível na sua área</strong> para acompanhamento (pelo link acima) e será <strong className="text-white">enviada para o seu e-mail</strong> assim que ficar pronta.</>
+                      : isPending
+                      ? "Seu pagamento está em análise. Assim que confirmado, iniciamos a produção e você poderá acompanhar tudo na sua área."
+                      : "Recebemos seu pedido. Assim que o pagamento for confirmado, iniciamos a produção e você poderá acompanhar na sua área."}
+                  </p>
+                  <p className="text-gray-300 text-sm leading-relaxed mt-3">
+                    Qualquer dúvida, fale com a gente no{" "}
+                    <a href="https://wa.me/5511996645678" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">WhatsApp</a>{" "}
+                    ou por{" "}
+                    <a href="mailto:contato@fizmusica.com.br" className="text-pink-400 underline">e-mail</a>.
+                  </p>
                 </div>
 
                 {/* NÚMERO DO PEDIDO */}
