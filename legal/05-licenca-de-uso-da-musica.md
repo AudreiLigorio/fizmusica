@@ -55,7 +55,11 @@ A Fiz Música poderá, a seu exclusivo critério: publicar, licenciar, distribui
 
 ## 9. Utilização de Nomes e Elementos Identificáveis
 
-A Fiz Música poderá utilizar nomes, apelidos, personagens ou referências da narrativa original quando necessário para a integridade artística da obra. A critério exclusivo da Fiz Música, tais elementos poderão ser mantidos, alterados, adaptados, parcialmente modificados ou totalmente anonimizados, considerando aspectos artísticos, comerciais, operacionais e de privacidade.
+A Fiz Música poderá utilizar nomes, apelidos, personagens ou referências da narrativa original **dentro da obra entregue ao Cliente**, quando necessário para a integridade artística.
+
+Na **exploração pública ou comercial** da obra por iniciativa da Fiz Música (catálogos, playlists, licenciamentos etc.), os dados identificáveis do Cliente ou de terceiros (em especial o **nome real** e a **imagem**) serão utilizados **somente de forma anonimizada ou adaptada** para preservar a privacidade. A critério exclusivo da Fiz Música, tais elementos poderão ser mantidos, alterados, adaptados, parcialmente modificados ou totalmente anonimizados.
+
+**Fronteira com a Autorização de Publicação:** a divulgação que **identifique** o Cliente ou o homenageado (nome real, imagem, depoimento, identificação do caso) para fins de **marketing/promoção** **não está abrangida por este Termo** e depende de consentimento específico, conforme o **Termo de Autorização de Publicação (documento 07)**, em observância ao direito de imagem (art. 20 do Código Civil) e à LGPD. Ou seja: este Termo rege os **direitos autorais sobre a obra**; a exposição da **identidade real das pessoas** em peças promocionais é regida pela Autorização de Publicação.
 
 ## 10. Dados Não Utilizados Comercialmente
 

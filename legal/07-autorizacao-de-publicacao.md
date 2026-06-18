@@ -16,6 +16,8 @@ Portfólio institucional; site oficial; redes sociais; materiais promocionais; c
 
 ## 4. Opções de Autorização
 
+> **Nota de fronteira:** estas autorizações tratam do uso que **identifica** o Cliente ou o homenageado (nome real, imagem, depoimento, identificação do caso) para fins de **marketing/promoção** — o que envolve direito de imagem (art. 20 do Código Civil) e dados pessoais (LGPD). Elas **complementam, sem substituir**, a [Licença de Uso da Música / Direitos Autorais](05-licenca-de-uso-da-musica.md), que rege os **direitos autorais sobre a obra**. A Fiz Música pode explorar a obra de forma **anonimizada/adaptada** independentemente destas opções; estas opções autorizam, adicionalmente, a exposição da **identidade real** das pessoas.
+
 O Cliente poderá escolher uma ou mais das opções abaixo:
 
 **Opção A — Compartilhamento por Link**
