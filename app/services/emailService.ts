@@ -383,7 +383,7 @@ function buildClientEmail(order: OrderEmailData): string {
         ${detailsRow("Emoção", order.emotion)}
       </table>`,
     button: { text: "💳 Ir para o pagamento", url: paymentUrl },
-    note: { text: `Em breve entraremos em contato pelo WhatsApp <strong>${order.whatsapp}</strong> com mais detalhes.` },
+    note: { text: `Qualquer dúvida, fale com a gente no WhatsApp: <a href="https://wa.me/5511996645678" style="color:#ec4899;font-weight:bold">(11) 99664-5678</a>` },
   })
 }
 
