@@ -90,6 +90,10 @@ export default function FotosPage() {
                 Até {MAX} fotos que vão aparecer junto da sua música. Toque em uma para defini-la como capa.
                 <br />É opcional — você pode voltar por este link quando quiser.
               </p>
+              <p className="text-white/35 text-[11px] leading-relaxed mt-3 max-w-sm mx-auto">
+                Ao enviar, você autoriza o uso das fotos apenas para exibição no player da sua música e declara ter o consentimento das pessoas retratadas (e dos responsáveis, se houver crianças). Saiba mais na{" "}
+                <a href="/legal/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Política de Privacidade</a>.
+              </p>
             </div>
 
             {error && (

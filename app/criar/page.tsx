@@ -76,6 +76,8 @@ function CriarMusicaInner() {
 
   const [occasions, setOccasions] = useState<WizardOccasion[]>([])
   const [step, setStep] = useState(1)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const TERMS_VERSION = "2026-06"
   const [selectedContext, setSelectedContext] = useState("")
   const [selectedSubcategory, setSelectedSubcategory] = useState("")
   const [answers, setAnswers] = useState<Record<string, string>>({})
@@ -450,6 +452,10 @@ function CriarMusicaInner() {
 
   const handleFinalizar = async () => {
     setError("")
+    if (!termsAccepted) {
+      setError("Para continuar, aceite os Termos de Uso e a Política de Privacidade.")
+      return
+    }
     setSubmitting(true)
 
     const payload: CreateOrderDTO = {
@@ -462,6 +468,9 @@ function CriarMusicaInner() {
       voiceType,
       emotion,
       honoreeName: honoreeName.trim() || undefined,
+      termsAccepted: true,
+      termsVersion: TERMS_VERSION,
+      honoreeConsent: !!honoreeName.trim(),
       answers: questions.map((q, i) => ({
         question: q,
         answer: answers[q] ?? "",
@@ -1098,6 +1107,25 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
             {/* Botões de navegação — desktop */}
             {!showLeadCapture && (
+              <>
+              {step === 5 && (
+                <label className="flex items-start gap-3 mt-8 cursor-pointer max-w-2xl">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="mt-1 w-4 h-4 accent-pink-500 shrink-0"
+                  />
+                  <span className="text-xs text-white/60 leading-relaxed">
+                    Li e concordo com os{" "}
+                    <a href="/legal/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">Termos de Uso</a>{" "}
+                    e a{" "}
+                    <a href="/legal/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">Política de Privacidade</a>, e autorizo o tratamento dos meus dados para a criação da música.
+                    {honoreeName.trim() ? " Declaro possuir autorização para fornecer os dados do homenageado." : ""}
+                  </span>
+                </label>
+              )}
+
               <div className="hidden lg:flex justify-between items-center mt-10">
                 {step > 1 ? (
                   <button onClick={prevStep} disabled={submitting}
@@ -1123,6 +1151,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   </button>
                 )}
               </div>
+              </>
             )}
 
           </div>

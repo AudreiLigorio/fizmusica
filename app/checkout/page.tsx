@@ -328,9 +328,17 @@ function CheckoutContent() {
 
           {/* Segurança */}
           {status !== "pix" && (
-            <p className="text-center text-xs text-white/30 mt-6">
-              🔒 Pagamento 100% seguro via Mercado Pago
-            </p>
+            <>
+              <p className="text-center text-xs text-white/30 mt-6">
+                🔒 Pagamento 100% seguro via Mercado Pago
+              </p>
+              <p className="text-center text-[11px] text-white/30 mt-2 leading-relaxed">
+                Ao pagar, você concorda com os{" "}
+                <a href="/legal/termos-de-uso" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Termos de Uso</a>,{" "}
+                <a href="/legal/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Política de Privacidade</a> e{" "}
+                <a href="/legal/reembolso-e-cancelamento" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Política de Reembolso</a>.
+              </p>
+            </>
           )}
         </div>
       </div>

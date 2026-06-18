@@ -127,6 +127,12 @@ export default function EntrarPage() {
                   Você receberá um link seguro por e-mail — sem senha necessária.
                 </p>
               </form>
+
+              <p className="text-[11px] text-gray-500 text-center mt-4 leading-relaxed">
+                Ao entrar, você concorda com os{" "}
+                <a href="/legal/termos-de-uso" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300">Termos de Uso</a> e a{" "}
+                <a href="/legal/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300">Política de Privacidade</a>.
+              </p>
             </>
           )}
         </div>

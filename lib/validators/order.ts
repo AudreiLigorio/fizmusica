@@ -19,6 +19,10 @@ export const createOrderSchema = z.object({
   emotion:      z.string().min(1, "Emoção obrigatória"),
   answers:      z.array(answerSchema).min(1, "Respostas obrigatórias"),
   honoreeName:  z.string().optional(),
+  // Consentimento (prova LGPD)
+  termsAccepted:  z.boolean().optional(),
+  termsVersion:   z.string().optional(),
+  honoreeConsent: z.boolean().optional(),
 })
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>

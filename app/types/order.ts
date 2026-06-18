@@ -26,6 +26,11 @@ export interface CreateOrderDTO {
 
   // Homenageado
   honoreeName?: string
+
+  // Consentimento (prova LGPD)
+  termsAccepted?: boolean
+  termsVersion?: string
+  honoreeConsent?: boolean
 }
 
 export interface AnswerDTO {
