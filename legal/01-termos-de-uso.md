@@ -6,9 +6,11 @@
 
 Ao utilizar a plataforma Fiz Música e contratar qualquer serviço disponibilizado, o usuário declara que leu, compreendeu e concorda integralmente com estes Termos de Uso. Caso não concorde com qualquer disposição, o usuário não deverá utilizar os serviços da plataforma.
 
-## 2. Objeto
+## 2. Objeto e Definições
 
-A Fiz Música oferece serviços de criação de músicas personalizadas produzidas a partir das informações fornecidas pelo cliente. Os serviços podem incluir:
+Para fins destes Termos: **Usuário** é qualquer pessoa que acessa a plataforma; **Cliente** é o usuário que contrata um serviço; **Homenageado** é o terceiro a quem a música se destina; **Obra** é a música e seus elementos criativos.
+
+A Fiz Música oferece serviços de criação de músicas personalizadas produzidas a partir das informações fornecidas pelo Cliente. Os serviços podem incluir:
 
 - Criação de letra personalizada;
 - Produção musical personalizada;

@@ -28,3 +28,7 @@ Texto a ser exibido no **wizard / checkout**, com caixa de marcação obrigatór
 - Manter links visíveis para Termos de Uso e Política de Privacidade.
 
 > **Nota:** a base legal principal do tratamento dos dados do pedido é a **execução do contrato**; o consentimento reforça transparência e cobre as finalidades específicas (fotos, dados de terceiros).
+
+## Revogação do consentimento
+
+O titular pode **revogar** os consentimentos específicos (ex.: uso de fotos) a qualquer momento, sem afetar a execução do contrato já contratado, pelo canal **privacidade@fizmusica.com.br** ou removendo as fotos na própria Área do Cliente. A revogação não afeta tratamentos baseados em outras bases legais (execução de contrato, obrigação legal) nem materiais já publicados antes da solicitação, quando houver impossibilidade técnica/legal de remoção imediata.

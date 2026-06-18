@@ -22,3 +22,17 @@ Conjunto de documentos para adequação à legislação brasileira (LGPD, CDC, L
 | 10 | Política de Cookies | (se usar analytics) | [10-politica-de-cookies.md](10-politica-de-cookies.md) |
 
 **Mínimo para lançar:** 1, 2, 3, 4, 5 e 6.
+
+## Definições e convenções (aplicam-se a todos os documentos)
+
+- **Usuário:** qualquer pessoa que acessa ou utiliza a plataforma Fiz Música.
+- **Cliente:** o usuário que **contrata** um serviço (compra uma música).
+- **Homenageado:** terceiro a quem a música se destina, cujos dados o Cliente fornece.
+- **Obra:** a música, letra, melodia, arranjo, gravação e demais elementos criativos produzidos pela Fiz Música.
+- **Área do Cliente:** ambiente autenticado (login sem senha) para acompanhar pedidos, cadastrar fotos e ouvir a música.
+
+**Canais de contato (convenção):**
+- **privacidade@fizmusica.com.br** → assuntos de **LGPD/privacidade** (direitos do titular, revogação de consentimento).
+- **contato@fizmusica.com.br** → assuntos **gerais**, suporte, pedidos, reembolso e notificações de conteúdo.
+
+**Padrões:** grafia da marca **"Fiz Música"**; data de atualização **Junho de 2026**; código de pedido no formato **#XXXXXXXX**.
