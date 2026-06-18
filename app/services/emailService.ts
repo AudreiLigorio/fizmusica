@@ -216,7 +216,7 @@ export async function sendDuplicatePaymentAlert(data: DuplicatePaymentAlertData)
     const result = await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      ADMIN_EMAIL,
-      subject: `⚠️ Possível pagamento duplicado — pedido ${data.orderId.slice(0, 8).toUpperCase()}`,
+      subject: `[Admin] ⚠️ Possível pagamento duplicado — pedido ${data.orderId.slice(0, 8).toUpperCase()}`,
       html: emailShell({
         emoji: "⚠️",
         title: "Possível pagamento duplicado",
@@ -351,7 +351,7 @@ export async function sendOrderNotificationEmail(order: OrderEmailData): Promise
     await resend.emails.send({
       from: FROM_ADDRESS,
       to: ADMIN_EMAIL,
-      subject: `Novo pedido #${order.orderId.slice(0, 8)} — ${order.nome}`,
+      subject: `[Admin] Novo pedido #${order.orderId.slice(0, 8).toUpperCase()} — ${order.nome}`,
       html: buildAdminEmail(order),
     })
     console.log("[email] Notificação interna enviada")
@@ -411,7 +411,7 @@ export async function sendNewOrderPaidNotification(order: PaymentNotificationDat
     await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      ADMIN_EMAIL,
-      subject: `💳 Novo pedido PAGO — ${order.nome} (${order.subcategory})`,
+      subject: `[Admin] 💳 Pedido pago — ${order.nome} (${order.subcategory})`,
       html: emailShell({
         emoji: "💳",
         title: "Novo pedido pago!",
