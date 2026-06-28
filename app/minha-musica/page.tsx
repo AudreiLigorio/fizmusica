@@ -1,44 +1,100 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { supabase } from "@/lib/supabase"
 import type { User } from "@supabase/supabase-js"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import QRModal from "@/app/components/QRModal"
+import PreparoFlow from "./PreparoFlow"
+import DetalhesPedido from "./DetalhesPedido"
+import AjudaCliente from "./AjudaCliente"
+import PublicacaoConsent from "./PublicacaoConsent"
+import EscolherVersao from "./EscolherVersao"
+import VersoesEntregues from "./VersoesEntregues"
+import { dbTime } from "@/lib/date"
 
 type Order = {
   id: string
+  nome?: string
+  email?: string
+  whatsapp?: string
   context: string
   subcategory: string
+  musicalStyle?: string
+  voiceType?: string
+  emotion?: string
+  honoreeName?: string | null
   status: string
   paymentStatus: string
   createdAt: string
   photo_token?: string | null
   slug?: string | null
   products?: { name: string; price: number } | null
-  payments?: { amount: number; mpStatus: string | null } | null
+  payments?: { amount: number; mpStatus: string | null; paidAt?: string | null } | null
+  revision?: { status: string } | null
+  is_revision?: boolean
+  mp3Url?: string | null
+  sharing_term_accepted_at?: string | null
+  lyricsApproved?: boolean
+  photoCount?: number
+  productId?: string | null
+  sunoStatus?: string | null
+  sunoTracks?: { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }[] | null
+  publication_consent?: boolean
+  answers?: { question: string; answer: string; position: number }[]
+  shipping_name?: string | null
+  shipping_cep?: string | null
+  shipping_address?: string | null
+  shipping_number?: string | null
+  shipping_complement?: string | null
+  shipping_neighborhood?: string | null
+  shipping_city?: string | null
+  shipping_state?: string | null
+  shipping_phone?: string | null
 }
 
-const STEPS = [
-  { key: "PAID",          label: "Pago" },
-  { key: "IN_PRODUCTION", label: "Em produção" },
-  { key: "DELIVERED",     label: "Pronta" },
+type StepState = "done" | "current" | "todo"
+
+// Jornada do cliente pós-pagamento: as 2 primeiras são AÇÕES dele, as 2 últimas são espera.
+const JOURNEY = [
+  { key: "letra", label: "Aprovar letra", icon: "✍️" },
+  { key: "fotos", label: "Fotos",         icon: "📸" },
+  { key: "prod",  label: "Produção",      icon: "🎵" },
+  { key: "pronta",label: "Pronta",        icon: "✅" },
 ]
 
-function stepState(order: Order, key: string): "done" | "current" | "todo" {
-  const paid = order.paymentStatus === "PAID"
-  const reached: Record<string, boolean> = {
-    PAID:          paid,
-    IN_PRODUCTION: paid && (order.status === "IN_PRODUCTION" || order.status === "DELIVERED"),
-    DELIVERED:     order.status === "DELIVERED",
-  }
-  if (order.status === "DELIVERED") return reached[key] ? "done" : "todo"
-  // etapa atual = a primeira alcançada de trás pra frente
-  if (key === "IN_PRODUCTION" && reached.IN_PRODUCTION) return "current"
-  if (key === "PAID" && paid && !reached.IN_PRODUCTION) return "current"
-  return reached[key] ? "done" : "todo"
+// Índice da etapa ATUAL (foco). Fotos é opcional/paralela: não trava o avanço.
+function currentStepIndex(order: Order): number {
+  if (order.status === "DELIVERED") return 3                 // Pronta
+  if (!order.lyricsApproved) return 0                         // Aprovar letra (bloqueante)
+  if ((order.photoCount ?? 0) === 0) return 1                 // Convite p/ fotos
+  return 2                                                    // Em produção / espera
+}
+
+// Prioridade de exibição dos pedidos pagos: ação pendente no topo.
+function paidPriority(order: Order): number {
+  if (order.status === "DELIVERED") return 2          // entregue (mais embaixo)
+  if (!order.lyricsApproved) return 0                  // precisa aprovar letra (topo)
+  return 1                                             // em produção
+}
+
+function journeyStepState(order: Order, index: number): StepState {
+  const delivered = order.status === "DELIVERED"
+  const approved  = !!order.lyricsApproved
+  const hasPhotos = (order.photoCount ?? 0) > 0
+  // done por marco
+  const done = [
+    approved,                                  // 0 letra
+    approved && hasPhotos,                      // 1 fotos (só "done" se realmente adicionou)
+    delivered,                                  // 2 produção (done quando entregue)
+    delivered,                                  // 3 pronta
+  ]
+  if (done[index]) return "done"
+  if (index === currentStepIndex(order)) return "current"
+  return "todo"
 }
 
 function MinhaMusicaContent() {
@@ -49,6 +105,24 @@ function MinhaMusicaContent() {
   const [user, setUser]     = useState<User | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [qrUrl, setQrUrl] = useState<string | null>(null)
+  const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({})
+  const [tab, setTab] = useState<"paid" | "unpaid">("paid")
+  const autoTab = useRef(false)
+  const [termChecked, setTermChecked] = useState<Record<string, boolean>>({})
+  const [acceptingTerm, setAcceptingTerm] = useState<string | null>(null)
+
+  async function acceptDeliveryTerm(orderId: string) {
+    setAcceptingTerm(orderId)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/orders/${orderId}/aceitar-entrega`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+    })
+    setAcceptingTerm(null)
+    if (res.ok) await loadOrders()
+  }
 
   const [linkPrompt, setLinkPrompt] = useState<{ code: string; maskedEmail: string } | null>(null)
   const [linking, setLinking]       = useState(false)
@@ -65,7 +139,19 @@ function MinhaMusicaContent() {
       cache: "no-store",
     })
     const d = await res.json()
-    setOrders(d.orders ?? [])
+    const orders: Order[] = d.orders ?? []
+
+    // Busca revisões pendentes
+    const revisions = await Promise.all(
+      orders.map((o) =>
+        fetch(`/api/orders/${o.id}/contestar`, {
+          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        }).then((r) => r.json()).catch(() => ({ revision: null }))
+      )
+    )
+    const ordersWithRevisions = orders.map((o, i) => ({ ...o, revision: revisions[i]?.revision ?? null }))
+
+    setOrders(ordersWithRevisions)
     setLoading(false)
   }
 
@@ -117,6 +203,15 @@ function MinhaMusicaContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  // Se não houver pedido pago mas houver não pago, já abre na aba certa (uma vez).
+  useEffect(() => {
+    if (autoTab.current || loading || orders.length === 0) return
+    autoTab.current = true
+    const hasPaid = orders.some((o) => o.paymentStatus === "PAID")
+    const hasUnpaid = orders.some((o) => o.paymentStatus !== "PAID")
+    if (!hasPaid && hasUnpaid) setTab("unpaid")
+  }, [loading, orders])
+
   async function confirmLink() {
     setLinking(true)
     const { data: { session } } = await supabase.auth.getSession()
@@ -145,6 +240,14 @@ function MinhaMusicaContent() {
 
   const firstName = (user.user_metadata?.full_name as string)?.split(" ")[0] || user.email?.split("@")[0]
 
+  // Pedidos pagos (protagonistas) ordenados por urgência; não pagos vão para o rodapé.
+  const paidOrders = orders
+    .filter((o) => o.paymentStatus === "PAID")
+    .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
+  const unpaidOrders = orders
+    .filter((o) => o.paymentStatus !== "PAID")
+    .sort((a, b) => dbTime(b.createdAt) - dbTime(a.createdAt))
+
   return (
     <div className="relative min-h-screen text-white font-sans overflow-hidden" style={{ background: "#07060d" }}>
       {/* Fundo gradiente da marca */}
@@ -154,6 +257,8 @@ function MinhaMusicaContent() {
       </div>
 
       {/* Popup: vincular pedido recém-comprado com e-mail diferente */}
+      {qrUrl && <QRModal url={qrUrl} onClose={() => setQrUrl(null)} />}
+
       {linkPrompt && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5">
           <div className="bg-[#15131d] border border-white/10 rounded-3xl p-7 max-w-sm w-full text-center">
@@ -194,19 +299,6 @@ function MinhaMusicaContent() {
             <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-red-400 transition-colors">Sair</button>
           </div>
 
-          {/* Criar nova música */}
-          <button
-            onClick={() => router.push("/criar")}
-            className="w-full rounded-2xl p-5 mb-6 text-left flex items-center justify-between transition-transform hover:scale-[1.01]"
-            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef, #a855f7)", boxShadow: "0 12px 40px rgba(217,70,239,0.3)" }}
-          >
-            <div>
-              <p className="font-bold text-lg">+ Criar nova música</p>
-              <p className="text-white/80 text-sm">Para outra pessoa ou ocasião especial</p>
-            </div>
-            <span className="text-2xl">🎵</span>
-          </button>
-
           {claimed === "ok" && (
             <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-300 rounded-2xl px-4 py-3 text-sm">
               ✅ Pedido vinculado à sua conta com sucesso!
@@ -218,84 +310,343 @@ function MinhaMusicaContent() {
             </div>
           )}
 
-          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider mb-3">Meus pedidos</p>
-
+          {/* ── PEDIDOS ── */}
           {orders.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl">
+            <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl mb-6">
               <p className="text-4xl mb-3">🎵</p>
               <p>Nenhum pedido encontrado para este e-mail.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {orders.map((order) => {
-                const paid = order.paymentStatus === "PAID"
-                const delivered = order.status === "DELIVERED"
-                return (
-                  <div key={order.id} className="bg-white/[0.04] border border-white/10 rounded-2xl p-6">
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div>
-                        <p className="font-semibold text-lg">{order.subcategory}</p>
-                        <p className="text-xs text-gray-400">
-                          {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
-                        </p>
-                      </div>
-                      {order.payments?.amount && (
-                        <p className="text-pink-400 font-bold whitespace-nowrap">
-                          R$ {Number(order.payments.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </p>
-                      )}
+            <div className="mb-6">
+              {/* Abas: pagos / não pagos */}
+              <div className="flex gap-2 mb-5">
+                <button onClick={() => setTab("paid")} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${tab === "paid" ? "bg-pink-500/15 border border-pink-500/40 text-pink-200" : "border border-white/10 text-white/50 hover:text-white/80 hover:bg-white/[0.04]"}`}>
+                  Pagos
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${tab === "paid" ? "bg-pink-500/30 text-pink-100" : "bg-white/10 text-white/50"}`}>{paidOrders.length}</span>
+                </button>
+                <button onClick={() => setTab("unpaid")} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${tab === "unpaid" ? "bg-yellow-500/15 border border-yellow-500/40 text-yellow-200" : "border border-white/10 text-white/50 hover:text-white/80 hover:bg-white/[0.04]"}`}>
+                  Não pagos
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${tab === "unpaid" ? "bg-yellow-500/30 text-yellow-100" : "bg-white/10 text-white/50"}`}>{unpaidOrders.length}</span>
+                </button>
+              </div>
+
+              {/* ABA PAGOS */}
+              {tab === "paid" && (
+                <div className="space-y-4">
+                  {paidOrders.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl">
+                      <p className="text-3xl mb-2">🎵</p>
+                      <p className="text-sm">Você ainda não tem nenhuma música paga.</p>
+                      {unpaidOrders.length > 0 && <p className="text-xs text-gray-500 mt-1">Veja seus pedidos não pagos na outra aba.</p>}
                     </div>
+                  ) : paidOrders.map((order) => {
+                const paid       = order.paymentStatus === "PAID"
+                const delivered  = order.status === "DELIVERED"
+                const approved   = !!order.lyricsApproved
+                // Escolha pendente: versões liberadas e o cliente ainda não escolheu (sem slug).
+                // Tem prioridade — aparece mesmo se algo marcou o pedido como entregue.
+                const escolhaPendente = paid && order.sunoStatus === "RELEASED" && !order.slug && (order.sunoTracks?.length ?? 0) > 0
+                const inProdPhase = paid && approved && !delivered && !escolhaPendente   // na fila / sendo produzida
+                const hasRevision      = !!order.revision
+                const revisionPending  = order.revision?.status === "PENDING"
+                const termAccepted     = !!order.sharing_term_accepted_at
+                // Música pronta com as 2 versões: experiência própria de "o que fazer agora".
+                const musicaPronta     = delivered && !!order.slug && termAccepted && (order.sunoTracks?.length ?? 0) > 1
 
-                    {/* Linha do tempo */}
-                    {paid && (
-                      <div className="flex items-center mb-5">
-                        {STEPS.map((s, i) => {
-                          const st = stepState(order, s.key)
-                          return (
-                            <div key={s.key} className="flex items-center flex-1 last:flex-none">
-                              <div className="flex flex-col items-center">
-                                <span className={`w-3.5 h-3.5 rounded-full ${
-                                  st === "done" ? "bg-green-400" : st === "current" ? "bg-fuchsia-400 animate-pulse" : "bg-white/15"
-                                }`} />
-                                <span className={`text-[10px] mt-1 ${st === "todo" ? "text-gray-600" : "text-gray-300"}`}>{s.label}</span>
-                              </div>
-                              {i < STEPS.length - 1 && (
-                                <span className={`h-0.5 flex-1 mx-1 mb-4 ${st === "done" ? "bg-green-400/60" : "bg-white/10"}`} />
-                              )}
-                            </div>
-                          )
-                        })}
+                return (
+                  <div key={order.id} className={`relative overflow-hidden rounded-2xl border transition-all ${
+                    delivered
+                      ? "border-green-500/30 bg-green-500/5"
+                      : inProdPhase
+                        ? "border-fuchsia-500/40 bg-fuchsia-500/5"
+                        : "border-white/10 bg-white/[0.04]"
+                  }`}>
+
+                    {/* Barra de brilho animada quando em produção */}
+                    {inProdPhase && (
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+                        <div className="absolute top-0 left-[-100%] w-2/3 h-full opacity-20"
+                             style={{
+                               background: "linear-gradient(90deg, transparent, #d946ef, transparent)",
+                               animation: "shimmer 2.5s infinite",
+                             }} />
                       </div>
                     )}
 
-                    {!paid && (
-                      <p className="text-yellow-400 text-sm mb-4">⏳ Aguardando confirmação do pagamento</p>
-                    )}
+                    <div className="p-6">
+                      <div className="flex items-start justify-between gap-3 mb-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <p className="font-bold text-lg">{order.subcategory}</p>
+                            {order.is_revision && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-400">
+                            {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
+                          </p>
+                        </div>
+                        {order.payments?.amount && (
+                          <p className="text-pink-400 font-bold whitespace-nowrap text-sm">
+                            R$ {Number(order.payments.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                          </p>
+                        )}
+                      </div>
 
-                    {/* Ações */}
-                    <div className="flex flex-wrap gap-2">
-                      {delivered && order.slug && (
-                        <a
-                          href={`/m/${order.slug}`}
-                          className="flex-1 min-w-[140px] text-center bg-gradient-to-r from-pink-500 to-fuchsia-500 hover:opacity-90 transition-opacity py-2.5 rounded-xl text-sm font-bold"
-                        >
-                          ▶ Ouvir minha música
-                        </a>
+                      {/* JORNADA — stepper de 4 passos (ações do cliente + espera).
+                          Some quando a música já está pronta: lá a própria VersoesEntregues
+                          mostra a jornada "o que fazer agora" (Principal → Fotos → Player → Surpresa). */}
+                      {paid && !musicaPronta && (
+                        <div className="flex items-start mb-5">
+                          {JOURNEY.map((s, i) => {
+                            const st = journeyStepState(order, i)
+                            return (
+                              <div key={s.key} className="flex items-center flex-1 last:flex-none">
+                                <div className="flex flex-col items-center w-12">
+                                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all ${
+                                    st === "done"    ? "bg-green-400 text-black font-bold" :
+                                    st === "current" ? "bg-fuchsia-500 ring-4 ring-fuchsia-500/25 animate-pulse" :
+                                                       "bg-white/10 text-white/30"
+                                  }`}>
+                                    {st === "done" ? "✓" : <span className="text-xs">{s.icon}</span>}
+                                  </span>
+                                  <span className={`text-[10px] mt-1.5 text-center leading-tight ${
+                                    st === "done"    ? "text-green-400" :
+                                    st === "current" ? "text-fuchsia-300 font-semibold" :
+                                                       "text-gray-600"
+                                  }`}>{s.label}</span>
+                                </div>
+                                {i < JOURNEY.length - 1 && (
+                                  <span className={`h-0.5 flex-1 mx-1 mb-4 ${
+                                    journeyStepState(order, i) === "done" ? "bg-green-400/50" : "bg-white/10"
+                                  }`} />
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
                       )}
-                      {paid && order.photo_token && (
-                        <a
-                          href={`/pedido/${order.photo_token}/fotos`}
-                          className="flex-1 min-w-[140px] text-center bg-white/10 border border-pink-500/30 hover:bg-white/15 transition-colors py-2.5 rounded-xl text-sm font-medium text-pink-300"
-                        >
-                          📸 Adicionar fotos
-                        </a>
+
+                      {!paid && (
+                        <p className="text-yellow-400 text-sm mb-4">⏳ Aguardando confirmação do pagamento</p>
                       )}
+
+                      {/* FLUXO GUIADO: Letra → Fotos → Aprovar & gerar */}
+                      {paid && !delivered && !approved && (
+                        <PreparoFlow
+                          orderId={order.id}
+                          photoToken={order.photo_token}
+                          isRevision={order.is_revision}
+                          onApproved={loadOrders}
+                        />
+                      )}
+
+                      {/* ESCOLHER VERSÃO — versões liberadas, cliente ainda não escolheu */}
+                      {escolhaPendente && (
+                        <EscolherVersao orderId={order.id} tracks={order.sunoTracks!} onChosen={loadOrders} />
+                      )}
+
+                      {/* EM PRODUÇÃO (sem ação): card pulsante. Fotos já foram travadas na aprovação. */}
+                      {inProdPhase && (
+                        <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-3 bg-fuchsia-500/10 border border-fuchsia-500/20">
+                          <span className="relative flex h-3 w-3 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75" />
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-fuchsia-500" />
+                          </span>
+                          <div>
+                            <p className="text-fuchsia-300 font-semibold text-sm">Sua música está sendo criada</p>
+                            <p className="text-fuchsia-400/70 text-xs leading-relaxed">
+                              Pode fechar a página — avisamos por e-mail assim que ficar pronta.
+                              <strong className="text-fuchsia-200"> Você não precisa fazer nada.</strong>
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Badge de revisão */}
+                      {hasRevision && revisionPending && (
+                        <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-3 border border-orange-500/25 bg-orange-500/8">
+                          <span className="text-orange-400 text-lg">✏️</span>
+                          <div>
+                            <p className="text-orange-300 font-semibold text-sm">Revisão em análise</p>
+                            <p className="text-orange-400/60 text-xs">Nossa equipe vai entrar em contato em breve.</p>
+                          </div>
+                        </div>
+                      )}
+                      {hasRevision && !revisionPending && (
+                        <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-3 border border-fuchsia-500/25 bg-fuchsia-500/8">
+                          <span className="text-fuchsia-400 text-lg">✅</span>
+                          <div>
+                            <p className="text-fuchsia-300 font-semibold text-sm">Revisão aceita</p>
+                            <p className="text-fuchsia-400/60 text-xs">Sua nova versão está sendo produzida — veja o pedido de revisão na lista.</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Portão do Termo de Entrega Digital — antes de liberar o acesso */}
+                      {delivered && order.slug && !termAccepted && (
+                        <div className="rounded-xl border border-pink-500/25 bg-pink-500/[0.06] p-4 mb-2">
+                          <p className="text-sm font-semibold text-white mb-1">🔒 Sua música está pronta!</p>
+                          <p className="text-xs text-white/50 mb-3">
+                            Antes de ouvir, baixar e compartilhar, confirme o termo abaixo.
+                          </p>
+                          <label className="flex items-start gap-2 cursor-pointer mb-3">
+                            <input
+                              type="checkbox"
+                              checked={!!termChecked[order.id]}
+                              onChange={(e) => setTermChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
+                              className="w-4 h-4 mt-0.5 accent-pink-500 shrink-0"
+                            />
+                            <span className="text-xs text-white/60 leading-relaxed">
+                              Li e aceito o{" "}
+                              <a href="/legal/entrega-digital" className="text-pink-400 underline">Termo de Entrega Digital</a>
+                              {" "}e entendo que o <strong className="text-white/80">compartilhamento da música é de minha responsabilidade</strong>.
+                            </span>
+                          </label>
+                          <button
+                            onClick={() => acceptDeliveryTerm(order.id)}
+                            disabled={!termChecked[order.id] || acceptingTerm === order.id}
+                            className="w-full py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+                          >
+                            {acceptingTerm === order.id ? "Liberando…" : "Aceitar e liberar minha música →"}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Música pronta com as 2 versões do Suno — ambas disponíveis */}
+                      {musicaPronta && (
+                        <VersoesEntregues
+                          orderId={order.id}
+                          tracks={order.sunoTracks!}
+                          principalUrl={order.mp3Url ?? null}
+                          slug={order.slug ?? null}
+                          photoToken={order.photo_token}
+                          photoCount={order.photoCount}
+                          onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
+                          onChanged={loadOrders}
+                        />
+                      )}
+
+                      {/* Ações — entrega legada (1 música, sem versões do Suno) */}
+                      <div className="flex flex-wrap gap-2">
+                        {delivered && order.slug && termAccepted && (order.sunoTracks?.length ?? 0) <= 1 && (
+                          <>
+                            <a
+                              href={`/m/${order.slug}`}
+                              className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 6px 24px rgba(240,25,107,0.35)" }}
+                            >
+                              ▶ Ouvir minha música
+                            </a>
+                            {order.mp3Url && (
+                              <a
+                                href={order.mp3Url}
+                                download
+                                className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-white/15 text-white/80 hover:bg-white/5 transition-colors"
+                              >
+                                ⬇ Baixar MP3
+                              </a>
+                            )}
+                            {!hasRevision && (
+                              <button
+                                onClick={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
+                                className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-[#B8963E]/40 text-[#B8963E] hover:bg-[#B8963E]/10 transition-colors"
+                              >
+                                📱 Imprimir QR e fazer a surpresa
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {delivered && termAccepted && !hasRevision && !order.is_revision && (
+                          <button
+                            onClick={() => router.push(`/contestar/${order.id}`)}
+                            className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"
+                          >
+                            Não gostei dessa versão →
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Autorização opcional de divulgação — após a música entregue */}
+                      {delivered && order.slug && termAccepted && (
+                        <PublicacaoConsent orderId={order.id} initial={!!order.publication_consent} />
+                      )}
+
+                      {/* Detalhes do pedido — resumo do que foi preenchido */}
+                      <div className="mt-4 pt-3 border-t border-white/5">
+                        {openDetails[order.id] && <DetalhesPedido order={order} />}
+                        <button
+                          onClick={() => setOpenDetails((p) => ({ ...p, [order.id]: !p[order.id] }))}
+                          className="w-full text-center text-white/40 hover:text-white/70 text-xs py-1.5 transition-colors"
+                        >
+                          {openDetails[order.id] ? "Ocultar detalhes ▲" : "Ver detalhes do pedido ▾"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )
               })}
+                </div>
+              )}
+
+              {/* ABA NÃO PAGOS */}
+              {tab === "unpaid" && (
+                <div className="space-y-2">
+                  {unpaidOrders.length === 0 ? (
+                    <div className="text-center py-12 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl">
+                      <p className="text-3xl mb-2">✅</p>
+                      <p className="text-sm">Nenhum pedido aguardando pagamento.</p>
+                    </div>
+                  ) : (
+                    unpaidOrders.map((order) => {
+                      const hasProduct = !!order.productId && !!order.products?.price
+                      const href = hasProduct
+                        ? `/checkout?orderId=${order.id}&productId=${order.productId}&productName=${encodeURIComponent(order.products!.name)}&price=${order.products!.price}`
+                        : `/produtos?orderId=${order.id}`
+                      return (
+                        <div key={order.id} className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 flex items-center justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm text-white/85 truncate">{order.subcategory}</p>
+                            <p className="text-[11px] text-white/40">
+                              {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
+                            </p>
+                          </div>
+                          <a
+                            href={href}
+                            className="shrink-0 text-center text-xs font-semibold px-4 py-2.5 rounded-xl text-white transition-all hover:brightness-110"
+                            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+                          >
+                            {hasProduct ? "Finalizar pagamento →" : "Escolher produto →"}
+                          </a>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              )}
             </div>
           )}
+
+          {/* Criar nova música — em baixo */}
+          <button
+            onClick={() => router.push("/criar")}
+            className="w-full rounded-2xl p-5 mb-4 text-left flex items-center justify-between transition-all hover:brightness-110 active:scale-[0.98]"
+            style={{ background: "rgba(240,25,107,0.08)", border: "1px solid rgba(240,25,107,0.2)" }}
+          >
+            <div>
+              <p className="font-semibold text-base text-pink-300">+ Criar nova música</p>
+              <p className="text-white/40 text-xs mt-0.5">Para outra pessoa ou ocasião especial</p>
+            </div>
+            <span className="text-xl opacity-60">🎵</span>
+          </button>
+
+          <style>{`
+            @keyframes shimmer { 0% { left: -100% } 100% { left: 200% } }
+          `}</style>
+
+          {/* Ajuda — regras desta tela */}
+          <AjudaCliente />
 
           {/* Reivindicar pedido feito com outro e-mail */}
           <div className="mt-8 border-t border-white/10 pt-6">
