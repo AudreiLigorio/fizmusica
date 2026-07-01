@@ -9,16 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Valores FAKE só para o build passar: vários SDKs (Supabase/Resend/Mercado Pago)
+    # são construídos no carregamento do módulo e estouram sem env. O build só CONSTRÓI
+    # os clients — não chama os serviços (não há request de rede em build) — então
+    # placeholders bastam. Não são segredos; produção usa as envs reais na Vercel.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-key
+      RESEND_API_KEY: re_placeholder
+      MP_ACCESS_TOKEN: TEST-0000000000000000-000000-00000000000000000000000000000000-000000000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       # Portão real: o mesmo `next build` que decide se vai pra produção.
       - run: npx next build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
