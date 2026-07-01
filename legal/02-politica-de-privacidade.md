@@ -1,6 +1,6 @@
 # Política de Privacidade — Fiz Música
 
-Última atualização: Junho de 2026
+Última atualização: Julho de 2026
 
 ## 1. Apresentação
 
@@ -47,6 +47,7 @@ A Fiz Música compartilha dados, na medida necessária, com prestadores que atua
 | Vercel | Hospedagem da aplicação | EUA |
 | Mercado Pago | Processamento de pagamento | Brasil |
 | Resend | Envio de e-mails transacionais | EUA |
+| Sentry | Monitoramento de erros e diagnóstico técnico da aplicação | EUA |
 | Google | Login social opcional (OAuth) | EUA |
 | Provedores de inteligência artificial | Geração da **letra** e da **música** por IA | Brasil / Exterior |
 | n8n | Automação de eventos | Nuvem |
@@ -55,7 +56,9 @@ Todos os parceiros devem observar padrões adequados de segurança e proteção 
 
 ## 7. Transferência Internacional de Dados
 
-Parte dos dados — incluindo cadastro, conteúdos do pedido e **fotos enviadas** — é armazenada e processada em servidores localizados nos **Estados Unidos** (Supabase/AWS, Vercel, Resend, Google). Ao utilizar a plataforma, o usuário está ciente e concorda com a transferência internacional dos dados para as finalidades aqui descritas, observado o disposto no art. 33 da LGPD e adotadas garantias contratuais e técnicas adequadas pelos operadores.
+Parte dos dados — incluindo cadastro, conteúdos do pedido e **fotos enviadas** — é armazenada e processada em servidores localizados nos **Estados Unidos** (Supabase/AWS, Vercel, Resend, Sentry, Google). Ao utilizar a plataforma, o usuário está ciente e concorda com a transferência internacional dos dados para as finalidades aqui descritas, observado o disposto no art. 33 da LGPD e adotadas garantias contratuais e técnicas adequadas pelos operadores.
+
+O monitoramento de erros (Sentry) é configurado para **não coletar dados pessoais identificáveis** — registra apenas informações técnicas da falha (mensagem de erro, rota, navegador), com remoção de conteúdos da requisição.
 
 ## 7.1. Uso de Inteligência Artificial na Produção
 
