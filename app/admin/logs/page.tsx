@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import ResolveButton from "./ResolveButton"
+import { fmtDateTimeBR } from "@/lib/date"
 
 export const dynamic = "force-dynamic"
 
@@ -25,8 +26,7 @@ async function getAlerts(): Promise<Alert[]> {
   return (data as Alert[]) ?? []
 }
 
-const fmt = (d: string) =>
-  `${new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} ${new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`
+const fmt = fmtDateTimeBR
 
 export default async function AdminLogs() {
   const alerts = await getAlerts()

@@ -48,6 +48,7 @@ A Fiz Música compartilha dados, na medida necessária, com prestadores que atua
 | Mercado Pago | Processamento de pagamento | Brasil |
 | Resend | Envio de e-mails transacionais | EUA |
 | Google | Login social opcional (OAuth) | EUA |
+| Provedores de inteligência artificial | Geração da **letra** e da **música** por IA | Brasil / Exterior |
 | n8n | Automação de eventos | Nuvem |
 
 Todos os parceiros devem observar padrões adequados de segurança e proteção de dados.
@@ -56,9 +57,13 @@ Todos os parceiros devem observar padrões adequados de segurança e proteção 
 
 Parte dos dados — incluindo cadastro, conteúdos do pedido e **fotos enviadas** — é armazenada e processada em servidores localizados nos **Estados Unidos** (Supabase/AWS, Vercel, Resend, Google). Ao utilizar a plataforma, o usuário está ciente e concorda com a transferência internacional dos dados para as finalidades aqui descritas, observado o disposto no art. 33 da LGPD e adotadas garantias contratuais e técnicas adequadas pelos operadores.
 
+## 7.1. Uso de Inteligência Artificial na Produção
+
+Para criar a **letra** e a **música**, a Fiz Música utiliza **ferramentas de inteligência artificial operadas por terceiros**, às quais são transmitidos os elementos necessários à produção da obra — como a **história fornecida** e a **letra**. Esses fornecedores podem estar localizados **fora do Brasil**, hipótese em que a transferência internacional observa o disposto no art. 33 da LGPD. Os dados enviados são utilizados **exclusivamente** para a geração da obra contratada. A relação detalhada dos operadores pode ser obtida mediante solicitação ao canal de privacidade: **privacidade@fizmusica.com.br**.
+
 ## 8. Músicas, Letras e Conteúdos Gerados
 
-Por padrão, as músicas permanecem privadas e acessíveis apenas ao cliente autenticado. Caso o usuário gere um link compartilhável, a música poderá ser acessada por terceiros que possuam o link. A disponibilização pública ocorre somente mediante autorização do usuário.
+Por padrão, as músicas permanecem privadas e acessíveis apenas ao cliente autenticado. Caso o usuário gere um link compartilhável, a música poderá ser acessada por terceiros que possuam o link. Essa disponibilização ocorre somente por ação do próprio usuário ao gerar o link, sob sua responsabilidade.
 
 ## 9. Uso de Músicas para Divulgação
 
@@ -66,7 +71,16 @@ A Fiz Música não utilizará músicas, letras, histórias, imagens ou homenagen
 
 ## 10. Prazo de Armazenamento
 
-Os dados serão mantidos apenas pelo período necessário para cumprir as finalidades descritas, respeitando obrigações legais e regulatórias (ex.: prazos fiscais para dados de pagamento). Quando possível, os dados poderão ser anonimizados ou excluídos de forma segura. As fotos enviadas poderão ser removidas pelo próprio cliente em sua área.
+Os dados serão mantidos apenas pelo período necessário para cumprir as finalidades descritas, respeitando obrigações legais e regulatórias e aplicando o princípio da necessidade (art. 6º, III, e arts. 15 e 16 da LGPD). Ao término do tratamento, os dados são eliminados de forma segura ou anonimizados.
+
+Para **pedidos não concluídos (sem pagamento)**, aplicamos os seguintes prazos de eliminação automática:
+
+| Tipo de dado | Prazo de retenção | Observação |
+|---|---|---|
+| **Fotos enviadas** (inclusive de terceiros/homenageados) | **Até 7 dias** após a criação do pedido não pago | Como a finalidade (produzir a música) não se concretizou, as imagens são excluídas em definitivo dos nossos servidores e do armazenamento. |
+| **Cadastro do lead** (nome, e-mail, telefone e respostas do pedido) | **Até 60 dias** após a criação do pedido não pago | Mantido com base no legítimo interesse para eventual retomada/recuperação da compra; depois, excluído ou anonimizado. |
+
+Para **pedidos pagos**, os dados de transação e os necessários ao cumprimento de obrigações fiscais e de defesa do consumidor são mantidos pelos prazos legais aplicáveis (em regra, até 5 anos). As fotos enviadas podem ser removidas pelo próprio cliente, a qualquer momento, em sua área. O titular pode, ainda, solicitar a eliminação antecipada de seus dados pelos canais indicados nesta Política, ressalvadas as hipóteses de guarda obrigatória.
 
 ## 11. Segurança das Informações
 

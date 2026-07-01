@@ -36,7 +36,7 @@ export default function FeedbackPage() {
     e.preventDefault()
     setError("")
     if (rating === 0)        return setError("Por favor, dê uma nota de 1 a 5 estrelas.")
-    if (!highlight.trim())   return setError("Conte o que te encantou na sua música.")
+    if (!highlight.trim())   return setError("Conte o que mais te marcou na sua experiência.")
     setState("submitting")
     const res  = await fetch(`/api/feedback/${token}`, {
       method:  "POST",
@@ -74,7 +74,7 @@ export default function FeedbackPage() {
       <div className="text-center py-10">
         <div className="text-5xl mb-4">✅</div>
         <h2 className="text-xl font-bold mb-2">Avaliação já enviada!</h2>
-        <p className="text-gray-500 text-sm">Você já avaliou esta música. Muito obrigado pelo seu feedback!</p>
+        <p className="text-gray-500 text-sm">Você já avaliou sua experiência. Muito obrigado pelo seu feedback!</p>
       </div>
     </Page>
   )
@@ -86,7 +86,7 @@ export default function FeedbackPage() {
         <div className="text-6xl mb-5 animate-bounce">🎉</div>
         <h2 className="text-2xl font-bold mb-3">Obrigado, {firstName}!</h2>
         <p className="text-gray-400 mb-6 leading-relaxed">
-          Seu feedback é muito importante para continuarmos criando músicas incríveis.<br />
+          Seu feedback é muito importante para seguirmos criando experiências incríveis.<br />
           Ficamos felizes em fazer parte deste momento especial! ❤️
         </p>
         <a href="https://fizmusica.com.br"
@@ -104,7 +104,7 @@ export default function FeedbackPage() {
         <div className="text-4xl mb-3">🎵</div>
         <h2 className="text-xl font-bold mb-1">Como foi sua experiência?</h2>
         <p className="text-gray-500 text-sm">
-          {subcategory ? `Sua música de ${subcategory} ` : "Sua música "} ficou pronta — conta pra gente o que achou!
+          {subcategory ? `Seu pedido de ${subcategory} ` : "Seu pedido "} foi entregue — conta pra gente como foi do início ao fim!
         </p>
       </div>
 
@@ -112,8 +112,8 @@ export default function FeedbackPage() {
 
         {/* Pergunta 1 — Nota com estrelas */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-          <p className="text-sm font-semibold mb-1">1. Como você avalia a música que recebeu?</p>
-          <p className="text-xs text-gray-500 mb-4">Dê uma nota de 1 a 5 estrelas</p>
+          <p className="text-sm font-semibold mb-1">1. Como você avalia sua experiência com a FizMusica?</p>
+          <p className="text-xs text-gray-500 mb-4">Considere tudo: a música, o atendimento e a entrega. Dê uma nota de 1 a 5 estrelas</p>
           <div className="flex gap-3 justify-center">
             {[1, 2, 3, 4, 5].map(n => (
               <button
@@ -139,10 +139,10 @@ export default function FeedbackPage() {
         {/* Pergunta 2 — Ponto alto (obrigatório) */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
           <p className="text-sm font-semibold mb-1">
-            2. O que mais te surpreendeu ou emocionou na sua música?
+            2. O que mais te surpreendeu ou emocionou na sua experiência?
             <span className="text-pink-400 ml-1">*</span>
           </p>
-          <p className="text-xs text-gray-500 mb-3">Pode ser a letra, o ritmo, a voz, um trecho específico…</p>
+          <p className="text-xs text-gray-500 mb-3">Pode ser a música, o atendimento, a entrega, um detalhe que te marcou…</p>
           <textarea
             rows={3}
             value={highlight}

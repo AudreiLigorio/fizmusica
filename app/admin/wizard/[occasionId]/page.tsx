@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import SubcategoryActions from "./SubcategoryActions"
+import Reorder from "../Reorder"
 
 export const dynamic = "force-dynamic"
 
@@ -36,10 +37,11 @@ export default async function AdminWizardOcasiao({ params }: { params: Promise<{
       </div>
 
       <div className="space-y-3">
-        {subcategories.map((s) => {
+        {subcategories.map((s, i) => {
           const count = (s.wizard_questions as unknown as { count: number }[])[0]?.count ?? 0
           return (
             <div key={s.id} className="bg-black/40 border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-4">
+              <Reorder items={subcategories} index={i} endpointBase="/api/admin/wizard/subcategorias" />
               <span className="text-xl w-7">{s.emoji}</span>
               <div className="flex-1">
                 <div className="flex items-center gap-2">

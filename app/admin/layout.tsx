@@ -10,6 +10,9 @@ const NAV = [
   { href: "/admin/crm",       label: "CRM",        icon: "📬" },
   { href: "/admin/produtos",  label: "Produtos",   icon: "🛒" },
   { href: "/admin/wizard",    label: "Wizard",     icon: "✨" },
+  { href: "/admin/compositor", label: "Compositor",  icon: "🤖" },
+  { href: "/admin/operacao",  label: "Operação",   icon: "🧹" },
+  { href: "/admin/cupons",    label: "Cupons",     icon: "🎟️" },
   { href: "/admin/logs",      label: "Logs",       icon: "⚠️" },
 ]
 
@@ -71,26 +74,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* Conteúdo */}
-      <main className="flex-1 overflow-auto pb-20 lg:pb-0">
+      <main className="flex-1 overflow-auto pb-28 lg:pb-0">
         {children}
       </main>
 
-      {/* Bottom nav — mobile only */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex border-t border-white/10"
-           style={{ background: "rgba(7,6,13,0.97)", backdropFilter: "blur(16px)" }}>
+      {/* Bottom nav — mobile only (grid 5×2 para não amontoar os 10 itens) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 grid grid-cols-5 gap-px border-t border-white/10"
+           style={{ background: "rgba(7,6,13,0.97)", backdropFilter: "blur(16px)", paddingBottom: "env(safe-area-inset-bottom)" }}>
         {NAV.map((item) => {
           const active = pathname === item.href
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 text-[10px] font-medium transition-colors ${
-                active ? "text-pink-400" : "text-gray-500"
+              className={`flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium rounded-lg transition-colors ${
+                active ? "text-pink-300 bg-pink-500/12" : "text-gray-500 hover:text-gray-300"
               }`}
             >
               <span className="text-lg leading-none">{item.icon}</span>
-              <span>{item.label}</span>
-              {active && <span className="w-1 h-1 rounded-full bg-pink-500 mt-0.5" />}
+              <span className="leading-none whitespace-nowrap">{item.label}</span>
             </Link>
           )
         })}

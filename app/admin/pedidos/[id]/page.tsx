@@ -5,7 +5,9 @@ import Link from "next/link"
 export const dynamic = "force-dynamic"
 import UpdateStatusButton from "./UpdateStatusButton"
 import SyncPaymentButton from "./SyncPaymentButton"
+import ReconcilePaymentButton from "./ReconcilePaymentButton"
 import EditEmail from "./EditEmail"
+import AdminPhotosManager from "./AdminPhotosManager"
 
 async function getOrder(id: string) {
   const supabase = createServerClient()
@@ -132,7 +134,11 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
               )}
             </div>
           ) : (
-            <p className="text-gray-600 text-sm">Sem pagamento registrado.</p>
+            <>
+              <p className="text-gray-600 text-sm">Sem pagamento registrado.</p>
+              <p className="text-gray-600 text-xs mt-1">Cliente diz que pagou? Procure no Mercado Pago pelo nº do pedido.</p>
+              <ReconcilePaymentButton orderId={order.id} />
+            </>
           )}
           {payment && payment.status !== "PAID" && (
             <SyncPaymentButton orderId={order.id} />
@@ -140,36 +146,8 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Fotos enviadas pelo cliente */}
-      {photos.length > 0 && (
-        <div className="bg-black/40 border border-white/10 rounded-2xl p-6 mb-8">
-          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">
-            Fotos do cliente <span className="text-gray-600 normal-case">({photos.length})</span>
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {photos.map((p: { id: string; url: string; is_cover: boolean }) => (
-              <a
-                key={p.id}
-                href={p.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`relative block rounded-xl overflow-hidden border-2 transition-all hover:opacity-90 ${
-                  p.is_cover ? "border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.25)]" : "border-white/10"
-                }`}
-                style={{ aspectRatio: "1/1" }}
-              >
-                <img src={p.url} alt="Foto do cliente" className="w-full h-full object-cover" />
-                {p.is_cover && (
-                  <span className="absolute top-1.5 left-1.5 text-[10px] font-bold bg-pink-500 text-white px-2 py-0.5 rounded-full">
-                    ★ CAPA
-                  </span>
-                )}
-              </a>
-            ))}
-          </div>
-          <p className="text-xs text-gray-600 mt-4">Clique em uma foto para abrir em tamanho real.</p>
-        </div>
-      )}
+      {/* Fotos do cliente — gerenciamento completo */}
+      <AdminPhotosManager orderId={order.id} initial={photos} />
 
       {/* Respostas */}
       <div className="bg-black/40 border border-white/10 rounded-2xl p-6">

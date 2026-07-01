@@ -16,10 +16,12 @@ export default function MusicaForm({
   orderId,
   honoreeName,
   nome,
+  lyricsDraft,
 }: {
   orderId: string
   honoreeName: string | null
   nome: string
+  lyricsDraft?: string | null
 }) {
   const [open, setOpen]             = useState(false)
   const [music, setMusic]           = useState<MusicData | null>(null)
@@ -36,6 +38,7 @@ export default function MusicaForm({
   const [delivering, setDelivering]   = useState(false)
   const [publicUrl, setPublicUrl]     = useState<string | null>(null)
   const [msg, setMsg]                 = useState("")
+  const [deliveredUrl, setDeliveredUrl] = useState<string | null>(null)
   const [tapping, setTapping]         = useState(false)
   const [tapIndex, setTapIndex]       = useState(0)
   const [tapTimes, setTapTimes]       = useState<number[]>([])
@@ -115,11 +118,14 @@ export default function MusicaForm({
       setMusic(d.music)
       setMusicName(d.music.musicName ?? "")
       // personName vem do pedido (honoreeName ?? nome), não do banco
-      setLyrics(d.music.lyrics ?? "")
+      setLyrics(d.music.lyrics || lyricsDraft || "")
       setLyricsLrc(d.music.lyricsLrc ?? "")
       setMp3Url(d.music.mp3Url ?? "")
       setImageUrl(d.music.imageUrl ?? "")
       if (d.music.slug) setPublicUrl(`${baseUrl}/m/${d.music.slug}`)
+    } else if (lyricsDraft) {
+      // Pedido ainda não produzido: pré-preenche com a letra aprovada pelo cliente
+      setLyrics((prev) => prev || lyricsDraft)
     }
   }
 
@@ -229,20 +235,26 @@ export default function MusicaForm({
     setDelivering(true)
     setMsg("")
 
-    const res  = await fetch(`/api/admin/producao/${orderId}/entregar`, { method: "POST" })
-    const data = await res.json()
+    try {
+      const res  = await fetch(`/api/admin/producao/${orderId}/entregar`, { method: "POST" })
+      const data = await res.json()
 
-    if (data.ok) {
-      setPublicUrl(data.publicUrl)
-      if (data.emailSent === false) {
-        setMsg(`✅ Música entregue! ⚠️ E-mail falhou: ${data.emailError ?? "erro desconhecido"}`)
+      if (data.ok) {
+        setPublicUrl(data.publicUrl)
+        setDeliveredUrl(data.publicUrl)
+        if (data.emailSent === false) {
+          setMsg(`✅ Música entregue! ⚠️ E-mail falhou: ${data.emailError ?? "erro desconhecido"}`)
+        } else {
+          setMsg("✅ Música entregue! E-mail enviado ao cliente.")
+        }
       } else {
-        setMsg("✅ Música entregue! E-mail enviado ao cliente.")
+        setMsg(`❌ Erro: ${data.error}`)
       }
-    } else {
-      setMsg(`❌ Erro: ${data.error}`)
+    } catch (err: any) {
+      setMsg(`❌ Erro de conexão: ${err?.message ?? "tente novamente"}`)
+    } finally {
+      setDelivering(false)
     }
-    setDelivering(false)
   }
 
   const isReady = !!music?.mp3Url
@@ -251,6 +263,49 @@ export default function MusicaForm({
     <>
     {/* AUDIO oculto para o tap */}
     <audio ref={tapAudio} src={mp3Url || undefined} preload="auto" />
+
+    {/* MODAL DE SUCESSO NA ENTREGA */}
+    {deliveredUrl && (
+      <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-3xl p-8 text-center"
+          style={{ background: "linear-gradient(135deg, #0f0a1e 0%, #1a0a2e 100%)", border: "1px solid rgba(240,25,107,0.25)", boxShadow: "0 24px 80px rgba(240,25,107,0.25)" }}>
+          <div className="text-6xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-pink-400 to-fuchsia-400 bg-clip-text text-transparent">
+            Música entregue!
+          </h2>
+          <p className="text-gray-300 mb-1 leading-relaxed">
+            Sua música está pronta — curte esse momento lindo. 🎵
+          </p>
+          <p className="text-gray-500 text-sm mb-6">
+            O cliente recebeu o e-mail com o link e o MP3 em anexo.
+          </p>
+
+          <div className="space-y-3">
+            <a
+              href={deliveredUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-3 rounded-2xl border border-pink-500/30 text-pink-400 text-sm font-medium hover:bg-pink-500/10 transition-colors"
+            >
+              🎧 Ouvir a música
+            </a>
+            <button
+              onClick={() => { window.location.href = "/admin/producao" }}
+              className="block w-full py-3 rounded-2xl text-white text-sm font-bold transition-colors"
+              style={{ background: "linear-gradient(135deg, #f0196b, #a855f7)" }}
+            >
+              ← Voltar ao gerenciador
+            </button>
+            <button
+              onClick={() => setDeliveredUrl(null)}
+              className="block w-full text-gray-600 hover:text-gray-400 text-xs transition-colors pt-1"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* MODAL TIME-TAP */}
     {tapping && (

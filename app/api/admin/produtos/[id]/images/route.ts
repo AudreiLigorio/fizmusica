@@ -38,7 +38,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
-  const path = `${id}/${isCover ? "cover" : `photo_${sortOrder}_${Date.now()}`}.${ext}`
+  // Nome único também para a capa: a URL pública muda a cada upload, evitando que o
+  // CDN/navegador sirvam a capa antiga do cache (a capa anterior é removida abaixo).
+  const path = `${id}/${isCover ? `cover_${Date.now()}` : `photo_${sortOrder}_${Date.now()}`}.${ext}`
 
   const { error: uploadErr } = await supabase.storage
     .from("product-images")

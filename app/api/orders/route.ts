@@ -26,24 +26,39 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("orders")
-    .select(`id, context, subcategory, status, paymentStatus, createdAt, photo_token, products(name, price), payments(amount, mpStatus)`)
+    .select(`id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_token, is_revision, sharing_term_accepted_at, lyricsApproved, productId, sunoStatus, sunoTracks, publication_consent, shipping_name, shipping_cep, shipping_address, shipping_number, shipping_complement, shipping_neighborhood, shipping_city, shipping_state, shipping_phone, products(name, price), payments(amount, mpStatus, paidAt), order_photos(id), order_answers(question, answer, position)`)
     .or(filter)
     .order("createdAt", { ascending: false })
 
   if (error) return NextResponse.json({ orders: [] })
 
-  // Anexa o slug da música (quando publicada) para o botão "Ouvir"
+  // Anexa slug + mp3 da música (quando publicada) para os botões Ouvir/Baixar
   const ids = (data ?? []).map((o) => o.id)
-  const slugByOrder: Record<string, string> = {}
+  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null }> = {}
   if (ids.length) {
     const { data: gm } = await supabase
       .from("generated_music")
-      .select("orderId, slug")
+      .select("orderId, slug, mp3Url")
       .in("orderId", ids)
-    for (const g of gm ?? []) if (g.slug) slugByOrder[g.orderId as string] = g.slug as string
+    for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null }
   }
 
-  const orders = (data ?? []).map((o) => ({ ...o, slug: slugByOrder[o.id] ?? null }))
+  const orders = (data ?? []).map((o) => {
+    const { order_photos, order_answers, ...rest } = o as typeof o & {
+      order_photos?: { id: string }[]
+      order_answers?: { question: string; answer: string; position: number }[]
+    }
+    const answers = Array.isArray(order_answers)
+      ? [...order_answers].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      : []
+    return {
+      ...rest,
+      slug:       musicByOrder[o.id]?.slug ?? null,
+      mp3Url:     musicByOrder[o.id]?.mp3Url ?? null,
+      photoCount: Array.isArray(order_photos) ? order_photos.length : 0,
+      answers,
+    }
+  })
   return NextResponse.json({ orders })
 }
 

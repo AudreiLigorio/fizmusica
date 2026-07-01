@@ -11,9 +11,13 @@ export const supabase = createClient(url, anonKey)
 export function createServerClient() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+  // Sem a service_role, o fallback para anon NÃO funciona mais: com RLS habilitado
+  // em todas as tabelas (migration 015), a anon key não lê/escreve nada e as telas
+  // viriam vazias silenciosamente. Falhar explícito é mais seguro que esconder o bug.
   if (!serviceKey) {
-    // Fallback para anon key enquanto service_role não está configurada
-    return createClient(url, anonKey)
+    throw new Error(
+      "SUPABASE_SERVICE_ROLE_KEY não configurada — acesso server-side ao banco indisponível (RLS bloqueia a anon key)."
+    )
   }
 
   return createClient(url, serviceKey, {

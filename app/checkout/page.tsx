@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "@/app/components/Header"
+import Footer from "@/app/components/Footer"
+import JourneyProgress from "@/app/components/JourneyProgress"
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
@@ -23,6 +25,65 @@ function CheckoutContent() {
   const [pixCopied, setPixCopied] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const payerEmailRef = useRef<string>("")
+
+  // Confirmação do e-mail de acesso (evita typo no e-mail do wizard)
+  const [orderEmail, setOrderEmail] = useState("")
+  const [editingEmail, setEditingEmail] = useState(false)
+  const [emailInput, setEmailInput] = useState("")
+  const [savingEmail, setSavingEmail] = useState(false)
+  const [emailMsg, setEmailMsg] = useState("")
+
+  async function saveEmail() {
+    const v = emailInput.trim().toLowerCase()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { setEmailMsg("E-mail inválido."); return }
+    setSavingEmail(true); setEmailMsg("")
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: v }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) { setEmailMsg(d.error ?? "Não consegui salvar."); setSavingEmail(false); return }
+      setOrderEmail(v)
+      payerEmailRef.current = v
+      setEditingEmail(false)
+    } catch {
+      setEmailMsg("Falha de conexão.")
+    }
+    setSavingEmail(false)
+  }
+
+  // Cupom
+  const [couponInput, setCouponInput] = useState((searchParams.get("cupom") ?? "").toUpperCase())
+  const [coupon, setCoupon] = useState<{ code: string; discount: number; finalTotal: number } | null>(null)
+  const [couponMsg, setCouponMsg] = useState("")
+  const [checkingCoupon, setCheckingCoupon] = useState(false)
+  const couponRef = useRef<string>("")
+
+  async function applyCoupon() {
+    if (!couponInput.trim()) return
+    setCheckingCoupon(true); setCouponMsg("")
+    const d = await fetch("/api/coupons/validate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: couponInput.trim(), total: price }),
+    }).then((r) => r.json()).catch(() => ({ valid: false, reason: "Erro de conexão." }))
+    setCheckingCoupon(false)
+    if (d.valid) {
+      setCoupon({ code: d.code, discount: d.discount, finalTotal: d.finalTotal })
+      couponRef.current = d.code
+      setCouponMsg("")
+    } else {
+      setCoupon(null); couponRef.current = ""
+      setCouponMsg(d.reason ?? "Cupom inválido.")
+    }
+  }
+
+  function removeCoupon() {
+    setCoupon(null); couponRef.current = ""; setCouponInput(""); setCouponMsg("")
+  }
+
+  const displayTotal = coupon ? coupon.finalTotal : price
 
   function startPixPolling() {
     if (pollRef.current) clearInterval(pollRef.current)
@@ -47,6 +108,12 @@ function CheckoutContent() {
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
 
+  // Auto-aplica cupom vindo na URL (link do e-mail de repescagem)
+  useEffect(() => {
+    if (couponInput.trim() && price > 0 && !coupon) applyCoupon()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [price])
+
   useEffect(() => {
     if (!orderId || !price) {
       router.push("/")
@@ -67,7 +134,7 @@ function CheckoutContent() {
     ;(async () => {
       try {
         const d = await fetch(`/api/orders/${orderId}`, { cache: "no-store" }).then((r) => r.json())
-        if (d?.order?.email) payerEmailRef.current = d.order.email
+        if (d?.order?.email) { payerEmailRef.current = d.order.email; setOrderEmail(d.order.email); setEmailInput(d.order.email) }
         if (d?.order?.paymentStatus === "PAID") {
           router.replace(`/sucesso?orderId=${orderId}&status=approved`)
           return
@@ -127,12 +194,10 @@ function CheckoutContent() {
       customization: {
         paymentMethods: {
           creditCard: "all",
-          debitCard: "all",
           bankTransfer: "all",  // Pix
           ticket: "all",        // Boleto
-          atm: "all",
           mercadoPago: ["wallet_purchase"],
-          maxInstallments: 12,
+          maxInstallments: 5,
         },
         visual: {
           style: {
@@ -170,6 +235,7 @@ function CheckoutContent() {
                 deliveryOptionId: deliveryId,
                 paymentMethod: selectedPaymentMethod,
                 formData,
+                couponCode: couponRef.current || undefined,
               }),
             })
 
@@ -222,6 +288,11 @@ function CheckoutContent() {
              style={{ background: "radial-gradient(circle, #d946ef 0%, transparent 70%)" }} />
       </div>
 
+      {/* Jornada completa */}
+      <div className="relative z-10 border-b border-white/[0.06] px-4">
+        <JourneyProgress current={4} />
+      </div>
+
       {/* Barra superior mobile */}
       <div className="lg:hidden relative z-10 px-5 pt-4 pb-2">
         <button
@@ -237,19 +308,50 @@ function CheckoutContent() {
 
           {/* Cabeçalho */}
           <div className="mb-6">
-            <button
-              onClick={() => router.back()}
-              className="hidden lg:inline-block transition-all px-5 py-2.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white mb-5"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
-            >
-              ← Voltar
-            </button>
             <h1 className="text-2xl font-bold mb-1">Finalizar pagamento</h1>
             <div className="flex items-center justify-between">
               <p className="text-white/55 text-sm">{productName}</p>
-              <p className="text-pink-400 font-bold text-lg">
-                R$ {price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </p>
+              <div className="text-right">
+                {coupon && (
+                  <p className="text-white/30 text-xs line-through">
+                    R$ {price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                )}
+                <p className="text-pink-400 font-bold text-lg">
+                  R$ {displayTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+
+            {/* Cupom de desconto */}
+            <div className="mt-4">
+              {coupon ? (
+                <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 border border-green-500/25 bg-green-500/8">
+                  <div>
+                    <p className="text-green-300 text-sm font-semibold">🎟️ {coupon.code} aplicado</p>
+                    <p className="text-green-400/70 text-xs">Você economizou R$ {coupon.discount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                  </div>
+                  <button onClick={removeCoupon} className="text-xs text-white/40 hover:text-white/70 transition-colors">Remover</button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon() } }}
+                    placeholder="Tem um cupom?"
+                    className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500 uppercase placeholder:normal-case"
+                  />
+                  <button
+                    onClick={applyCoupon}
+                    disabled={checkingCoupon || !couponInput.trim()}
+                    className="px-4 py-2.5 rounded-xl text-sm font-medium border border-pink-500/30 text-pink-300 hover:bg-pink-500/10 disabled:opacity-40 transition-colors"
+                  >
+                    {checkingCoupon ? "…" : "Aplicar"}
+                  </button>
+                </div>
+              )}
+              {couponMsg && <p className="text-red-400 text-xs mt-1.5">{couponMsg}</p>}
             </div>
           </div>
 
@@ -300,7 +402,7 @@ function CheckoutContent() {
                 Abra o app do seu banco, escolha <strong>PIX → Pagar com QR Code</strong> e aponte para o código acima.
               </p>
               <p className="text-pink-400 font-bold text-lg mt-2">
-                R$ {price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                R$ {displayTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </p>
 
               <button
@@ -319,6 +421,41 @@ function CheckoutContent() {
             </div>
           )}
 
+          {/* Confirmação do e-mail de acesso — reduz typo no e-mail do wizard */}
+          {(status === "ready" || status === "loading") && orderEmail && (
+            <div className="mb-4 rounded-2xl border border-pink-500/25 bg-pink-500/[0.06] px-4 py-3">
+              {!editingEmail ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-white/45 uppercase tracking-wider">Enviaremos o acesso da sua música para</p>
+                    <p className="text-sm text-white font-medium truncate">📧 {orderEmail}</p>
+                  </div>
+                  <button onClick={() => { setEditingEmail(true); setEmailMsg("") }}
+                    className="shrink-0 text-xs font-medium text-pink-300 hover:text-pink-200 underline underline-offset-2">
+                    Não é esse? Editar
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-[11px] text-white/45 uppercase tracking-wider mb-1.5">Corrigir e-mail de acesso</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); saveEmail() } }}
+                      className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500"
+                    />
+                    <button onClick={saveEmail} disabled={savingEmail}
+                      className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50 transition-all hover:brightness-110"
+                      style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
+                      {savingEmail ? "…" : "Salvar"}
+                    </button>
+                  </div>
+                  {emailMsg && <p className="text-red-400 text-xs mt-1.5">{emailMsg}</p>}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Container do Brick */}
           <div
             id="payment-brick-container"
@@ -334,13 +471,29 @@ function CheckoutContent() {
               </p>
               <p className="text-center text-[11px] text-white/30 mt-2 leading-relaxed">
                 Ao pagar, você concorda com os{" "}
-                <a href="/legal/termos-de-uso" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Termos de Uso</a>,{" "}
-                <a href="/legal/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Política de Privacidade</a> e{" "}
-                <a href="/legal/reembolso-e-cancelamento" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/60">Política de Reembolso</a>.
+                <a href="/legal/termos-de-uso" className="underline hover:text-white/60">Termos de Uso</a>,{" "}
+                <a href="/legal/politica-de-privacidade" className="underline hover:text-white/60">Política de Privacidade</a> e{" "}
+                <a href="/legal/reembolso-e-cancelamento" className="underline hover:text-white/60">Política de Reembolso</a>.
               </p>
             </>
           )}
+
+          {/* Voltar — desktop, no rodapé (mesmo padrão da tela /produtos) */}
+          <div className="hidden lg:flex justify-between items-center mt-10">
+            <button
+              onClick={() => router.back()}
+              className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white"
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
+            >
+              ← Voltar
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Footer — desktop only (mesmo padrão das outras telas) */}
+      <div className="hidden lg:block relative z-10">
+        <Footer />
       </div>
     </div>
   )

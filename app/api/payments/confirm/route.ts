@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
-import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
-import { sendNewOrderPaidNotification, sendPaymentConfirmedEmail } from "@/app/services/emailService"
+import { sendNewOrderPaidNotification } from "@/app/services/emailService"
 import { triggerN8nWebhook } from "@/app/services/orderService"
+import { ensurePaymentPrep } from "@/lib/payments/prep"
 
 // Confirma pagamento aprovado diretamente no Supabase
 // O status já foi verificado pelo MP na rota /api/payments/create
@@ -16,10 +16,22 @@ export async function POST(req: Request) {
 
     const supabase = createServerClient()
 
+    // Reconcilia produto/prazo com o pagamento (Fix 3)
+    const { data: paidRow } = await supabase
+      .from("payments")
+      .select("productId, deliveryOptionId")
+      .eq("orderId", orderId)
+      .maybeSingle()
+
     // Atualiza pedido como PAID
     await supabase
       .from("orders")
-      .update({ paymentStatus: "PAID", updatedAt: new Date().toISOString() })
+      .update({
+        paymentStatus: "PAID",
+        ...(paidRow?.productId ? { productId: paidRow.productId } : {}),
+        ...(paidRow?.deliveryOptionId ? { deliveryOptionId: paidRow.deliveryOptionId } : {}),
+        updatedAt: new Date().toISOString(),
+      })
       .eq("id", orderId)
 
     // Atualiza registro de pagamento
@@ -36,25 +48,9 @@ export async function POST(req: Request) {
       .single()
 
     if (order) {
-      // ── Convite para anexar fotos (link tokenizado, sem login) ──
-      // Gera o token na primeira confirmação; idempotente em reentregas do webhook.
-      let photoToken: string | null = (order as any).photo_token ?? null
-      if (!photoToken) {
-        photoToken = crypto.randomUUID()
-        const { error: tokErr } = await supabase
-          .from("orders")
-          .update({ photo_token: photoToken })
-          .eq("id", orderId)
-        if (tokErr) {
-          console.error("[confirm] falha ao gerar photo_token:", tokErr.message)
-          photoToken = null
-        } else {
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
-          const areaUrl = `${baseUrl}/minha-musica?orderId=${orderId}`
-          const r = await sendPaymentConfirmedEmail({ nome: order.nome, email: order.email, areaUrl })
-          if (!r.ok) console.error("[confirm] e-mail de pagamento confirmado falhou:", r.error)
-        }
-      }
+      // Gera o photo_token + envia o e-mail "aprove sua letra" (idempotente; o mesmo
+      // helper roda no webhook, então quem paga PIX e fecha a aba também recebe).
+      await ensurePaymentPrep(supabase, orderId)
 
       // Notifica admin por e-mail
       await sendNewOrderPaidNotification({

@@ -47,6 +47,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Nenhum campo válido." }, { status: 400 })
   }
 
+  // Guarda: trocar e-mail só é permitido antes do pagamento (evita sequestro de
+  // pedido pago por quem souber o orderId). Demais campos seguem o fluxo normal.
+  if ("email" in allowed) {
+    const { data: cur } = await supabase
+      .from("orders").select("paymentStatus").eq("id", id).maybeSingle()
+    if (cur?.paymentStatus === "PAID") {
+      return NextResponse.json({ error: "Pedido já pago — e-mail não pode ser alterado aqui." }, { status: 403 })
+    }
+  }
+
   if (Object.keys(allowed).length > 0) {
     const { error } = await supabase.from("orders").update(allowed).eq("id", id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

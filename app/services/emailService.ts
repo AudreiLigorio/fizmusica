@@ -1,10 +1,12 @@
 import { Resend } from "resend"
-import QRCode from "qrcode"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM_ADDRESS = "FizMusica <contato@fizmusica.com.br>"
 const ADMIN_EMAIL  = process.env.ADMIN_NOTIFY_EMAIL ?? "contato@fizmusica.com.br"
+// Alerta operacional de "música pronta pra liberar" (modo com aprovação). Vai pro
+// e-mail pessoal por padrão; override por env se quiser mudar sem mexer no código.
+const ADMIN_REVIEW_EMAIL = process.env.ADMIN_REVIEW_EMAIL ?? "audreiligorio@gmail.com"
 
 // ============================================================
 // Layout padrão dos e-mails (marca FizMusica)
@@ -65,50 +67,20 @@ interface MusicDeliveryEmailData {
   nome:      string
   email:     string
   musicName: string
-  publicUrl: string
+  areaUrl:   string
   orderId:   string
-  mp3Url?:   string | null
+  loyaltyCoupon?: { code: string; label: string } | null
 }
 
 export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Promise<{ ok: boolean; error?: string }> {
   try {
-    // Gera QR Code como PNG base64
-    const qrDataUrl = await QRCode.toDataURL(data.publicUrl, {
-      width: 200,
-      margin: 2,
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-    // Remove prefixo "data:image/png;base64," para usar como cid embed
-    const qrBase64 = qrDataUrl.replace(/^data:image\/png;base64,/, "")
-
-    // Busca MP3 como buffer para anexar (máx 20 MB)
-    const attachments: Array<{ filename: string; content: string }> = []
-    if (data.mp3Url) {
-      try {
-        const mp3Res = await fetch(data.mp3Url, { signal: AbortSignal.timeout(15000) })
-        if (mp3Res.ok) {
-          const buffer = await mp3Res.arrayBuffer()
-          const sizeMB = buffer.byteLength / 1024 / 1024
-          if (sizeMB <= 20) {
-            attachments.push({
-              filename: `${data.musicName ?? "musica"}.mp3`.replace(/[^a-zA-Z0-9\-_.áéíóúãõâêôçÁÉÍÓÚÃÕÂÊÔÇ ]/g, "").trim() + ".mp3",
-              content:  Buffer.from(buffer).toString("base64"),
-            })
-          } else {
-            console.warn(`[email] MP3 muito grande (${sizeMB.toFixed(1)} MB) — não anexado`)
-          }
-        }
-      } catch (mp3Err) {
-        console.warn("[email] Não foi possível baixar o MP3 para anexo:", mp3Err)
-      }
-    }
-
+    // Acesso (ouvir/baixar/QR) acontece só na área do cliente, após aceite do
+    // Termo de Entrega Digital — por isso o e-mail não traz player, QR nem MP3.
     const result = await resend.emails.send({
       from:        FROM_ADDRESS,
       to:          data.email,
       subject:     `🎵 Sua música está pronta, ${data.nome.split(" ")[0]}!`,
-      html:        buildDeliveryEmail(data, qrBase64),
-      attachments: attachments.length > 0 ? attachments : undefined,
+      html:        buildDeliveryEmail(data),
     })
 
     if ((result as any).error) {
@@ -125,28 +97,24 @@ export async function sendMusicDeliveryEmail(data: MusicDeliveryEmailData): Prom
   }
 }
 
-function buildDeliveryEmail(data: MusicDeliveryEmailData, qrBase64: string): string {
-  const qrBox = `
-    <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:20px;text-align:center;margin:20px 0">
-      <p style="color:#999;font-size:13px;margin:0 0 12px">📱 Escaneie para ouvir no celular</p>
-      <img src="data:image/png;base64,${qrBase64}" alt="QR Code" width="160" height="160" style="display:block;margin:0 auto;border-radius:8px;border:4px solid #fff" />
-      <p style="color:#666;font-size:11px;margin:12px 0 0;word-break:break-all"><a href="${data.publicUrl}" style="color:#ec4899">${data.publicUrl}</a></p>
-    </div>
-    ${data.mp3Url ? `
-    <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px;margin:12px 0">
-      <p style="color:#bbb;font-size:13px;margin:0 0 4px">🎧 O arquivo MP3 também está em anexo neste e-mail.</p>
-      <p style="color:#777;font-size:11px;margin:0">Salve no seu celular para ouvir sem internet!</p>
-    </div>` : ""}
-    ${para("Compartilhe com quem quiser — basta enviar o link ou mostrar o QR Code! ❤️")}`
+function buildDeliveryEmail(data: MusicDeliveryEmailData): string {
+  const afterButton = `
+    ${para("Na sua área você poderá ouvir, baixar o MP3 e gerar o QR Code para compartilhar — basta confirmar o termo de entrega.")}
+    ${data.loyaltyCoupon ? `
+    <div style="margin:24px 0;padding:18px;border:2px dashed #a855f7;border-radius:14px;background:rgba(168,85,247,0.08);text-align:center">
+      <p style="margin:0 0 6px;color:#d8b4fe;font-size:13px;font-weight:bold">🎁 ${data.loyaltyCoupon.label} NA SUA PRÓXIMA MÚSICA</p>
+      <p style="margin:0 0 4px;font-size:24px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:.1em">${data.loyaltyCoupon.code}</p>
+      <p style="margin:0;color:#cbd5e1;font-size:12px">Que tal surpreender outra pessoa especial? Use este código no checkout.</p>
+    </div>` : ""}`
   return emailShell({
     emoji: "🎵",
     title: "Sua música está pronta!",
     subtitle: "Feita com amor especialmente para você",
     body:
       para(`Olá, ${strong(data.nome.split(" ")[0])}! ❤️`) +
-      para(`Sua música personalizada ${strong(`"${data.musicName}"`)} ficou incrível e está pronta para você ouvir!`),
-    button: { text: "▶ Ouvir minha música", url: data.publicUrl },
-    afterButton: qrBox,
+      para(`Sua música personalizada ${strong(`"${data.musicName}"`)} ficou incrível! Acesse sua área para ouvi-la, baixar e compartilhar.`),
+    button: { text: "🎵 Acessar minha música", url: data.areaUrl },
+    afterButton,
   })
 }
 
@@ -157,7 +125,7 @@ function buildDeliveryEmail(data: MusicDeliveryEmailData, qrBase64: string): str
 interface PaymentConfirmedEmailData {
   nome:    string
   email:   string
-  areaUrl: string
+  prepUrl: string
 }
 
 export async function sendPaymentConfirmedEmail(data: PaymentConfirmedEmailData): Promise<{ ok: boolean; error?: string }> {
@@ -165,7 +133,7 @@ export async function sendPaymentConfirmedEmail(data: PaymentConfirmedEmailData)
     const result = await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      data.email,
-      subject: `✅ Pagamento confirmado, ${data.nome.split(" ")[0]}! Acompanhe sua música`,
+      subject: `✅ Pagamento confirmado, ${data.nome.split(" ")[0]}! Falta aprovar sua letra`,
       html:    buildPaymentConfirmedEmail(data),
     })
     if ((result as any).error) {
@@ -184,18 +152,18 @@ export async function sendPaymentConfirmedEmail(data: PaymentConfirmedEmailData)
 
 function buildPaymentConfirmedEmail(data: PaymentConfirmedEmailData): string {
   return emailShell({
-    emoji: "✅",
-    title: "Pagamento confirmado!",
-    subtitle: "Sua música já entrou na fila de produção",
+    emoji: "✍️",
+    title: "Falta 1 passo: aprovar sua letra",
+    subtitle: "Sua música só começa depois da sua aprovação",
     body:
       para(`Olá, ${strong(data.nome.split(" ")[0])}! ❤️`) +
-      para(`Recebemos seu pagamento com sucesso. Agora você tem uma <strong>área exclusiva</strong> onde pode ${strong("acompanhar o status da criação")} e ${strong("cadastrar todas as suas fotos")}, que vão aparecer no player junto da música.`),
-    button: { text: "Acessar minha área", url: data.areaUrl },
+      para(`Recebemos seu pagamento com sucesso. Agora falta você ${strong("aprovar a letra")} e, se quiser, ${strong("adicionar fotos")} ao player — é rapidinho e ${strong("não precisa de senha")}.`),
+    button: { text: "✍️ Aprovar minha letra", url: data.prepUrl },
     note: {
-      label: "⏱ Dica importante",
-      text: "Quanto antes você cadastrar as fotos, melhor — elas entram na produção junto com a música. Se deixar pra depois, podem não dar tempo de entrar.",
+      label: "⚠️ Importante",
+      text: "Sua música não começa sozinha — ela só entra em produção depois que você aprovar a letra. Leva só um minutinho.",
     },
-    afterButton: para(`Na área você entra <strong>sem senha</strong> — com sua conta Google ou um link enviado para o seu e-mail.`),
+    afterButton: para(`Depois de aprovar, geramos a música automaticamente e avisamos por e-mail assim que ficar pronta.`),
   })
 }
 
@@ -436,6 +404,33 @@ export async function sendNewOrderPaidNotification(order: PaymentNotificationDat
   }
 }
 
+// Alerta ao admin: no modo "com aprovação", a música ficou pronta (READY) e aguarda
+// você clicar em "Liberar" na fila de Produção. Sem isso o admin ficava cego até abrir o painel.
+export async function sendMusicReadyForReviewNotification(data: { orderId: string; nome: string; subcategory?: string | null }): Promise<void> {
+  const adminUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"}/admin/producao`
+  try {
+    await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      ADMIN_REVIEW_EMAIL,
+      subject: `[Admin] 🎵 Música pronta pra liberar — ${data.nome}`,
+      html: emailShell({
+        emoji: "🎵",
+        title: "Música pronta para revisão",
+        subtitle: "As versões foram geradas e aguardam sua liberação para o cliente.",
+        body: adminRows([
+          ["Pedido", `<span style="font-family:monospace;color:#ec4899">#${data.orderId.slice(0, 8).toUpperCase()}</span>`],
+          ["Cliente", data.nome],
+          ...(data.subcategory ? [["Ocasião", data.subcategory] as [string, string]] : []),
+        ]),
+        button: { text: "Abrir a fila de Produção →", url: adminUrl },
+      }),
+    })
+    console.log(`[email] Alerta "pronta pra liberar" enviado para ${ADMIN_REVIEW_EMAIL}`)
+  } catch (err) {
+    console.error("[email] Falha ao notificar admin (pronta pra liberar):", err)
+  }
+}
+
 function buildAdminEmail(order: OrderEmailData): string {
   return emailShell({
     emoji: "🆕",
@@ -465,6 +460,7 @@ interface RecoveryEmailData {
   subcategory:  string
   musicalStyle: string
   orderId:      string
+  coupon?:      { code: string; label: string } | null
 }
 
 export async function sendRecoveryEmail(data: RecoveryEmailData): Promise<{ ok: boolean; error?: string }> {
@@ -488,6 +484,13 @@ export async function sendRecoveryEmail(data: RecoveryEmailData): Promise<{ ok: 
 }
 
 function buildRecoveryEmail(data: RecoveryEmailData, siteUrl: string): string {
+  const couponBlock = data.coupon
+    ? `<div style="margin:24px 0;padding:18px;border:2px dashed #ec4899;border-radius:14px;background:rgba(236,72,153,0.08);text-align:center">
+         <p style="margin:0 0 6px;color:#f9a8d4;font-size:13px;font-weight:bold;letter-spacing:.05em">🎟️ ${data.coupon.label} PRA VOCÊ VOLTAR</p>
+         <p style="margin:0 0 4px;font-size:26px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:.1em">${data.coupon.code}</p>
+         <p style="margin:0;color:#cbd5e1;font-size:12px">Use este código no checkout ao finalizar.</p>
+       </div>`
+    : ""
   return emailShell({
     emoji: "🎵",
     title: "Sua música está esperando!",
@@ -495,7 +498,10 @@ function buildRecoveryEmail(data: RecoveryEmailData, siteUrl: string): string {
     body:
       para(`Olá, ${strong(data.nome.split(" ")[0])}! ❤️`) +
       para(`Notamos que você iniciou um pedido de ${strong(data.subcategory)} no estilo ${strong(data.musicalStyle)}, mas não concluiu o pagamento.`) +
-      para("Sua música personalizada pode ser criada especialmente para você — basta finalizar o pedido!"),
+      para(data.coupon
+        ? "E pra te dar aquele empurrãozinho, separamos um desconto especial:"
+        : "Sua música personalizada pode ser criada especialmente para você — basta finalizar o pedido!") +
+      couponBlock,
     button: { text: "🎵 Finalizar meu pedido", url: `${siteUrl}/criar` },
     note: { text: `Dúvidas? Fale com a gente no WhatsApp: <a href="https://wa.me/5511996645678" style="color:#ec4899;font-weight:bold">📱 (11) 99664-5678</a>` },
   })
@@ -517,7 +523,7 @@ export async function sendFeedbackRequestEmail(data: FeedbackRequestEmailData): 
     const result = await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      data.email,
-      subject: `${data.nome.split(" ")[0]}, o que você achou da sua música? 🎵`,
+      subject: `${data.nome.split(" ")[0]}, como foi sua experiência com a FizMusica? ✨`,
       html: buildFeedbackRequestEmail(data),
     })
     if ((result as any).error) {
@@ -535,16 +541,16 @@ export async function sendFeedbackRequestEmail(data: FeedbackRequestEmailData): 
 function buildFeedbackRequestEmail(data: FeedbackRequestEmailData): string {
   return emailShell({
     emoji: "💜",
-    title: "O que você achou?",
+    title: "Como foi sua experiência?",
     subtitle: "Sua opinião faz toda a diferença pra nós!",
     body:
       para(`Olá, ${strong(data.nome.split(" ")[0])}! 🎵`) +
-      para(`Sua música ${strong(`"${data.musicName}"`)} foi entregue e esperamos que tenha ficado incrível!`) +
-      para("Queremos saber o que você achou — leva menos de 2 minutos e nos ajuda muito a continuar criando músicas especiais."),
-    button: { text: "⭐ Avaliar minha música", url: data.feedbackUrl },
+      para(`Seu pedido ${strong(`"${data.musicName}"`)} foi entregue e esperamos que tenha sido uma experiência especial — da criação à entrega.`) +
+      para("Queremos saber como foi pra você, do começo ao fim — leva menos de 2 minutos e nos ajuda muito a continuar melhorando cada detalhe."),
+    button: { text: "⭐ Avaliar minha experiência", url: data.feedbackUrl },
     note: {
       label: "3 perguntinhas rápidas",
-      text: "⭐ Nota geral de 1 a 5 estrelas<br>💬 O que te emocionou na música<br>🔧 Sugestão de melhoria (opcional)",
+      text: "⭐ Nota geral de 1 a 5 estrelas<br>💬 O que mais te marcou na experiência<br>🔧 Sugestão de melhoria (opcional)",
     },
   })
 }

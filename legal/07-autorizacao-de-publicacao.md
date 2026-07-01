@@ -8,37 +8,25 @@ Por meio deste Termo, o Cliente autoriza, de forma livre, informada e inequívoc
 
 ## 2. Conteúdos Abrangidos
 
-A autorização poderá abranger: música produzida; letra; título; nome do homenageado (quando autorizado); trechos da história fornecida; imagens e vídeos enviados voluntariamente; e depoimentos relacionados à experiência com a Fiz Música.
+A autorização abrange exclusivamente a **música produzida e a sua letra** (a "Obra"). A Obra pode, por sua própria natureza, **conter nomes e a história real** que inspiraram a composição — esses elementos fazem parte do conteúdo criativo e estão incluídos na divulgação da Obra.
+
+A autorização **não abrange**: o reuso de **fotos ou vídeos** enviados; depoimentos; nem qualquer exposição que **identifique o Cliente (autor do pedido)**.
+
+> **Nota:** o compartilhamento da música por link pelo próprio Cliente é uma funcionalidade da plataforma controlada pelo próprio Cliente e não depende deste Termo. Este Termo trata exclusivamente do uso da Obra **pela Fiz Música** para fins de marketing e divulgação.
 
 ## 3. Finalidades da Utilização
 
 Portfólio institucional; site oficial; redes sociais; materiais promocionais; campanhas publicitárias; apresentações comerciais; e divulgação de cases e exemplos de trabalhos realizados.
 
-## 4. Opções de Autorização
+## 4. Autorização
 
-> **Nota de fronteira:** estas autorizações tratam do uso que **identifica** o Cliente ou o homenageado (nome real, imagem, depoimento, identificação do caso) para fins de **marketing/promoção** — o que envolve direito de imagem (art. 20 do Código Civil) e dados pessoais (LGPD). Elas **complementam, sem substituir**, a [Licença de Uso da Música / Direitos Autorais](05-licenca-de-uso-da-musica.md), que rege os **direitos autorais sobre a obra**. A Fiz Música pode explorar a obra de forma **anonimizada/adaptada** independentemente destas opções; estas opções autorizam, adicionalmente, a exposição da **identidade real** das pessoas.
+> **Nota de fronteira:** esta autorização trata da **divulgação pública da Obra** (música + letra) pela Fiz Música. Ela **complementa, sem substituir**, a [Licença de Uso da Música / Direitos Autorais](05-licenca-de-uso-da-musica.md), que rege os **direitos autorais sobre a obra**. A Fiz Música pode, a seu critério, explorar a Obra de forma **anonimizada/adaptada** — especialmente em casos sensíveis — independentemente desta autorização.
 
-O Cliente poderá escolher uma ou mais das opções abaixo:
-
-**Opção A — Compartilhamento por Link**
-Autorizo a disponibilização da música em página acessível por meio de link compartilhável.
+**Autorizo a divulgação da Música e da Letra**
+Autorizo a Fiz Música a divulgar a música e a letra criadas para mim, em seus canais e materiais de marketing. Reconheço que a Obra pode conter **nomes e a história real** como parte do seu conteúdo. A Fiz Música **não divulgará a identidade de quem encomendou** a música, **não utilizará as fotos** enviadas e **não exporá depoimentos** sem autorização específica e separada.
 ( ) Sim ( ) Não
 
-**Opção B — Uso da Música e Letra**
-Autorizo a utilização da música e da letra para divulgação da marca Fiz Música.
-( ) Sim ( ) Não
-
-**Opção C — Uso de Nome do Homenageado**
-Autorizo a divulgação do nome do homenageado associado à música.
-( ) Sim ( ) Não
-
-**Opção D — Uso de Imagens**
-Autorizo a utilização das imagens enviadas para divulgação institucional e promocional.
-( ) Sim ( ) Não
-
-**Opção E — Depoimentos**
-Autorizo a divulgação de depoimentos relacionados à experiência com a Fiz Música.
-( ) Sim ( ) Não
+Esta autorização é **opcional**, **não é requisito** para a contratação dos serviços, e pode ser **revogada a qualquer momento** (ver seção 7).
 
 ## 5. Gratuidade
 

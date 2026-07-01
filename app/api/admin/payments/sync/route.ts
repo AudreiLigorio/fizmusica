@@ -3,6 +3,7 @@ import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { sendNewOrderPaidNotification } from "@/app/services/emailService"
 import { triggerN8nWebhook } from "@/app/services/orderService"
+import { ensurePaymentPrep } from "@/lib/payments/prep"
 
 export const dynamic = "force-dynamic"
 
@@ -48,6 +49,10 @@ export async function POST(req: NextRequest) {
 
     // Notifica admin (só se ainda não estava PAID)
     if (order && order.paymentStatus !== "PAID") {
+      // Cliente: gera token + e-mail "aprove sua letra" (idempotente) — fecha o
+      // funil também quando a confirmação vem pela reconciliação manual.
+      await ensurePaymentPrep(supabase, orderId)
+
       await sendNewOrderPaidNotification({
         orderId: order.id, nome: order.nome, email: order.email,
         whatsapp: order.whatsapp, subcategory: order.subcategory,

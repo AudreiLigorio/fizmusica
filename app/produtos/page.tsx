@@ -1,10 +1,11 @@
 ﻿"use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import JourneyProgress from "@/app/components/JourneyProgress"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import ProductGallery from "./ProductGallery"
 
@@ -72,6 +73,26 @@ function ProdutosContent() {
   const [delivery, setDelivery]     = useState<DeliveryOption | null>(null)
   const [shipping, setShipping]     = useState<ShippingData>(EMPTY_SHIPPING)
   const [savingShipping, setSavingShipping] = useState(false)
+  const [promoCoupon, setPromoCoupon] = useState<{ code: string; label: string; description: string | null } | null>(null)
+
+  // Cupom digitado pelo cliente (visto nas redes). Validado contra o total atual;
+  // o checkout revalida de forma autoritativa, então o desconto aqui é só preview.
+  const [couponInput, setCouponInput]       = useState("")
+  const [appliedCoupon, setAppliedCoupon]   = useState<{ code: string; discount: number; finalTotal: number } | null>(null)
+  const [couponMsg, setCouponMsg]           = useState("")
+  const [checkingCoupon, setCheckingCoupon] = useState(false)
+
+  // Carrossel de produtos (só no mobile) — rastreia o card centralizado p/ os dots.
+  const carouselRef = useRef<HTMLDivElement>(null)
+  const [activeProduct, setActiveProduct] = useState(0)
+
+  function handleCarouselScroll() {
+    const el = carouselRef.current
+    const first = el?.firstElementChild as HTMLElement | null
+    if (!el || !first) return
+    const step = first.offsetWidth + 16 // largura do card + gap-4
+    setActiveProduct(Math.round(el.scrollLeft / step))
+  }
 
   const isPhysical = selected?.category === "DIGITAL_PHYSICAL"
 
@@ -80,6 +101,10 @@ function ProdutosContent() {
       .then((r) => r.json())
       .then((d) => { setProducts(d.products ?? []); setLoading(false) })
       .catch(() => setLoading(false))
+    fetch("/api/coupons/active")
+      .then((r) => r.json())
+      .then((d) => { if (d.coupon) setPromoCoupon(d.coupon) })
+      .catch(() => {})
   }, [])
 
   // O botão "Salvando…" é transitório: só vale durante o PATCH em andamento.
@@ -95,6 +120,35 @@ function ProdutosContent() {
       window.removeEventListener("focus", clearSaving)
     }
   }, [])
+
+  async function applyCoupon(codeArg?: string) {
+    const code = (codeArg ?? couponInput).trim()
+    if (!code) return
+    // Sem produto: total=0 → o endpoint só confere existência/ativo (pending).
+    const total = selected ? selected.price + (delivery?.price_extra ?? 0) : 0
+    setCheckingCoupon(true); setCouponMsg("")
+    const d = await fetch("/api/coupons/validate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, total }),
+    }).then((r) => r.json()).catch(() => ({ valid: false, reason: "Erro de conexão." }))
+    setCheckingCoupon(false)
+    if (d.valid) {
+      setAppliedCoupon({ code: d.code, discount: d.discount ?? 0, finalTotal: d.finalTotal ?? 0 })
+      setCouponInput(d.code); setCouponMsg("")
+    } else {
+      setAppliedCoupon(null); setCouponMsg(d.reason ?? "Cupom inválido.")
+    }
+  }
+
+  function removeCoupon() {
+    setAppliedCoupon(null); setCouponInput(""); setCouponMsg("")
+  }
+
+  // Se o cliente trocar o produto/prazo após aplicar, revalida o cupom contra o novo total.
+  useEffect(() => {
+    if (appliedCoupon) applyCoupon(appliedCoupon.code)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [delivery, selected])
 
   function handleSelectProduct(product: Product) {
     setSelected(product)
@@ -137,6 +191,9 @@ function ProdutosContent() {
       productName: delivery ? `${selected.name} — ${delivery.label}` : selected.name,
       price:       String(selected.price + (delivery?.price_extra ?? 0)),
       ...(delivery ? { deliveryId: delivery.id } : {}),
+      // Só leva cupom se o cliente realmente aplicou no campo. O banner do cupom
+      // público é informativo — não desconta sozinho.
+      ...(appliedCoupon ? { cupom: appliedCoupon.code } : {}),
     })
 
     window.location.href = `/checkout?${params.toString()}`
@@ -149,6 +206,8 @@ function ProdutosContent() {
   const finalPrice = selected
     ? selected.price + (delivery?.price_extra ?? 0)
     : 0
+
+  const displayPrice = appliedCoupon ? appliedCoupon.finalTotal : finalPrice
 
   return (
     <div className="text-white font-sans" style={{ background: "#07060d" }}>
@@ -170,15 +229,19 @@ function ProdutosContent() {
       <div className="fixed inset-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
            style={{ background: "#07060d" }}>
 
-        {/* Mobile: barra de step no topo */}
-        <div className="lg:hidden shrink-0 px-5 pt-4 pb-2 flex items-center justify-center">
-          <div className="flex items-center gap-2">
-            {[1, 2].map((n) => (
-              <div key={n} className={`h-1 rounded-full transition-all duration-300 ${
-                n <= step ? "w-8" : "w-4"
-              }`} style={{ background: n <= step ? "linear-gradient(90deg,#f0196b,#d946ef)" : "rgba(255,255,255,0.1)" }} />
-            ))}
-          </div>
+        {/* Jornada completa */}
+        <div className="shrink-0 px-4 border-b border-white/[0.06]">
+          <JourneyProgress current={3} />
+        </div>
+
+        {/* Mobile: Voltar no topo */}
+        <div className="lg:hidden shrink-0 px-5 pt-4 pb-1">
+          <button
+            onClick={step === 1 ? () => router.push("/criar") : () => setStep(1)}
+            className="text-white/50 text-sm hover:text-white transition-colors"
+          >
+            ← Voltar
+          </button>
         </div>
 
         {/* Área de conteúdo */}
@@ -193,37 +256,71 @@ function ProdutosContent() {
                   Selecione o produto ideal
                 </h1>
                 <p className="text-gray-400 text-sm">Escolha abaixo e prossiga para o pagamento.</p>
+
+                {/* Banner do cupom ativo */}
+                {promoCoupon && (
+                  <div className="mt-4 flex items-center gap-3 rounded-2xl px-4 py-3"
+                       style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.12), rgba(168,85,247,0.10))", border: "1px dashed rgba(240,25,107,0.4)" }}>
+                    <span className="text-2xl">🎟️</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-pink-300">
+                        {promoCoupon.label} com o cupom <span className="font-mono bg-pink-500/20 px-1.5 py-0.5 rounded">{promoCoupon.code}</span>
+                      </p>
+                      <p className="text-xs text-white/50">{promoCoupon.description ?? "Digite o código abaixo e aplique."}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* INDICADOR DE STEPS — desktop only */}
-            <div className="hidden lg:flex items-center justify-center gap-3 mb-10">
-              {[
-                { n: 1, label: "Produto" },
-                { n: 2, label: isPhysical ? "Dados de envio" : "Prazo de entrega" },
-              ].map(({ n, label }, i, arr) => (
-                <div key={n} className="flex items-center gap-3">
-                  <button
-                    onClick={() => n < step && setStep(n as 1 | 2)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                      step === n
-                        ? "bg-pink-500/15 border border-pink-500/30 text-pink-300"
-                        : step > n
-                        ? "bg-white/5 border border-white/10 text-gray-200 hover:text-white cursor-pointer"
-                        : "bg-white/5 border border-white/5 text-gray-200 cursor-default"
-                    }`}
-                  >
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                      step > n ? "bg-pink-500 text-white" : step === n ? "bg-pink-500 text-white" : "bg-white/10 text-gray-300"
-                    }`}>
-                      {step > n ? "✓" : n}
-                    </span>
-                    {label}
-                  </button>
-                  {i < arr.length - 1 && <div className="w-8 h-px bg-white/10" />}
-                </div>
-              ))}
-            </div>
+            {/* Cupom de desconto — topo, abaixo do banner. Vale para os dois produtos. */}
+            {!loading && (
+              <div className="mb-6 lg:mb-10">
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between rounded-2xl px-4 py-3"
+                       style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)" }}>
+                    <div className="min-w-0">
+                      <p className="text-green-300 text-sm font-semibold">
+                        🎟️ {appliedCoupon.code} {selected ? "aplicado" : "válido"}
+                      </p>
+                      <p className="text-green-400/70 text-xs">
+                        {selected
+                          ? `Você economizou R$ ${fmt(appliedCoupon.discount)}`
+                          : "Selecione um produto para aplicar o desconto."}
+                      </p>
+                    </div>
+                    <button onClick={removeCoupon} className="text-xs text-white/50 hover:text-white underline shrink-0 ml-3">
+                      Remover
+                    </button>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl px-4 py-3.5"
+                       style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <label className="text-sm text-white/70 font-medium">Tem um cupom de desconto?</label>
+                    <p className="text-xs text-white/35 mb-2.5">Use o código do banner ou um que você viu nas nossas redes sociais.</p>
+                    <div className="flex gap-2">
+                      <input
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => { if (e.key === "Enter") applyCoupon() }}
+                        placeholder="Digite o código"
+                        className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-2xl px-5 py-3 text-base outline-none focus:border-pink-500 transition-colors uppercase placeholder:normal-case placeholder:text-white/30"
+                      />
+                      <button
+                        onClick={() => applyCoupon()}
+                        disabled={checkingCoupon || !couponInput.trim()}
+                        className="px-6 py-3 rounded-2xl text-sm font-semibold text-white disabled:opacity-40 transition-all shrink-0"
+                        style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
+                      >
+                        {checkingCoupon ? "…" : "Aplicar"}
+                      </button>
+                    </div>
+                    {couponMsg && <p className="text-red-400 text-xs mt-2">{couponMsg}</p>}
+                  </div>
+                )}
+              </div>
+            )}
+
 
         {/* ====== STEP 1 — ESCOLHA DO PRODUTO ====== */}
         {loading ? (
@@ -231,7 +328,12 @@ function ProdutosContent() {
             <div className="w-10 h-10 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : step === 1 ? (
-          <div className="grid md:grid-cols-2 gap-6 mb-10">
+          <>
+          <div
+            ref={carouselRef}
+            onScroll={handleCarouselScroll}
+            className="flex md:grid md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-10 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-5 px-5 md:mx-0 md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          >
             {products.map((product) => {
               const isSelected = selected?.id === product.id
               const icon = PRODUCT_ICONS[product.name] ?? "🎶"
@@ -240,7 +342,7 @@ function ProdutosContent() {
                 <button
                   key={product.id}
                   onClick={() => handleSelectProduct(product)}
-                  className={`relative text-left rounded-[32px] p-8 border transition-all duration-200 ${
+                  className={`snap-center shrink-0 w-[82%] sm:w-[55%] md:w-full relative text-left rounded-[32px] p-6 sm:p-8 border transition-all duration-200 ${
                     isSelected
                       ? "border-pink-500 bg-pink-500/10 shadow-[0_0_40px_rgba(236,72,153,0.15)]"
                       : "border-white/10 bg-white/5 hover:border-pink-500/40"
@@ -275,9 +377,25 @@ function ProdutosContent() {
                     </span>
                   </div>
 
-                  {product.description && (
-                    <p className="text-gray-200 leading-relaxed mb-4">{product.description}</p>
-                  )}
+                  {product.description && (() => {
+                    // Itens separados por "+" viram uma lista com ✓ (mais escaneável).
+                    // Sem "+", cai no parágrafo simples de antes.
+                    const items = product.description.split("+").map((s) => s.trim()).filter(Boolean)
+                    return items.length > 1 ? (
+                      <ul className="space-y-2 mb-4" onClick={(e) => e.stopPropagation()}>
+                        {items.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-gray-200">
+                            <svg className="w-4 h-4 mt-0.5 shrink-0 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="leading-snug">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-200 leading-relaxed mb-4">{product.description}</p>
+                    )
+                  })()}
 
                   {product.category !== "DIGITAL_PHYSICAL" && product.product_delivery_options.length > 0 && (
                     <p className="text-xs text-gray-300">
@@ -299,6 +417,23 @@ function ProdutosContent() {
               )
             })}
           </div>
+
+          {/* Indicador de carrossel — só no mobile */}
+          {products.length > 1 && (
+            <div className="md:hidden flex items-center justify-center gap-2 mb-8">
+              {products.map((_, i) => (
+                <span key={i} className="rounded-full transition-all" style={{
+                  width: i === activeProduct ? 18 : 7,
+                  height: 7,
+                  background: i === activeProduct ? "#f0196b" : "rgba(255,255,255,0.18)",
+                }} />
+              ))}
+              <span className="text-white/40 text-xs ml-2">
+                {activeProduct + 1} / {products.length} · arraste →
+              </span>
+            </div>
+          )}
+          </>
         ) : null}
 
         {/* ====== STEP 2 — PRAZO DE ENTREGA ====== */}
@@ -405,52 +540,37 @@ function ProdutosContent() {
                     }}
                   >
                     {(savingShipping && isPhysical) ? "Salvando…" :
-                      canContinue ? `Ir para pagamento — R$ ${fmt(finalPrice)} ❤️` :
+                      canContinue ? `Ir para pagamento — R$ ${fmt(displayPrice)} ❤️` :
                       isPhysical ? "Preencha todos os campos" : "Selecione um prazo para continuar"}
                   </button>
                 )}
-                <div className="flex gap-6 text-xs text-gray-500">
-                  <span>🔒 Pagamento seguro</span>
-                  <span>⚡ Confirmação imediata</span>
-                  <span>💬 Suporte via WhatsApp</span>
-                </div>
               </div>
             </div>
 
           </div>{/* fecha px-5 / lg:max-w-5xl */}
         </div>{/* fecha flex-1 overflow-y-auto */}
 
-        {/* RODAPÉ FIXO — mobile */}
-        <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
-             style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
-          <div className="flex items-center justify-between gap-3">
-            <button
-              onClick={step === 1 ? () => router.push("/criar") : () => setStep(1)}
-              className="transition-all px-5 py-3 rounded-2xl text-sm font-medium text-white/60 hover:text-white shrink-0"
-              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
-            >
-              ← Voltar
-            </button>
-            {((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) ? (
-              canContinue ? (
-                <button
-                  onClick={handleContinuar}
-                  disabled={savingShipping && isPhysical}
-                  className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
-                >
-                  {(savingShipping && isPhysical) ? "Salvando…" : "Ir para pagamento ❤️"}
-                </button>
-              ) : (
-                <div className="flex-1 py-3 rounded-2xl text-sm font-semibold text-center text-white/40"
-                     style={{ background: "rgba(255,255,255,0.05)" }}>
-                  {isPhysical ? "Preencha os campos" : "Selecione um prazo"}
-                </div>
-              )
-            ) : <div className="flex-1" />}
+        {/* RODAPÉ FIXO — mobile (só o botão de continuar; Voltar fica no topo) */}
+        {((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) && (
+          <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
+               style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
+            {canContinue ? (
+              <button
+                onClick={handleContinuar}
+                disabled={savingShipping && isPhysical}
+                className="w-full py-3 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
+              >
+                {(savingShipping && isPhysical) ? "Salvando…" : "Ir para pagamento ❤️"}
+              </button>
+            ) : (
+              <div className="w-full py-3 rounded-2xl text-sm font-semibold text-center text-white/40"
+                   style={{ background: "rgba(255,255,255,0.05)" }}>
+                {isPhysical ? "Preencha os campos" : "Selecione um prazo"}
+              </div>
+            )}
           </div>
-          <p className="text-center text-xs text-white/25 mt-2">🔒 Pagamento seguro · ⚡ Confirmação imediata</p>
-        </div>
+        )}
 
         {/* Footer — desktop only */}
         <div className="hidden lg:block">

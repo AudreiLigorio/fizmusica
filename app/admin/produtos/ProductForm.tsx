@@ -175,10 +175,11 @@ export default function ProductForm({ product }: { product: Product }) {
       )}
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Descrição</label>
+        <p className="text-[11px] text-gray-600 mb-1.5">Separe os itens com <span className="text-pink-400 font-mono">+</span> para virarem uma lista com ✓ na loja. Ex.: <span className="text-gray-500">Música exclusiva + 5 fotos + Player 50 dias</span></p>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          rows={2}
+          rows={3}
           className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500 resize-none"
         />
       </div>

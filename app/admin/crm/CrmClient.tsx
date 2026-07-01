@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { dbTime } from "@/lib/date"
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -34,7 +35,7 @@ type Feedback = {
 // ── Helpers ────────────────────────────────────────────────────
 
 function timeAgo(dateStr: string) {
-  const diff = Date.now() - new Date(dateStr).getTime()
+  const diff = Date.now() - dbTime(dateStr)
   const h = Math.floor(diff / 3600000)
   const d = Math.floor(h / 24)
   if (d > 0) return `há ${d} dia${d > 1 ? "s" : ""}`

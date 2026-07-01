@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { detectDuplicatePayment } from "@/lib/paymentAlerts"
+import { validateCoupon } from "@/lib/coupons"
 
 const client = new MercadoPago({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -10,9 +11,9 @@ const client = new MercadoPago({
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { orderId, productId, productName, price, deliveryOptionId, paymentMethod, formData } = body
+    const { orderId, productId, deliveryOptionId, paymentMethod, formData, couponCode } = body
 
-    if (!orderId || !price || !formData) {
+    if (!orderId || !productId || !formData) {
       return NextResponse.json({ success: false, error: "Dados incompletos." }, { status: 400 })
     }
 
@@ -28,6 +29,18 @@ export async function POST(req: Request) {
     if (!order) {
       return NextResponse.json({ success: false, error: "Pedido não encontrado." }, { status: 404 })
     }
+
+    // Fix 1: preço vem SEMPRE do banco (não confia no client)
+    const { data: product } = await supabase
+      .from("products")
+      .select("name, price")
+      .eq("id", productId)
+      .single()
+
+    if (!product) {
+      return NextResponse.json({ success: false, error: "Produto inválido." }, { status: 400 })
+    }
+    const productName = product.name
 
     // Anti-duplo-pagamento: se o pedido já está pago, não cria nova cobrança no MP
     if (order.paymentStatus === "PAID") {
@@ -62,12 +75,47 @@ export async function POST(req: Request) {
       if (delivery) priceExtra = Number(delivery.price_extra)
     }
 
-    const finalPrice = Number(price) + priceExtra
+    const grossPrice = Number(product.price) + priceExtra
+
+    // Aplica cupom (validado no servidor — não confia no client)
+    let finalPrice = grossPrice
+    let appliedCouponCode: string | null = null
+    let discountAmount = 0
+    if (couponCode) {
+      const cv = await validateCoupon(supabase, String(couponCode), grossPrice)
+      if (cv.valid) {
+        finalPrice        = cv.finalTotal
+        discountAmount    = cv.discount
+        appliedCouponCode = cv.coupon.code
+      }
+    }
+
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "")
     const isLocalhost = baseUrl.includes("localhost")
 
-    // Cria o pagamento diretamente via API MP
     const paymentClient = new Payment(client)
+
+    // Fix 2: cancela a cobrança PIX anterior deste pedido (se ainda pendente)
+    // para não deixar dois QRs pagáveis quando o cliente volta e troca o produto.
+    const { data: prevPayment } = await supabase
+      .from("payments")
+      .select("mpPaymentId, status")
+      .eq("orderId", orderId)
+      .maybeSingle()
+
+    if (prevPayment?.mpPaymentId && prevPayment.status !== "PAID") {
+      try {
+        const prev = await paymentClient.get({ id: prevPayment.mpPaymentId })
+        if (prev.status === "pending" || prev.status === "in_process") {
+          await paymentClient.cancel({ id: prevPayment.mpPaymentId })
+          console.log(`[create] PIX anterior ${prevPayment.mpPaymentId} cancelado (troca de produto)`)
+        }
+      } catch (cancelErr: any) {
+        console.warn(`[create] não foi possível cancelar PIX anterior:`, cancelErr?.message ?? cancelErr)
+      }
+    }
+
+    // Cria o pagamento diretamente via API MP
     const result = await paymentClient.create({
       body: {
         ...formData,
@@ -102,6 +150,7 @@ export async function POST(req: Request) {
       .update({
         productId,
         ...(deliveryOptionId ? { deliveryOptionId } : {}),
+        ...(appliedCouponCode ? { coupon_code: appliedCouponCode, discount_amount: discountAmount } : {}),
         updatedAt: new Date().toISOString(),
       })
       .eq("id", orderId)
@@ -116,6 +165,8 @@ export async function POST(req: Request) {
         mpStatus: mpStatus ?? null,
         status: mpStatus === "approved" ? "PAID" : "UNPAID",
         amount: finalPrice,
+        productId,                                    // Fix 3: produto vinculado a ESTA cobrança
+        ...(deliveryOptionId ? { deliveryOptionId } : {}),
         paidAt: mpStatus === "approved" ? new Date().toISOString() : null,
         updatedAt: new Date().toISOString(),
       },
@@ -123,6 +174,17 @@ export async function POST(req: Request) {
     )
 
     if (paymentError) console.error("[create] payment upsert error:", paymentError)
+
+    // Rede de segurança: se o e-mail do checkout (pagador) é válido e DIFERE do
+    // e-mail do pedido, guarda-o para também enviar o link de acesso para lá.
+    // Best-effort: se a coluna ainda não existe (migração 019 pendente), apenas loga.
+    if (isValidEmail(brickEmail) && brickEmail !== orderEmail) {
+      const { error: peErr } = await supabase
+        .from("payments")
+        .update({ payer_email: brickEmail })
+        .eq("orderId", orderId)
+      if (peErr) console.warn("[create] payer_email não salvo (migração 019 pendente?):", peErr.message)
+    }
 
     // Atualiza paymentStatus do pedido se aprovado
     if (mpStatus === "approved") {
@@ -133,6 +195,18 @@ export async function POST(req: Request) {
 
       if (paidError) console.error("[create] paymentStatus update error:", paidError)
       else console.log(`[create] order ${orderId} marcado como PAID`)
+
+      // Incrementa uso do cupom (só quando o pagamento é aprovado)
+      if (appliedCouponCode) {
+        await supabase.rpc("increment_coupon_use", { p_code: appliedCouponCode }).then(
+          () => {},
+          async () => {
+            // fallback sem RPC: leitura + escrita
+            const { data: c } = await supabase.from("coupons").select("id, used_count").ilike("code", appliedCouponCode!).maybeSingle()
+            if (c) await supabase.from("coupons").update({ used_count: (c.used_count ?? 0) + 1 }).eq("id", c.id)
+          }
+        )
+      }
     }
 
     console.log(`[create] payment ${result.id} — status: ${mpStatus} — order: ${orderId}`)

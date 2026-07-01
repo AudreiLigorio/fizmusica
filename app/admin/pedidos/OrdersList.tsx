@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
+import { fmtDateBR, fmtTimeBR, dbTime } from "@/lib/date"
 
 const PAGE_SIZE = 50
 
@@ -33,8 +34,8 @@ const PAYMENT_COLOR: Record<string, string> = {
 }
 
 const code = (id: string) => id.slice(0, 8).toUpperCase()
-const fmtDate = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
-const fmtTime = (d: string) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })
+const fmtDate = fmtDateBR
+const fmtTime = fmtTimeBR
 
 export default function OrdersList({ orders }: { orders: Order[] }) {
   const [search, setSearch]   = useState("")
@@ -58,7 +59,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
       if (status && o.status !== status) return false
       if (payment && o.paymentStatus !== payment) return false
       if (product && (o.products?.name ?? "") !== product) return false
-      const ts = new Date(o.createdAt).getTime()
+      const ts = dbTime(o.createdAt)
       if (fromTs !== null && ts < fromTs) return false
       if (toTs !== null && ts > toTs) return false
       if (term) {

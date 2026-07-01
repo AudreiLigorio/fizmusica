@@ -17,7 +17,12 @@ export async function POST(req: Request) {
 
     const supabase = createServerClient()
     const { data, error } = await supabase.from("wizard_subcategories").insert(parsed.data).select().single()
-    if (error) throw error
+    if (error) {
+      if ((error as { code?: string }).code === "23505") {
+        return NextResponse.json({ error: "Já existe uma subcategoria com esse slug nesta ocasião. Use outro slug." }, { status: 409 })
+      }
+      throw error
+    }
 
     return NextResponse.json({ success: true, data }, { status: 201 })
   } catch (err) {

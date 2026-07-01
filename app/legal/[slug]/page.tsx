@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import LegalBackButton from "./LegalBackButton"
 
 const DOCS: Record<string, { file: string; title: string }> = {
   "termos-de-uso":                { file: "01-termos-de-uso", title: "Termos de Uso" },
@@ -51,7 +52,10 @@ export default async function LegalDoc({ params }: { params: Promise<{ slug: str
     <div className="min-h-screen text-white font-sans" style={{ background: "#07060d" }}>
       <Header showButton={false} />
       <article className="max-w-2xl mx-auto px-5 pt-24 pb-20">
-        <Link href="/legal" className="text-pink-400 hover:text-pink-300 text-sm">← Todos os documentos</Link>
+        <div className="flex items-center gap-5">
+          <LegalBackButton />
+          <Link href="/legal" className="text-white/40 hover:text-white/70 text-sm">Ver todos os documentos</Link>
+        </div>
         <h1 className="text-3xl font-bold mt-3 mb-8">{doc.title}</h1>
 
         <div className="legal-prose text-gray-300 leading-relaxed text-[15px]">

@@ -23,15 +23,15 @@ A Fiz Música oferece serviços de criação de músicas personalizadas produzid
 
 Para utilizar determinados recursos, o usuário deverá fornecer informações verdadeiras e atualizadas. O acesso à área do cliente poderá ocorrer por meio de autenticação por e-mail (Magic Link), login social (Google) ou outro método definido pela plataforma. O usuário é responsável pela segurança do acesso ao seu e-mail e aos links de autenticação recebidos.
 
-## 4. Responsabilidade pelas Informações Enviadas
+## 4. Responsabilidade pelas Informações Enviadas e Uso Aceitável
 
-O cliente declara que possui autorização para fornecer todas as informações, imagens, nomes, histórias e conteúdos enviados à plataforma, sendo integralmente responsável por eles.
+Como a obra é gerada de forma **automatizada** a partir do que o Cliente fornece (ver seção 5), o Cliente é o **único e integral responsável** pelas informações, imagens, nomes, histórias e instruções que insere, declarando possuir autorização para utilizá-las.
 
-É proibido enviar conteúdos: ilícitos, difamatórios, discriminatórios, ofensivos, que violem direitos de terceiros ou que infrinjam direitos autorais. A Fiz Música poderá recusar pedidos que violem estes Termos ou a legislação vigente.
+É **expressamente vedado** utilizar o serviço para: ofender, difamar, caluniar, injuriar ou ameaçar terceiros; criar conteúdo discriminatório, de ódio, sexual envolvendo menores, ou que incite violência ou atos ilícitos; violar direitos autorais, de imagem, de marca ou quaisquer direitos de terceiros; ou para qualquer finalidade ilegal. A Fiz Música poderá recusar pedidos que violem estes Termos ou a legislação vigente.
 
 ## 5. Processo de Criação
 
-A qualidade do resultado final depende diretamente das informações fornecidas pelo cliente. A Fiz Música empregará seus melhores esforços para produzir uma obra personalizada compatível com o briefing recebido, não sendo possível garantir satisfação subjetiva ou expectativas artísticas específicas.
+A obra é produzida de forma **automatizada**, com o auxílio de ferramentas de **inteligência artificial (IA)**, a partir das informações e instruções fornecidas pelo Cliente, **sem revisão prévia obrigatória** de cada conteúdo pela Fiz Música. A qualidade do resultado final depende diretamente das informações fornecidas, não sendo possível garantir satisfação subjetiva ou expectativas artísticas específicas.
 
 ## 6. Prazo de Entrega
 
@@ -69,9 +69,13 @@ A Fiz Música não utilizará músicas, letras, histórias, imagens ou conteúdo
 
 A Fiz Música não se responsabiliza por: informações incorretas fornecidas pelo cliente; uso indevido do link compartilhável por terceiros; indisponibilidades temporárias causadas por serviços de terceiros; expectativas subjetivas relacionadas a gosto artístico ou musical.
 
-## 14. Suspensão ou Cancelamento
+## 14. Suspensão, Bloqueio e Cooperação com Autoridades
 
-A plataforma poderá suspender ou cancelar pedidos que: descumpram estes Termos; envolvam fraude; utilizem informações falsas; possuam conteúdo ilícito ou ofensivo.
+Em caso de violação destes Termos ou da legislação, a Fiz Música poderá, a seu critério e **sem aviso prévio**: remover o conteúdo; suspender ou cancelar pedidos; e **bloquear ou banir** o usuário da plataforma. Quando a violação for comprovada, **não haverá direito a reembolso**.
+
+Aplicam-se especialmente os casos de: descumprimento destes Termos; fraude; uso de informações falsas; e conteúdo ilícito, ofensivo ou que viole direitos de terceiros.
+
+A Fiz Música poderá fornecer os **dados cadastrais do responsável pela compra** a autoridades competentes **mediante requisição legal, ordem judicial, ou para cumprimento de obrigação legal e exercício regular de direitos**, nos termos da Lei nº 13.709/2018 (LGPD) e da Lei nº 12.965/2014 (Marco Civil da Internet). Ao aceitar estes Termos, o usuário declara estar **ciente e de acordo** com esse compartilhamento nas hipóteses descritas.
 
 ## 15. Privacidade e Proteção de Dados
 

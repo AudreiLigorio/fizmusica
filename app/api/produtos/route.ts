@@ -10,7 +10,7 @@ export async function GET() {
       .select(`
         id, name, description, price, imageUrl, featured, category,
         product_delivery_options (
-          id, label, days, price_extra, sort_order
+          id, label, days, price_extra, sort_order, active
         ),
         product_images (
           id, url, is_cover, sort_order
@@ -25,6 +25,7 @@ export async function GET() {
     const products = (data ?? []).map((p) => ({
       ...p,
       product_delivery_options: (p.product_delivery_options ?? [])
+        .filter((o: { active?: boolean }) => o.active !== false)
         .sort((a: { sort_order: number }, b: { sort_order: number }) => a.sort_order - b.sort_order),
       product_images: (p.product_images ?? [])
         .sort((a: { is_cover: boolean; sort_order: number }, b: { is_cover: boolean; sort_order: number }) =>

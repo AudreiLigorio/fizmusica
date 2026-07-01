@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase"
+import { fmtDateBR } from "@/lib/date"
 
 export const dynamic = "force-dynamic"
 
@@ -113,7 +114,7 @@ export default async function AdminDashboard() {
                       {o.paymentStatus}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-500">{new Date(o.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td>
+                  <td className="px-6 py-4 text-gray-500">{fmtDateBR(o.createdAt)}</td>
                 </tr>
               ))}
             </tbody>
@@ -130,7 +131,7 @@ export default async function AdminDashboard() {
               <div className="min-w-0">
                 <p className="font-medium text-sm truncate">{o.nome}</p>
                 <p className="text-gray-500 text-xs truncate mt-0.5">{o.subcategory}</p>
-                <p className="text-gray-600 text-xs mt-1">{new Date(o.createdAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p>
+                <p className="text-gray-600 text-xs mt-1">{fmtDateBR(o.createdAt)}</p>
               </div>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
                 <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${STATUS_COLOR[o.status] ?? ""}`}>

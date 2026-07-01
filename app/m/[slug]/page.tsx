@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: data.musicName
       ? `${data.musicName} — FizMusica ❤️`
       : `Música especial para ${data.personName ?? "você"} — FizMusica`,
-    description: `Uma música personalizada feita com amor pela FizMusica.`,
+    description: `Uma música criada especialmente para você.`,
   }
 }
 
@@ -35,6 +35,9 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
     .single()
 
   if (!music || !music.mp3Url) notFound()
+
+  // Conta o acesso (best-effort, não bloqueia a renderização)
+  supabase.rpc("increment_music_views", { p_slug: slug }).then(() => {}, () => {})
 
   // Busca order separadamente (sem JOIN — FK não configurada)
   const { data: order } = await supabase

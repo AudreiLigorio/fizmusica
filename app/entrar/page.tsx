@@ -16,6 +16,19 @@ export default function EntrarPage() {
     setError("")
     setLoading(true)
 
+    // Verifica se existe algum pedido com esse e-mail antes de enviar o link
+    const check = await fetch("/api/conta/check-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).then((r) => r.json()).catch(() => ({ hasOrders: true }))
+
+    if (!check.hasOrders) {
+      setError("Não encontramos nenhum pedido com esse e-mail. Verifique se digitou corretamente ou acesse pelo e-mail usado na compra.")
+      setLoading(false)
+      return
+    }
+
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -130,8 +143,8 @@ export default function EntrarPage() {
 
               <p className="text-[11px] text-gray-500 text-center mt-4 leading-relaxed">
                 Ao entrar, você concorda com os{" "}
-                <a href="/legal/termos-de-uso" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300">Termos de Uso</a> e a{" "}
-                <a href="/legal/politica-de-privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300">Política de Privacidade</a>.
+                <a href="/legal/termos-de-uso" className="underline hover:text-gray-300">Termos de Uso</a> e a{" "}
+                <a href="/legal/politica-de-privacidade" className="underline hover:text-gray-300">Política de Privacidade</a>.
               </p>
             </>
           )}

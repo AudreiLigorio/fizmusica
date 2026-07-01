@@ -40,6 +40,18 @@ model Order {
   // Token de acesso à página de upload de fotos (sem login), gerado no pagamento
   photo_token String? @unique @db.Uuid
 
+  // Letra com IA (etapa "Sua letra" na área do cliente, pós-pagamento)
+  lyricsDraft          String?   @db.Text
+  lyricsApproved       Boolean   @default(false)
+  lyricsApprovedAt     DateTime?
+  lyricsReprocessCount Int       @default(0)
+
+  // Geração da música via Suno (KIE). sunoStatus: GENERATING|READY|FAILED
+  sunoTaskId String?
+  sunoStatus String?
+  sunoError  String?
+  sunoTracks Json?
+
   // Relações
   answers        OrderAnswer[]
   payment        Payment?
@@ -175,6 +187,20 @@ model WizardSession {
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("wizard_sessions")
+}
+
+// ============================================================
+// CONFIG DO COMPOSITOR IA (prompt editável no admin — linha única)
+// ============================================================
+
+model ComposerSettings {
+  id        Int      @id @default(1)
+  prompt    String   @db.Text
+  model     String   @default("gemini-flash-latest")
+  location  String   @default("global")
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("composer_settings")
 }
 
 // ============================================================

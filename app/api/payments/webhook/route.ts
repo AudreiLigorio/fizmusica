@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { sendNewOrderPaidNotification } from "@/app/services/emailService"
+import { ensurePaymentPrep } from "@/lib/payments/prep"
 import { triggerN8nWebhook } from "@/app/services/orderService"
 import { detectDuplicatePayment } from "@/lib/paymentAlerts"
 
@@ -40,6 +41,14 @@ export async function POST(req: Request) {
       }
     }
 
+    // Produto vinculado a ESTE pagamento (reconciliação Fix 3): o pedido deve
+    // refletir o que foi efetivamente pago, não o que a última tela gravou.
+    const { data: paidRow } = await supabase
+      .from("payments")
+      .select("productId, deliveryOptionId")
+      .eq("mpPaymentId", paymentId)
+      .maybeSingle()
+
     // Salva/atualiza na tabela payments
     await supabase.from("payments").upsert(
       {
@@ -65,11 +74,21 @@ export async function POST(req: Request) {
 
       await supabase
         .from("orders")
-        .update({ paymentStatus: "PAID", updatedAt: new Date().toISOString() })
+        .update({
+          paymentStatus: "PAID",
+          // Reconcilia produto/prazo com o pagamento aprovado (corrige troca via tela velha)
+          ...(paidRow?.productId ? { productId: paidRow.productId } : {}),
+          ...(paidRow?.deliveryOptionId ? { deliveryOptionId: paidRow.deliveryOptionId } : {}),
+          updatedAt: new Date().toISOString(),
+        })
         .eq("id", orderId)
 
       // Notifica admin só se ainda não estava PAID (evita duplo aviso no caso de webhook + confirm)
       if (order && order.paymentStatus !== "PAID") {
+        // Cliente: gera token + e-mail "aprove sua letra" (idempotente; cobre o PIX
+        // confirmado fora da aba, em que o /confirm não roda).
+        await ensurePaymentPrep(supabase, orderId)
+
         await sendNewOrderPaidNotification({
           orderId:      order.id,
           nome:         order.nome,

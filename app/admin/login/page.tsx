@@ -1,10 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 
 export default function AdminLoginPage() {
-  const router = useRouter()
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -21,8 +19,9 @@ export default function AdminLoginPage() {
     })
 
     if (res.ok) {
-      router.push("/admin")
-      router.refresh()
+      // Navegação de página inteira (não SPA): garante que o middleware veja o cookie
+      // recém-setado já na primeira requisição. Mantém "Entrando…" até sair da página.
+      window.location.assign("/admin")
     } else {
       const data = await res.json()
       setError(data.error ?? "Erro ao autenticar.")

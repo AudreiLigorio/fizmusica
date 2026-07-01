@@ -7,14 +7,35 @@ async function getQueue() {
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("orders")
-    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_effect, products(name), product_delivery_options(label, days), order_photos(id, url, is_cover, sort_order), payments(mpPaymentId, mpStatus)")
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_effect, is_revision, parent_order_id, revision_note, lyricsApproved, lyricsDraft, sunoStatus, sunoTracks, sunoError, product_delivery_options(label, days), products(name), order_photos(id, url, is_cover, sort_order), payments(mpPaymentId, mpStatus)")
     .eq("paymentStatus", "PAID")
+    .eq("lyricsApproved", true)
     .neq("status", "ABANDONED")
     .order("createdAt", { ascending: true })
 
   if (error) console.error("[producao] query error:", JSON.stringify(error))
 
-  return { orders: data ?? [], error }
+  const orders = data ?? []
+
+  try {
+    if (orders.length > 0) {
+      const ids = orders.map((o: any) => o.id)
+      const { data: revisions } = await supabase
+        .from("revision_requests")
+        .select("orderId, message, status, createdAt")
+        .in("orderId", ids)
+        .eq("status", "PENDING")
+
+      const revByOrder: Record<string, any> = {}
+      for (const r of revisions ?? []) revByOrder[r.orderId] = r
+
+      return { orders: orders.map((o: any) => ({ ...o, revision: revByOrder[o.id] ?? null })), error }
+    }
+  } catch (e) {
+    console.error("[producao] revision query error:", e)
+  }
+
+  return { orders, error }
 }
 
 export default async function AdminProducao() {

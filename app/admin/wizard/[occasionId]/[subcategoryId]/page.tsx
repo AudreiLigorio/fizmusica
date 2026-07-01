@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import QuestionActions from "./QuestionActions"
+import Reorder from "../../Reorder"
 
 export const dynamic = "force-dynamic"
 
@@ -46,6 +47,7 @@ export default async function AdminWizardPerguntas({
       <div className="space-y-2">
         {questions.map((q, i) => (
           <div key={q.id} className="bg-black/40 border border-white/10 rounded-2xl px-6 py-4 flex items-center gap-4">
+            <Reorder items={questions} index={i} endpointBase="/api/admin/wizard/perguntas" />
             <span className="text-gray-600 text-sm w-6 text-right">{i + 1}</span>
             <div className="flex-1">
               <p className="text-sm font-medium">{q.label}</p>

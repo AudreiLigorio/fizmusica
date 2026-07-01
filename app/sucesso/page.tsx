@@ -6,10 +6,12 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
+import JourneyProgress from "../components/JourneyProgress"
 
 type OrderData = {
   id: string
   nome: string
+  email?: string | null
   paymentStatus: string
   status: string
   photo_token?: string | null
@@ -45,6 +47,11 @@ function SucessoContent() {
       const d = await fetch(`/api/orders/${orderId}`).then((r) => r.json())
       setOrder(d.order ?? null)
       setLoading(false)
+
+      // 3. Limpa sessão do wizard — pagamento confirmado, pedido encerrado
+      if (d.order?.paymentStatus === "PAID") {
+        localStorage.removeItem("fizmusica_session_id")
+      }
     }
 
     confirm().catch(() => setLoading(false))
@@ -63,8 +70,11 @@ function SucessoContent() {
 
       <div className="relative z-10">
         <Header showButton={false} />
+        <div className="border-b border-white/[0.06] px-4 pt-16">
+          <JourneyProgress current={5} />
+        </div>
 
-        <div className="flex items-center justify-center px-5 pt-20 pb-16 min-h-screen">
+        <div className="flex items-center justify-center px-5 pt-10 pb-16 min-h-screen">
           <div className="max-w-xl w-full">
 
             {loading ? (
@@ -95,7 +105,7 @@ function SucessoContent() {
                   </h1>
                   <p className="text-gray-300 leading-relaxed mt-3">
                     {isPaid
-                      ? "Pagamento confirmado! Já vamos iniciar a produção da sua música."
+                      ? "Pagamento confirmado! Falta só um passo seu para começarmos a produzir."
                       : isPending
                       ? "Seu pagamento está sendo processado. Assim que confirmar, começamos."
                       : "Seu pedido foi recebido e já vamos preparar sua música personalizada."}
@@ -105,7 +115,7 @@ function SucessoContent() {
                 {/* ⭐ DESTAQUE: ENTRAR NA ÁREA (acompanhar + fotos) */}
                 {isPaid && (
                   <button
-                    onClick={() => router.push(`/minha-musica?orderId=${orderId ?? ""}`)}
+                    onClick={() => router.push(order?.photo_token ? `/preparar/${order.photo_token}` : `/minha-musica?orderId=${orderId ?? ""}`)}
                     className="group block w-full text-left rounded-3xl p-7 mb-4 relative overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.99]"
                     style={{
                       background: "linear-gradient(135deg, #f0196b 0%, #d946ef 55%, #a855f7 100%)",
@@ -115,21 +125,34 @@ function SucessoContent() {
                     <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
                     <div className="relative">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">🎧</span>
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">Sua área</span>
+                        <span className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">✍️</span>
+                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">Falta 1 passo</span>
                       </div>
-                      <h2 className="text-2xl font-bold leading-tight mb-1">Acompanhe seu pedido e adicione fotos</h2>
+                      <h2 className="text-2xl font-bold leading-tight mb-1">Aprove sua letra para começarmos</h2>
                       <p className="text-white/85 text-sm leading-relaxed mb-5">
-                        Entre na sua área (com Google ou e-mail, <strong>sem senha</strong>) para acompanhar o status, <strong>adicionar até 5 fotos</strong> ao player e ouvir sua música quando ficar pronta.
+                        Sua música <strong>só entra em produção depois que você aprovar a letra</strong> na sua área (entra com Google ou e-mail, <strong>sem senha</strong>). Lá você também adiciona <strong>fotos</strong> ao player.
                       </p>
                       <span className="inline-flex items-center gap-2 bg-white text-pink-600 font-bold text-sm px-6 py-3 rounded-2xl shadow-lg group-hover:gap-3 transition-all">
-                        🎧 Entrar na minha área
+                        ✍️ Aprovar minha letra agora
                         <span className="transition-transform group-hover:translate-x-0.5">→</span>
                       </span>
                     </div>
                   </button>
                 )}
 
+
+                {/* E-MAIL DE ACESSO + dica de vínculo (evita "não recebi o link") */}
+                {isPaid && order?.email && (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 mb-4">
+                    <p className="text-sm text-white/80">
+                      📧 Enviamos o link de acesso para <strong className="text-white">{order.email}</strong>.
+                    </p>
+                    <p className="text-xs text-white/45 leading-relaxed mt-1">
+                      O login é sem senha (Google ou e-mail). Se você entrar com um e-mail diferente,
+                      é só usar <strong className="text-white/70">“Vincular pedido”</strong> na sua área para conectar tudo.
+                    </p>
+                  </div>
+                )}
 
                 {/* PRODUTO + VALOR */}
                 {order?.products && (
@@ -147,16 +170,28 @@ function SucessoContent() {
                   </div>
                 )}
 
+                {/* NÚMERO DO PEDIDO — logo abaixo do produto */}
+                {orderId && (
+                  <div className="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-center text-xs text-gray-400 mb-4 font-mono">
+                    Pedido <span className="text-pink-300">#{orderId.slice(0, 8).toUpperCase()}</span>
+                  </div>
+                )}
+
                 {/* PRÓXIMOS PASSOS */}
                 <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 mb-4">
                   <h2 className="text-base font-bold mb-3">Próximos passos ❤️</h2>
                   <p className="text-gray-300 text-sm leading-relaxed">
                     {isPaid
-                      ? <>Sua música ficará <strong className="text-white">disponível na sua área</strong> para acompanhamento (pelo link acima) e será <strong className="text-white">enviada para o seu e-mail</strong> assim que ficar pronta.</>
+                      ? <>Na sua área você vai <strong className="text-white">aprovar a letra</strong>, <strong className="text-white">adicionar fotos</strong> e liberar a produção. Assim que aprovar, geramos a música e avisamos por <strong className="text-white">e-mail</strong> quando ficar pronta.</>
                       : isPending
-                      ? "Seu pagamento está em análise. Assim que confirmado, iniciamos a produção e você poderá acompanhar tudo na sua área."
-                      : "Recebemos seu pedido. Assim que o pagamento for confirmado, iniciamos a produção e você poderá acompanhar na sua área."}
+                      ? "Seu pagamento está em análise. Assim que confirmado, você poderá aprovar a letra e liberar a produção na sua área."
+                      : "Recebemos seu pedido. Assim que o pagamento for confirmado, você poderá aprovar a letra e liberar a produção na sua área."}
                   </p>
+                  {isPaid && (
+                    <p className="text-yellow-200 text-sm leading-relaxed mt-3 bg-yellow-500/10 border border-yellow-500/25 rounded-xl px-4 py-3">
+                      ⚠️ <strong>Importante:</strong> sua música <strong>não começa sozinha</strong>. Ela só entra em produção depois que você aprovar a letra na sua área — leva só um minutinho.
+                    </p>
+                  )}
                   <p className="text-gray-300 text-sm leading-relaxed mt-3">
                     Qualquer dúvida, fale com a gente no{" "}
                     <a href="https://wa.me/5511996645678" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">WhatsApp</a>{" "}
@@ -165,42 +200,17 @@ function SucessoContent() {
                   </p>
                 </div>
 
-                {/* NÚMERO DO PEDIDO */}
-                {orderId && (
-                  <div className="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-center text-xs text-gray-400 mb-4 font-mono">
-                    Pedido <span className="text-pink-300">#{orderId.slice(0, 8).toUpperCase()}</span>
-                  </div>
-                )}
-
-                {/* WHATSAPP */}
-                <a
-                  href="https://wa.me/5511996645678"
-                  target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-3 w-full bg-green-500 hover:bg-green-600 transition-all py-4 rounded-2xl text-lg font-bold shadow-2xl shadow-green-500/20"
-                >
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
-                  Falar no WhatsApp
-                </a>
-
-                {/* LINKS */}
-                <div className="text-center mt-5 space-y-2">
-                  {orderId && !isPaid && (
+                {/* LINKS — acompanhar pedido (só quando ainda não pago) */}
+                {orderId && !isPaid && (
+                  <div className="text-center mt-5">
                     <button
                       onClick={() => router.push(`/minha-musica?orderId=${orderId}`)}
                       className="block w-full text-pink-400 hover:text-pink-300 transition-colors text-sm font-medium"
                     >
                       🎵 Acompanhar meu pedido
                     </button>
-                  )}
-                  <button
-                    onClick={() => router.push("/")}
-                    className="block w-full text-gray-500 hover:text-gray-300 transition-colors text-sm"
-                  >
-                    ← Voltar para a página inicial
-                  </button>
-                </div>
+                  </div>
+                )}
               </>
             )}
 

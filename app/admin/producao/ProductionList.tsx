@@ -3,8 +3,10 @@
 import { useMemo, useState, useEffect } from "react"
 import Link from "next/link"
 import MusicaForm from "./MusicaForm"
+import SunoPanel from "./SunoPanel"
 import PhotoEffectSelect from "./PhotoEffectSelect"
 import OrderPhotosAdmin from "./OrderPhotosAdmin"
+import { fmtDateBR, fmtTimeBR, dbTime } from "@/lib/date"
 
 type Order = {
   id: string
@@ -19,9 +21,18 @@ type Order = {
   status: string
   createdAt: string
   photo_effect?: string | null
+  lyricsApproved?: boolean
+  lyricsDraft?: string | null
   products?: { name: string } | null
   product_delivery_options?: { label: string; days: number } | null
   payments?: { mpPaymentId: string | null; mpStatus: string | null }[] | null
+  revision?: { message: string; status: string; createdAt: string } | null
+  is_revision?: boolean
+  parent_order_id?: string | null
+  revision_note?: string | null
+  sunoStatus?: string | null
+  sunoError?: string | null
+  sunoTracks?: { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }[] | null
 }
 
 const PAGE_SIZE = 30
@@ -36,8 +47,8 @@ const STATUS_LABEL: Record<string, string> = {
 }
 
 const code = (id: string) => id.slice(0, 8).toUpperCase()
-const fmtDate = (d: string) => new Date(d).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
-const fmtTime = (d: string) => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })
+const fmtDate = fmtDateBR
+const fmtTime = fmtTimeBR
 
 export default function ProductionList({ orders }: { orders: Order[] }) {
   const [search, setSearch]   = useState("")
@@ -46,6 +57,24 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
   const [from, setFrom]       = useState("")
   const [to, setTo]           = useState("")
   const [page, setPage]       = useState(0)
+  const [accepting, setAccepting] = useState<string | null>(null)
+
+  async function handleAcceptRevision(orderId: string) {
+    setAccepting(orderId)
+    try {
+      const res = await fetch(`/api/admin/producao/${orderId}/aceitar-revisao`, { method: "POST" })
+      const data = await res.json()
+      if (data.ok) {
+        window.location.reload()
+      } else {
+        alert(`Erro: ${data.error}`)
+        setAccepting(null)
+      }
+    } catch (err: any) {
+      alert(`Erro de conexão: ${err?.message ?? "tente novamente"}`)
+      setAccepting(null)
+    }
+  }
 
   const counts = useMemo(() => ({
     PENDING:       orders.filter((o) => o.status === "PENDING").length,
@@ -65,7 +94,7 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
     return orders.filter((o) => {
       if (status && o.status !== status) return false
       if (product && (o.products?.name ?? "") !== product) return false
-      const ts = new Date(o.createdAt).getTime()
+      const ts = dbTime(o.createdAt)
       if (fromTs !== null && ts < fromTs) return false
       if (toTs !== null && ts > toTs) return false
       if (term) {
@@ -151,12 +180,50 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
           {paged.map((order) => {
             const mpId = order.payments?.[0]?.mpPaymentId ?? null
             return (
-              <div key={order.id} className="bg-black/40 border border-white/10 rounded-2xl p-6">
+              <div key={order.id} className={`rounded-2xl p-6 border ${
+                order.revision
+                  ? "bg-orange-500/5 border-orange-500/40 shadow-[0_0_24px_rgba(249,115,22,0.1)]"
+                  : order.is_revision
+                    ? "bg-fuchsia-500/5 border-fuchsia-500/40 shadow-[0_0_24px_rgba(217,70,239,0.1)]"
+                    : "bg-black/40 border-white/10"
+              }`}>
+                {/* Banner: revisão solicitada pelo cliente (pedido original) */}
+                {order.revision && (
+                  <div className="mb-4 rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-orange-400 font-bold text-xs uppercase tracking-wider">⚠️ Revisão solicitada pelo cliente</span>
+                      <span className="text-orange-400/50 text-xs">{fmtDateBR(order.revision.createdAt)} {fmtTimeBR(order.revision.createdAt)}</span>
+                    </div>
+                    <p className="text-orange-200 text-sm leading-relaxed whitespace-pre-wrap mb-3">{order.revision.message}</p>
+                    <button
+                      onClick={() => handleAcceptRevision(order.id)}
+                      disabled={accepting === order.id}
+                      className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      {accepting === order.id ? (
+                        <>
+                          <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Criando pedido de revisão…
+                        </>
+                      ) : "✅ Aceitar revisão (criar novo pedido)"}
+                    </button>
+                  </div>
+                )}
+                {/* Banner: este é um pedido de revisão (duplicado) */}
+                {order.is_revision && order.revision_note && (
+                  <div className="mb-4 rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-4 py-3">
+                    <p className="text-fuchsia-300 font-bold text-xs uppercase tracking-wider mb-1">✏️ Pedido de revisão — ajustar conforme pedido do cliente</p>
+                    <p className="text-fuchsia-200 text-sm leading-relaxed whitespace-pre-wrap">{order.revision_note}</p>
+                  </div>
+                )}
                 {/* Cabeçalho */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <p className="font-semibold">{order.nome}</p>
+                      {order.is_revision && (
+                        <span className="text-xs px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
+                      )}
                       <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLOR[order.status] ?? ""}`}>
                         {STATUS_LABEL[order.status] ?? order.status}
                       </span>
@@ -210,8 +277,11 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
                   <PhotoEffectSelect orderId={order.id} current={order.photo_effect ?? "slide"} />
                 </div>
 
+                {/* Música por IA (Suno) — gerar/ouvir/liberar versões */}
+                <SunoPanel orderId={order.id} status={order.sunoStatus ?? null} tracks={order.sunoTracks ?? null} error={order.sunoError ?? null} />
+
                 {/* Form de produção */}
-                <MusicaForm orderId={order.id} honoreeName={order.honoreeName ?? null} nome={order.nome} />
+                <MusicaForm orderId={order.id} honoreeName={order.honoreeName ?? null} nome={order.nome} lyricsDraft={order.lyricsDraft ?? null} />
               </div>
             )
           })}
