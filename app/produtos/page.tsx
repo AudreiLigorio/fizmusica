@@ -339,10 +339,13 @@ function ProdutosContent() {
               const icon = PRODUCT_ICONS[product.name] ?? "🎶"
 
               return (
-                <button
+                <div
                   key={product.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => handleSelectProduct(product)}
-                  className={`snap-center shrink-0 w-[82%] sm:w-[55%] md:w-full relative text-left rounded-[32px] p-6 sm:p-8 border transition-all duration-200 ${
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectProduct(product) } }}
+                  className={`snap-center shrink-0 w-[82%] sm:w-[55%] md:w-full relative text-left rounded-[32px] p-6 sm:p-8 border transition-all duration-200 cursor-pointer ${
                     isSelected
                       ? "border-pink-500 bg-pink-500/10 shadow-[0_0_40px_rgba(236,72,153,0.15)]"
                       : "border-white/10 bg-white/5 hover:border-pink-500/40"
@@ -413,7 +416,7 @@ function ProdutosContent() {
                     </div>
                     {isSelected ? "Selecionado" : "Selecionar"}
                   </div>
-                </button>
+                </div>
               )
             })}
           </div>

@@ -5,11 +5,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Desliga o cache do cliente para o painel sempre mostrar dados frescos
+  // Desliga o cache do cliente das rotas dinâmicas para o painel sempre mostrar
+  // dados frescos. (static tem mínimo de 30s no Next 16, então não o forçamos.)
   experimental: {
     staleTimes: {
       dynamic: 0,
-      static: 0,
     },
   },
 };
