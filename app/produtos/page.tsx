@@ -400,12 +400,6 @@ function ProdutosContent() {
                     )
                   })()}
 
-                  {product.category !== "DIGITAL_PHYSICAL" && product.product_delivery_options.length > 0 && (
-                    <p className="text-xs text-gray-300">
-                      ⏱ Prazo: a partir de {product.product_delivery_options[0].days} dias úteis
-                    </p>
-                  )}
-
                   <div className={`mt-5 flex items-center gap-2 text-sm font-medium transition-all ${isSelected ? "text-pink-400" : "text-gray-300"}`}>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-pink-500 bg-pink-500" : "border-white/20"}`}>
                       {isSelected && (
