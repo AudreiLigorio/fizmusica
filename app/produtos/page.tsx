@@ -237,7 +237,7 @@ function ProdutosContent() {
         {/* Mobile: Voltar no topo */}
         <div className="lg:hidden shrink-0 px-5 pt-4 pb-1">
           <button
-            onClick={step === 1 ? () => router.push("/criar") : () => setStep(1)}
+            onClick={step === 1 ? () => router.push(orderId ? `/criar?orderId=${orderId}&editar=1` : "/criar?editar=1") : () => setStep(1)}
             className="text-white/50 text-sm hover:text-white transition-colors"
           >
             ← Voltar
@@ -524,7 +524,7 @@ function ProdutosContent() {
             {/* RODAPÉ — desktop */}
             <div className="hidden lg:flex justify-between items-center mt-10">
               <button
-                onClick={step === 1 ? () => router.push("/criar?editar=1") : () => setStep(1)}
+                onClick={step === 1 ? () => router.push(orderId ? `/criar?orderId=${orderId}&editar=1` : "/criar?editar=1") : () => setStep(1)}
                 className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
               >

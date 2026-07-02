@@ -137,6 +137,40 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
 
   // Ao montar: verifica ?sessao=UUID (link de e-mail de recuperação) ou localStorage
   useEffect(() => {
+    // Fluxo e-mail → pagamento → "Voltar": vem com ?orderId. Reconstrói o wizard a
+    // partir do PEDIDO (não do localStorage, que some no in-app browser do mobile).
+    const urlOrderId = searchParams.get("orderId")
+    if (urlOrderId) {
+      fetch(`/api/orders/${urlOrderId}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json) => {
+          const o = json?.order
+          if (!o) return
+          // Pedido já pago não deve ser reeditado no wizard — leva pra área do cliente.
+          if (o.paymentStatus === "PAID") { router.replace(`/minha-musica?orderId=${urlOrderId}`); return }
+          resumeSessionData({
+            selectedContext:     o.context ?? "",
+            selectedSubcategory: o.subcategory ?? "",
+            answers: Object.fromEntries(
+              (o.order_answers ?? [])
+                .sort((a: { position: number }, b: { position: number }) => a.position - b.position)
+                .map((a: { question: string; answer: string }) => [a.question, a.answer])
+            ),
+            musicalStyle: o.musicalStyle ?? "",
+            voiceType:    o.voiceType ?? "",
+            emotion:      o.emotion ?? "",
+            nome:         o.nome ?? "",
+            email:        o.email ?? "",
+            whatsapp:     o.whatsapp ?? "",
+            honoreeName:  o.honoreeName ?? "",
+            leadCaptured: true,
+            orderId:      urlOrderId,
+          }, 5)
+        })
+        .catch(() => {})
+      return
+    }
+
     const urlSessionId = searchParams.get("sessao")
     const storedId = urlSessionId ?? localStorage.getItem(SESSION_KEY)
     if (!storedId) return
