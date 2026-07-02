@@ -502,7 +502,7 @@ function buildRecoveryEmail(data: RecoveryEmailData, siteUrl: string): string {
         ? "E pra te dar aquele empurrãozinho, separamos um desconto especial:"
         : "Sua música personalizada pode ser criada especialmente para você — basta finalizar o pedido!") +
       couponBlock,
-    button: { text: "🎵 Finalizar meu pedido", url: `${siteUrl}/criar` },
+    button: { text: "🎵 Finalizar meu pedido", url: `${siteUrl}/criar?orderId=${data.orderId}` },
     note: { text: `Dúvidas? Fale com a gente no WhatsApp: <a href="https://wa.me/5511996645678" style="color:#ec4899;font-weight:bold">📱 (11) 99664-5678</a>` },
   })
 }

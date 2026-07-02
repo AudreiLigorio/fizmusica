@@ -7,6 +7,7 @@ import Header from "./components/Header"
 import Footer from "./components/Footer"
 import ExperienceVideo from "./components/ExperienceVideo"
 import FaqHome from "./components/FaqHome"
+import ResumeMusicBanner from "./components/ResumeMusicBanner"
 
 const DEMOS = [
   { id: "namoro",    src: "/namoro_2anos.mp3",          title: "Homenagem Dia dos Namorados", meta: "Maria Eduarda · Sertanejo romântico · 3:12", emoji: "💖" },
@@ -167,6 +168,7 @@ export default function Home() {
   return (
     <div className="noise min-h-screen text-white overflow-x-hidden" style={{ backgroundColor: "#07060d", ...bodyFont }}>
       <Header />
+      <ResumeMusicBanner />
 
       {/* ═══════════════════════════════════════════
           HERO
