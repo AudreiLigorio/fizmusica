@@ -24,7 +24,15 @@ export default function MicButton({ onResult, onInterim, size = "md", className 
   const recRef = useRef<InstanceType<typeof SpeechRecognition> | null>(null)
 
   useEffect(() => {
-    setSupported(!!(window.SpeechRecognition || window.webkitSpeechRecognition))
+    const hasSR = !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+    // No iOS (iPhone/iPad), o webkitSpeechRecognition EXISTE mas é instável — trava
+    // após o 1º uso (ex.: 2ª pergunta), fica "gravando" sem gerar texto. Melhor não
+    // oferecer. (iPadOS 13+ se identifica como Mac → checa touch para distinguir.)
+    const ua = navigator.userAgent
+    const isIOS =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+    setSupported(hasSR && !isIOS)
   }, [])
 
   const stop = useCallback(() => {
