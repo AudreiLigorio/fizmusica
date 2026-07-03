@@ -864,10 +864,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             <div>
               <div className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
-                  Selecione a ocasião que deseja homenagear
+                  Qual história você quer transformar em música?
                 </h1>
                 <p className="text-white/55 text-sm">
-                  Escolha abaixo e preencha o questionário guiado.
+                  Escolha uma ocasião ou comece do zero. Dá pra criar música pra celebrar, agradecer, emocionar, surpreender, se declarar ou só contar uma história.
                 </p>
               </div>
 
@@ -879,13 +879,15 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       <div className="h-2.5 w-56 bg-white/5 rounded" />
                     </div>
                   ))
-                ) : occasions.map((occasion) => (
+                ) : [...occasions].sort((a, b) => Number(b.label === "Composição Livre") - Number(a.label === "Composição Livre")).map((occasion) => (
                   <div
                     key={occasion.id}
                     className={`border rounded-2xl overflow-hidden transition-all ${
                       selectedContext === occasion.label
                         ? "border-pink-500 bg-pink-500/5"
-                        : "border-white/10 bg-black/20"
+                        : occasion.label === "Composição Livre"
+                          ? "border-pink-500/40 bg-pink-500/[0.04]"
+                          : "border-white/10 bg-black/20"
                     }`}
                   >
                     <button
@@ -901,6 +903,11 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                           {occasion.emoji} {occasion.label}
                         </h2>
                         {selectedContext !== occasion.label && (
+                          occasion.label === "Composição Livre" ? (
+                            <p className="text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
+                              Qualquer ideia, do seu jeito — uma declaração, um pedido de desculpas, uma piada interna, a história do seu pet…
+                            </p>
+                          ) : (
                           <div className="flex flex-wrap gap-1.5">
                             {occasion.wizard_subcategories.slice(0, 4).map((sub, i) => (
                               <span key={sub.id} className="text-[10px]"
@@ -915,6 +922,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                               </span>
                             )}
                           </div>
+                          )
                         )}
                       </div>
                       <span className="text-lg text-pink-500 shrink-0 mt-0.5">
