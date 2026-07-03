@@ -44,15 +44,21 @@ export async function GET(req: NextRequest) {
   }
 
   const orders = (data ?? []).map((o) => {
-    const { order_photos, order_answers, ...rest } = o as typeof o & {
+    // Renomeia sunoStatus/sunoTracks para nomes neutros na resposta — a chave literal
+    // do JSON é o único lugar onde "suno" chegaria ao cliente (via DevTools/Network).
+    const { order_photos, order_answers, sunoStatus, sunoTracks, ...rest } = o as typeof o & {
       order_photos?: { id: string }[]
       order_answers?: { question: string; answer: string; position: number }[]
+      sunoStatus?: string | null
+      sunoTracks?: unknown
     }
     const answers = Array.isArray(order_answers)
       ? [...order_answers].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
       : []
     return {
       ...rest,
+      musicStatus: sunoStatus ?? null,
+      tracks:      sunoTracks ?? null,
       slug:       musicByOrder[o.id]?.slug ?? null,
       mp3Url:     musicByOrder[o.id]?.mp3Url ?? null,
       photoCount: Array.isArray(order_photos) ? order_photos.length : 0,

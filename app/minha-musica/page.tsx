@@ -41,8 +41,8 @@ type Order = {
   lyricsApproved?: boolean
   photoCount?: number
   productId?: string | null
-  sunoStatus?: string | null
-  sunoTracks?: { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }[] | null
+  musicStatus?: string | null
+  tracks?: { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }[] | null
   publication_consent?: boolean
   answers?: { question: string; answer: string; position: number }[]
   shipping_name?: string | null
@@ -345,13 +345,13 @@ function MinhaMusicaContent() {
                 const approved   = !!order.lyricsApproved
                 // Escolha pendente: versões liberadas e o cliente ainda não escolheu (sem slug).
                 // Tem prioridade — aparece mesmo se algo marcou o pedido como entregue.
-                const escolhaPendente = paid && order.sunoStatus === "RELEASED" && !order.slug && (order.sunoTracks?.length ?? 0) > 0
+                const escolhaPendente = paid && order.musicStatus === "RELEASED" && !order.slug && (order.tracks?.length ?? 0) > 0
                 const inProdPhase = paid && approved && !delivered && !escolhaPendente   // na fila / sendo produzida
                 const hasRevision      = !!order.revision
                 const revisionPending  = order.revision?.status === "PENDING"
                 const termAccepted     = !!order.sharing_term_accepted_at
                 // Música pronta com as 2 versões: experiência própria de "o que fazer agora".
-                const musicaPronta     = delivered && !!order.slug && termAccepted && (order.sunoTracks?.length ?? 0) > 1
+                const musicaPronta     = delivered && !!order.slug && termAccepted && (order.tracks?.length ?? 0) > 1
 
                 return (
                   <div key={order.id} className={`relative overflow-hidden rounded-2xl border transition-all ${
@@ -443,7 +443,7 @@ function MinhaMusicaContent() {
 
                       {/* ESCOLHER VERSÃO — versões liberadas, cliente ainda não escolheu */}
                       {escolhaPendente && (
-                        <EscolherVersao orderId={order.id} tracks={order.sunoTracks!} onChosen={loadOrders} />
+                        <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={loadOrders} />
                       )}
 
                       {/* EM PRODUÇÃO (sem ação): card pulsante. Fotos já foram travadas na aprovação. */}
@@ -518,7 +518,7 @@ function MinhaMusicaContent() {
                       {musicaPronta && (
                         <VersoesEntregues
                           orderId={order.id}
-                          tracks={order.sunoTracks!}
+                          tracks={order.tracks!}
                           principalUrl={order.mp3Url ?? null}
                           slug={order.slug ?? null}
                           photoToken={order.photo_token}
@@ -532,7 +532,7 @@ function MinhaMusicaContent() {
 
                       {/* Ações — entrega legada (1 música, sem versões do Suno) */}
                       <div className="flex flex-wrap gap-2">
-                        {delivered && order.slug && termAccepted && (order.sunoTracks?.length ?? 0) <= 1 && (
+                        {delivered && order.slug && termAccepted && (order.tracks?.length ?? 0) <= 1 && (
                           <>
                             <a
                               href={`/m/${order.slug}`}
@@ -562,7 +562,7 @@ function MinhaMusicaContent() {
                         )}
                         {/* Entrega legada (1 faixa): o "não gostei" fica aqui. No fluxo de
                             2 versões o botão vive dentro do passo Principal (VersoesEntregues). */}
-                        {delivered && termAccepted && !hasRevision && !order.is_revision && (order.sunoTracks?.length ?? 0) <= 1 && (
+                        {delivered && termAccepted && !hasRevision && !order.is_revision && (order.tracks?.length ?? 0) <= 1 && (
                           <button
                             onClick={() => router.push(`/contestar/${order.id}`)}
                             className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"
