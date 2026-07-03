@@ -208,7 +208,7 @@ export default function VersoesEntregues({
           )}
           <div className="grid grid-cols-3 gap-2">
             {principalUrl && (
-              <a href={principalUrl} download
+              <a href={`/api/orders/${orderId}/musica/download`} download
                 className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
                 <span className="text-base leading-none">⬇</span> Baixar
               </a>

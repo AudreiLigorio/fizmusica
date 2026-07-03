@@ -543,7 +543,7 @@ function MinhaMusicaContent() {
                             </a>
                             {order.mp3Url && (
                               <a
-                                href={order.mp3Url}
+                                href={`/api/orders/${order.id}/musica/download`}
                                 download
                                 className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-white/15 text-white/80 hover:bg-white/5 transition-colors"
                               >
