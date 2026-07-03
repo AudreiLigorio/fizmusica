@@ -523,7 +523,9 @@ function MinhaMusicaContent() {
                           slug={order.slug ?? null}
                           photoToken={order.photo_token}
                           photoCount={order.photoCount}
+                          canRevise={!hasRevision && !order.is_revision}
                           onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
+                          onNaoGostei={() => router.push(`/contestar/${order.id}`)}
                           onChanged={loadOrders}
                         />
                       )}
@@ -558,7 +560,9 @@ function MinhaMusicaContent() {
                             )}
                           </>
                         )}
-                        {delivered && termAccepted && !hasRevision && !order.is_revision && (
+                        {/* Entrega legada (1 faixa): o "não gostei" fica aqui. No fluxo de
+                            2 versões o botão vive dentro do passo Principal (VersoesEntregues). */}
+                        {delivered && termAccepted && !hasRevision && !order.is_revision && (order.sunoTracks?.length ?? 0) <= 1 && (
                           <button
                             onClick={() => router.push(`/contestar/${order.id}`)}
                             className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"

@@ -18,7 +18,9 @@ export default function VersoesEntregues({
   slug,
   photoToken,
   photoCount,
+  canRevise,
   onQr,
+  onNaoGostei,
   onChanged,
 }: {
   orderId: string
@@ -27,7 +29,9 @@ export default function VersoesEntregues({
   slug: string | null
   photoToken?: string | null
   photoCount?: number
+  canRevise?: boolean
   onQr: () => void
+  onNaoGostei?: () => void
   onChanged?: () => void
 }) {
   const [busy, setBusy] = useState<string | null>(null)
@@ -111,7 +115,7 @@ export default function VersoesEntregues({
       {/* ── PRINCIPAL ── só a versão escolhida; "ouvir a outra" revela pra trocar */}
       {active === "principal" && (
         <div className="space-y-3">
-          <p className="text-white/60 text-xs">Esta é a versão <strong className="text-white/80">principal</strong> — é ela que vai no QR Code e no link. Você pode trocar quando quiser.</p>
+          <p className="text-white/60 text-xs">Ouça as versões e escolha a <strong className="text-white/80">principal</strong> — é ela que vai no QR Code e no link. {canRevise ? "Se nenhuma te agradou, você pode pedir para refazer." : "Você pode trocar quando quiser."}</p>
 
           <div className="rounded-xl border border-pink-500/40 bg-pink-500/[0.06] p-4">
             <div className="flex items-center justify-between mb-2">
@@ -144,6 +148,18 @@ export default function VersoesEntregues({
               <audio controls src={t.audioUrl} className="w-full h-10" />
             </div>
           ))}
+
+          {/* Saída de emergência: não gostou de nenhuma → pedir revisão. Discreto,
+              separado, e só enquanto a revisão está disponível. */}
+          {canRevise && onNaoGostei && (
+            <div className="border-t border-white/[0.08] pt-3 mt-1">
+              <button onClick={onNaoGostei}
+                className="w-full text-center py-2.5 rounded-lg text-xs font-medium border border-white/12 text-white/45 hover:border-red-500/30 hover:text-red-400 transition-colors">
+                Não gostei de nenhuma — pedir para refazer →
+              </button>
+              <p className="text-center text-[10px] text-white/30 mt-1.5">Você tem 1 revisão inclusa</p>
+            </div>
+          )}
         </div>
       )}
 
