@@ -904,14 +904,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                         </h2>
                         {selectedContext !== occasion.label && (
                           occasion.label === "Composição Livre" ? (
-                            <p className="text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
+                            <p className="text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
                               Componha a sua música do jeito que quiser, ou escreva uma história para virar música.
                             </p>
                           ) : (
                           <div className="flex flex-wrap gap-1.5">
                             {occasion.wizard_subcategories.slice(0, 4).map((sub, i) => (
                               <span key={sub.id} className="text-[10px]"
-                                style={{ color: "rgba(255,255,255,0.35)" }}>
+                                style={{ color: "rgba(255,255,255,0.55)" }}>
                                 {sub.label}{i < Math.min(3, occasion.wizard_subcategories.length - 1) ? " ·" : ""}
                               </span>
                             ))}
