@@ -173,7 +173,7 @@ export default function PublicMusicPlayer({
             {music.personName}
           </span>
         ) : (
-          music.musicName ?? "Sua música"
+          music.musicName?.trim() || "Sua música"
         )}
       </h1>
       {music.musicName && music.personName && (
@@ -397,7 +397,7 @@ export default function PublicMusicPlayer({
           <div className="shrink-0 flex items-center gap-3 px-6 py-2">
             {playButton}
             <div className="min-w-0 flex-1">
-              <p className="font-bold truncate">{music.personName ?? music.musicName ?? "Sua música"}</p>
+              <p className="font-bold truncate">{music.personName?.trim() || music.musicName?.trim() || "Sua música"}</p>
               {music.musicName && music.personName && (
                 <p className="text-xs text-gray-400 italic truncate">"{music.musicName}"</p>
               )}

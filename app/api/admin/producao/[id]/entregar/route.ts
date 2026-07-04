@@ -89,7 +89,7 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
   const emailResult = await sendMusicDeliveryEmail({
     nome:      order.nome,
     email:     order.email,
-    musicName: music.musicName ?? "Sua música",
+    musicName: music.musicName?.trim() || "Sua música",
     areaUrl,
     orderId:   id,
     loyaltyCoupon: promo ? { code: promo.code, label: couponLabel(promo) } : null,

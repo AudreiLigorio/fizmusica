@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     const order = fb.orders as any
     if (!order?.email) { results.push({ id: fb.id, ok: false, error: "sem email" }); continue }
 
-    const musicName = (order.generated_music as any)?.[0]?.musicName ?? "sua música"
+    const musicName = (order.generated_music as any)?.[0]?.musicName?.trim() || "sua música"
     const feedbackUrl = `${baseUrl}/feedback/${fb.token}`
 
     const r = await sendFeedbackRequestEmail({
