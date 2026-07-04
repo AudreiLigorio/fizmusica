@@ -97,7 +97,7 @@ export default function ContestarPage() {
               <p className="text-orange-300 text-xs font-semibold uppercase tracking-wider mb-2">⚠️ Atenção antes de enviar</p>
               <ul className="text-orange-200/70 text-sm space-y-1.5 leading-relaxed">
                 <li>• A melodia e letra atuais <strong className="text-orange-200">serão descartadas</strong> — a música será refeita do zero.</li>
-                <li>• Esta é sua <strong className="text-orange-200">última revisão gratuita</strong>. Novas alterações após isso terão custo adicional.</li>
+                <li>• Esta é sua <strong className="text-orange-200">última revisão gratuita</strong>. Para novas alterações depois disso, será necessário fazer um novo pedido.</li>
                 <li>• Acrescente apenas o que <strong className="text-orange-200">ficou faltando</strong>: estilo, voz, detalhes da história, tom emocional.</li>
               </ul>
             </div>
