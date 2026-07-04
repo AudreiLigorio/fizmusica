@@ -867,7 +867,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   Qual história você quer transformar em música?
                 </h1>
                 <p className="text-white/55 text-sm">
-                  Escolha uma ocasião ou comece do zero. Dá pra criar música pra celebrar, agradecer, emocionar, surpreender, se declarar ou só contar uma história.
+                  Você pode criar música para celebrar, homenagear, emocionar, surpreender, se declarar, compor ou só contar uma história para transformar em música.
                 </p>
               </div>
 
@@ -905,7 +905,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                         {selectedContext !== occasion.label && (
                           occasion.label === "Composição Livre" ? (
                             <p className="text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.4)" }}>
-                              Qualquer ideia, do seu jeito — uma declaração, um pedido de desculpas, uma piada interna, a história do seu pet…
+                              Componha a sua música do jeito que quiser, ou escreva uma história para virar música.
                             </p>
                           ) : (
                           <div className="flex flex-wrap gap-1.5">
