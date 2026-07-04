@@ -119,8 +119,8 @@ export default function PreparoFlow({
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/[0.08] p-4">
           <p className="text-yellow-300 font-semibold text-sm mb-1">⚠️ Tudo pronto para gerar</p>
           <p className="text-yellow-400/70 text-xs leading-relaxed mb-3">
-            Ao aprovar, a música é <strong>gerada automaticamente</strong> e, a partir daí,
-            <strong> nada poderá ser alterado — nem a letra, nem as fotos</strong>.
+            Ao aprovar, a música é <strong>gerada automaticamente</strong> e a <strong>letra fica travada</strong>.
+            As fotos você ainda pode ajustar depois, inclusive com a música pronta.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
