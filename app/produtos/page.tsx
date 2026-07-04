@@ -27,6 +27,7 @@ type Product = {
   imageUrl: string | null
   featured: boolean
   category?: string | null
+  photo_limit?: number | null
   product_delivery_options: DeliveryOption[]
   product_images: ProductImage[]
 }
@@ -381,9 +382,15 @@ function ProdutosContent() {
                   </div>
 
                   {product.description && (() => {
+                    // {fotos} no texto vira o número real (products.photo_limit) — editar
+                    // o limite no admin já reflete aqui, sem precisar reescrever a descrição.
+                    const withPhotoCount = product.description.replace(
+                      /\{fotos\}/gi,
+                      String(product.photo_limit ?? "")
+                    )
                     // Itens separados por "+" viram uma lista com ✓ (mais escaneável).
                     // Sem "+", cai no parágrafo simples de antes.
-                    const items = product.description.split("+").map((s) => s.trim()).filter(Boolean)
+                    const items = withPhotoCount.split("+").map((s) => s.trim()).filter(Boolean)
                     return items.length > 1 ? (
                       <ul className="space-y-2 mb-4" onClick={(e) => e.stopPropagation()}>
                         {items.map((item, i) => (
@@ -396,7 +403,7 @@ function ProdutosContent() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-gray-200 leading-relaxed mb-4">{product.description}</p>
+                      <p className="text-gray-200 leading-relaxed mb-4">{withPhotoCount}</p>
                     )
                   })()}
 

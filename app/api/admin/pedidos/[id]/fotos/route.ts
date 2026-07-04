@@ -3,11 +3,11 @@ import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
 import { validateImageUpload } from "@/lib/imageValidation"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
+import { getPhotoLimit, countClientPhotos } from "@/lib/photoLimit"
 
 export const dynamic = "force-dynamic"
 
 const BUCKET = "order-photos"
-const MAX_PHOTOS = 5
 
 type Params = Promise<{ id: string }>
 
@@ -34,14 +34,17 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
   const { id } = await params
   const supabase = createServerClient()
 
-  const { data } = await supabase
-    .from("order_photos")
-    .select("id, url, is_cover, sort_order")
-    .eq("orderId", id)
-    .order("is_cover", { ascending: false })
-    .order("sort_order", { ascending: true })
+  const [{ data }, photoLimit] = await Promise.all([
+    supabase
+      .from("order_photos")
+      .select("id, url, is_cover, sort_order")
+      .eq("orderId", id)
+      .order("is_cover", { ascending: false })
+      .order("sort_order", { ascending: true }),
+    getPhotoLimit(supabase, id),
+  ])
 
-  return NextResponse.json({ photos: data ?? [] })
+  return NextResponse.json({ photos: data ?? [], photoLimit })
 }
 
 // ── POST: admin envia uma foto (mesma validação defensiva) ──
@@ -57,12 +60,12 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   const v = await validateImageUpload(file)
   if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
-  const { count } = await supabase
-    .from("order_photos")
-    .select("id", { count: "exact", head: true })
-    .eq("orderId", id)
-  if ((count ?? 0) >= MAX_PHOTOS) {
-    return NextResponse.json({ error: `Máximo de ${MAX_PHOTOS} fotos atingido.` }, { status: 400 })
+  const [limit, count] = await Promise.all([
+    getPhotoLimit(supabase, id),
+    countClientPhotos(supabase, id),
+  ])
+  if (count >= limit) {
+    return NextResponse.json({ error: `Máximo de ${limit} fotos atingido.` }, { status: 400 })
   }
 
   await ensureBucket(supabase)

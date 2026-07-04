@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
 import { validateImageUpload } from "@/lib/imageValidation"
+import { getPhotoLimit, countClientPhotos } from "@/lib/photoLimit"
 
 export const dynamic = "force-dynamic"
 
-const BUCKET     = "order-photos"
-const MAX_PHOTOS = 5
+const BUCKET = "order-photos"
 
 type Params = Promise<{ id: string }>
 
@@ -60,12 +60,12 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   const v = await validateImageUpload(file)
   if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
-  const { count } = await supabase
-    .from("order_photos")
-    .select("id", { count: "exact", head: true })
-    .eq("orderId", order.id)
-  if ((count ?? 0) >= MAX_PHOTOS) {
-    return NextResponse.json({ error: `Máximo de ${MAX_PHOTOS} fotos atingido.` }, { status: 400 })
+  const [limit, count] = await Promise.all([
+    getPhotoLimit(supabase, order.id),
+    countClientPhotos(supabase, order.id),
+  ])
+  if (count >= limit) {
+    return NextResponse.json({ error: `Máximo de ${limit} fotos atingido.` }, { status: 400 })
   }
 
   await ensureBucket(supabase)
@@ -85,8 +85,8 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
       orderId:      order.id,
       url:          publicUrl,
       storage_path: path,
-      is_cover:     (count ?? 0) === 0,
-      sort_order:   count ?? 0,
+      is_cover:     count === 0,
+      sort_order:   count,
     })
     .select("id, url, is_cover, sort_order")
     .single()

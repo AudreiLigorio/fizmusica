@@ -10,7 +10,7 @@ import PhotoCropModal from "@/app/components/PhotoCropModal"
 
 type Photo = { id: string; url: string; is_cover: boolean; sort_order: number }
 
-const MAX = 5
+const DEFAULT_MAX = 10 // usado só até a resposta do servidor chegar com o limite real
 
 // ─── Página principal ─────────────────────────────────────────────────────────
 export default function FotosPage() {
@@ -19,6 +19,7 @@ export default function FotosPage() {
 
   const [nome, setNome]         = useState("")
   const [photos, setPhotos]     = useState<Photo[]>([])
+  const [max, setMax]           = useState(DEFAULT_MAX)
   const [loading, setLoading]   = useState(true)
   const [invalid, setInvalid]   = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -32,6 +33,7 @@ export default function FotosPage() {
     const data = await res.json()
     setNome(data.nome ?? "")
     setPhotos(data.photos ?? [])
+    if (data.photoLimit) setMax(data.photoLimit)
     setLoading(false)
   }
 
@@ -48,7 +50,7 @@ export default function FotosPage() {
   async function upload(blob: Blob) {
     setError(null)
     setCropSrc(null)
-    if (photos.length >= MAX) { setError(`Máximo de ${MAX} fotos.`); return }
+    if (photos.length >= max) { setError(`Máximo de ${max} fotos.`); return }
     setUploading(true)
     const fd = new FormData()
     fd.append("file", blob, "foto.jpg")
@@ -113,7 +115,7 @@ export default function FotosPage() {
                 {nome ? `${nome.split(" ")[0]}, ` : ""}adicione suas fotos
               </h1>
               <p className="text-white/55 text-sm leading-relaxed">
-                Até {MAX} fotos que vão aparecer junto da sua música. Toque em uma para defini-la como capa.
+                Adicione fotos que vão aparecer junto da sua música (a quantidade varia de acordo com o produto escolhido). Toque em uma para defini-la como capa.
                 <br />É opcional — você pode voltar por este link quando quiser.
               </p>
               <p className="text-white/35 text-[11px] leading-relaxed mt-3 max-w-sm mx-auto">
@@ -176,7 +178,7 @@ export default function FotosPage() {
               ))}
 
               {/* Slot adicionar */}
-              {photos.length < MAX && (
+              {photos.length < max && (
                 <div className="flex flex-col gap-1.5">
                   <button
                     onClick={() => fileRef.current?.click()}
@@ -194,14 +196,14 @@ export default function FotosPage() {
                     )}
                   </button>
                   <span className="w-full text-center text-[11px] text-white/20 py-1.5">
-                    {MAX - photos.length} restante{MAX - photos.length !== 1 ? "s" : ""}
+                    {max - photos.length} restante{max - photos.length !== 1 ? "s" : ""}
                   </span>
                 </div>
               )}
             </div>
 
             <p className="text-center text-xs text-white/30 mb-2">
-              {photos.length}/{MAX} fotos · JPG, PNG ou WebP · até 8 MB cada
+              {photos.length}/{max} fotos · JPG, PNG ou WebP · até 8 MB cada
             </p>
 
             <input

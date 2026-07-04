@@ -8,7 +8,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from("products")
       .select(`
-        id, name, description, price, imageUrl, featured, category,
+        id, name, description, price, imageUrl, featured, category, photo_limit,
         product_delivery_options (
           id, label, days, price_extra, sort_order, active
         ),

@@ -7,6 +7,7 @@ import Footer from "../components/Footer"
 import MicButton from "../components/MicButton"
 import JourneyProgress from "../components/JourneyProgress"
 import type { CreateOrderDTO } from "@/app/types/order"
+import { DEFAULT_PHOTO_LIMIT } from "@/lib/photoLimit"
 
 // Detecta erros de digitação comuns no domínio do e-mail e sugere correção
 const COMMON_EMAIL_DOMAINS = [
@@ -586,7 +587,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !orderId) return
-    if (photos.length >= 5) { setPhotoError("Máximo de 5 fotos atingido."); return }
+    if (photos.length >= DEFAULT_PHOTO_LIMIT) { setPhotoError(`Máximo de ${DEFAULT_PHOTO_LIMIT} fotos atingido.`); return }
 
     setUploadingPhoto(true)
     setPhotoError("")
@@ -1250,7 +1251,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               <div className="mb-6 text-center">
                 <h1 className="text-2xl font-bold mb-2">Adicione fotos à sua música</h1>
                 <p className="text-white/50 text-sm max-w-sm mx-auto">
-                  As fotos aparecem no player enquanto a música toca. Você pode adicionar até 5.
+                  As fotos aparecem no player enquanto a música toca. A quantidade que você pode adicionar varia de acordo com o produto escolhido.
                 </p>
               </div>
 
@@ -1269,7 +1270,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   </div>
                 ))}
 
-                {photos.length < 5 && (
+                {photos.length < DEFAULT_PHOTO_LIMIT && (
                   <label className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
                     uploadingPhoto ? "border-pink-500/30 opacity-50 cursor-not-allowed" : "border-white/15 hover:border-pink-500/40"
                   }`}>

@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react"
 
 type Photo = { id: string; url: string; is_cover: boolean; sort_order: number }
 
-const MAX = 5
-
 export default function OrderPhotosAdmin({ orderId }: { orderId: string }) {
   const [photos, setPhotos]     = useState<Photo[]>([])
+  const [max, setMax]           = useState(10) // ajustado assim que a API responder
   const [loading, setLoading]   = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError]       = useState<string | null>(null)
@@ -17,6 +16,7 @@ export default function OrderPhotosAdmin({ orderId }: { orderId: string }) {
     const res = await fetch(`/api/admin/pedidos/${orderId}/fotos`)
     const data = await res.json()
     setPhotos(data.photos ?? [])
+    if (data.photoLimit) setMax(data.photoLimit)
     setLoading(false)
   }
 
@@ -24,7 +24,7 @@ export default function OrderPhotosAdmin({ orderId }: { orderId: string }) {
 
   async function upload(file: File) {
     setError(null)
-    if (photos.length >= MAX) { setError(`Máximo de ${MAX} fotos.`); return }
+    if (photos.length >= max) { setError(`Máximo de ${max} fotos.`); return }
     setUploading(true)
     const fd = new FormData()
     fd.append("file", file)
@@ -59,7 +59,7 @@ export default function OrderPhotosAdmin({ orderId }: { orderId: string }) {
   return (
     <div>
       <p className="text-xs text-gray-500 mb-2">
-        📸 Fotos do cliente ({photos.length}/{MAX})
+        📸 Fotos do cliente ({photos.length}/{max})
         <span className="text-gray-600"> · clique em ★ para definir a capa</span>
       </p>
 
@@ -94,7 +94,7 @@ export default function OrderPhotosAdmin({ orderId }: { orderId: string }) {
           </div>
         ))}
 
-        {photos.length < MAX && (
+        {photos.length < max && (
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}

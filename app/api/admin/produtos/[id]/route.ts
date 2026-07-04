@@ -14,6 +14,7 @@ const schema = z.object({
   height_cm:   z.number().int().positive().optional().nullable(),
   width_cm:    z.number().int().positive().optional().nullable(),
   length_cm:   z.number().int().positive().optional().nullable(),
+  photo_limit: z.number().int().min(0).optional(),
 })
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -6,6 +6,7 @@ type Photo = { id: string; url: string; is_cover: boolean; sort_order: number }
 
 export default function AdminPhotosManager({ orderId, initial }: { orderId: string; initial: Photo[] }) {
   const [photos, setPhotos]       = useState<Photo[]>(initial)
+  const [max, setMax]             = useState(10) // ajustado assim que a API responder
   const [uploading, setUploading] = useState(false)
   const [error, setError]         = useState("")
   const inputRef = useRef<HTMLInputElement>(null)
@@ -16,14 +17,17 @@ export default function AdminPhotosManager({ orderId, initial }: { orderId: stri
   useEffect(() => {
     fetch(apiBase)
       .then((r) => r.json())
-      .then((d) => { if (Array.isArray(d.photos)) setPhotos(d.photos) })
+      .then((d) => {
+        if (Array.isArray(d.photos)) setPhotos(d.photos)
+        if (d.photoLimit) setMax(d.photoLimit)
+      })
       .catch(() => {})
   }, [apiBase])
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (photos.length >= 5) { setError("Máximo de 5 fotos atingido."); return }
+    if (photos.length >= max) { setError(`Máximo de ${max} fotos atingido.`); return }
 
     setUploading(true)
     setError("")
@@ -57,9 +61,9 @@ export default function AdminPhotosManager({ orderId, initial }: { orderId: stri
     <div className="bg-black/40 border border-white/10 rounded-2xl p-6 mb-8">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
-          Fotos do cliente <span className="text-gray-600 normal-case">({photos.length}/5)</span>
+          Fotos do cliente <span className="text-gray-600 normal-case">({photos.length}/{max})</span>
         </h2>
-        {photos.length < 5 && (
+        {photos.length < max && (
           <label className={`cursor-pointer text-xs px-3 py-1.5 rounded-lg border transition-colors ${
             uploading
               ? "border-white/5 text-gray-600 cursor-not-allowed"

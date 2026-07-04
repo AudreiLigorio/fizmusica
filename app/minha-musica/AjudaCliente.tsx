@@ -13,7 +13,7 @@ const ITENS: { q: string; a: string }[] = [
   },
   {
     q: "Como adiciono fotos? Quantas posso colocar?",
-    a: "No passo de fotos, você adiciona até 5 imagens, que aparecem no player enquanto a música toca (como um clipe). As fotos são opcionais — se não quiser, é só pular. Você pode trocar ou remover as fotos até aprovar a letra; depois disso elas ficam travadas.",
+    a: "No passo de fotos, você adiciona imagens que aparecem no player enquanto a música toca (como um clipe) — a quantidade varia de acordo com o produto escolhido. As fotos são opcionais — se não quiser, é só pular. Você pode trocar ou remover as fotos até aprovar a letra; depois disso elas ficam travadas.",
   },
   {
     q: "A imagem de capa sou eu que escolho?",

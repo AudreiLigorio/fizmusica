@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
 import { validateImageUpload } from "@/lib/imageValidation"
+import { getPhotoLimit, countClientPhotos } from "@/lib/photoLimit"
 
 export const dynamic = "force-dynamic"
 
-const BUCKET    = "order-photos"
-const MAX_PHOTOS = 5
+const BUCKET = "order-photos"
 
 type Params = Promise<{ token: string }>
 
@@ -43,14 +43,17 @@ export async function GET(_req: NextRequest, { params }: { params: Params }) {
   const { supabase, order } = await resolveOrder(token)
   if (!order) return NextResponse.json({ error: "Link inválido." }, { status: 404 })
 
-  const { data } = await supabase
-    .from("order_photos")
-    .select("id, url, is_cover, sort_order")
-    .eq("orderId", order.id)
-    .order("is_cover", { ascending: false })
-    .order("sort_order", { ascending: true })
+  const [{ data }, photoLimit] = await Promise.all([
+    supabase
+      .from("order_photos")
+      .select("id, url, is_cover, sort_order")
+      .eq("orderId", order.id)
+      .order("is_cover", { ascending: false })
+      .order("sort_order", { ascending: true }),
+    getPhotoLimit(supabase, order.id),
+  ])
 
-  return NextResponse.json({ nome: order.nome, photos: data ?? [] })
+  return NextResponse.json({ nome: order.nome, photos: data ?? [], photoLimit })
 }
 
 // ── POST: envia uma foto (validação defensiva completa) ──
@@ -70,13 +73,13 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   const v = await validateImageUpload(file)
   if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
-  // Limite de fotos por pedido
-  const { count } = await supabase
-    .from("order_photos")
-    .select("id", { count: "exact", head: true })
-    .eq("orderId", order.id)
-  if ((count ?? 0) >= MAX_PHOTOS) {
-    return NextResponse.json({ error: `Máximo de ${MAX_PHOTOS} fotos atingido.` }, { status: 400 })
+  // Limite de fotos por pedido (parametrizado pelo produto)
+  const [limit, count] = await Promise.all([
+    getPhotoLimit(supabase, order.id),
+    countClientPhotos(supabase, order.id),
+  ])
+  if (count >= limit) {
+    return NextResponse.json({ error: `Máximo de ${limit} fotos atingido.` }, { status: 400 })
   }
 
   await ensureBucket(supabase)

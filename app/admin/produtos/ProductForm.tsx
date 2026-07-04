@@ -15,6 +15,7 @@ type Product = {
   height_cm?: number | null
   width_cm?: number | null
   length_cm?: number | null
+  photo_limit?: number | null
 }
 
 export default function ProductForm({ product }: { product: Product }) {
@@ -31,6 +32,7 @@ export default function ProductForm({ product }: { product: Product }) {
   const [heightCm, setHeightCm]   = useState(String(product.height_cm ?? ""))
   const [widthCm, setWidthCm]     = useState(String(product.width_cm ?? ""))
   const [lengthCm, setLengthCm]   = useState(String(product.length_cm ?? ""))
+  const [photoLimit, setPhotoLimit] = useState(String(product.photo_limit ?? 10))
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -65,6 +67,7 @@ export default function ProductForm({ product }: { product: Product }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name, description, price: Number(price), active, featured, category,
+          photo_limit: photoLimit ? Number(photoLimit) : 10,
           ...(category === "DIGITAL_PHYSICAL" ? {
             weight_g:  weightG  ? Number(weightG)  : null,
             height_cm: heightCm ? Number(heightCm) : null,
@@ -118,6 +121,16 @@ export default function ProductForm({ product }: { product: Product }) {
             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
           />
         </div>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500 mb-1 block">Limite de fotos</label>
+        <input
+          type="number" min="0"
+          value={photoLimit}
+          onChange={(e) => setPhotoLimit(e.target.value)}
+          className="w-full md:w-40 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:border-pink-500"
+        />
+        <p className="text-[11px] text-gray-600 mt-1">Quantas fotos o cliente pode enviar para este produto. A capa gerada pela IA não conta neste limite.</p>
       </div>
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Categoria do produto</label>
@@ -175,7 +188,7 @@ export default function ProductForm({ product }: { product: Product }) {
       )}
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Descrição</label>
-        <p className="text-[11px] text-gray-600 mb-1.5">Separe os itens com <span className="text-pink-400 font-mono">+</span> para virarem uma lista com ✓ na loja. Ex.: <span className="text-gray-500">Música exclusiva + 5 fotos + Player 50 dias</span></p>
+        <p className="text-[11px] text-gray-600 mb-1.5">Separe os itens com <span className="text-pink-400 font-mono">+</span> para virarem uma lista com ✓ na loja. Use <span className="text-pink-400 font-mono">{"{fotos}"}</span> para inserir o limite de fotos deste produto (definido no campo abaixo) — atualiza sozinho, sem editar o texto. Ex.: <span className="text-gray-500">Música exclusiva + {"{fotos}"} fotos + Player 50 dias</span></p>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}

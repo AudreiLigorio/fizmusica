@@ -25,7 +25,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Posso colocar fotos na música?",
-    a: "Pode! Antes de aprovar, você adiciona até 5 fotos que aparecem no player enquanto a música toca, criando um clipe emocional. As fotos são opcionais, mas deixam a experiência muito mais especial.",
+    a: "Pode! Antes de aprovar, você adiciona fotos que aparecem no player enquanto a música toca, criando um clipe emocional — a quantidade varia de acordo com o produto escolhido. As fotos são opcionais, mas deixam a experiência muito mais especial.",
   },
   {
     q: "Quanto tempo leva para ficar pronta?",

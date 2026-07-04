@@ -5,12 +5,13 @@ import PhotoCropModal from "@/app/components/PhotoCropModal"
 
 type Photo = { id: string; url: string; is_cover: boolean; sort_order: number }
 
-const MAX = 5
+const DEFAULT_MAX = 10 // usado só até a resposta do servidor chegar com o limite real
 
 // Galeria de fotos inline (expansível dentro do card do pedido em /minha-musica).
 // Mesma funcionalidade da página /pedido/[token]/fotos, sem trocar de tela.
 export default function FotosPanel({ token, onChange }: { token: string; onChange?: () => void }) {
   const [photos, setPhotos]     = useState<Photo[]>([])
+  const [max, setMax]           = useState(DEFAULT_MAX) // limite do produto do pedido
   const [loading, setLoading]   = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError]       = useState<string | null>(null)
@@ -22,6 +23,7 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
     if (!res.ok) { setLoading(false); return }
     const data = await res.json()
     setPhotos(data.photos ?? [])
+    if (data.photoLimit) setMax(data.photoLimit)
     setLoading(false)
   }
 
@@ -37,7 +39,7 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
   async function upload(blob: Blob) {
     setError(null)
     setCropSrc(null)
-    if (photos.length >= MAX) { setError(`Máximo de ${MAX} fotos.`); return }
+    if (photos.length >= max) { setError(`Máximo de ${max} fotos.`); return }
     setUploading(true)
     const fd = new FormData()
     fd.append("file", blob, "foto.jpg")
@@ -70,7 +72,7 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
 
       <div className="flex items-center justify-between mb-3">
         <p className="text-pink-200 font-semibold text-sm">📸 Suas fotos <span className="text-white/40 font-normal text-xs">(opcional)</span></p>
-        <span className="text-white/30 text-[11px]">{photos.length}/{MAX}</span>
+        <span className="text-white/30 text-[11px]">{photos.length}/{max}</span>
       </div>
       <p className="text-white/45 text-xs mb-4 leading-relaxed">
         Aparecem no player enquanto a música toca. Ao enviar, você declara ter o
@@ -102,7 +104,7 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
             </div>
           ))}
 
-          {photos.length < MAX && (
+          {photos.length < max && (
             <button
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
