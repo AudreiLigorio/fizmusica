@@ -33,6 +33,10 @@
   70%  { box-shadow: 0 0 0 14px rgba(240,25,107,0); }
   100% { box-shadow: 0 0 0 0   rgba(240,25,107,0); }
 }
+@keyframes icon-ping {
+  0%, 100% { opacity: 0.4; }
+  50%       { opacity: 1; }
+}
 @keyframes waveBar {
   0%, 100% { transform: scaleY(0.4); }
   50%       { transform: scaleY(1); }
@@ -48,6 +52,7 @@
 .animate-fade-in   { animation: fadeIn 1s ease both; }
 .animate-float     { animation: floatY 7s ease-in-out infinite; }
 .animate-pulse-ring { animation: pulse-ring 2s ease-out infinite; }
+.animate-icon-ping { animation: icon-ping 1.6s ease-in-out infinite; }
 .animate-orb       { animation: orb-drift 18s ease-in-out infinite; }
 
 .delay-100 { animation-delay: 0.1s; }
