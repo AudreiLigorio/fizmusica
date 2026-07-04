@@ -959,7 +959,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           {!showLeadCapture && step === 2 && (
             <div>
               <div className="mb-5">
-                <h1 className="text-xl font-bold tracking-tight">Conte sua história</h1>
+                <h1 className="text-xl font-bold tracking-tight">Vamos criar algo inesquecível</h1>
               </div>
 
               <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
