@@ -2,6 +2,7 @@ import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
 import ResolveButton from "./ResolveButton"
 import { fmtDateTimeBR } from "@/lib/date"
+import { getCreditBalance } from "@/lib/suno/client"
 
 export const dynamic = "force-dynamic"
 
@@ -28,8 +29,16 @@ async function getAlerts(): Promise<Alert[]> {
 
 const fmt = fmtDateTimeBR
 
+async function getSunoBalance(): Promise<{ credits: number | null; error: string | null }> {
+  try {
+    return { credits: await getCreditBalance(), error: null }
+  } catch (e) {
+    return { credits: null, error: e instanceof Error ? e.message : "Erro desconhecido" }
+  }
+}
+
 export default async function AdminLogs() {
-  const alerts = await getAlerts()
+  const [alerts, suno] = await Promise.all([getAlerts(), getSunoBalance()])
   const open = alerts.filter((a) => !a.resolved)
 
   return (
@@ -40,6 +49,40 @@ export default async function AdminLogs() {
           ? `${open.length} alerta${open.length !== 1 ? "s" : ""} em aberto`
           : "Nenhum alerta em aberto"} · {alerts.length} no total
       </p>
+
+      <h2 className="text-base font-semibold mb-3">Consumo de APIs</h2>
+      <div className="grid sm:grid-cols-2 gap-3 mb-8">
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">🎵</span>
+            <span className="text-sm font-semibold">Suno (KIE.ai)</span>
+          </div>
+          {suno.credits != null ? (
+            <p className="text-2xl font-bold text-green-400">
+              {suno.credits.toLocaleString("pt-BR")} <span className="text-sm font-normal text-gray-500">créditos disponíveis</span>
+            </p>
+          ) : (
+            <p className="text-sm text-red-400">Erro ao consultar: {suno.error}</p>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">✨</span>
+            <span className="text-sm font-semibold">Gemini (Google AI Studio)</span>
+          </div>
+          <p className="text-sm text-gray-500 mb-3">
+            A API do Gemini não tem endpoint de saldo/consumo — precisa consultar direto no painel do Google.
+          </p>
+          <a
+            href="https://aistudio.google.com/usage"
+            target="_blank" rel="noopener noreferrer"
+            className="inline-block text-xs font-semibold bg-pink-500/15 text-pink-300 px-3 py-2 rounded-lg hover:bg-pink-500/25 transition-colors"
+          >
+            Consultar no Google AI Studio ↗
+          </a>
+        </div>
+      </div>
 
       {alerts.length === 0 ? (
         <div className="text-center py-20 text-gray-500">

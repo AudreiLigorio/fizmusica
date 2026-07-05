@@ -66,6 +66,18 @@ export async function getMusicDetails(taskId: string): Promise<any> {
   return res.json()
 }
 
+// Saldo de créditos restantes na conta KIE.ai.
+export async function getCreditBalance(): Promise<number> {
+  const res = await fetch(`${KIE_BASE}/chat/credit`, {
+    headers: { Authorization: `Bearer ${apiKey()}` },
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || data?.code !== 200) {
+    throw new Error(data?.msg || `Falha ao consultar créditos (HTTP ${res.status}).`)
+  }
+  return Number(data.data)
+}
+
 // Letra sincronizada (timestamps por palavra). Usado na Fase 3 (LRC automático).
 export async function getTimestampedLyrics(taskId: string, audioId: string): Promise<unknown> {
   const res = await fetch(`${KIE_BASE}/generate/get-timestamped-lyrics`, {
