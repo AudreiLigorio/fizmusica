@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import { fmtDateTimeBR } from "@/lib/date"
 
 export const dynamic = "force-dynamic"
 import UpdateStatusButton from "./UpdateStatusButton"
@@ -9,11 +10,27 @@ import ReconcilePaymentButton from "./ReconcilePaymentButton"
 import EditEmail from "./EditEmail"
 import AdminPhotosManager from "./AdminPhotosManager"
 
+const EVENT_LABELS: Record<string, { icon: string; label: string }> = {
+  pedido_criado:              { icon: "🆕", label: "Pedido criado" },
+  pagamento_confirmado:       { icon: "💳", label: "Pagamento confirmado" },
+  letra_aprovada:             { icon: "✍️", label: "Letra aprovada" },
+  letra_reprocessada:         { icon: "🔁", label: "Letra reprocessada pela IA" },
+  foto_enviada:               { icon: "📸", label: "Foto enviada" },
+  foto_removida:               { icon: "🗑️", label: "Foto removida" },
+  capa_definida:               { icon: "⭐", label: "Capa definida" },
+  versao_principal_alterada:   { icon: "🎵", label: "Versão principal alterada" },
+  termo_entrega_aceito:        { icon: "🔒", label: "Termo de entrega aceito" },
+  revisao_solicitada:          { icon: "✏️", label: "Revisão solicitada" },
+  revisao_aceita:              { icon: "✅", label: "Revisão aceita" },
+  musica_gerada:               { icon: "🤖", label: "Música gerada pela IA" },
+  musica_liberada:             { icon: "🚀", label: "Música liberada ao cliente" },
+}
+
 async function getOrder(id: string) {
   const supabase = createServerClient()
   const { data } = await supabase
     .from("orders")
-    .select(`*, order_answers(*), payments(*), product_delivery_options(label, days), order_photos(id, url, is_cover, sort_order)`)
+    .select(`*, order_answers(*), payments(*), product_delivery_options(label, days), order_photos(id, url, is_cover, sort_order), order_events(id, type, detail, actor, created_at)`)
     .eq("id", id)
     .single()
   return data
@@ -32,6 +49,10 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
   const photos = [...(order.order_photos ?? [])].sort(
     (a: { is_cover: boolean; sort_order: number }, b: { is_cover: boolean; sort_order: number }) =>
       Number(b.is_cover) - Number(a.is_cover) || a.sort_order - b.sort_order
+  )
+  const events = [...(order.order_events ?? [])].sort(
+    (a: { created_at: string }, b: { created_at: string }) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   )
 
   return (
@@ -162,6 +183,37 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
                 <p className="text-gray-200 leading-relaxed">{a.answer}</p>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Histórico do pedido — timeline de ações, com data/hora, pra apresentar em caso de contestação */}
+      <div className="bg-black/40 border border-white/10 rounded-2xl p-6 mt-6">
+        <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-6">📜 Histórico do pedido</h2>
+        {events.length === 0 ? (
+          <p className="text-gray-600 text-sm">Sem eventos registrados ainda.</p>
+        ) : (
+          <div className="space-y-4">
+            {events.map((e: { id: string; type: string; detail: string | null; actor: string; created_at: string }) => {
+              const meta = EVENT_LABELS[e.type] ?? { icon: "•", label: e.type }
+              return (
+                <div key={e.id} className="flex gap-3">
+                  <span className="text-lg shrink-0">{meta.icon}</span>
+                  <div className="min-w-0 flex-1 border-b border-white/5 pb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-sm">{meta.label}</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                        e.actor === "admin" ? "bg-pink-500/15 text-pink-300" :
+                        e.actor === "system" ? "bg-blue-500/15 text-blue-300" :
+                        "bg-white/10 text-gray-400"
+                      }`}>{e.actor}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5">{fmtDateTimeBR(e.created_at)}</p>
+                    {e.detail && <p className="text-xs text-gray-400 mt-1 leading-relaxed">{e.detail}</p>}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

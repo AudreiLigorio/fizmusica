@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase"
 import { validateImageUpload } from "@/lib/imageValidation"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { getPhotoLimit, countClientPhotos } from "@/lib/photoLimit"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 
@@ -93,6 +94,8 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     return NextResponse.json({ error: "Falha ao registrar a foto." }, { status: 500 })
   }
 
+  await logOrderEvent(supabase, id, "foto_enviada", undefined, "admin")
+
   return NextResponse.json({ photo: img })
 }
 
@@ -110,6 +113,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Params }) {
 
   await supabase.from("order_photos").update({ is_cover: false }).eq("orderId", id)
   await supabase.from("order_photos").update({ is_cover: true }).eq("id", photoId)
+  await logOrderEvent(supabase, id, "capa_definida", undefined, "admin")
   return NextResponse.json({ ok: true })
 }
 
@@ -128,5 +132,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
   await supabase.storage.from(BUCKET).remove([img.storage_path])
   const { error } = await supabase.from("order_photos").delete().eq("id", photoId).eq("orderId", id)
   if (error) return NextResponse.json({ error: "Falha ao remover." }, { status: 500 })
+  await logOrderEvent(supabase, id, "foto_removida", undefined, "admin")
   return NextResponse.json({ ok: true })
 }

@@ -6,6 +6,7 @@ import { getMusicDetails } from "@/lib/suno/client"
 import { ingestSunoResult } from "@/lib/suno/ingest"
 import { handleSunoFailure } from "@/lib/suno/failure"
 import { notifyMusicReady } from "@/lib/suno/notify"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
     const { error } = await supabase.from("orders").update({ sunoStatus: "RELEASED" }).eq("id", id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await logOrderEvent(supabase, id, "musica_liberada", "liberado manualmente pelo admin", "admin")
     await notifyMusicReady(supabase, id)
     return NextResponse.json({ ok: true, status: "RELEASED" })
   }

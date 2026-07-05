@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase"
 import type { CreateOrderDTO, N8nOrderWebhookPayload } from "@/app/types/order"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export async function createOrder(data: CreateOrderDTO) {
   const supabase = createServerClient()
@@ -40,6 +41,8 @@ export async function createOrder(data: CreateOrderDTO) {
   const { error: answersError } = await supabase.from("order_answers").insert(answers)
 
   if (answersError) throw answersError
+
+  await logOrderEvent(supabase, order.id, "pedido_criado", `${data.subcategory} — ${data.context}`)
 
   return {
     id: order.id,

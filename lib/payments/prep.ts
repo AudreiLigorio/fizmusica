@@ -1,5 +1,6 @@
 import type { createServerClient } from "@/lib/supabase"
 import { sendPaymentConfirmedEmail } from "@/app/services/emailService"
+import { logOrderEvent } from "@/lib/orderEvents"
 import crypto from "crypto"
 
 type DB = ReturnType<typeof createServerClient>
@@ -27,6 +28,7 @@ export async function ensurePaymentPrep(supabase: DB, orderId: string): Promise<
   if (!claimed || claimed.length === 0) return // já preparado por outro caminho
 
   const o = claimed[0]
+  await logOrderEvent(supabase, orderId, "pagamento_confirmado")
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
   const prepUrl = `${baseUrl}/preparar/${o.photo_token}`
   const r = await sendPaymentConfirmedEmail({ nome: o.nome, email: o.email, prepUrl })

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { triggerSunoGeneration } from "@/lib/suno/trigger"
 import { getComposerSettings } from "@/lib/composer/settings"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 
@@ -36,6 +37,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     })
     .eq("id", id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await logOrderEvent(supabase, id, "letra_aprovada")
 
   // Modo de produção (Operação): "manual" NÃO dispara o Suno — o pedido entra na
   // fila de Produção esperando o admin gerar/subir. "auto" e "review" disparam.

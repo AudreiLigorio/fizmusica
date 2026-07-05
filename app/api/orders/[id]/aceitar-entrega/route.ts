@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 
@@ -43,5 +44,6 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     .eq("id", id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  await logOrderEvent(supabase, id, "termo_entrega_aceito")
   return NextResponse.json({ ok: true })
 }

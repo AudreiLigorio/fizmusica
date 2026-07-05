@@ -4,6 +4,7 @@ import { getComposerSettings } from "@/lib/composer/settings"
 import { buildOrderContext } from "@/lib/composer/context"
 import { generateLyricsStream } from "@/lib/composer/gemini"
 import { REPROCESS_LIMIT } from "../route"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           .from("orders")
           .update({ lyricsDraft: fullText.trim(), lyricsReprocessCount: novoUso })
           .eq("id", id)
+        await logOrderEvent(supabase, id, "letra_reprocessada", pedido, "cliente")
         // Envia metadados de revisão ao final como marcador especial
         controller.enqueue(enc.encode(`\x00META:${JSON.stringify({ reprocessUsed: novoUso, reprocessLeft: Math.max(0, REPROCESS_LIMIT - novoUso) })}`))
       } catch (e) {

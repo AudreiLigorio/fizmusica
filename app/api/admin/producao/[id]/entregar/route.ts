@@ -3,6 +3,7 @@ import { createServerClient } from "@/lib/supabase"
 import { sendMusicDeliveryEmail } from "@/app/services/emailService"
 import { triggerN8nWebhook } from "@/app/services/orderService"
 import { getActivePublicCoupon, couponLabel } from "@/lib/coupons"
+import { logOrderEvent } from "@/lib/orderEvents"
 import crypto from "crypto"
 
 type Params = Promise<{ id: string }>
@@ -149,6 +150,7 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
     .from("orders")
     .update({ status: "DELIVERED", updatedAt: new Date().toISOString() })
     .eq("id", id)
+  await logOrderEvent(supabase, id, "musica_liberada", "entrega manual (fluxo legado)", "admin")
 
   return NextResponse.json({
     ok: true,

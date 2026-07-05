@@ -3,6 +3,7 @@ import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
 import { validateImageUpload } from "@/lib/imageValidation"
 import { getPhotoLimit, countClientPhotos } from "@/lib/photoLimit"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 
@@ -96,6 +97,8 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     return NextResponse.json({ error: "Falha ao registrar a foto." }, { status: 500 })
   }
 
+  await logOrderEvent(supabase, order.id, "foto_enviada")
+
   return NextResponse.json({ photo: img })
 }
 
@@ -117,6 +120,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
 
   await supabase.storage.from(BUCKET).remove([(img as any).storage_path])
   await supabase.from("order_photos").delete().eq("id", photoId).eq("orderId", order.id)
+  await logOrderEvent(supabase, order.id, "foto_removida")
 
   return NextResponse.json({ ok: true })
 }

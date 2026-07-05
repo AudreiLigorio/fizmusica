@@ -3,6 +3,7 @@ import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
 import { getTimestampedLyrics } from "@/lib/suno/client"
 import { alignedWordsToLrc } from "@/lib/suno/lrc"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -61,6 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (gmErr) return NextResponse.json({ error: gmErr.message }, { status: 500 })
 
   await supabase.from("orders").update({ status: "DELIVERED", updatedAt: new Date().toISOString() }).eq("id", id)
+  await logOrderEvent(supabase, id, "versao_principal_alterada", `versão ${audioId}${track.duration ? ` (${Math.round(track.duration)}s)` : ""}`)
 
   // Cria o pedido de feedback (uma vez) — o cron envia o e-mail após o prazo.
   // Idempotente: trocar a versão principal depois não duplica.

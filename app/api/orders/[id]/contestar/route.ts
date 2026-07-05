@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase"
 import { sendRevisionRequestedNotification } from "@/app/services/emailService"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { acceptRevision } from "@/lib/revision"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 export const dynamic = "force-dynamic"
 
@@ -69,6 +70,8 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  await logOrderEvent(supabase, id, "revisao_solicitada", message.trim())
+
   // Original permanece DELIVERED (v1 preservada). O badge no cliente é guiado
   // pela existência da revisão pendente.
 
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   const { revisionAutoAccept } = await getComposerSettings()
   let autoAccepted = false
   if (revisionAutoAccept) {
-    const result = await acceptRevision(supabase, id)
+    const result = await acceptRevision(supabase, id, "system")
     autoAccepted = result.ok
     if (!result.ok) console.error("[contestar] aceite automático falhou:", result.error)
   }

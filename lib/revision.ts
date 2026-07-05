@@ -1,4 +1,5 @@
 import type { createServerClient } from "@/lib/supabase"
+import { logOrderEvent } from "@/lib/orderEvents"
 import crypto from "crypto"
 
 type DB = ReturnType<typeof createServerClient>
@@ -10,6 +11,7 @@ type DB = ReturnType<typeof createServerClient>
 export async function acceptRevision(
   supabase: DB,
   orderId: string,
+  actor: "admin" | "system" = "admin",
 ): Promise<{ ok: boolean; newOrderId?: string; error?: string }> {
   const { data: original, error: origErr } = await supabase
     .from("orders")
@@ -106,6 +108,7 @@ export async function acceptRevision(
   }
 
   await supabase.from("revision_requests").update({ status: "ACCEPTED" }).eq("id", revision.id)
+  await logOrderEvent(supabase, orderId, "revisao_aceita", `novo pedido #${newId.slice(0, 8).toUpperCase()}`, actor)
 
   // A geração NÃO é disparada aqui: o pedido de revisão volta editável para o
   // cliente (letra/fotos) e a regeneração ocorre quando ele aprova novamente,

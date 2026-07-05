@@ -4,6 +4,7 @@ import { alignedWordsToLrc } from "./lrc"
 import { generateMusicTitle } from "@/lib/composer/title"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { notifyMusicReady, notifyAdminReviewNeeded } from "./notify"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 const BUCKET = "songs"
 type DB = ReturnType<typeof createServerClient>
@@ -126,9 +127,14 @@ export async function ingestSunoResult(
   const { sunoMode } = await getComposerSettings()
   const finalStatus = sunoMode === "auto" ? "RELEASED" : "READY"
   await supabase.from("orders").update({ sunoStatus: finalStatus, sunoError: null, sunoTracks: tracks }).eq("id", order.id)
+  await logOrderEvent(supabase, order.id, "musica_gerada", `${tracks.length} versão(ões)`, "system")
   // Modo automático libera direto → avisa o cliente. Modo com aprovação → avisa o ADMIN
   // que há uma música pronta esperando ser liberada.
-  if (finalStatus === "RELEASED") await notifyMusicReady(supabase, order.id)
-  else await notifyAdminReviewNeeded(supabase, order.id)
+  if (finalStatus === "RELEASED") {
+    await logOrderEvent(supabase, order.id, "musica_liberada", "liberação automática", "system")
+    await notifyMusicReady(supabase, order.id)
+  } else {
+    await notifyAdminReviewNeeded(supabase, order.id)
+  }
   return { ok: true, status: "READY" }
 }
