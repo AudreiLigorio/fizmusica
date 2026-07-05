@@ -46,15 +46,19 @@ export async function GET(req: NextRequest) {
   const orders = (data ?? []).map((o) => {
     // Renomeia sunoStatus/sunoTracks para nomes neutros na resposta — a chave literal
     // do JSON é o único lugar onde "suno" chegaria ao cliente (via DevTools/Network).
-    const { order_photos, order_answers, sunoStatus, sunoTracks, ...rest } = o as typeof o & {
+    const { order_photos, order_answers, sunoStatus, sunoTracks, payments, ...rest } = o as typeof o & {
       order_photos?: { id: string }[]
       order_answers?: { question: string; answer: string; position: number }[]
       sunoStatus?: string | null
       sunoTracks?: unknown
+      payments?: unknown
     }
     const answers = Array.isArray(order_answers)
       ? [...order_answers].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
       : []
+    // Supabase embute payments como ARRAY mesmo com orderId único — normaliza pra
+    // objeto único (já inclui entrega+cupom, calculado em /api/payments/create).
+    const paymentRow = Array.isArray(payments) ? (payments[0] ?? null) : (payments ?? null)
     return {
       ...rest,
       musicStatus: sunoStatus ?? null,
@@ -63,6 +67,7 @@ export async function GET(req: NextRequest) {
       mp3Url:     musicByOrder[o.id]?.mp3Url ?? null,
       photoCount: Array.isArray(order_photos) ? order_photos.length : 0,
       answers,
+      payments: paymentRow,
     }
   })
   return NextResponse.json({ orders })

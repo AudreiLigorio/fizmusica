@@ -21,7 +21,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 })
   }
 
-  return NextResponse.json({ order: data })
+  // Supabase embute payments como ARRAY mesmo com orderId único — normaliza pra
+  // objeto único (já inclui entrega+cupom, calculado em /api/payments/create).
+  const { payments, ...rest } = data as typeof data & { payments?: unknown }
+  const paymentRow = Array.isArray(payments) ? (payments[0] ?? null) : (payments ?? null)
+
+  return NextResponse.json({ order: { ...rest, payments: paymentRow } })
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
