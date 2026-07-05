@@ -3,6 +3,16 @@ import Link from "next/link"
 import ResolveButton from "./ResolveButton"
 import { fmtDateTimeBR } from "@/lib/date"
 import { getCreditBalance } from "@/lib/suno/client"
+import { getStorageUsage } from "@/lib/storageUsage"
+
+function fmtBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  const units = ["KB", "MB", "GB", "TB"]
+  let n = bytes / 1024
+  let i = 0
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++ }
+  return `${n.toFixed(1)} ${units[i]}`
+}
 
 export const dynamic = "force-dynamic"
 
@@ -38,7 +48,7 @@ async function getSunoBalance(): Promise<{ credits: number | null; error: string
 }
 
 export default async function AdminLogs() {
-  const [alerts, suno] = await Promise.all([getAlerts(), getSunoBalance()])
+  const [alerts, suno, storage] = await Promise.all([getAlerts(), getSunoBalance(), getStorageUsage()])
   const open = alerts.filter((a) => !a.resolved)
 
   return (
@@ -82,6 +92,44 @@ export default async function AdminLogs() {
             Consultar no Google AI Studio ↗
           </a>
         </div>
+      </div>
+
+      <h2 className="text-base font-semibold mb-3">Armazenamento (Supabase Storage)</h2>
+      <div className="rounded-2xl border border-white/10 bg-black/40 p-5 mb-8">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <span className="text-sm">
+            <span className="font-bold text-lg">{fmtBytes(storage.totalBytes)}</span>{" "}
+            <span className="text-gray-500">de {fmtBytes(storage.limitBytes)} usados ({storage.percent}%)</span>
+          </span>
+          {storage.daysToFull != null && (
+            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+              storage.daysToFull <= 30 ? "bg-red-500/15 text-red-400" :
+              storage.daysToFull <= 90 ? "bg-yellow-500/15 text-yellow-400" :
+              "bg-green-500/15 text-green-400"
+            }`}>
+              {storage.daysToFull === 0 ? "limite já atingido" : `estoura em ~${storage.daysToFull} dias no ritmo atual`}
+            </span>
+          )}
+        </div>
+        <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-4">
+          <div
+            className={`h-full rounded-full transition-all ${storage.percent >= 90 ? "bg-red-500" : storage.percent >= 70 ? "bg-yellow-500" : "bg-gradient-to-r from-pink-500 to-fuchsia-500"}`}
+            style={{ width: `${storage.percent}%` }}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-xs">
+          {storage.buckets.map((b) => (
+            <div key={b.name}>
+              <p className="text-gray-500 mb-0.5">{b.name}</p>
+              <p className="font-medium">{fmtBytes(b.bytes)}</p>
+            </div>
+          ))}
+        </div>
+        {storage.percent >= 80 && (
+          <p className="text-xs text-yellow-400 mt-3">
+            Acima de 80% do plano Free — considere fazer upgrade pro plano Pro (100 GB) antes de estourar.
+          </p>
+        )}
       </div>
 
       {alerts.length === 0 ? (
