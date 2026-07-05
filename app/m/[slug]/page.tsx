@@ -30,11 +30,25 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
 
   const { data: music } = await supabase
     .from("generated_music")
-    .select("id, musicName, personName, lyrics, lyricsLrc, mp3Url, imageUrl, orderId")
+    .select("id, musicName, personName, lyrics, lyricsLrc, mp3Url, imageUrl, orderId, link_disabled_at")
     .eq("slug", slug)
     .single()
 
   if (!music || !music.mp3Url) notFound()
+
+  // Link desativado (prazo expirado, configurável em Admin → Operação): a obra
+  // continua guardada internamente — só o acesso público para de funcionar.
+  if (music.link_disabled_at) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-center px-6" style={{ background: "#07060d" }}>
+        <div>
+          <p className="text-3xl mb-3">🔒</p>
+          <h1 className="text-xl font-bold text-white mb-2">Este link não está mais disponível</h1>
+          <p className="text-white/50 text-sm max-w-sm">O prazo de acesso a esta música expirou.</p>
+        </div>
+      </div>
+    )
+  }
 
   // Conta o acesso (best-effort, não bloqueia a renderização)
   supabase.rpc("increment_music_views", { p_slug: slug }).then(() => {}, () => {})

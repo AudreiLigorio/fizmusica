@@ -25,7 +25,7 @@ export async function GET() {
 
   const { data: logs } = await supabase
     .from("purge_log")
-    .select("ran_at, photos_purged, leads_purged, recovery_sent, errors")
+    .select("ran_at, photos_purged, leads_purged, paid_photos_purged, recovery_sent, errors")
     .order("ran_at", { ascending: false })
     .limit(30)
 
@@ -34,8 +34,9 @@ export async function GET() {
     (acc, l) => ({
       photos: acc.photos + (l.photos_purged ?? 0),
       leads:  acc.leads  + (l.leads_purged ?? 0),
+      paidPhotos: acc.paidPhotos + (l.paid_photos_purged ?? 0),
     }),
-    { photos: 0, leads: 0 }
+    { photos: 0, leads: 0, paidPhotos: 0 }
   )
 
   // Pendentes: pedidos UNPAID não-revisão mais velhos que os cortes
@@ -64,7 +65,7 @@ export async function GET() {
   const musicDays = settings?.music_days ?? 365
   const { data: musicRows } = await supabase
     .from("generated_music")
-    .select("slug, views, publishedAt, createdAt, orderId")
+    .select("slug, views, publishedAt, createdAt, orderId, link_disabled_at")
     .not("slug", "is", null)
     .order("publishedAt", { ascending: false, nullsFirst: false })
     .limit(500)
@@ -72,7 +73,7 @@ export async function GET() {
   const musics = (musicRows ?? []).map((m) => {
     const base = m.publishedAt ?? m.createdAt
     let daysLeft: number | null = null
-    if (musicEnabled && base) {
+    if (musicEnabled && base && !m.link_disabled_at) {
       const elapsed = (Date.now() - new Date(base).getTime()) / 864e5
       daysLeft = Math.max(0, Math.ceil(musicDays - elapsed))
     }
@@ -82,7 +83,8 @@ export async function GET() {
       url: `${baseUrl}/m/${m.slug}`,
       views: m.views ?? 0,
       publishedAt: m.publishedAt ?? m.createdAt,
-      daysLeft, // null = permanente
+      linkDisabled: !!m.link_disabled_at,
+      daysLeft, // null = permanente (ou já desativado)
     }
   })
 

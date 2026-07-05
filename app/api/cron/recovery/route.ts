@@ -85,11 +85,12 @@ export async function GET(req: NextRequest) {
 
   // Registra a execução (relatório + status de saúde da tela Operação)
   await supabase.from("purge_log").insert({
-    photos_purged: purge.photosPurged,
-    leads_purged:  purge.leadsPurged,
-    music_purged:  purge.musicPurged ?? 0,
-    recovery_sent: sent,
-    errors:        purge.errors.length ? purge.errors.join(" | ") : null,
+    photos_purged:      purge.photosPurged,
+    leads_purged:       purge.leadsPurged,
+    music_purged:       purge.musicPurged ?? 0,
+    paid_photos_purged: purge.paidPhotosPurged ?? 0,
+    recovery_sent:      sent,
+    errors:             purge.errors.length ? purge.errors.join(" | ") : null,
   })
 
   return NextResponse.json({
@@ -109,8 +110,9 @@ async function runPurge(supabase: ReturnType<typeof createServerClient>) {
   const errors: string[] = []
   let photosPurged = 0
   let leadsPurged  = 0
+  let paidPhotosPurged = 0
 
-  let musicPurged = 0
+  let musicPurged = 0 // conta LINKS DESATIVADOS (não apaga mais o MP3 — ver migration 023)
 
   // Configuração editável na tela Operação
   const { data: settings } = await supabase
@@ -120,38 +122,56 @@ async function runPurge(supabase: ReturnType<typeof createServerClient>) {
     .maybeSingle()
 
   if (!settings) {
-    return { photosPurged, leadsPurged, musicPurged, errors, skipped: true }
+    return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, errors, skipped: true }
   }
 
-  // Expurgo de MÚSICA entregue (opcional, desligado por padrão) — apaga MP3 + registro
+  // Desativação do LINK PÚBLICO após o prazo (opcional, desligado por padrão).
+  // O MP3/letra NUNCA são apagados — a Fiz Música retém a obra por direito
+  // (Licença de Uso, cláusulas 6+9). Só o acesso público (/m/slug) para de
+  // funcionar. No MESMO evento, as FOTOS do pedido são removidas (dado mais
+  // sensível — imagem de pessoa real; nunca reutilizadas, conforme os Termos).
   if (settings.music_enabled) {
     try {
       const musicCutoff = new Date(Date.now() - settings.music_days * 24 * 60 * 60 * 1000).toISOString()
       const { data: oldMusic } = await supabase
         .from("generated_music")
-        .select("id, slug, mp3Url")
+        .select("id, orderId")
         .not("slug", "is", null)
+        .is("link_disabled_at", null)
         .lt("publishedAt", musicCutoff)
         .limit(100)
 
       for (const m of oldMusic ?? []) {
-        // deriva o caminho no bucket "songs" a partir da URL pública
-        const path = typeof m.mp3Url === "string" ? m.mp3Url.split("/songs/")[1] : null
-        if (path) {
-          const { error: rmErr } = await supabase.storage.from("songs").remove([path])
-          if (rmErr) errors.push(`songs remove: ${rmErr.message}`)
+        const { error: updErr } = await supabase
+          .from("generated_music")
+          .update({ link_disabled_at: new Date().toISOString() })
+          .eq("id", m.id)
+        if (updErr) { errors.push(`generated_music update: ${updErr.message}`); continue }
+        musicPurged++
+
+        // Fotos do pedido: removidas junto (arquivo + registro), capa da IA inclusa.
+        const { data: photos } = await supabase
+          .from("order_photos")
+          .select("id, storage_path")
+          .eq("orderId", m.orderId)
+        if (photos && photos.length > 0) {
+          const paths = photos.map((p) => p.storage_path).filter(Boolean)
+          if (paths.length > 0) {
+            const { error: rmErr } = await supabase.storage.from(BUCKET).remove(paths)
+            if (rmErr) errors.push(`order-photos remove: ${rmErr.message}`)
+          }
+          const { error: delErr } = await supabase.from("order_photos").delete().eq("orderId", m.orderId)
+          if (delErr) errors.push(`order_photos delete: ${delErr.message}`)
+          else paidPhotosPurged += photos.length
         }
-        const { error: delErr } = await supabase.from("generated_music").delete().eq("id", m.id)
-        if (delErr) errors.push(`generated_music delete: ${delErr.message}`)
-        else musicPurged++
       }
     } catch (e: any) {
-      errors.push(`musica: ${e?.message ?? e}`)
+      errors.push(`link/fotos: ${e?.message ?? e}`)
     }
   }
 
   if (!settings.enabled) {
-    return { photosPurged, leadsPurged, musicPurged, errors, skipped: true }
+    return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, errors, skipped: true }
   }
 
   const photosCutoff = new Date(Date.now() - settings.photos_days * 24 * 60 * 60 * 1000).toISOString()
@@ -223,5 +243,5 @@ async function runPurge(supabase: ReturnType<typeof createServerClient>) {
     errors.push(`lead: ${e?.message ?? e}`)
   }
 
-  return { photosPurged, leadsPurged, musicPurged, errors }
+  return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, errors }
 }

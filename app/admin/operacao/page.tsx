@@ -16,13 +16,13 @@ const REVISION_MODES: { id: boolean; emoji: string; title: string; desc: string 
   { id: true,  emoji: "🟢", title: "Automático", desc: "Assim que o cliente solicita, o pedido já é aceito e duplicado — sem esperar você. A criação da música segue o modo acima." },
   { id: false, emoji: "🔴", title: "Manual",     desc: "Você recebe o e-mail de alerta e decide quando aceitar a solicitação, na fila de Produção." },
 ]
-type Log = { ran_at: string; photos_purged: number; leads_purged: number; music_purged?: number; recovery_sent: number; errors: string | null }
-type Music = { code: string; orderId: string; url: string; views: number; publishedAt: string | null; daysLeft: number | null }
+type Log = { ran_at: string; photos_purged: number; leads_purged: number; music_purged?: number; paid_photos_purged?: number; recovery_sent: number; errors: string | null }
+type Music = { code: string; orderId: string; url: string; views: number; publishedAt: string | null; daysLeft: number | null; linkDisabled?: boolean }
 
 export default function OperacaoPage() {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [logs, setLogs]         = useState<Log[]>([])
-  const [totals, setTotals]     = useState({ photos: 0, leads: 0 })
+  const [totals, setTotals]     = useState({ photos: 0, leads: 0, paidPhotos: 0 })
   const [pending, setPending]   = useState({ photos: 0, leads: 0 })
   const [musics, setMusics]     = useState<Music[]>([])
   const [loading, setLoading]   = useState(true)
@@ -34,7 +34,7 @@ export default function OperacaoPage() {
     const d = await fetch("/api/admin/operacao/purge", { cache: "no-store" }).then((r) => r.json())
     setSettings(d.settings)
     setLogs(d.logs ?? [])
-    setTotals(d.totals ?? { photos: 0, leads: 0 })
+    setTotals(d.totals ?? { photos: 0, leads: 0, paidPhotos: 0 })
     setPending(d.pending ?? { photos: 0, leads: 0 })
     setMusics(d.musics ?? [])
     setLoading(false)
@@ -161,9 +161,10 @@ export default function OperacaoPage() {
       </div>
 
       {/* Cards de totais */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
         <StatCard label="Fotos expurgadas (30 dias)" value={totals.photos} color="text-pink-400" />
         <StatCard label="Cadastros expurgados (30 dias)" value={totals.leads} color="text-fuchsia-400" />
+        <StatCard label="Fotos de pedidos pagos removidas (30 dias)" value={totals.paidPhotos} color="text-purple-400" />
         <StatCard label="Fotos aguardando expurgo" value={pending.photos} color="text-yellow-400" />
         <StatCard label="Cadastros aguardando expurgo" value={pending.leads} color="text-orange-400" />
       </div>
@@ -231,7 +232,8 @@ export default function OperacaoPage() {
                   <th className="text-left py-2 pr-4 font-medium">Data/hora</th>
                   <th className="text-right py-2 px-4 font-medium">Fotos</th>
                   <th className="text-right py-2 px-4 font-medium">Cadastros</th>
-                  <th className="text-right py-2 px-4 font-medium">Músicas</th>
+                  <th className="text-right py-2 px-4 font-medium">Links desativados</th>
+                  <th className="text-right py-2 px-4 font-medium">Fotos (pagos)</th>
                   <th className="text-right py-2 px-4 font-medium">Recuperação</th>
                   <th className="text-left py-2 pl-4 font-medium">Status</th>
                 </tr>
@@ -243,6 +245,7 @@ export default function OperacaoPage() {
                     <td className="py-2.5 px-4 text-right text-pink-400">{l.photos_purged}</td>
                     <td className="py-2.5 px-4 text-right text-fuchsia-400">{l.leads_purged}</td>
                     <td className="py-2.5 px-4 text-right text-yellow-400">{l.music_purged ?? 0}</td>
+                    <td className="py-2.5 px-4 text-right text-purple-400">{l.paid_photos_purged ?? 0}</td>
                     <td className="py-2.5 px-4 text-right text-gray-400">{l.recovery_sent}</td>
                     <td className="py-2.5 pl-4">
                       {l.errors ? <span className="text-red-400 text-xs" title={l.errors}>⚠️ erro</span> : <span className="text-green-400 text-xs">ok</span>}
@@ -269,11 +272,17 @@ export default function OperacaoPage() {
                 onChange={(e) => setSettings({ ...settings, music_enabled: e.target.checked })}
                 className="w-5 h-5 accent-yellow-500"
               />
-              <span className="text-sm">Apagar URLs de música automaticamente após o prazo</span>
+              <span className="text-sm">Desativar o acesso público (link/QR) automaticamente após o prazo</span>
             </label>
+            <div className="text-xs text-gray-400 leading-relaxed mb-3 space-y-1">
+              <p><strong className="text-gray-300">O que acontece ao expirar:</strong></p>
+              <p>✅ <strong className="text-gray-300">MP3 e letra são mantidos</strong> internamente — a Fiz Música retém a obra por direito (Licença de Uso), para uso futuro (ex.: playlist), respeitando o consentimento de publicação de cada pedido.</p>
+              <p>❌ O <strong className="text-gray-300">link/QR do cliente para de funcionar</strong> (mostra "não está mais disponível").</p>
+              <p>🗑️ As <strong className="text-gray-300">fotos enviadas pelo cliente são apagadas em definitivo</strong> — não são reutilizadas, conforme os Termos.</p>
+            </div>
             {settings.music_enabled && (
               <p className="text-xs text-yellow-300/80 mb-3">
-                ⚠️ Atenção: ao expirar, o MP3 e os dados são <strong>apagados em definitivo</strong> e o QR Code impresso no presente <strong>deixa de funcionar</strong>. Use com cuidado.
+                ⚠️ Ao expirar, o QR Code impresso no presente <strong>deixa de funcionar</strong> para o cliente. Use com cuidado.
               </p>
             )}
             <div className="flex items-end gap-3">
@@ -322,7 +331,9 @@ export default function OperacaoPage() {
                       <td className="py-2.5 px-4 text-right text-gray-300">{m.views}</td>
                       <td className="py-2.5 px-4 text-gray-500">{m.publishedAt ? fmtDateTimeBR(m.publishedAt) : "—"}</td>
                       <td className="py-2.5 pl-4 text-right">
-                        {m.daysLeft == null
+                        {m.linkDisabled
+                          ? <span className="text-gray-500 text-xs">🔒 desativado</span>
+                          : m.daysLeft == null
                           ? <span className="text-green-400 text-xs">permanente</span>
                           : <span className={m.daysLeft <= 7 ? "text-red-400" : "text-gray-300"}>{m.daysLeft} dia{m.daysLeft !== 1 ? "s" : ""}</span>}
                       </td>
