@@ -433,17 +433,21 @@ export async function sendMusicReadyForReviewNotification(data: { orderId: strin
 
 // Alerta ao admin: o cliente solicitou uma revisão ("não gostei") e aguarda análise
 // na tela /admin/producao (ver e aceitar/duplicar o pedido).
-export async function sendRevisionRequestedNotification(data: { orderId: string; nome: string; message: string }): Promise<void> {
+export async function sendRevisionRequestedNotification(data: { orderId: string; nome: string; message: string; autoAccepted?: boolean }): Promise<void> {
   const adminUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"}/admin/producao`
   try {
     await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      ADMIN_REVIEW_EMAIL,
-      subject: `[Admin] ✏️ Revisão solicitada — ${data.nome}`,
+      subject: data.autoAccepted
+        ? `[Admin] ✏️ Revisão aceita automaticamente — ${data.nome}`
+        : `[Admin] ✏️ Revisão solicitada — ${data.nome}`,
       html: emailShell({
         emoji: "✏️",
-        title: "Cliente solicitou revisão",
-        subtitle: "Analise o pedido e aceite para gerar a nova versão.",
+        title: data.autoAccepted ? "Revisão aceita automaticamente" : "Cliente solicitou revisão",
+        subtitle: data.autoAccepted
+          ? "O pedido já foi duplicado e aguarda o cliente reaprovar a letra. Nenhuma ação sua é necessária agora."
+          : "Analise o pedido e aceite para gerar a nova versão.",
         body: adminRows([
           ["Pedido", `<span style="font-family:monospace;color:#ec4899">#${data.orderId.slice(0, 8).toUpperCase()}</span>`],
           ["Cliente", data.nome],

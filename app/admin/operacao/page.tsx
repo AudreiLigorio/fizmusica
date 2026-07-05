@@ -4,12 +4,17 @@ import { useEffect, useState } from "react"
 import { fmtDateTimeBR } from "@/lib/date"
 
 type SunoMode = "auto" | "review" | "manual"
-type Settings = { photos_days: number; lead_days: number; enabled: boolean; music_enabled: boolean; music_days: number; suno_mode?: SunoMode; updatedAt?: string }
+type Settings = { photos_days: number; lead_days: number; enabled: boolean; music_enabled: boolean; music_days: number; suno_mode?: SunoMode; revision_auto_accept?: boolean; updatedAt?: string }
 
 const MODES: { id: SunoMode; emoji: string; title: string; desc: string; color: string }[] = [
   { id: "auto",   emoji: "🟢", title: "Totalmente automático", desc: "A IA cria e libera direto pro cliente. Você não toca em nada.", color: "green" },
   { id: "review", emoji: "🟡", title: "Com sua aprovação",      desc: "A IA cria, mas espera você ouvir e liberar antes do cliente.", color: "yellow" },
   { id: "manual", emoji: "🔴", title: "Manual",                 desc: "Nada é gerado sozinho. Você gera ou sobe a música na Produção.", color: "red" },
+]
+
+const REVISION_MODES: { id: boolean; emoji: string; title: string; desc: string }[] = [
+  { id: true,  emoji: "🟢", title: "Automático", desc: "Assim que o cliente solicita, o pedido já é aceito e duplicado — sem esperar você. A criação da música segue o modo acima." },
+  { id: false, emoji: "🔴", title: "Manual",     desc: "Você recebe o e-mail de alerta e decide quando aceitar a solicitação, na fila de Produção." },
 ]
 type Log = { ran_at: string; photos_purged: number; leads_purged: number; music_purged?: number; recovery_sent: number; errors: string | null }
 type Music = { code: string; orderId: string; url: string; views: number; publishedAt: string | null; daysLeft: number | null }
@@ -101,13 +106,39 @@ export default function OperacaoPage() {
               )
             })}
           </div>
-          <div className="flex items-center gap-3 mt-4">
+          <div className="border-t border-white/10 mt-5 pt-5">
+            <h2 className="font-semibold mb-1">✏️ Solicitação de revisão do cliente</h2>
+            <p className="text-gray-500 text-sm mb-4">Define o que acontece assim que o cliente pede uma revisão ("não gostei").</p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {REVISION_MODES.map((m) => {
+                const active = (settings.revision_auto_accept ?? false) === m.id
+                return (
+                  <button
+                    key={String(m.id)}
+                    onClick={() => setSettings({ ...settings, revision_auto_accept: m.id })}
+                    className={`text-left rounded-xl border-2 p-4 transition-all ${
+                      active ? "border-pink-500 bg-pink-500/10" : "border-white/10 bg-black/30 hover:border-white/25"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-lg">{m.emoji}</span>
+                      <span className="font-semibold text-sm">{m.title}</span>
+                      {active && <span className="ml-auto text-pink-400 text-xs font-bold">● ativo</span>}
+                    </div>
+                    <p className="text-xs text-gray-400 leading-relaxed">{m.desc}</p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 mt-5">
             <button
               onClick={save}
               disabled={saving}
               className="bg-pink-500 hover:bg-pink-600 disabled:opacity-50 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors"
             >
-              {saving ? "Salvando…" : "Salvar modo"}
+              {saving ? "Salvando…" : "Salvar"}
             </button>
             {savedMsg && <span className="text-sm text-gray-400">{savedMsg}</span>}
           </div>

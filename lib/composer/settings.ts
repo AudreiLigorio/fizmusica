@@ -9,6 +9,7 @@ export type ComposerSettings = {
   location: string
   sunoModel: string
   sunoMode: SunoMode
+  revisionAutoAccept: boolean
 }
 
 // Configuração do compositor. Lê a linha única de composer_settings; se não
@@ -17,7 +18,7 @@ export async function getComposerSettings(): Promise<ComposerSettings> {
   const supabase = createServerClient()
   const { data } = await supabase
     .from("composer_settings")
-    .select("prompt, model, location, sunoModel, suno_mode")
+    .select("prompt, model, location, sunoModel, suno_mode, revision_auto_accept")
     .eq("id", 1)
     .maybeSingle()
 
@@ -28,5 +29,6 @@ export async function getComposerSettings(): Promise<ComposerSettings> {
     location:  data?.location?.trim()  || process.env.GCP_LOCATION   || "global",
     sunoModel: data?.sunoModel?.trim() || process.env.SUNO_MODEL     || "V5",
     sunoMode:  ["auto", "review", "manual"].includes(mode) ? mode : "review",
+    revisionAutoAccept: data?.revision_auto_accept ?? false,
   }
 }

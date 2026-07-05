@@ -13,13 +13,15 @@ export async function GET() {
     .eq("id", 1)
     .maybeSingle()
 
-  // Modo de produção da música (auto | review | manual), guardado no compositor.
+  // Modo de produção da música (auto | review | manual) e aceite da revisão do
+  // cliente (auto | manual), guardados no compositor.
   const { data: comp } = await supabase
     .from("composer_settings")
-    .select("suno_mode")
+    .select("suno_mode, revision_auto_accept")
     .eq("id", 1)
     .maybeSingle()
   const sunoMode = comp?.suno_mode ?? "review"
+  const revisionAutoAccept = comp?.revision_auto_accept ?? false
 
   const { data: logs } = await supabase
     .from("purge_log")
@@ -85,7 +87,7 @@ export async function GET() {
   })
 
   return NextResponse.json({
-    settings: { ...(settings ?? { photos_days: 7, lead_days: 60, enabled: true, music_enabled: false, music_days: 365 }), suno_mode: sunoMode },
+    settings: { ...(settings ?? { photos_days: 7, lead_days: 60, enabled: true, music_enabled: false, music_days: 365 }), suno_mode: sunoMode, revision_auto_accept: revisionAutoAccept },
     logs: logs ?? [],
     totals,
     pending: { photos: pendingPhotos ?? 0, leads: pendingLeads ?? 0 },
@@ -108,11 +110,14 @@ export async function PUT(req: NextRequest) {
   const { error } = await supabase.from("purge_settings").update(update).eq("id", 1)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Modo de produção da música → composer_settings
-  if (["auto", "review", "manual"].includes(body.suno_mode)) {
+  // Modo de produção da música + aceite da revisão do cliente → composer_settings
+  const compUpdate: Record<string, unknown> = {}
+  if (["auto", "review", "manual"].includes(body.suno_mode)) compUpdate.suno_mode = body.suno_mode
+  if (typeof body.revision_auto_accept === "boolean") compUpdate.revision_auto_accept = body.revision_auto_accept
+  if (Object.keys(compUpdate).length > 0) {
     const { error: cErr } = await supabase
       .from("composer_settings")
-      .update({ suno_mode: body.suno_mode })
+      .update(compUpdate)
       .eq("id", 1)
     if (cErr) return NextResponse.json({ error: cErr.message }, { status: 500 })
   }

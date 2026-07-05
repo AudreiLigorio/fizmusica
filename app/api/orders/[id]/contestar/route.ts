@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
 import { sendRevisionRequestedNotification } from "@/app/services/emailService"
+import { getComposerSettings } from "@/lib/composer/settings"
+import { acceptRevision } from "@/lib/revision"
 
 export const dynamic = "force-dynamic"
 
@@ -70,8 +72,19 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   // Original permanece DELIVERED (v1 preservada). O badge no cliente é guiado
   // pela existência da revisão pendente.
 
+  // Modo automático: aceita/duplica o pedido na hora, sem esperar o admin clicar
+  // na fila de Produção. A criação da nova música segue o modo de produção normal
+  // (auto/review/manual) a partir do momento em que o cliente reaprova a letra.
+  const { revisionAutoAccept } = await getComposerSettings()
+  let autoAccepted = false
+  if (revisionAutoAccept) {
+    const result = await acceptRevision(supabase, id)
+    autoAccepted = result.ok
+    if (!result.ok) console.error("[contestar] aceite automático falhou:", result.error)
+  }
+
   // Alerta o admin — sem isso, a solicitação ficava só no banco e ninguém era avisado.
-  await sendRevisionRequestedNotification({ orderId: id, nome: order.nome ?? "Cliente", message: message.trim() })
+  await sendRevisionRequestedNotification({ orderId: id, nome: order.nome ?? "Cliente", message: message.trim(), autoAccepted })
 
   return NextResponse.json({ ok: true, revision })
 }
