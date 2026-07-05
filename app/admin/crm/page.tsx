@@ -40,6 +40,33 @@ async function getInsights() {
     .select("subcategory, musicalStyle, voiceType, emotion, paymentStatus")
     .neq("status", "ABANDONED")
 
+  // Cliques no wizard (inclui quem abandonou antes de virar pedido) — últimos 90 dias
+  // pra não misturar com sessões antigas/lixo de teste.
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
+  const { data: sessions } = await supabase
+    .from("wizard_sessions")
+    .select("data")
+    .gte("created_at", since)
+
+  const clickMaps = {
+    occasions: new Map<string, number>(),
+    styles:    new Map<string, number>(),
+    voices:    new Map<string, number>(),
+    emotions:  new Map<string, number>(),
+  }
+  const bump = (map: Map<string, number>, key: unknown) => {
+    if (!key || typeof key !== "string") return
+    map.set(key, (map.get(key) ?? 0) + 1)
+  }
+  for (const s of sessions ?? []) {
+    const d = s.data as Record<string, unknown> | null
+    if (!d) continue
+    bump(clickMaps.occasions, d.selectedSubcategory)
+    bump(clickMaps.styles,    d.musicalStyle)
+    bump(clickMaps.voices,    d.voiceType)
+    bump(clickMaps.emotions,  d.emotion)
+  }
+
   if (!orders?.length) return { occasions: [], styles: [], voices: [], emotions: [] }
 
   const occasionMap = new Map<string, { total: number; paid: number }>()
@@ -62,16 +89,16 @@ async function getInsights() {
     add(emotionMap,  o.emotion)
   }
 
-  const toRows = (map: typeof occasionMap) =>
+  const toRows = (map: typeof occasionMap, clicks: Map<string, number>) =>
     Array.from(map.entries())
-      .map(([name, v]) => ({ name, ...v, rate: v.total > 0 ? Math.round((v.paid / v.total) * 100) : 0 }))
-      .sort((a, b) => b.total - a.total)
+      .map(([name, v]) => ({ name, ...v, clicks: clicks.get(name) ?? v.total, rate: v.total > 0 ? Math.round((v.paid / v.total) * 100) : 0 }))
+      .sort((a, b) => b.clicks - a.clicks)
 
   return {
-    occasions: toRows(occasionMap),
-    styles:    toRows(styleMap),
-    voices:    toRows(voiceMap),
-    emotions:  toRows(emotionMap),
+    occasions: toRows(occasionMap, clickMaps.occasions),
+    styles:    toRows(styleMap,    clickMaps.styles),
+    voices:    toRows(voiceMap,    clickMaps.voices),
+    emotions:  toRows(emotionMap,  clickMaps.emotions),
   }
 }
 

@@ -17,7 +17,7 @@ type UnpaidOrder = {
   recoveryCount: number
 }
 
-type InsightRow = { name: string; total: number; paid: number; rate: number }
+type InsightRow = { name: string; total: number; paid: number; clicks: number; rate: number }
 type Insights   = { occasions: InsightRow[]; styles: InsightRow[]; voices: InsightRow[]; emotions: InsightRow[] }
 
 type Feedback = {
@@ -56,7 +56,7 @@ function Stars({ rating, size = "text-base" }: { rating: number; size?: string }
 // ── Sub-components ─────────────────────────────────────────────
 
 function InsightTable({ title, col, rows }: { title: string; col: string; rows: InsightRow[] }) {
-  const maxTotal = rows[0]?.total ?? 1
+  const maxClicks = rows[0]?.clicks ?? 1
   return (
     <div>
       <h2 className="text-base font-semibold mb-3">{title}</h2>
@@ -68,6 +68,7 @@ function InsightTable({ title, col, rows }: { title: string; col: string; rows: 
             <thead>
               <tr className="border-b border-white/10 text-gray-500 text-xs">
                 <th className="text-left px-5 py-3">{col}</th>
+                <th className="text-center px-4 py-3">Cliques</th>
                 <th className="text-center px-4 py-3">Pedidos</th>
                 <th className="text-center px-4 py-3">Pagos</th>
                 <th className="text-left px-4 py-3 hidden lg:table-cell w-40">Volume</th>
@@ -83,12 +84,13 @@ function InsightTable({ title, col, rows }: { title: string; col: string; rows: 
                       <span className="font-medium">{row.name}</span>
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-center text-gray-400">{row.clicks}</td>
                   <td className="px-4 py-3 text-center text-gray-300">{row.total}</td>
                   <td className="px-4 py-3 text-center text-green-400 font-medium">{row.paid}</td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                       <div className="h-full rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 transition-all"
-                        style={{ width: `${Math.round((row.total / maxTotal) * 100)}%` }} />
+                        style={{ width: `${Math.round((row.clicks / maxClicks) * 100)}%` }} />
                     </div>
                   </td>
                   <td className="px-4 py-3 text-center">
