@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
+import { sendRevisionRequestedNotification } from "@/app/services/emailService"
 
 export const dynamic = "force-dynamic"
 
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   // Verifica que o pedido pertence ao usuário e está entregue
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, userId, email")
+    .select("id, nome, status, userId, email")
     .eq("id", id)
     .maybeSingle()
 
@@ -68,6 +69,9 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   // Original permanece DELIVERED (v1 preservada). O badge no cliente é guiado
   // pela existência da revisão pendente.
+
+  // Alerta o admin — sem isso, a solicitação ficava só no banco e ninguém era avisado.
+  await sendRevisionRequestedNotification({ orderId: id, nome: order.nome ?? "Cliente", message: message.trim() })
 
   return NextResponse.json({ ok: true, revision })
 }

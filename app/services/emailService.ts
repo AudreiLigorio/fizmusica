@@ -431,6 +431,33 @@ export async function sendMusicReadyForReviewNotification(data: { orderId: strin
   }
 }
 
+// Alerta ao admin: o cliente solicitou uma revisão ("não gostei") e aguarda análise
+// na tela /admin/producao (ver e aceitar/duplicar o pedido).
+export async function sendRevisionRequestedNotification(data: { orderId: string; nome: string; message: string }): Promise<void> {
+  const adminUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"}/admin/producao`
+  try {
+    await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      ADMIN_REVIEW_EMAIL,
+      subject: `[Admin] ✏️ Revisão solicitada — ${data.nome}`,
+      html: emailShell({
+        emoji: "✏️",
+        title: "Cliente solicitou revisão",
+        subtitle: "Analise o pedido e aceite para gerar a nova versão.",
+        body: adminRows([
+          ["Pedido", `<span style="font-family:monospace;color:#ec4899">#${data.orderId.slice(0, 8).toUpperCase()}</span>`],
+          ["Cliente", data.nome],
+          ["O que pediu", data.message],
+        ]),
+        button: { text: "Abrir a fila de Produção →", url: adminUrl },
+      }),
+    })
+    console.log(`[email] Alerta "revisão solicitada" enviado para ${ADMIN_REVIEW_EMAIL}`)
+  } catch (err) {
+    console.error("[email] Falha ao notificar admin (revisão solicitada):", err)
+  }
+}
+
 function buildAdminEmail(order: OrderEmailData): string {
   return emailShell({
     emoji: "🆕",
