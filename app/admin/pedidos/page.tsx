@@ -7,7 +7,7 @@ async function getOrders() {
   const supabase = createServerClient()
   const { data } = await supabase
     .from("orders")
-    .select("id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, status, paymentStatus, createdAt, products(name), product_delivery_options(label, days)")
+    .select("id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, status, paymentStatus, createdAt, customer_state, products(name), product_delivery_options(label, days)")
     .order("createdAt", { ascending: false })
   return data ?? []
 }

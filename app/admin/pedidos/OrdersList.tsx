@@ -16,6 +16,7 @@ type Order = {
   status: string
   paymentStatus: string
   createdAt: string
+  customer_state?: string | null
   products?: { name: string } | null
   product_delivery_options?: { label: string; days: number } | null
 }
@@ -152,6 +153,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
                 <th className="text-left px-6 py-4">Produto</th>
                 <th className="text-left px-6 py-4">Ocasião</th>
                 <th className="text-left px-6 py-4">Estilo</th>
+                <th className="text-left px-6 py-4">Estado</th>
                 <th className="text-left px-6 py-4">Status</th>
                 <th className="text-left px-6 py-4">Pagamento</th>
                 <th className="text-left px-6 py-4">Data / Hora</th>
@@ -160,7 +162,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-6 py-12 text-center text-gray-600">Nenhum pedido encontrado.</td></tr>
+                <tr><td colSpan={10} className="px-6 py-12 text-center text-gray-600">Nenhum pedido encontrado.</td></tr>
               )}
               {paged.map((o) => (
                 <tr key={o.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
@@ -184,6 +186,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
                     )}
                   </td>
                   <td className="px-6 py-4 text-gray-400 text-xs">{o.musicalStyle}</td>
+                  <td className="px-6 py-4 text-gray-400 text-xs">{o.customer_state ?? "—"}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${STATUS_COLOR[o.status] ?? ""}`}>
                       {STATUS_LABEL[o.status] ?? o.status}
@@ -218,7 +221,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
                   <span className="inline-block text-xs font-medium text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-md mt-1">
                     {o.products?.name ?? "—"}
                   </span>
-                  <p className="text-gray-500 text-xs mt-0.5">{o.subcategory} · {o.musicalStyle}</p>
+                  <p className="text-gray-500 text-xs mt-0.5">{o.subcategory} · {o.musicalStyle}{o.customer_state ? ` · ${o.customer_state}` : ""}</p>
                   {o.product_delivery_options && (
                     <p className="text-yellow-400 text-xs mt-0.5">⏱ {o.product_delivery_options.label}</p>
                   )}

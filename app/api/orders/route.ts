@@ -4,6 +4,7 @@ import { createOrder, triggerN8nWebhook } from "@/app/services/orderService"
 import { sendOrderConfirmationEmail, sendOrderNotificationEmail } from "@/app/services/emailService"
 import { createOrderSchema } from "@/lib/validators/order"
 import { createServerClient } from "@/lib/supabase"
+import { extractClientIp, lookupState } from "@/lib/geoip"
 
 export async function GET(req: NextRequest) {
   // Identidade: prioriza o token de login (Bearer) — busca por e-mail OU userId
@@ -86,9 +87,10 @@ export async function POST(req: NextRequest) {
     }
 
     const body = parsed.data
+    const customerIp = extractClientIp(req.headers)
 
     // Salva no banco
-    const order = await createOrder(body)
+    const order = await createOrder(body, customerIp)
 
     // Dispara e-mails e n8n APÓS a resposta (after garante execução mesmo após response)
     const emailData = {
@@ -104,6 +106,12 @@ export async function POST(req: NextRequest) {
       createdAt: order.createdAt,
     }
     after(async () => {
+      if (customerIp) {
+        const geo = await lookupState(customerIp)
+        if (geo.state) {
+          await createServerClient().from("orders").update({ customer_state: geo.state }).eq("id", order.id)
+        }
+      }
       await sendOrderConfirmationEmail(emailData)
       await sendOrderNotificationEmail(emailData)
       await triggerN8nWebhook({

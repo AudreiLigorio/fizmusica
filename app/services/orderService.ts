@@ -2,7 +2,7 @@ import { createServerClient } from "@/lib/supabase"
 import type { CreateOrderDTO, N8nOrderWebhookPayload } from "@/app/types/order"
 import { logOrderEvent } from "@/lib/orderEvents"
 
-export async function createOrder(data: CreateOrderDTO) {
+export async function createOrder(data: CreateOrderDTO, customerIp?: string | null) {
   const supabase = createServerClient()
 
   const { data: order, error } = await supabase
@@ -23,6 +23,7 @@ export async function createOrder(data: CreateOrderDTO) {
       status: "PENDING",
       paymentStatus: "UNPAID",
       updatedAt: new Date().toISOString(),
+      customer_ip: customerIp ?? null,
     })
     .select("id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, createdAt")
     .single()

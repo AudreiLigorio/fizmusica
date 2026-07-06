@@ -18,7 +18,7 @@ Fiz Música é uma plataforma digital dedicada à criação de músicas personal
 
 **Dados de entrega (produtos físicos):** endereço completo para envio.
 
-**Dados técnicos:** endereço IP, data e hora de acesso, dispositivo, navegador, logs de acesso.
+**Dados técnicos:** endereço IP, data e hora de acesso, dispositivo, navegador, logs de acesso. A partir do IP, estimamos de forma aproximada o estado (UF) de origem do pedido, para fins estatísticos — essa estimativa não corresponde a um endereço e pode ser imprecisa.
 
 **Dados de pagamento:** os pagamentos são processados por provedores especializados (ex.: Mercado Pago). A Fiz Música **não armazena** números completos de cartões de crédito ou informações bancárias sensíveis — guarda apenas identificadores da transação (ex.: id do pagamento).
 
@@ -31,7 +31,8 @@ Fiz Música é uma plataforma digital dedicada à criação de músicas personal
 - Enviar notificações sobre o andamento da produção;
 - Realizar atendimento ao cliente;
 - Cumprir obrigações legais e regulatórias;
-- Garantir segurança e prevenção a fraudes.
+- Garantir segurança e prevenção a fraudes;
+- Gerar estatísticas agregadas sobre a origem geográfica dos pedidos (estimativa de estado via IP), para análise de negócio.
 
 ## 5. Bases Legais
 
