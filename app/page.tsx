@@ -16,6 +16,11 @@ const DEMOS = [
   { id: "pet",       src: "/despedida_pet.mp3",         title: "Despedida — Amora",            meta: "MPB sentimental · 3:20",                    emoji: "🐾" },
 ]
 
+// Vídeo do hero (fundo em loop). Duas resoluções — baixa só a certa por tela.
+const HERO_POSTER = "/videos/hero-home.poster.jpg"
+const HERO_SRC_DESKTOP = "/videos/hero-home.opt.mp4"    // 720p, ~1MB
+const HERO_SRC_MOBILE = "/videos/hero-home.mobile.mp4"  // 480p, ~490KB
+
 const STEPS = [
   { n: "1", label: "Conte sua história",    desc: "Escolha a ocasião e preencha o questionário guiado." },
   { n: "2", label: "Escolha o estilo e sentimento", desc: "Sertanejo, MPB, pagode, pop — você decide." },
@@ -152,6 +157,17 @@ export default function Home() {
   const [playing, setPlaying] = useState(false)
   const router = useRouter()
 
+  // Vídeo de fundo do hero: escolhe a resolução no cliente (baixa só a certa)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [videoSrc, setVideoSrc] = useState<string | null>(null)
+  useEffect(() => {
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches
+    setVideoSrc(isDesktop ? HERO_SRC_DESKTOP : HERO_SRC_MOBILE)
+  }, [])
+  useEffect(() => {
+    if (videoSrc) videoRef.current?.play().catch(() => {})
+  }, [videoSrc])
+
   function togglePlay(src: string) {
     if (!audioRef.current) return
     if (currentAudio === src && playing) {
@@ -171,196 +187,144 @@ export default function Home() {
       <ResumeMusicBanner />
 
       {/* ═══════════════════════════════════════════
-          HERO
+          HERO — vídeo de fundo em loop + textos sobrepostos
+          (altura = conteúdo; o vídeo fecha junto com os textos)
       ═══════════════════════════════════════════ */}
-      <section className="relative lg:min-h-screen flex items-center overflow-hidden pt-20 lg:pt-24">
+      <section className="relative flex items-center overflow-hidden">
 
-        {/* ambient orbs */}
-        <div className="animate-orb pointer-events-none absolute -top-32 -left-32 w-[700px] h-[700px] rounded-full"
-             style={{ background: "radial-gradient(circle, rgba(240,25,107,0.08) 0%, transparent 70%)" }} />
-        <div className="animate-orb pointer-events-none absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full delay-700"
-             style={{ background: "radial-gradient(circle, rgba(217,70,239,0.06) 0%, transparent 70%)", animationDelay: "6s" }} />
+        {/* vídeo de fundo (loop, mudo, autoplay) */}
+        <video
+          ref={videoRef}
+          src={videoSrc ?? undefined}
+          poster={HERO_POSTER}
+          muted
+          playsInline
+          autoPlay
+          loop
+          preload="auto"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        />
 
-        <div className="relative max-w-6xl mx-auto px-6 py-8 lg:py-20 w-full grid lg:grid-cols-[1fr_420px] gap-8 lg:gap-16 xl:gap-24 items-start">
+        {/* overlays de legibilidade: escurece geral + reforça esquerda (desktop) e base (mobile) */}
+        <div className="absolute inset-0 z-10 pointer-events-none"
+             style={{ background: "linear-gradient(90deg, rgba(7,6,13,0.92) 0%, rgba(7,6,13,0.75) 38%, rgba(7,6,13,0.35) 70%, rgba(7,6,13,0.25) 100%)" }} />
+        <div className="absolute inset-0 z-10 pointer-events-none lg:hidden"
+             style={{ background: "linear-gradient(180deg, rgba(7,6,13,0.55) 0%, rgba(7,6,13,0.35) 40%, rgba(7,6,13,0.9) 100%)" }} />
+        <div className="absolute inset-0 z-10 pointer-events-none"
+             style={{ background: "radial-gradient(ellipse at 20% 30%, rgba(240,25,107,0.14) 0%, transparent 55%)" }} />
 
-          {/* ── copy ── */}
-          <div>
-            <p className="animate-fade-up delay-100 text-[#f0196b] text-xs font-medium tracking-[0.3em] uppercase mb-8"
-               style={bodyFont}>
+        {/* conteúdo sobreposto — pt extra pra limpar o header fixo */}
+        <div className="relative z-20 max-w-6xl mx-auto px-6 pt-28 lg:pt-36 pb-16 lg:pb-24 w-full">
+          <div className="max-w-xl">
+            <p className="animate-fade-up delay-100 text-[#ff6b9d] text-xs font-medium tracking-[0.3em] uppercase mb-6" style={bodyFont}>
               Músicas personalizadas
             </p>
 
-            <h1 className="animate-fade-up delay-200 leading-[0.95] mb-8" style={displayFont}>
-              <span className="block font-light text-white/90"
-                    style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)" }}>
-                Existem histórias
-              </span>
-              <span className="block font-light text-white/90"
-                    style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)" }}>
-                que merecem ser
-              </span>
-              <em className="block font-semibold not-italic"
-                  style={{ fontSize: "clamp(3.2rem, 7.5vw, 7rem)", color: "#f0196b" }}>
-                cantadas.
-              </em>
+            <h1 className="animate-fade-up delay-200 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>Existem histórias</span>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>que merecem ser</span>
+              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)", color: "#ff3d84" }}>cantadas.</em>
             </h1>
 
-            <p className="animate-fade-up delay-300 text-white/50 leading-relaxed mb-10 max-w-sm"
-               style={{ ...bodyFont, fontSize: "1rem" }}>
+            <p className="animate-fade-up delay-300 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
               Crie uma música 100% personalizada e emocione quem você ama com um presente verdadeiramente único.
             </p>
 
-            <div className="animate-fade-up delay-400 flex flex-wrap gap-3 mb-10">
+            <div className="animate-fade-up delay-400 flex flex-wrap gap-3 mb-9">
               <button
                 onClick={() => router.push("/criar")}
                 className="text-white px-8 py-4 rounded-2xl transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
                 style={{
                   ...bodyFont,
                   background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)",
-                  fontSize: "0.9375rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.02em",
-                  boxShadow: "0 8px_32px rgba(240,25,107,0.4), 0 2px 8px rgba(217,70,239,0.2)",
+                  fontSize: "0.9375rem", fontWeight: 600, letterSpacing: "0.02em",
+                  boxShadow: "0 8px 32px rgba(240,25,107,0.5), 0 2px 8px rgba(217,70,239,0.3)",
                 }}
               >
                 Criar minha música ❤️
               </button>
             </div>
 
-            <div className="animate-fade-up delay-500 flex flex-wrap gap-6 text-xs text-white/55 tracking-wide"
-                 style={bodyFont}>
+            <div className="animate-fade-up delay-500 flex flex-wrap gap-6 text-xs text-white/70 tracking-wide" style={bodyFont}>
               {[
                 { label: "Presente único", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> },
                 { label: "Entrega via WhatsApp", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> },
                 { label: "Pagamento seguro", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> },
               ].map(({ label, icon }) => (
                 <span key={label} className="flex items-center gap-1.5">
-                  <span style={{ color: "#f0196b" }}>{icon}</span> {label}
+                  <span style={{ color: "#ff3d84" }}>{icon}</span> {label}
                 </span>
               ))}
             </div>
           </div>
-
-          {/* ── player ── */}
-          <div className="animate-fade-up delay-400 lg:pt-16">
-
-            {/* Logo com glow ambiente */}
-            <div className="hidden lg:flex relative mb-14 items-center justify-center">
-              <div className="pointer-events-none absolute w-64 h-32 rounded-full blur-[60px] opacity-50"
-                   style={{ background: "radial-gradient(ellipse, #f0196b 0%, transparent 70%)" }} />
-              <div className="pointer-events-none absolute w-48 h-28 rounded-full blur-[50px] opacity-35 translate-x-8"
-                   style={{ background: "radial-gradient(ellipse, #d946ef 0%, transparent 70%)" }} />
-              <img src="/logo_fizmusica.png" alt="Fiz Música" className="relative z-10 h-48 w-auto" />
-            </div>
-
-            <div className="animate-float rounded-3xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.6)]"
-                 style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.18) 0%, rgba(217,70,239,0.12) 50%, rgba(255,255,255,0.03) 100%)", border: "1px solid rgba(240,25,107,0.2)", backdropFilter: "blur(24px)" }}>
-
-              {/* header card */}
-              <div className="px-5 pt-5 pb-4 border-b border-white/[0.06]"
-                   style={{ background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded-full"
-                    style={{ background: "rgba(255,255,255,0.22)", color: "#fff", letterSpacing: "0.12em" }}>
-                    🎧 exemplos
-                  </span>
-                </div>
-                <p className="font-semibold text-base mb-0.5" style={displayFont}>
-                  Ouça como ficam as músicas:
-                </p>
-                <p className="text-white/75 text-xs" style={bodyFont}>
-                  Músicas reais já entregues — a sua será única e personalizada
-                </p>
-              </div>
-
-              {/* tracks */}
-              <div className="space-y-0 p-2">
-                {DEMOS.map((d, idx) => {
-                  const isActive = currentAudio === d.src && playing
-                  return (
-                    <button
-                      key={d.id}
-                      onClick={() => togglePlay(d.src)}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200 group"
-                      style={{
-                        background: isActive ? "rgba(240,25,107,0.15)" : "rgba(255,255,255,0.03)",
-                      }}
-                    >
-                      {/* track number */}
-                      <span
-                        className="shrink-0 w-6 text-center tabular-nums"
-                        style={{ ...bodyFont, fontSize: "0.7rem", color: isActive ? "rgba(240,25,107,0.8)" : "rgba(255,255,255,0.25)" }}
-                      >
-                        {String(idx + 1).padStart(2, "0")}
-                      </span>
-
-                      {/* text */}
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="truncate leading-snug mb-0.5"
-                          style={{
-                            ...bodyFont,
-                            fontSize: "0.8125rem",
-                            fontWeight: 500,
-                            color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)",
-                            letterSpacing: "0.01em",
-                          }}
-                        >
-                          {d.title}
-                        </p>
-                        <p
-                          className="truncate"
-                          style={{
-                            ...bodyFont,
-                            fontSize: "0.68rem",
-                            color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)",
-                            letterSpacing: "0.02em",
-                          }}
-                        >
-                          {d.meta}
-                        </p>
-                      </div>
-
-                      {/* play button */}
-                      <div
-                        className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110"
-                        style={{
-                          background: isActive
-                            ? "#f0196b"
-                            : "rgba(255,255,255,0.07)",
-                          boxShadow: isActive
-                            ? "0 0 18px rgba(240,25,107,0.55), 0 0 6px rgba(240,25,107,0.3)"
-                            : "none",
-                          border: `1px solid ${isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.1)"}`,
-                        }}
-                      >
-                        {isActive ? (
-                          /* pause icon */
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
-                            <rect x="2" y="1" width="3" height="10" rx="1"/>
-                            <rect x="7" y="1" width="3" height="10" rx="1"/>
-                          </svg>
-                        ) : (
-                          /* play icon SVG — slightly offset right for optical centering */
-                          <svg width="11" height="12" viewBox="0 0 11 12" fill="none" style={{ marginLeft: "1px" }}>
-                            <path d="M1 1.5L10 6L1 10.5V1.5Z" fill="rgba(255,255,255,0.7)" stroke="rgba(255,255,255,0.7)" strokeWidth="0.5" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-
-              <audio
-                ref={audioRef}
-                onEnded={() => { setPlaying(false); setCurrentAudio(null) }}
-              />
-            </div>
-
-          </div>
-
         </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          PLAYER DE EXEMPLOS — abaixo do hero
+      ═══════════════════════════════════════════ */}
+      <section className="max-w-3xl mx-auto px-6 py-14 lg:py-20">
+        <div className="text-center mb-8">
+          <span className="inline-block text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-4"
+                style={{ background: "rgba(240,25,107,0.12)", color: "#ff6b9d", letterSpacing: "0.12em" }}>
+            🎧 exemplos
+          </span>
+          <h2 className="font-light text-white/90 leading-tight" style={{ ...displayFont, fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)" }}>
+            Ouça como ficam as músicas
+          </h2>
+          <p className="text-white/50 text-sm mt-2" style={bodyFont}>
+            Músicas reais já entregues — a sua será única e personalizada.
+          </p>
+        </div>
+
+        <div className="rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+             style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.14) 0%, rgba(217,70,239,0.10) 50%, rgba(255,255,255,0.03) 100%)", border: "1px solid rgba(240,25,107,0.2)", backdropFilter: "blur(24px)" }}>
+          <div className="space-y-0 p-2">
+            {DEMOS.map((d, idx) => {
+              const isActive = currentAudio === d.src && playing
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => togglePlay(d.src)}
+                  className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl text-left transition-all duration-200 group"
+                  style={{ background: isActive ? "rgba(240,25,107,0.15)" : "rgba(255,255,255,0.03)" }}
+                >
+                  <span className="shrink-0 w-6 text-center tabular-nums"
+                        style={{ ...bodyFont, fontSize: "0.7rem", color: isActive ? "rgba(240,25,107,0.8)" : "rgba(255,255,255,0.25)" }}>
+                    {String(idx + 1).padStart(2, "0")}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate leading-snug mb-0.5"
+                       style={{ ...bodyFont, fontSize: "0.875rem", fontWeight: 500, color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)" }}>
+                      {d.emoji} {d.title}
+                    </p>
+                    <p className="truncate" style={{ ...bodyFont, fontSize: "0.72rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)" }}>
+                      {d.meta}
+                    </p>
+                  </div>
+                  <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110"
+                       style={{
+                         background: isActive ? "#f0196b" : "rgba(255,255,255,0.07)",
+                         boxShadow: isActive ? "0 0 18px rgba(240,25,107,0.55)" : "none",
+                         border: `1px solid ${isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.1)"}`,
+                       }}>
+                    {isActive ? (
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
+                        <rect x="2" y="1" width="3" height="10" rx="1"/><rect x="7" y="1" width="3" height="10" rx="1"/>
+                      </svg>
+                    ) : (
+                      <svg width="11" height="12" viewBox="0 0 11 12" fill="none" style={{ marginLeft: "1px" }}>
+                        <path d="M1 1.5L10 6L1 10.5V1.5Z" fill="rgba(255,255,255,0.7)" stroke="rgba(255,255,255,0.7)" strokeWidth="0.5" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <audio ref={audioRef} onEnded={() => { setPlaying(false); setCurrentAudio(null) }} />
       </section>
 
 
