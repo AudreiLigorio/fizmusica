@@ -50,14 +50,47 @@ const code = (id: string) => id.slice(0, 8).toUpperCase()
 const fmtDate = fmtDateBR
 const fmtTime = fmtTimeBR
 
+// Um pedido "precisa de ação" quando: cliente pediu revisão (esperando aceite),
+// a geração falhou (precisa gerar de novo), ou está pronta esperando ser liberada.
+function needsAction(o: Order): "revision" | "failed" | "ready" | null {
+  if (o.revision) return "revision"
+  if (o.sunoStatus === "FAILED") return "failed"
+  if (o.sunoStatus === "READY") return "ready"
+  return null
+}
+
+const ACTION_LABEL: Record<string, string> = {
+  revision: "⚠️ Revisão solicitada",
+  failed:   "❌ Geração falhou",
+  ready:    "✅ Pronta p/ liberar",
+}
+const ACTION_COLOR: Record<string, string> = {
+  revision: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+  failed:   "bg-red-500/15 text-red-300 border-red-500/30",
+  ready:    "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+}
+
 export default function ProductionList({ orders }: { orders: Order[] }) {
   const [search, setSearch]   = useState("")
   const [status, setStatus]   = useState("")
   const [product, setProduct] = useState("")
   const [from, setFrom]       = useState("")
   const [to, setTo]           = useState("")
+  const [onlyAction, setOnlyAction] = useState(false)
   const [page, setPage]       = useState(0)
   const [accepting, setAccepting] = useState<string | null>(null)
+  // Pedidos que precisam de ação já começam expandidos — o resto, recolhido.
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set(orders.filter((o) => needsAction(o) !== null).map((o) => o.id))
+  )
+
+  function toggleExpanded(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
 
   async function handleAcceptRevision(orderId: string) {
     setAccepting(orderId)
@@ -80,6 +113,7 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
     PENDING:       orders.filter((o) => o.status === "PENDING").length,
     IN_PRODUCTION: orders.filter((o) => o.status === "IN_PRODUCTION").length,
     DELIVERED:     orders.filter((o) => o.status === "DELIVERED").length,
+    ACTION:        orders.filter((o) => needsAction(o) !== null).length,
   }), [orders])
 
   const productOptions = useMemo(
@@ -91,7 +125,8 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
     const term = search.trim().replace(/^#/, "").toLowerCase()
     const fromTs = from ? new Date(`${from}T00:00:00`).getTime() : null
     const toTs   = to ? new Date(`${to}T23:59:59`).getTime() : null
-    return orders.filter((o) => {
+    const base = orders.filter((o) => {
+      if (onlyAction && needsAction(o) === null) return false
       if (status && o.status !== status) return false
       if (product && (o.products?.name ?? "") !== product) return false
       const ts = dbTime(o.createdAt)
@@ -104,18 +139,23 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
       }
       return true
     })
-  }, [orders, search, status, product, from, to])
+    // Prioriza quem precisa de ação (revisão > falha > pronto) no topo; resto
+    // segue a ordem cronológica original (mais antigo primeiro).
+    const ACTION_WEIGHT: Record<string, number> = { revision: 0, failed: 1, ready: 2 }
+    const weight = (o: Order) => ACTION_WEIGHT[needsAction(o) ?? ""] ?? 3
+    return [...base].sort((a, b) => weight(a) - weight(b))
+  }, [orders, search, status, product, from, to, onlyAction])
 
-  useEffect(() => { setPage(0) }, [search, status, product, from, to])
+  useEffect(() => { setPage(0) }, [search, status, product, from, to, onlyAction])
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, pageCount - 1)
   const paged = filtered.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE)
-  const hasFilters = search || status || product || from || to
+  const hasFilters = search || status || product || from || to || onlyAction
 
   return (
     <>
       {/* RESUMO */}
-      <div className="grid grid-cols-3 gap-3 lg:gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
         {[
           { label: "Aguardando",  count: counts.PENDING,       color: "text-yellow-400" },
           { label: "Em produção", count: counts.IN_PRODUCTION, color: "text-blue-400"   },
@@ -126,6 +166,19 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
             <p className="text-gray-500 text-sm mt-1">{label}</p>
           </div>
         ))}
+        <button
+          onClick={() => setOnlyAction((v) => !v)}
+          className={`rounded-2xl p-5 text-center border transition-all ${
+            onlyAction
+              ? "bg-orange-500/15 border-orange-500/50"
+              : counts.ACTION > 0
+                ? "bg-orange-500/5 border-orange-500/30 hover:border-orange-500/50"
+                : "bg-black/40 border-white/10"
+          }`}
+        >
+          <p className={`text-3xl font-bold ${counts.ACTION > 0 ? "text-orange-400" : "text-gray-600"}`}>{counts.ACTION}</p>
+          <p className="text-gray-400 text-sm mt-1">⚠️ Precisa de ação</p>
+        </button>
       </div>
 
       {/* FILTROS */}
@@ -163,7 +216,7 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
             className="bg-black/60 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-pink-500 text-gray-300" />
         </div>
         {hasFilters && (
-          <button onClick={() => { setSearch(""); setStatus(""); setProduct(""); setFrom(""); setTo("") }}
+          <button onClick={() => { setSearch(""); setStatus(""); setProduct(""); setFrom(""); setTo(""); setOnlyAction(false) }}
             className="text-xs text-gray-400 hover:text-white px-3 py-2 rounded-xl border border-white/10">Limpar</button>
         )}
       </div>
@@ -176,17 +229,52 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
           <p>Nenhum pedido encontrado.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {paged.map((order) => {
             const mpId = order.payments?.[0]?.mpPaymentId ?? null
+            const action = needsAction(order)
+            const isOpen = expanded.has(order.id)
             return (
-              <div key={order.id} className={`rounded-2xl p-6 border ${
+              <div key={order.id} className={`rounded-2xl border overflow-hidden ${
                 order.revision
                   ? "bg-orange-500/5 border-orange-500/40 shadow-[0_0_24px_rgba(249,115,22,0.1)]"
                   : order.is_revision
                     ? "bg-fuchsia-500/5 border-fuchsia-500/40 shadow-[0_0_24px_rgba(217,70,239,0.1)]"
                     : "bg-black/40 border-white/10"
               }`}>
+                {/* Linha-resumo — sempre visível, clicável pra expandir/recolher */}
+                <button
+                  onClick={() => toggleExpanded(order.id)}
+                  className="w-full flex items-start justify-between gap-3 p-4 lg:p-5 text-left hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-gray-600 shrink-0 transition-transform" style={{ transform: isOpen ? "rotate(90deg)" : "none" }}>▸</span>
+                      <p className="font-semibold">{order.nome}</p>
+                      {order.is_revision && (
+                        <span className="text-xs px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLOR[order.status] ?? ""}`}>
+                        {STATUS_LABEL[order.status] ?? order.status}
+                      </span>
+                      {action && (
+                        <span className={`text-xs px-2 py-0.5 rounded-full border font-semibold ${ACTION_COLOR[action]}`}>
+                          {ACTION_LABEL[action]}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 truncate pl-5">
+                      {order.products?.name ?? "—"} · {order.subcategory} · {order.musicalStyle}
+                    </p>
+                  </div>
+                  <div className="text-right text-xs shrink-0">
+                    <p className="text-pink-300/90 font-mono">#{code(order.id)}</p>
+                    <p className="text-gray-500 mt-0.5">{fmtDate(order.createdAt)}</p>
+                  </div>
+                </button>
+
+                {!isOpen ? null : (
+                <div className="px-4 pb-6 lg:px-6 lg:pb-6 -mt-1">
                 {/* Banner: revisão solicitada pelo cliente (pedido original) */}
                 {order.revision && (
                   <div className="mb-4 rounded-xl border border-orange-500/30 bg-orange-500/10 px-4 py-3">
@@ -219,16 +307,6 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
                 {/* Cabeçalho */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <p className="font-semibold">{order.nome}</p>
-                      {order.is_revision && (
-                        <span className="text-xs px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
-                      )}
-                      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${STATUS_COLOR[order.status] ?? ""}`}>
-                        {STATUS_LABEL[order.status] ?? order.status}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 truncate">{order.email} · {order.whatsapp}</p>
                     {order.honoreeName && (
                       <p className="text-xs text-pink-400 mt-0.5">🎁 Para: {order.honoreeName}</p>
                     )}
@@ -239,8 +317,6 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
                     )}
                   </div>
                   <div className="text-right text-xs shrink-0">
-                    <p className="text-pink-300/90 font-mono">#{code(order.id)}</p>
-                    <p className="text-gray-500 mt-0.5">{fmtDate(order.createdAt)}</p>
                     <p className="text-gray-600">{fmtTime(order.createdAt)}</p>
                     {mpId && (
                       <a
@@ -282,6 +358,8 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
 
                 {/* Form de produção */}
                 <MusicaForm orderId={order.id} honoreeName={order.honoreeName ?? null} nome={order.nome} lyricsDraft={order.lyricsDraft ?? null} />
+                </div>
+                )}
               </div>
             )
           })}
