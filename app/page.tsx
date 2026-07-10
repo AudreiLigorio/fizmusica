@@ -221,9 +221,9 @@ export default function Home() {
             </p>
 
             <h1 className="animate-fade-up delay-200 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>O primeiro presente</span>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>que pode ser ouvido,</span>
-              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)", color: "#ff3d84" }}>assistido e compartilhado.</em>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(2.4rem, 5.5vw, 4.75rem)" }}>O primeiro presente</span>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(2.4rem, 5.5vw, 4.75rem)" }}>que pode ser ouvido,</span>
+              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(2.6rem, 6vw, 5.25rem)", color: "#ff3d84" }}>assistido e compartilhado.</em>
             </h1>
 
             <p className="animate-fade-up delay-300 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
@@ -248,7 +248,7 @@ export default function Home() {
             <div className="animate-fade-up delay-500 flex flex-wrap gap-6 text-xs text-white/70 tracking-wide" style={bodyFont}>
               {[
                 { label: "Presente único", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> },
-                { label: "Entrega via WhatsApp", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> },
+                { label: "Entrega imediata", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> },
                 { label: "Pagamento seguro", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> },
               ].map(({ label, icon }) => (
                 <span key={label} className="flex items-center gap-1.5">
