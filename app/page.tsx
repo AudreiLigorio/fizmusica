@@ -221,13 +221,13 @@ export default function Home() {
             </p>
 
             <h1 className="animate-fade-up delay-200 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>Existem histórias</span>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>que merecem ser</span>
-              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)", color: "#ff3d84" }}>cantadas.</em>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>O primeiro presente</span>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(2.8rem, 6.5vw, 6rem)" }}>que pode ser ouvido,</span>
+              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(3rem, 7vw, 6.5rem)", color: "#ff3d84" }}>assistido e compartilhado.</em>
             </h1>
 
             <p className="animate-fade-up delay-300 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
-              Crie uma música 100% personalizada e emocione quem você ama com um presente verdadeiramente único.
+              Transforme uma história real em uma música exclusiva criada especialmente para quem você ama. Com fotos, letra sincronizada, QR Code e um player personalizado.
             </p>
 
             <div className="animate-fade-up delay-400 flex flex-wrap gap-3 mb-9">
