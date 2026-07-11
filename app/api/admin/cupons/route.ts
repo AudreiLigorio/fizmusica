@@ -16,7 +16,27 @@ export async function GET() {
     .from("coupons")
     .select("*")
     .order("createdAt", { ascending: false })
-  return NextResponse.json({ coupons: data ?? [] })
+
+  // Usos derivados dos pedidos PAGOS (fonte da verdade), não do contador
+  // `used_count` — que subcontava PIX. Uma query só, tally em memória.
+  const { data: paidOrders } = await supabase
+    .from("orders")
+    .select("coupon_code")
+    .eq("paymentStatus", "PAID")
+    .not("coupon_code", "is", null)
+
+  const tally = new Map<string, number>()
+  for (const o of paidOrders ?? []) {
+    const k = String(o.coupon_code ?? "").trim().toUpperCase()
+    if (k) tally.set(k, (tally.get(k) ?? 0) + 1)
+  }
+
+  const coupons = (data ?? []).map((c) => ({
+    ...c,
+    used_count: tally.get(String(c.code ?? "").trim().toUpperCase()) ?? 0,
+  }))
+
+  return NextResponse.json({ coupons })
 }
 
 export async function POST(req: NextRequest) {

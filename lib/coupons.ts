@@ -14,6 +14,21 @@ export type Coupon = {
   description: string | null
 }
 
+// Nº de usos de um cupom = quantidade de pedidos PAGOS que o carregam.
+// Fonte da verdade (em vez do contador `used_count`, que subcontava PIX e podia
+// duplicar). `orders.coupon_code` é gravado na criação da cobrança, então cobre
+// cartão e PIX igualmente.
+export async function countCouponUses(supabase: SupabaseClient, code: string): Promise<number> {
+  const clean = String(code ?? "").trim()
+  if (!clean) return 0
+  const { count } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .ilike("coupon_code", clean)
+    .eq("paymentStatus", "PAID")
+  return count ?? 0
+}
+
 // Melhor cupom público ativo (para banner no site + e-mails de marketing).
 export async function getActivePublicCoupon(supabase: SupabaseClient): Promise<Coupon | null> {
   const { data } = await supabase
@@ -24,11 +39,12 @@ export async function getActivePublicCoupon(supabase: SupabaseClient): Promise<C
     .order("value", { ascending: false })
 
   const now = Date.now()
-  const valid = (data ?? []).find((c) =>
-    (c.expires_at == null || new Date(c.expires_at).getTime() > now) &&
-    (c.max_uses == null || c.used_count < c.max_uses)
-  )
-  return (valid as Coupon) ?? null
+  for (const c of data ?? []) {
+    if (c.expires_at != null && new Date(c.expires_at).getTime() <= now) continue
+    if (c.max_uses != null && (await countCouponUses(supabase, c.code)) >= c.max_uses) continue
+    return c as Coupon
+  }
+  return null
 }
 
 export function couponLabel(c: Pick<Coupon, "type" | "value">): string {
@@ -58,7 +74,7 @@ export async function checkCouponActive(
   if (!coupon.active) return { valid: false, reason: "Cupom inativo." }
   if (coupon.expires_at && new Date(coupon.expires_at).getTime() < Date.now())
     return { valid: false, reason: "Cupom expirado." }
-  if (coupon.max_uses != null && coupon.used_count >= coupon.max_uses)
+  if (coupon.max_uses != null && (await countCouponUses(supabase, coupon.code)) >= coupon.max_uses)
     return { valid: false, reason: "Cupom esgotado." }
 
   return { valid: true, coupon: coupon as Coupon }

@@ -196,17 +196,9 @@ export async function POST(req: Request) {
       if (paidError) console.error("[create] paymentStatus update error:", paidError)
       else console.log(`[create] order ${orderId} marcado como PAID`)
 
-      // Incrementa uso do cupom (só quando o pagamento é aprovado)
-      if (appliedCouponCode) {
-        await supabase.rpc("increment_coupon_use", { p_code: appliedCouponCode }).then(
-          () => {},
-          async () => {
-            // fallback sem RPC: leitura + escrita
-            const { data: c } = await supabase.from("coupons").select("id, used_count").ilike("code", appliedCouponCode!).maybeSingle()
-            if (c) await supabase.from("coupons").update({ used_count: (c.used_count ?? 0) + 1 }).eq("id", c.id)
-          }
-        )
-      }
+      // O uso do cupom NÃO é mais incrementado aqui: ele é derivado da contagem
+      // de pedidos PAGOS que carregam o coupon_code (ver countCouponUses em
+      // lib/coupons.ts). Isso cobre cartão e PIX igualmente, sem duplicar.
     }
 
     console.log(`[create] payment ${result.id} — status: ${mpStatus} — order: ${orderId}`)
