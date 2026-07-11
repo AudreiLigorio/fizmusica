@@ -102,6 +102,31 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   return NextResponse.json({ photo: img })
 }
 
+// ── PATCH: reordena as fotos do pedido ──
+export async function PATCH(req: NextRequest, { params }: { params: Params }) {
+  const { id } = await params
+  const { supabase, order } = await resolveOrder(id)
+  if (!order) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 })
+
+  const { reorder } = await req.json().catch(() => ({}))
+  if (!Array.isArray(reorder) || reorder.length === 0) {
+    return NextResponse.json({ error: "Lista de fotos inválida." }, { status: 400 })
+  }
+
+  const { data: owned } = await supabase
+    .from("order_photos")
+    .select("id")
+    .eq("orderId", order.id)
+    .in("id", reorder)
+  const ownedIds = new Set((owned ?? []).map((p: { id: string }) => p.id))
+  if (reorder.some((pid: string) => !ownedIds.has(pid))) {
+    return NextResponse.json({ error: "Foto inválida na lista." }, { status: 400 })
+  }
+
+  await Promise.all(reorder.map((pid: string, i: number) => supabase.from("order_photos").update({ sort_order: i }).eq("id", pid)))
+  return NextResponse.json({ ok: true })
+}
+
 export async function DELETE(req: NextRequest, { params }: { params: Params }) {
   const { id } = await params
   const { supabase, order } = await resolveOrder(id)

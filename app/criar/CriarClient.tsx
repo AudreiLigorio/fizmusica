@@ -643,6 +643,23 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     }).catch(() => {})
   }
 
+  // Move uma foto uma posição pra frente/trás — mesma mecânica do painel de fotos
+  // da área do cliente (app/minha-musica/FotosPanel.tsx).
+  async function handlePhotoMove(photoId: string, dir: -1 | 1) {
+    if (!orderId) return
+    const i = photos.findIndex((p) => p.id === photoId)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= photos.length) return
+    const reordered = [...photos]
+    ;[reordered[i], reordered[j]] = [reordered[j], reordered[i]]
+    setPhotos(reordered)
+    await fetch(`/api/orders/${orderId}/fotos`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reorder: reordered.map((p) => p.id) }),
+    }).catch(() => {})
+  }
+
   /* ================================================= */
   /* RESUMO                                            */
   /* ================================================= */
@@ -1284,7 +1301,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
               {/* Grid de fotos */}
               <div className="grid grid-cols-3 gap-3 mb-4">
-                {photos.map((photo) => (
+                {photos.map((photo, i) => (
                   <div key={photo.id} className="relative aspect-square rounded-2xl overflow-hidden border border-white/10">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={photo.url} alt="" className="w-full h-full object-cover" />
@@ -1294,6 +1311,22 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     >
                       ✕
                     </button>
+                    {photos.length > 1 && (
+                      <div className="absolute bottom-1.5 inset-x-1.5 flex justify-between">
+                        <button
+                          onClick={() => handlePhotoMove(photo.id, -1)}
+                          disabled={i === 0}
+                          className="w-6 h-6 rounded-full bg-black/70 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/70"
+                          title="Mover para trás"
+                        >‹</button>
+                        <button
+                          onClick={() => handlePhotoMove(photo.id, 1)}
+                          disabled={i === photos.length - 1}
+                          className="w-6 h-6 rounded-full bg-black/70 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/70"
+                          title="Mover para frente"
+                        >›</button>
+                      </div>
+                    )}
                   </div>
                 ))}
 
