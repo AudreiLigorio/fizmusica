@@ -11,6 +11,17 @@ const FRAMES: Record<Mood, [string, string]> = {
   calm:      ["/mascot/fiz-calm-a.webp", "/mascot/fiz-calm-b.webp"],
 }
 
+// Emoções (lista fixa do wizard, ver CriarClient.tsx) com energia/animação alta —
+// combinam com a dança. Tudo que não está aqui (inclusive vazio/desconhecido) cai
+// no "calm": é o padrão mais seguro, nunca destoa de um pedido sensível.
+const ENERGETIC_EMOTIONS = new Set([
+  "☀️ Alegre", "🎉 Divertida", "⚡ Energético", "😤 Agressivo", "💖 Emocionante",
+])
+
+export function moodFromEmotion(emotion?: string | null): Mood {
+  return emotion && ENERGETIC_EMOTIONS.has(emotion) ? "energetic" : "calm"
+}
+
 export default function FizMascot({ mood = "energetic", size = 168 }: { mood?: Mood; size?: number }) {
   const [frameA, frameB] = FRAMES[mood]
   const cycle = mood === "energetic" ? "0.9s" : "1.8s"

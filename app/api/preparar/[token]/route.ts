@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
   const supabase = createServerClient()
   const { data: order, error } = await supabase
     .from("orders")
-    .select("id, paymentStatus, status, lyricsApproved, honoreeName, subcategory, is_revision, photo_token")
+    .select("id, paymentStatus, status, lyricsApproved, honoreeName, subcategory, is_revision, photo_token, emotion")
     .eq("photo_token", token)
     .maybeSingle()
 
@@ -37,6 +37,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ tok
       honoreeName:    order.honoreeName,
       subcategory:    order.subcategory,
       is_revision:    order.is_revision,
+      emotion:        order.emotion,
       slug:           music?.slug ?? null,
     },
   })
