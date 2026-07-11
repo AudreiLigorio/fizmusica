@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 import Header from "../../components/Header"
 import Footer from "../../components/Footer"
 import PreparoFlow from "../../minha-musica/PreparoFlow"
+import FizMascot from "../../components/FizMascot"
 
 type Order = {
   id: string
@@ -117,8 +118,8 @@ export default function PrepararPage() {
     return (
       <Shell>
         <div className="text-center py-16">
-          <p className="text-4xl mb-3">🎶</p>
-          <h1 className="text-2xl font-bold mb-2">Pronto! Sua música está sendo criada</h1>
+          <FizMascot mood="energetic" />
+          <h1 className="text-2xl font-bold mb-2 mt-2">Pronto! Sua música está sendo criada</h1>
           <p className="text-white/50 text-sm mb-6">
             Você não precisa fazer mais nada agora — avisaremos por <strong className="text-white/70">e-mail</strong> assim que ficar pronta.
             Você também pode acompanhar tudo na sua área.
