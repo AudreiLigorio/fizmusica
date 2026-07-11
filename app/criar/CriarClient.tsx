@@ -311,6 +311,11 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     setHonoreeName(data.honoreeName ?? "")
     setLeadCaptured(data.leadCaptured ?? false)
     setOrderId(data.orderId ?? null)
+    // orderId só entra na sessão DEPOIS que handleFinalizar cria o pedido, o que
+    // exige termsAccepted=true naquele momento — ou seja, se há orderId, os termos
+    // já foram aceitos de verdade. Sem isso, o resumo da etapa 5 volta pedindo pra
+    // aceitar de novo, mesmo já tendo aceitado (o checkbox nunca era persistido).
+    setTermsAccepted(!!data.orderId)
   }
 
   function resumeSession(s: SessionData) {
