@@ -173,9 +173,9 @@ Fonte da verdade é o **`orderId`** (não só `localStorage`, que some em navega
 
 **Música por IA:** `POST /api/suno/callback` (webhook KIE), `POST /api/orders/[id]/musica/escolher`, `GET /api/orders/[id]/musica/download`, `POST /api/admin/producao/[id]/suno` (ações: gerar/regenerar/liberar/sincronizar).
 
-**Pagamentos:** `POST /api/payments/create`, `POST /api/payments/confirm`, `POST /api/payments/webhook`, `GET /api/payments/status`.
+**Pagamentos:** `POST /api/payments/create`, `POST /api/payments/confirm`, `POST /api/payments/webhook`, `GET /api/payments/status`, `POST /api/payments/free` (pedido zerado por cupom 100% — ver §12.3).
 
-**Cupons:** `POST /api/coupons/validate`.
+**Cupons:** `POST /api/coupons/validate` (preview); relatório/lista em `GET /api/admin/cupons`.
 
 **Conta/vínculo:** `POST /api/conta/claim`, `GET /api/conta/claim/confirm`, `GET/POST /api/conta/link-order`.
 
@@ -288,6 +288,10 @@ Toda automação de "pedido pronto/entregue" (e-mail, cupom de fidelidade, cria�
 - Aparecem em 4 jornadas: e-mail de repescagem dia-3 (auto-aplica via link), campo no checkout, banner público em `/produtos`, cupom de fidelidade pós-entrega.
 - **Cupom público não se auto-aplica** — só desconta se o cliente digitar/aplicar manualmente (correção feita após bug de auto-aplicação indevida).
 - Validação de preview via `/api/coupons/validate`; autoridade final é sempre o `checkout/create`, que revalida.
+- **Atribuição por pedido:** ao criar a cobrança, `orders.coupon_code` + `orders.discount_amount` são gravados (todos os métodos, inclusive PIX). É a base do relatório e da contagem de usos.
+- **Usos = pedidos PAGOS com aquele `coupon_code` (derivado, não contador).** Antes existia `coupons.used_count` incrementado só no cartão aprovado na hora — PIX (confirm + webhook) nunca contava, e em produção o EUQUERO tinha 6 conversões reais aparecendo como 0. Correção 2026-07-11: `countCouponUses()` em `lib/coupons.ts` conta `orders` PAGOS com o código; `checkCouponActive`/`getActivePublicCoupon` e o limite `max_uses` passam a usar isso. O campo `used_count` no banco ficou **obsoleto** (não é mais lido nem escrito). A tela `/admin/cupons` recebe o valor derivado pela API.
+- **Relatório de conversão por cupom** (`/admin/cupons`, `GET /api/admin/cupons`): por cupom mostra vendas pagas, receita, desconto concedido e testes grátis (R$ 0), derivado de `orders` PAGOS + `payments`. Serve pra **comissão de influenciador/youtuber** — um código único por youtuber (`JOAO20`) faz cada linha ser a conversão dele.
+- **Cupom que zera o total (100%) → caminho "pedido grátis":** o Mercado Pago não cobra R$ 0. Quando um cupom válido zera o total, o checkout troca o Brick do MP por um botão "Concluir pedido grátis" → `POST /api/payments/free`. O endpoint revalida o cupom no servidor, exige `finalTotal === 0`, marca o pedido PAGO, registra `payments` de R$ 0 (`mpPaymentId = FREE-<orderId>`, vira "teste grátis" no relatório) e roda `ensurePaymentPrep` (idempotente). Quantidade de testes é controlada pelo `max_uses` do cupom. Uso pensado: youtuber testar a plataforma antes de fechar parceria.
 
 ---
 
@@ -322,7 +326,7 @@ Mesmo e-mail → automático. E-mail diferente e pedido recente (<24h, não vinc
 
 - **RLS (Row Level Security) habilitado em todas as tabelas** (`public` schema) desde 2026-06-23, sem policies de leitura pública onde não precisa — como todo acesso sensível já era via `service_role` (que ignora RLS), habilitar RLS sem policy simplesmente bloqueia 100% do acesso anônimo/autenticado direto ao Supabase REST, sem quebrar o app. Exceções com `public read` mantidas de propósito (catálogo inofensivo): `products`, `wizard_*`.
 - **Storage:** policies de leitura/escrita pública removidas dos buckets (upload sempre via `service_role` ou signed URL); bucket é `public=true` só pra servir arquivo via `getPublicUrl`, não pra listar/gravar.
-- **Funções com `search_path` fixado** (`set_updated_at`, `increment_coupon_use`, `increment_music_views`) — corrige warning "Function Search Path Mutable".
+- **Funções com `search_path` fixado** (`set_updated_at`, `increment_coupon_use`, `increment_music_views`) — corrige warning "Function Search Path Mutable". Obs.: `increment_coupon_use` ficou **obsoleta** desde 2026-07-11 (usos de cupom agora são derivados, ver §12.3) — a função ainda existe no banco mas não é mais chamada.
 - **Upload de fotos defensivo** (`lib/imageValidation`): validação por magic bytes (assinatura real do arquivo), só JPEG/PNG/WebP (sem SVG, evita XSS), nome aleatório no servidor (sem path traversal). Limite de fotos por pedido parametrizável por produto (`photo_limit`, padrão 10).
 - **Anti-hijack de e-mail:** `PATCH /api/orders/[id]` bloqueia troca de e-mail depois de `PAID`.
 - **Fallback de `createServerClient()` removido**: antes caía pro anon key se a service role faltasse (silenciosamente mostraria telas vazias); agora lança erro explícito.
