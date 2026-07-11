@@ -5,7 +5,7 @@ import { useState } from "react"
 const FAQS: { q: string; a: string }[] = [
   {
     q: "O que é a Fiz Música?",
-    a: "É uma plataforma que transforma a sua história em uma música 100% personalizada. Você conta os detalhes, escolhe o estilo e o sentimento, e nós criamos uma canção única — feita para emocionar quem você ama.",
+    a: "É uma plataforma que transforma a sua história em uma música 100% personalizada, com fotos, QR Code para impressão, opção de compartilhamento e muito mais. Você conta com uma plataforma completa, onde você mesmo personaliza tudo do seu jeito, sem depender de terceiros.",
   },
   {
     q: "Como eu crio a minha música?",
@@ -16,20 +16,16 @@ const FAQS: { q: string; a: string }[] = [
     a: "No digital você recebe: o arquivo da música em MP3 para baixar, uma página exclusiva (player) com a letra sincronizada e suas fotos, e um QR Code para compartilhar e fazer a surpresa. Tudo fica disponível na sua área, sempre que quiser.",
   },
   {
-    q: "E o produto físico, o que muda?",
-    a: "Nos produtos físicos você recebe tudo do digital e ainda um item especial (por exemplo, uma placa/quadro com o QR Code da música) entregue no endereço informado. É a sua música ganhando forma para presentear de um jeito ainda mais marcante.",
-  },
-  {
     q: "Posso editar a letra antes de a música ser produzida?",
     a: "Sim! Depois do pagamento, você gera a letra na sua área, lê com calma e pode pedir ajustes à nossa IA ou editar você mesmo. A música só começa a ser produzida quando você aprovar a letra — então nada é gerado sem o seu OK.",
   },
   {
     q: "Posso colocar fotos na música?",
-    a: "Pode! Antes de aprovar, você adiciona fotos que aparecem no player enquanto a música toca, criando um clipe emocional — a quantidade varia de acordo com o produto escolhido. As fotos são opcionais, mas deixam a experiência muito mais especial.",
+    a: "Pode! Você adiciona fotos que aparecem no player enquanto a música toca, criando um clipe emocional — a quantidade varia de acordo com o produto escolhido. As fotos são opcionais, mas deixam a experiência muito mais especial.",
   },
   {
     q: "Quanto tempo leva para ficar pronta?",
-    a: "Assim que você aprova a letra, a produção começa automaticamente e costuma ficar pronta em poucos minutos. Avisamos por e-mail quando a sua música estiver disponível para ouvir e baixar na sua área.",
+    a: "Assim que você aprova a letra, a produção começa automaticamente e costuma ficar pronta em poucos minutos. Avisamos por e-mail quando a sua música estiver disponível. Assim que ficar pronta, você terá acesso ao player exclusivo, QR Code para impressão, download do MP3, edição das fotos e tudo pronto para surpreender.",
   },
   {
     q: "Como eu recebo e baixo a música?",
@@ -41,7 +37,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Quais as formas de pagamento?",
-    a: "Aceitamos PIX (aprovação na hora), cartão de crédito (em até 5x) e boleto. O pagamento é processado com segurança pelo Mercado Pago — a gente não armazena os dados do seu cartão.",
+    a: "Aceitamos PIX e cartão de crédito (aprovação na hora). O pagamento é processado com segurança pelo Mercado Pago — a gente não armazena os dados do seu cartão.",
   },
   {
     q: "A música pode ser para qualquer ocasião?",
