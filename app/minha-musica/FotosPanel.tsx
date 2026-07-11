@@ -60,6 +60,27 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
     await load(); onChange?.()
   }
 
+  // Move uma foto do cliente uma posição pra frente/trás (a capa gerada pela IA, se houver, não entra na troca)
+  async function move(photoId: string, dir: -1 | 1) {
+    const reorderable = photos.filter((p) => !p.is_cover)
+    const i = reorderable.findIndex((p) => p.id === photoId)
+    const j = i + dir
+    if (i < 0 || j < 0 || j >= reorderable.length) return
+    const ids = reorderable.map((p) => p.id)
+    ;[ids[i], ids[j]] = [ids[j], ids[i]]
+    setPhotos((prev) => {
+      const cover = prev.filter((p) => p.is_cover)
+      const byId = new Map(prev.map((p) => [p.id, p]))
+      return [...cover, ...ids.map((id) => byId.get(id)!)]
+    })
+    await fetch(`/api/pedido/${token}/fotos`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reorder: ids }),
+    })
+    await load(); onChange?.()
+  }
+
   return (
     <div className="rounded-2xl border border-pink-500/25 bg-pink-500/[0.05] p-4 mb-1">
       {cropSrc && (
@@ -92,17 +113,40 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-          {photos.map((p) => (
-            <div key={p.id} className="relative rounded-xl overflow-hidden border-2 border-white/10" style={{ aspectRatio: "1/1" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="" className="w-full h-full object-cover" />
-              <button
-                onClick={() => remove(p.id)}
-                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white text-sm font-bold flex items-center justify-center transition-colors"
-                title="Remover foto"
-              >×</button>
-            </div>
-          ))}
+          {(() => {
+            let ri = -1
+            return photos.map((p) => {
+              if (!p.is_cover) ri++
+              const reorderableCount = photos.filter((x) => !x.is_cover).length
+              return (
+                <div key={p.id} className="relative rounded-xl overflow-hidden border-2 border-white/10" style={{ aspectRatio: "1/1" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.url} alt="" className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => remove(p.id)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white text-sm font-bold flex items-center justify-center transition-colors"
+                    title="Remover foto"
+                  >×</button>
+                  {!p.is_cover && reorderableCount > 1 && (
+                    <div className="absolute bottom-1 inset-x-1 flex justify-between">
+                      <button
+                        onClick={() => move(p.id, -1)}
+                        disabled={ri === 0}
+                        className="w-6 h-6 rounded-full bg-black/60 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/60"
+                        title="Mover para trás"
+                      >‹</button>
+                      <button
+                        onClick={() => move(p.id, 1)}
+                        disabled={ri === reorderableCount - 1}
+                        className="w-6 h-6 rounded-full bg-black/60 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/60"
+                        title="Mover para frente"
+                      >›</button>
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          })()}
 
           {photos.length < max && (
             <button

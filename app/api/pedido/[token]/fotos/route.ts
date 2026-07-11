@@ -123,13 +123,32 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   return NextResponse.json({ photo: img })
 }
 
-// ── PATCH: define uma foto como capa ──
+// ── PATCH: define uma foto como capa, ou reordena as fotos do cliente ──
 export async function PATCH(req: NextRequest, { params }: { params: Params }) {
   const { token } = await params
   const { supabase, order } = await resolveOrder(token)
   if (!order) return NextResponse.json({ error: "Link inválido." }, { status: 404 })
 
-  const { photoId } = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => ({}))
+
+  if (Array.isArray(body.reorder)) {
+    const ids: string[] = body.reorder
+    // Só reordena fotos do cliente (nunca a capa gerada pela IA) e que pertençam a este pedido
+    const { data: owned } = await supabase
+      .from("order_photos")
+      .select("id")
+      .eq("orderId", order.id)
+      .eq("is_cover", false)
+      .in("id", ids)
+    const ownedIds = new Set((owned ?? []).map((p: { id: string }) => p.id))
+    if (ids.length === 0 || ids.some((id) => !ownedIds.has(id))) {
+      return NextResponse.json({ error: "Lista de fotos inválida." }, { status: 400 })
+    }
+    await Promise.all(ids.map((id, i) => supabase.from("order_photos").update({ sort_order: i }).eq("id", id)))
+    return NextResponse.json({ ok: true })
+  }
+
+  const { photoId } = body
   if (!photoId) return NextResponse.json({ error: "Foto não informada." }, { status: 400 })
 
   // Confirma que a foto pertence a este pedido
