@@ -104,6 +104,18 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [photoError, setPhotoError]   = useState("")
   const photoInputRef = useRef<HTMLInputElement>(null)
+
+  // Sincroniza as fotos já salvas assim que o orderId é conhecido (pedido recém
+  // criado ou retomado de uma sessão anterior). Sem isso, ao sair da etapa 6 e
+  // voltar (ex.: "Voltar" em /produtos), o estado local reinicia vazio mesmo com
+  // fotos já existindo no pedido — o cliente reenvia e cria duplicatas.
+  useEffect(() => {
+    if (!orderId) return
+    fetch(`/api/orders/${orderId}/fotos`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.photos) setPhotos(d.photos.map((p: { id: string; url: string }) => ({ id: p.id, url: p.url }))) })
+      .catch(() => {})
+  }, [orderId])
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
 
