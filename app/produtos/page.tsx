@@ -8,6 +8,7 @@ import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import ProductGallery from "./ProductGallery"
+import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 
 type DeliveryOption = {
   id: string
@@ -86,6 +87,9 @@ function ProdutosContent() {
   // Carrossel de produtos (só no mobile) — rastreia o card centralizado p/ os dots.
   const carouselRef = useRef<HTMLDivElement>(null)
   const [activeProduct, setActiveProduct] = useState(0)
+
+  const contentRef = useRef<HTMLDivElement>(null)
+  useScrollTopOnStepChange(step, contentRef)
 
   function handleCarouselScroll() {
     const el = carouselRef.current
@@ -246,7 +250,7 @@ function ProdutosContent() {
         </div>
 
         {/* Área de conteúdo */}
-        <div className="flex-1 overflow-y-auto lg:overflow-visible">
+        <div ref={contentRef} className="flex-1 overflow-y-auto lg:overflow-visible">
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-5xl lg:mx-auto lg:px-6 lg:py-12">
 
 

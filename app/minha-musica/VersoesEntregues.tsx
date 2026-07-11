@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import FotosPanel from "./FotosPanel"
 
 type Track = { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }
@@ -39,6 +39,16 @@ export default function VersoesEntregues({
   const [active, setActive] = useState<StepKey>("principal")
   const [verOutra, setVerOutra] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // Ao trocar de aba, traz a barra de passos (e o conteúdo novo) pro topo da
+  // tela — sem isso, se a aba anterior era mais alta, o conteúdo novo pode
+  // renderizar fora da área visível.
+  const rootRef = useRef<HTMLDivElement>(null)
+  const mountedRef = useRef(false)
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return }
+    rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [active])
 
   const hasPhotos  = (photoCount ?? 0) > 0
   const principal  = tracks.find((t) => principalUrl && t.audioUrl === principalUrl) ?? tracks[0]
@@ -82,7 +92,7 @@ export default function VersoesEntregues({
   const principalIndex = tracks.indexOf(principal)
 
   return (
-    <div className="space-y-3">
+    <div ref={rootRef} className="space-y-3">
       {/* Barra de passos — navegação "o que fazer agora" */}
       <div className="grid grid-cols-4 gap-1.5">
         {steps.map((s) => {

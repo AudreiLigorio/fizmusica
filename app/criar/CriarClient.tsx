@@ -8,6 +8,7 @@ import MicButton from "../components/MicButton"
 import JourneyProgress from "../components/JourneyProgress"
 import type { CreateOrderDTO } from "@/app/types/order"
 import { DEFAULT_PHOTO_LIMIT } from "@/lib/photoLimit"
+import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 
 // Detecta erros de digitação comuns no domínio do e-mail e sugere correção
 const COMMON_EMAIL_DOMAINS = [
@@ -103,6 +104,14 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [photoError, setPhotoError]   = useState("")
   const photoInputRef = useRef<HTMLInputElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
+
+  // Leva o olhar do usuário até a mensagem de erro assim que ela aparece —
+  // sem isso, numa etapa longa o aviso pode renderizar fora da tela.
+  const errorRef = useRef<HTMLDivElement>(null)
+  const leadErrorRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }) }, [error])
 
   // Session persistence
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -120,6 +129,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [leadWhatsapp, setLeadWhatsapp] = useState("")
   const [leadHonoreeName, setLeadHonoreeName] = useState("")
   const [leadError, setLeadError] = useState("")
+  useEffect(() => { if (leadError) leadErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }) }, [leadError])
 
   const leadWhatsappOk = /^\(\d{2}\) 9\d{4}-\d{4}$/.test(leadWhatsapp)
   const leadWhatsappDirty = leadWhatsapp.length > 0
@@ -688,7 +698,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         )}
 
         {/* ── Área de conteúdo ── */}
-        <div className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
+        <div ref={contentRef} className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12" style={{ width: "100%", boxSizing: "border-box" }}>
 
             {/* ── Banner de retomada ── */}
@@ -837,7 +847,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               {leadError && (
-                <div className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
+                <div ref={leadErrorRef} className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
                   ⚠️ {leadError}
                 </div>
               )}
@@ -1335,7 +1345,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
             {/* Erro */}
             {!showLeadCapture && step !== 6 && error && (
-              <div className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
+              <div ref={errorRef} className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
                 ⚠️ {error}
               </div>
             )}

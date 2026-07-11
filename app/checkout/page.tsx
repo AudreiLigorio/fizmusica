@@ -12,6 +12,7 @@ function CheckoutContent() {
   const router = useRouter()
   const brickRef = useRef<HTMLDivElement>(null)
   const controllerRef = useRef<{ unmount: () => void } | null>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
 
   const orderId      = searchParams.get("orderId")      ?? ""
   const productId    = searchParams.get("productId")    ?? ""
@@ -107,6 +108,12 @@ function CheckoutContent() {
   }
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
+
+  // O erro renderiza acima do Brick — sem isso, se o cliente já estava rolado
+  // pra baixo preenchendo o cartão, a mensagem passa despercebida.
+  useEffect(() => {
+    if (status === "error") errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }, [status])
 
   // Auto-aplica cupom vindo na URL (link do e-mail de repescagem)
   useEffect(() => {
@@ -372,7 +379,7 @@ function CheckoutContent() {
 
           {/* Erro */}
           {status === "error" && (
-            <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
+            <div ref={errorRef} className="mb-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
               ❌ {errorMsg}
               <button onClick={() => setStatus("ready")} className="block mt-2 text-pink-400 underline text-xs">
                 Tentar novamente

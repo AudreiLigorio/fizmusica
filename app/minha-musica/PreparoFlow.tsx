@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import LetraPanel from "./LetraPanel"
 import FotosPanel from "./FotosPanel"
 
@@ -36,8 +36,17 @@ export default function PreparoFlow({
 
   const activeStep = photosConfirmed ? 3 : showFotos ? 2 : 1
 
+  // Ao avançar de passo, traz o mini-stepper (e o novo conteúdo) pro topo da
+  // tela — sem isso, o passo novo pode renderizar fora da área visível.
+  const rootRef = useRef<HTMLDivElement>(null)
+  const mountedRef = useRef(false)
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; return }
+    rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [activeStep])
+
   return (
-    <div className="space-y-3">
+    <div ref={rootRef} className="space-y-3">
       {isRevision && !photosConfirmed && (
         <div className="flex items-start gap-3 rounded-xl px-4 py-3 border border-fuchsia-500/30 bg-fuchsia-500/[0.08]">
           <span className="text-fuchsia-300 text-lg shrink-0">🔁</span>
