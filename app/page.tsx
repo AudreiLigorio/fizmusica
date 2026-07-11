@@ -24,7 +24,7 @@ const HERO_SRC_MOBILE = "/videos/hero-home.mobile.mp4"  // 480p, ~490KB
 const STEPS = [
   { n: "1", label: "Conte sua história",    desc: "Escolha a ocasião e preencha o questionário guiado." },
   { n: "2", label: "Escolha o estilo e sentimento", desc: "Sertanejo, MPB, pagode, pop — você decide." },
-  { n: "3", label: "Selecione o produto de sua preferência", desc: "Aqui você vai se surpreender." },
+  { n: "3", label: "É só adicionar as suas fotos.", desc: "Aqui você vai surpreender ainda mais." },
   { n: "4", label: "Emocione alguém",        desc: "Um presente que ficará guardado para sempre." },
 ]
 
@@ -60,7 +60,7 @@ const WHY = [
       </svg>
     ),
     title: "Letra exclusiva para você",
-    desc: "Revisão rigorosa. Nada genérico — cada detalhe inspira a composição.",
+    desc: "A letra é editada e validada por você, online. Você tem à disposição 3 edições e uma revisão completa.",
     gradient: "linear-gradient(135deg, #d946ef, #f0196b)",
   },
   {
@@ -70,7 +70,7 @@ const WHY = [
       </svg>
     ),
     title: "Plataforma premium assistida",
-    desc: "Nossa equipe acompanha você do início ao fim via WhatsApp.",
+    desc: "Nossa plataforma é completa. Vamos além e entregamos muitas funcionalidades desde a música até a produção final. Tudo é feito por você, de forma online e sem esperas.",
     gradient: "linear-gradient(135deg, #f0196b, #d946ef)",
   },
   {
@@ -348,7 +348,7 @@ export default function Home() {
             <h2 className="font-light text-white/90 leading-tight"
                 style={{ ...displayFont, fontSize: "clamp(2.2rem, 4vw, 3.5rem)" }}>
               Em apenas alguns passos,<br />
-              <em style={{ color: "#f0196b" }}>sua história vira música.</em>
+              <em style={{ color: "#f0196b" }}>sua história vira uma surpresa inesquecível.</em>
             </h2>
           </div>
 
@@ -401,17 +401,24 @@ export default function Home() {
           </p>
           <h2 className="font-light leading-tight mb-8 text-white/90"
               style={{ ...displayFont, fontSize: "clamp(2rem, 3.5vw, 3rem)" }}>
-            Veja como é fácil transformar{" "}
-            <em style={{ color: "#f0196b" }}>sentimentos em música.</em>
+            Muito mais do que uma música,{" "}
+            <em style={{ color: "#f0196b" }}>é uma experiência completa.</em>
           </h2>
-          <div className="space-y-5">
+          <p className="text-white/90 font-medium mb-5" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
+            Tudo incluso:
+          </p>
+          <div className="space-y-4">
             {[
-              "Imagine criar uma música para o momento certo.",
-              "Mais do que um presente — uma lembrança para a vida toda.",
-              "Nós te entregamos mais do que emoção, tem história e outras \"surpresas\".",
+              "A música é exclusiva e perfeita",
+              "As fotos aparecem sincronizadas.",
+              "A letra acompanha a reprodução.",
+              "O QR Code tem um link exclusivo para surpreender de verdade.",
+              "Tudo em um player exclusivo.",
             ].map((t, i) => (
-              <div key={i} className="flex items-start gap-4">
-                <div className="shrink-0 w-px h-12 mt-1 rounded-full" style={{ background: "rgba(240,25,107,0.3)" }} />
+              <div key={i} className="flex items-start gap-3">
+                <svg className="shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f0196b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
                 <p className="text-white/55 leading-relaxed text-sm" style={bodyFont}>{t}</p>
               </div>
             ))}
@@ -533,8 +540,8 @@ export default function Home() {
                       grad: "linear-gradient(135deg,#d946ef,#f0196b)",
                     },
                     {
-                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-                      title: "Atendimento humanizado",
+                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>,
+                      title: "Player exclusivo com música, foto e letra.",
                       grad: "linear-gradient(135deg,#f0196b,#d946ef)",
                     },
                     {
