@@ -221,9 +221,9 @@ export default function Home() {
             </p>
 
             <h1 className="animate-fade-up delay-200 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(2.4rem, 5.5vw, 4.75rem)" }}>O primeiro presente</span>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(2.4rem, 5.5vw, 4.75rem)" }}>que pode ser ouvido,</span>
-              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(2.6rem, 6vw, 5.25rem)", color: "#ff3d84" }}>assistido e compartilhado.</em>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>O primeiro presente</span>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>que pode ser ouvido,</span>
+              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(2.1rem, 4vw, 3.3rem)", color: "#ff3d84" }}>assistido e compartilhado.</em>
             </h1>
 
             <p className="animate-fade-up delay-300 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
