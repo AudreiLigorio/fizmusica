@@ -24,6 +24,7 @@ function CheckoutContent() {
   const [errorMsg, setErrorMsg] = useState("")
   const [pixData, setPixData] = useState<{ qrCodeBase64: string; qrCode: string; ticketUrl: string | null } | null>(null)
   const [pixCopied, setPixCopied] = useState(false)
+  const [freeSubmitting, setFreeSubmitting] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const payerEmailRef = useRef<string>("")
 
@@ -85,6 +86,37 @@ function CheckoutContent() {
   }
 
   const displayTotal = coupon ? coupon.finalTotal : price
+  // Cupom que zera o total (ex.: 100% de teste) → não dá pra cobrar no MP; usa o
+  // caminho "pedido grátis". Exige que um cupom esteja de fato aplicado.
+  const isFreeOrder = !!coupon && displayTotal <= 0
+
+  async function submitFree() {
+    setFreeSubmitting(true)
+    try {
+      const res = await fetch("/api/payments/free", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          productId,
+          deliveryOptionId: deliveryId,
+          couponCode: couponRef.current || undefined,
+        }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.success || data.alreadyPaid) {
+        router.replace(`/sucesso?orderId=${orderId}&status=approved`)
+        return
+      }
+      setErrorMsg(data.error ?? "Não foi possível concluir o pedido grátis.")
+      setStatus("error")
+    } catch {
+      setErrorMsg("Falha de conexão. Tente novamente.")
+      setStatus("error")
+    } finally {
+      setFreeSubmitting(false)
+    }
+  }
 
   function startPixPolling() {
     if (pollRef.current) clearInterval(pollRef.current)
@@ -463,15 +495,32 @@ function CheckoutContent() {
             </div>
           )}
 
-          {/* Container do Brick */}
+          {/* Container do Brick — escondido no pedido grátis (não há o que cobrar) */}
           <div
             id="payment-brick-container"
             ref={brickRef}
-            className={status === "processing" || status === "pix" ? "opacity-0 pointer-events-none h-0 overflow-hidden" : ""}
+            className={status === "processing" || status === "pix" || isFreeOrder ? "opacity-0 pointer-events-none h-0 overflow-hidden" : ""}
           />
 
+          {/* Pedido grátis — cupom zerou o total (ex.: 100% de teste) */}
+          {isFreeOrder && status !== "processing" && status !== "pix" && (
+            <div className="mt-2">
+              <div className="mb-4 rounded-2xl border border-green-500/25 bg-green-500/[0.08] px-4 py-3 text-sm text-green-200">
+                🎁 Este cupom cobre 100% do valor — seu pedido sai <strong>sem custo</strong>. É só concluir.
+              </div>
+              <button
+                onClick={submitFree}
+                disabled={freeSubmitting}
+                className="w-full py-4 rounded-2xl text-sm font-bold text-white disabled:opacity-50 transition-all hover:brightness-110"
+                style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}
+              >
+                {freeSubmitting ? "Concluindo…" : "Concluir pedido grátis 🎁"}
+              </button>
+            </div>
+          )}
+
           {/* Segurança */}
-          {status !== "pix" && (
+          {status !== "pix" && !isFreeOrder && (
             <>
               <p className="text-center text-xs text-white/30 mt-6">
                 🔒 Pagamento 100% seguro via Mercado Pago
