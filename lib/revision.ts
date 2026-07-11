@@ -80,15 +80,17 @@ export async function acceptRevision(
     await supabase.from("order_answers").insert(answers.map((a) => ({ ...a, orderId: newId })))
   }
 
-  // Exclui a capa antiga da IA — uma nova capa é gerada na regeneração.
+  // Duplica todas as fotos do pedido original, inclusive a capa gerada pela IA
+  // (mantém is_cover) — fica como capa provisória até a nova música ser gerada.
+  // A regeneração já zera is_cover de tudo no pedido antes de inserir a capa nova
+  // (lib/suno/ingest.ts), então a antiga é substituída sem conflito.
   const { data: photos } = await supabase
     .from("order_photos")
-    .select("url, storage_path, sort_order")
+    .select("url, storage_path, sort_order, is_cover")
     .eq("orderId", orderId)
-    .not("storage_path", "like", "%suno-cover%")
 
   if (photos && photos.length > 0) {
-    await supabase.from("order_photos").insert(photos.map((p) => ({ ...p, orderId: newId, is_cover: false })))
+    await supabase.from("order_photos").insert(photos.map((p) => ({ ...p, orderId: newId })))
   }
 
   const { data: music } = await supabase
