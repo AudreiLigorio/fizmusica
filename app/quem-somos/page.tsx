@@ -163,14 +163,8 @@ export default function QuemSomosPage() {
         <div className="mb-20 rounded-3xl p-8 lg:p-12"
              style={{ background: "rgba(240,25,107,0.05)", border: "1px solid rgba(240,25,107,0.12)" }}>
           <p className="text-xs font-semibold tracking-[0.3em] uppercase mb-6 text-white/30">O time por trás disso</p>
-          <p className="text-white/70 leading-relaxed mb-6">
-            A FizMusica foi fundada por alguém que acredita que <strong className="text-white">a tecnologia mais poderosa é aquela que faz você sentir algo.</strong> Desde o início, a missão foi clara: democratizar o acesso a músicas personalizadas de verdade.
-          </p>
-          <p className="text-white/70 leading-relaxed mb-6">
-            Hoje, o time reúne <strong className="text-white">compositores, produtores musicais, cantores e especialistas em tecnologia</strong> — cada um apaixonado por aquele momento em que o cliente ouve a música pela primeira vez e não consegue segurar o choro.
-          </p>
           <p className="text-white/70 leading-relaxed">
-            A gente não tem escritório chique. Tem estúdio, tem WhatsApp sempre aberto e tem uma cultura absurda de <strong className="text-white">fazer bem-feito ou refazer.</strong>
+            A FizMusica foi fundada por alguém que acredita que <strong className="text-white">a tecnologia mais poderosa é aquela que faz você sentir algo.</strong> Desde o início, a missão foi clara: democratizar o acesso a músicas personalizadas de verdade.
           </p>
         </div>
 
