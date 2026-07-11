@@ -17,24 +17,50 @@ export async function GET() {
     .select("*")
     .order("createdAt", { ascending: false })
 
-  // Usos derivados dos pedidos PAGOS (fonte da verdade), não do contador
-  // `used_count` — que subcontava PIX. Uma query só, tally em memória.
+  // Relatório derivado dos pedidos PAGOS (fonte da verdade), não do contador
+  // `used_count` — que subcontava PIX. Base do relatório de conversão por cupom
+  // (comissão de youtuber): conversões, testes grátis (R$ 0), receita e desconto.
   const { data: paidOrders } = await supabase
     .from("orders")
-    .select("coupon_code")
+    .select("id, coupon_code, discount_amount")
     .eq("paymentStatus", "PAID")
     .not("coupon_code", "is", null)
 
-  const tally = new Map<string, number>()
+  const orderIds = (paidOrders ?? []).map((o) => o.id)
+  const { data: pays } = orderIds.length
+    ? await supabase.from("payments").select("orderId, amount").in("orderId", orderIds)
+    : { data: [] as { orderId: string; amount: number }[] }
+
+  const amountByOrder = new Map<string, number>()
+  for (const p of pays ?? []) amountByOrder.set(p.orderId, Number(p.amount) || 0)
+
+  type Stat = { conversions: number; free_tests: number; revenue: number; discount_total: number }
+  const stats = new Map<string, Stat>()
   for (const o of paidOrders ?? []) {
     const k = String(o.coupon_code ?? "").trim().toUpperCase()
-    if (k) tally.set(k, (tally.get(k) ?? 0) + 1)
+    if (!k) continue
+    const amount = amountByOrder.get(o.id) ?? 0
+    const s = stats.get(k) ?? { conversions: 0, free_tests: 0, revenue: 0, discount_total: 0 }
+    s.conversions   += 1
+    if (amount === 0) s.free_tests += 1
+    s.revenue       += amount
+    s.discount_total += Number(o.discount_amount) || 0
+    stats.set(k, s)
   }
 
-  const coupons = (data ?? []).map((c) => ({
-    ...c,
-    used_count: tally.get(String(c.code ?? "").trim().toUpperCase()) ?? 0,
-  }))
+  const coupons = (data ?? []).map((c) => {
+    const s = stats.get(String(c.code ?? "").trim().toUpperCase())
+    const conversions = s?.conversions ?? 0
+    const free_tests  = s?.free_tests ?? 0
+    return {
+      ...c,
+      used_count:       conversions,                 // usos = todas as conversões pagas
+      paid_conversions: conversions - free_tests,    // conversões que geraram receita
+      free_tests,                                    // testes grátis (cupom 100%)
+      revenue:          Math.round((s?.revenue ?? 0) * 100) / 100,
+      discount_total:   Math.round((s?.discount_total ?? 0) * 100) / 100,
+    }
+  })
 
   return NextResponse.json({ coupons })
 }

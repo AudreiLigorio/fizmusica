@@ -11,6 +11,10 @@ type Coupon = {
   min_value: number | null
   max_uses: number | null
   used_count: number
+  paid_conversions: number
+  free_tests: number
+  revenue: number
+  discount_total: number
   active: boolean
   expires_at: string | null
   show_on_site: boolean
@@ -168,6 +172,23 @@ export default function CuponsPage() {
                     {c.min_value != null ? ` · mín R$ ${Number(c.min_value).toFixed(2)}` : ""}
                     {c.expires_at ? ` · expira ${fmtDateBR(c.expires_at)}` : ""}
                   </p>
+                  {/* Relatório de conversão — comissão de youtuber */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs">
+                    <span className="text-green-400">
+                      💰 {c.paid_conversions} venda{c.paid_conversions !== 1 ? "s" : ""}
+                    </span>
+                    <span className="text-gray-400">
+                      Receita: <span className="text-white/80 font-medium">R$ {Number(c.revenue).toFixed(2)}</span>
+                    </span>
+                    <span className="text-gray-400">
+                      Desconto dado: R$ {Number(c.discount_total).toFixed(2)}
+                    </span>
+                    {c.free_tests > 0 && (
+                      <span className="text-fuchsia-300/80">
+                        🎬 {c.free_tests} teste{c.free_tests !== 1 ? "s" : ""} grátis
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => toggle(c.id, "active", !c.active)}
