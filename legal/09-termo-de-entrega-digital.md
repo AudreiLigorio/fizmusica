@@ -1,28 +1,33 @@
 # Termo de Entrega Digital — Acesso, Download e Compartilhamento
 
-Última atualização: Junho de 2026
+Última atualização: Julho de 2026
 
-## 1. Acesso à Área do Cliente
+## 1. Acesso ao Pedido e à Área do Cliente
 
-Após a conclusão do pedido e confirmação do pagamento, o Cliente terá acesso à **Área do Cliente** da plataforma Fiz Música mediante autenticação por e-mail (link mágico) ou login social (Google), **sem senha**.
+Após a confirmação do pagamento, o Cliente recebe por e-mail um **link de acesso exclusivo do pedido**, que permite — **sem senha e sem login** — acompanhar o status, aprovar a letra, gerenciar as fotos do player, escolher a versão da música e ouvi-la.
+
+O link de acesso do pedido é **pessoal**: qualquer pessoa de posse do link poderá executar as ações acima. A guarda e o não compartilhamento do link são de responsabilidade do Cliente.
+
+O Cliente também terá acesso à **Área do Cliente** da plataforma Fiz Música mediante autenticação por e-mail (link mágico) ou login social (Google), **sem senha**.
 
 A Área do Cliente permitirá:
 - Acompanhar o status do pedido;
 - Visualizar a letra da música;
 - Ouvir a música produzida;
-- Baixar o arquivo MP3 disponibilizado;
+- Baixar o arquivo MP3, mediante o **aceite deste Termo**;
 - Gerenciar os recursos de compartilhamento disponíveis;
-- Cadastrar/remover as fotos exibidas no player.
+- Cadastrar/remover as fotos exibidas no player;
+- Vincular o pedido à conta ("salvar acesso") para acessá-lo de qualquer dispositivo.
 
 ## 2. Entrega do MP3
 
-O arquivo **MP3** é disponibilizado na Área do Cliente e também enviado por **e-mail** no momento da entrega. O Cliente poderá realizar o download durante o período de disponibilidade informado.
+O arquivo **MP3** é disponibilizado na Área do Cliente, mediante autenticação e **aceite deste Termo**. O e-mail de entrega não contém o arquivo — apenas o direcionamento para o acesso. O Cliente poderá realizar o download durante o período de disponibilidade informado.
 
 Após o download, **o Cliente é responsável pela guarda, armazenamento e preservação do arquivo**. A Fiz Música **não garante** armazenamento permanente ou disponibilidade vitalícia do arquivo em seus servidores.
 
 ## 3. Player e QR Code
 
-A música é disponibilizada em uma **página digital (player)** acessível por link e por **QR Code**, com letra sincronizada e fotos (quando cadastradas). O QR Code pode ser impresso e compartilhado pelo Cliente.
+A música é disponibilizada em uma **página digital (player)** acessível por link e por **QR Code**, com letra sincronizada e fotos (quando cadastradas). A audição no player **não exige login nem senha**. O QR Code pode ser impresso e compartilhado pelo Cliente.
 
 ## 4. Link Compartilhável
 
