@@ -16,15 +16,21 @@ export default function AuthCallback() {
       const type = url.searchParams.get("type") as
         | "email" | "magiclink" | "recovery" | "signup" | "invite" | "email_change" | null
 
+      // "Salvar meu acesso" iniciado na página de token: volta pra lá depois do
+      // login (a própria página completa o vínculo). localStorage funciona aqui
+      // porque o OAuth do Google retorna no mesmo navegador.
+      const vincularToken = localStorage.getItem("fm_vincular_token")
+      const destino = vincularToken ? `/preparar/${vincularToken}` : "/minha-musica"
+
       // Fluxo token_hash (link mágico): valida no navegador → grava sessão
       if (token_hash && type) {
         const { error } = await supabase.auth.verifyOtp({ token_hash, type })
-        if (!error) { router.replace("/minha-musica"); return }
+        if (!error) { router.replace(destino); return }
       }
 
       // Fallback: se a sessão já tiver sido detectada na URL (fluxo implícito)
       const { data } = await supabase.auth.getSession()
-      if (data.session) { router.replace("/minha-musica"); return }
+      if (data.session) { router.replace(destino); return }
 
       router.replace("/entrar?erro=link-invalido")
     })()
