@@ -239,6 +239,56 @@ export async function sendClaimConfirmationEmail(data: ClaimEmailData): Promise<
   }
 }
 
+// ============================================================
+// E-mail: reenvio do link de acesso (token) — "perdi o e-mail"
+// ============================================================
+
+interface AccessLinksEmailData {
+  email:  string
+  nome?:  string | null
+  // Pedidos pagos do cliente, mais recente primeiro. url = /preparar/[token]
+  orders: { label: string; url: string }[]
+}
+
+export async function sendAccessLinksEmail(data: AccessLinksEmailData): Promise<{ ok: boolean; error?: string }> {
+  if (!data.orders.length) return { ok: false, error: "sem pedidos" }
+  const [first, ...rest] = data.orders
+  const firstName = data.nome?.split(" ")[0]
+  const restList = rest.length
+    ? `<div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 18px;margin:20px 0">
+         <p style="color:#f6a7c6;font-size:13px;margin:0 0 8px;font-weight:bold">Seus outros pedidos</p>
+         ${rest.map((o) => `<p style="margin:0 0 6px;font-size:13px;line-height:1.6"><a href="${o.url}" style="color:#ec4899">${o.label} →</a></p>`).join("")}
+       </div>`
+    : ""
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: "🔑 Seu link de acesso — FizMusica",
+      html: emailShell({
+        emoji: "🔑",
+        title: "Aqui está seu link de acesso",
+        subtitle: "Chegue direto na sua música — sem senha",
+        body:
+          para(`Olá${firstName ? `, ${strong(firstName)}` : ""}! ❤️`) +
+          para(`Você pediu para receber de novo o acesso à sua música. É só tocar no botão abaixo — o link te leva direto, ${strong("sem precisar de senha")}.`),
+        button: { text: "🎵 Abrir minha música", url: first.url },
+        afterButton: restList,
+        note: { label: "🔒 Link pessoal", text: "Este link dá acesso ao seu pedido — não compartilhe com quem não deve mexer nele. Se você não pediu este e-mail, pode ignorá-lo." },
+      }),
+    })
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      console.error("[email] Resend erro no reenvio de acesso:", msg)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Link de acesso reenviado para ${data.email}`)
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
 interface OrderEmailData {
   orderId: string
   nome: string

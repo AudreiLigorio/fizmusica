@@ -10,11 +10,30 @@ export default function EntrarPage() {
   const [sent, setSent]       = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState("")
+  // "login": magic link (entra na conta). "link": reenvia o link de token da
+  // música (/preparar/[token]) — sem login, pra quem perdeu o e-mail original.
+  const [mode, setMode]       = useState<"login" | "link">("login")
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
     setLoading(true)
+
+    // Reenvio do link de acesso (sem login) — resposta é sempre genérica.
+    if (mode === "link") {
+      try {
+        await fetch("/api/acesso/reenviar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        })
+        setSent(true)
+      } catch {
+        setError("Algo deu errado. Tente de novo em instantes.")
+      }
+      setLoading(false)
+      return
+    }
 
     // Verifica se existe algum pedido com esse e-mail antes de enviar o link
     const check = await fetch("/api/conta/check-email", {
@@ -66,9 +85,15 @@ export default function EntrarPage() {
               <div className="text-5xl mb-5">📧</div>
               <h1 className="text-2xl font-bold mb-3">Verifique seu e-mail</h1>
               <p className="text-gray-200 leading-relaxed mb-6">
-                Enviamos um link de acesso para{" "}
-                <span className="text-white font-medium">{email}</span>.
-                Clique no link para entrar.
+                {mode === "link" ? (
+                  <>Se houver pedidos no e-mail{" "}
+                  <span className="text-white font-medium">{email}</span>,
+                  você receberá o link da sua música em instantes. Confira também a caixa de spam.</>
+                ) : (
+                  <>Enviamos um link de acesso para{" "}
+                  <span className="text-white font-medium">{email}</span>.
+                  Clique no link para entrar.</>
+                )}
               </p>
               <button
                 onClick={() => { setSent(false); setEmail("") }}
@@ -81,9 +106,12 @@ export default function EntrarPage() {
             <>
               <div className="text-center mb-8">
                 <span className="text-pink-400 font-bold text-2xl">Fiz Música</span>
-                <p className="text-gray-300 text-sm mt-1">Acompanhe sua música ❤️</p>
+                <p className="text-gray-300 text-sm mt-1">
+                  {mode === "link" ? "Receba de novo o link da sua música 🎵" : "Acompanhe sua música ❤️"}
+                </p>
               </div>
 
+              {mode === "login" && (<>
               <button
                 onClick={handleGoogle}
                 className="w-full mb-4 bg-white text-gray-800 hover:bg-gray-100 transition-colors py-3 rounded-2xl font-semibold flex items-center justify-center gap-3"
@@ -97,6 +125,7 @@ export default function EntrarPage() {
                 <span className="text-xs text-gray-500">ou pelo e-mail</span>
                 <span className="h-px flex-1 bg-white/10" />
               </div>
+              </>)}
 
               <form
                 onSubmit={handleSubmit}
@@ -131,15 +160,28 @@ export default function EntrarPage() {
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       Enviando…
                     </>
+                  ) : mode === "link" ? (
+                    "Receber o link da minha música 🎵"
                   ) : (
                     "Enviar link de acesso ✉️"
                   )}
                 </button>
 
                 <p className="text-xs text-gray-300 text-center">
-                  Você receberá um link seguro por e-mail — sem senha necessária.
+                  {mode === "link"
+                    ? "Enviaremos o link direto da sua música pro e-mail usado na compra — sem login."
+                    : "Você receberá um link seguro por e-mail — sem senha necessária."}
                 </p>
               </form>
+
+              <button
+                onClick={() => { setMode(mode === "link" ? "login" : "link"); setError("") }}
+                className="w-full text-center text-xs text-gray-400 hover:text-pink-300 mt-4 underline underline-offset-2"
+              >
+                {mode === "link"
+                  ? "← Voltar para entrar na minha conta"
+                  : "Perdeu o link da sua música? Receba de novo por e-mail, sem login"}
+              </button>
 
               <p className="text-[11px] text-gray-500 text-center mt-4 leading-relaxed">
                 Ao entrar, você concorda com os{" "}
