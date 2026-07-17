@@ -6,6 +6,7 @@ import FizMusicaCarousel from "./components/FizMusicaCarousel"
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import ExperienceVideo from "./components/ExperienceVideo"
+import VideoExemplos from "./components/VideoExemplos"
 import FaqHome from "./components/FaqHome"
 import ResumeMusicBanner from "./components/ResumeMusicBanner"
 
@@ -258,6 +259,13 @@ export default function Home() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          EXEMPLOS EM VÍDEO — player pronto no celular
+      ═══════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-6 pt-14 lg:pt-20 pb-2">
+        <VideoExemplos />
       </section>
 
       {/* ═══════════════════════════════════════════
