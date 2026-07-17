@@ -82,7 +82,7 @@ export default function VideoExemplos() {
                 <div
                   className="relative w-full rounded-[2.35rem] p-2"
                   style={{
-                    aspectRatio: "9 / 19.3",
+                    aspectRatio: "9 / 14.4",
                     background: "linear-gradient(155deg,#050507,#17141d)",
                     boxShadow: "0 1px 0 rgba(255,255,255,0.06) inset, 0 30px 60px -25px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.04)",
                   }}
@@ -96,10 +96,13 @@ export default function VideoExemplos() {
                       <video
                         src={`/videos/exemplos/${ex.slug}.mp4`}
                         autoPlay
-                        controls
                         playsInline
+                        disablePictureInPicture
+                        controlsList="nodownload nofullscreen noremoteplayback"
+                        onEnded={() => setPlaying(null)}
                         onError={() => { setErrored((p) => ({ ...p, [ex.slug]: true })); setPlaying(null) }}
-                        className="absolute inset-0 w-full h-full object-cover z-20 bg-black"
+                        onClick={() => setPlaying(null)}
+                        className="absolute inset-0 w-full h-full object-contain z-20 bg-black cursor-pointer"
                       />
                     ) : (
                       <>
