@@ -6,7 +6,10 @@ import { useParams } from "next/navigation"
 import Header from "../../components/Header"
 import Footer from "../../components/Footer"
 import PreparoFlow from "../../minha-musica/PreparoFlow"
+import EscolherVersao from "../../minha-musica/EscolherVersao"
 import FizMascot, { moodFromEmotion } from "../../components/FizMascot"
+
+type Track = { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }
 
 type Order = {
   id: string
@@ -17,6 +20,8 @@ type Order = {
   subcategory?: string | null
   is_revision?: boolean
   emotion?: string | null
+  sunoStatus?: string | null
+  tracks?: Track[] | null
   slug?: string | null
 }
 
@@ -84,6 +89,9 @@ export default function PrepararPage() {
   const paid      = order.paymentStatus === "PAID"
   const delivered = order.status === "DELIVERED"
   const approved  = !!order.lyricsApproved
+  // Versões liberadas, cliente ainda não escolheu a principal (sem slug). Tem
+  // prioridade sobre o estado "sendo criada" — a música já está pronta pra ouvir.
+  const escolhaPendente = paid && order.sunoStatus === "RELEASED" && !order.slug && (order.tracks?.length ?? 0) > 0
 
   // Pagamento pendente
   if (!paid) {
@@ -98,17 +106,35 @@ export default function PrepararPage() {
     )
   }
 
-  // Já entregue → manda pro player / área
+  // Versões prontas → escolher a principal SEM login (o endpoint escolher roda por
+  // orderId). Ao escolher, recarrega e cai no estado "entregue" abaixo.
+  if (escolhaPendente) {
+    return (
+      <Shell>
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
+            Sua música <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">ficou pronta!</span>
+          </h1>
+          <p className="text-white/50 text-sm mt-2">Ouça as versões e escolha a principal — sem precisar de senha.</p>
+        </div>
+        <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={load} />
+      </Shell>
+    )
+  }
+
+  // Já entregue → manda direto pro player público (ouvir sem login). Baixar o MP3 e
+  // o Termo de Entrega continuam na área do cliente, com login.
   if (delivered && order.slug) {
     return (
       <Shell>
         <div className="text-center py-16">
           <p className="text-4xl mb-3">🎉</p>
           <h1 className="text-2xl font-bold mb-2">Sua música está pronta!</h1>
-          <p className="text-white/50 text-sm mb-6">Acesse sua área para ouvir, baixar e compartilhar.</p>
-          <a href="/minha-musica" className="inline-block px-6 py-3 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
-            Ouvir minha música →
+          <p className="text-white/50 text-sm mb-6">Toque abaixo para ouvir e compartilhar. Para baixar o MP3, acesse sua área.</p>
+          <a href={`/m/${order.slug}`} className="inline-block px-6 py-3 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
+            ▶ Ouvir minha música
           </a>
+          <a href="/minha-musica" className="block mt-4 text-white/40 text-xs underline">Ir para minha área (baixar / compartilhar)</a>
         </div>
       </Shell>
     )
