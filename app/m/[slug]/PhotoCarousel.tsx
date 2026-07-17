@@ -46,7 +46,7 @@ export default function PhotoCarousel({
     modules: MODULES,
     loop: photos.length > 1,
     autoplay: photos.length > 1
-      ? { delay: 4000, disableOnInteraction: false }
+      ? { delay: 6000, disableOnInteraction: false }
       : (false as const),
     className: "w-full h-full",
   }
