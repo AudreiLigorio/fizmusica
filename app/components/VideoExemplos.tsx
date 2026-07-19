@@ -25,6 +25,7 @@ const EXEMPLOS: Exemplo[] = [
   { slug: "pamela",  nome: "Pamela",  musica: "Meu Melhor Talento",     ocasiao: "Pedido de namoro", duracao: "0:40", grad: "linear-gradient(155deg,#3d1533 0%,#c8447a 55%,#f3b26e 100%)" },
   { slug: "eduardo", nome: "Eduardo", musica: "O Farol do Meu Mundo",   ocasiao: "Dia dos Pais",     duracao: "0:40", grad: "linear-gradient(155deg,#12222f 0%,#3c6b74 48%,#e3b579 100%)" },
   { slug: "familia", nome: "Família", musica: "A Doce Espera de Beatriz", ocasiao: "Chá revelação",  duracao: "0:40", grad: "linear-gradient(135deg,#f7bcd8 0%,#ddc9f4 52%,#a8d3f0 100%)" },
+  { slug: "orelha",  nome: "Orelha",  musica: "Estrela da Praia Brava",  ocasiao: "Homenagem Pet",   duracao: "4:28", grad: "linear-gradient(160deg,#241a33 0%,#6d5a94 48%,#d9b8d0 100%)" },
 ]
 
 const DISPLAY = { fontFamily: "'Cormorant Garamond', Georgia, serif" }
