@@ -26,6 +26,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     router.push("/admin/login")
   }
 
+  // Tela de login (antes de autenticar): sem menu/nav — por segurança e clareza,
+  // não expõe as áreas do admin a quem ainda não entrou. Renderiza só o conteúdo.
+  if (pathname === "/admin/login") {
+    return <div className="min-h-screen bg-gray-950 text-white">{children}</div>
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col lg:flex-row">
 
