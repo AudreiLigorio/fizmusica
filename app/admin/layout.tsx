@@ -80,12 +80,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <button onClick={handleLogout} className="text-gray-500 text-sm hover:text-red-400 transition-colors">Sair</button>
       </div>
 
-      {/* Conteúdo */}
-      <main className="flex-1 overflow-auto pb-28 lg:pb-0">
+      {/* Conteúdo — no mobile, reserva embaixo a altura real da bottom nav
+          (11 itens em 5 col = 3 linhas) + a safe-area do aparelho, pra a
+          paginação e botões do rodapé não ficarem escondidos atrás do menu. */}
+      <main className="flex-1 overflow-auto pb-[calc(12rem_+_env(safe-area-inset-bottom))] lg:pb-0">
         {children}
       </main>
 
-      {/* Bottom nav — mobile only (grid 5×2 para não amontoar os 10 itens) */}
+      {/* Bottom nav — mobile only (grid 5 colunas; 11 itens = 3 linhas) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 grid grid-cols-5 gap-px border-t border-white/10"
            style={{ background: "rgba(7,6,13,0.97)", backdropFilter: "blur(16px)", paddingBottom: "env(safe-area-inset-bottom)" }}>
         {NAV.map((item) => {
