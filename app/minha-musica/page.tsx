@@ -112,6 +112,7 @@ function MinhaMusicaContent() {
   const autoTab = useRef(false)
   const [termChecked, setTermChecked] = useState<Record<string, boolean>>({})
   const [acceptingTerm, setAcceptingTerm] = useState<string | null>(null)
+  const [gaveUpProd, setGaveUpProd] = useState(false)
 
   async function acceptDeliveryTerm(orderId: string) {
     setAcceptingTerm(orderId)
@@ -229,6 +230,28 @@ function MinhaMusicaContent() {
     await supabase.auth.signOut()
     router.push("/")
   }
+
+  // Auto-refresh enquanto algum pedido está em produção: re-checa a cada 8s e a
+  // tela troca sozinha (o stepper avança / abre "escolher versão") quando fica
+  // pronta. Pausa com a aba oculta; desiste após ~3 min (rede de segurança).
+  const anyInProduction = orders.some((o) => {
+    const paid = o.paymentStatus === "PAID"
+    const escolhaPendente = paid && o.musicStatus === "RELEASED" && !o.slug && (o.tracks?.length ?? 0) > 0
+    return paid && !!o.lyricsApproved && o.status !== "DELIVERED" && !escolhaPendente
+  })
+
+  useEffect(() => {
+    if (!anyInProduction || !user) return
+    setGaveUpProd(false)
+    const started = Date.now()
+    const id = setInterval(() => {
+      if (document.hidden) return
+      if (Date.now() - started > 3 * 60 * 1000) { setGaveUpProd(true); clearInterval(id); return }
+      loadOrders()
+    }, 8000)
+    return () => clearInterval(id)
+    // eslint-disable-next-line
+  }, [anyInProduction, user])
 
   if (loading || !user) {
     return (
@@ -459,6 +482,19 @@ function MinhaMusicaContent() {
                               Pode fechar a página — avisamos por e-mail assim que ficar pronta.
                               <strong className="text-fuchsia-200"> Você não precisa fazer nada.</strong>
                             </p>
+                            <div className="mt-2 flex items-center gap-3 flex-wrap">
+                              <span className="text-fuchsia-300/70 text-[11px]">
+                                {gaveUpProd
+                                  ? "Está demorando um pouco mais que o normal — avisamos por e-mail. 💜"
+                                  : "⏳ Esta tela atualiza sozinha quando ficar pronta."}
+                              </span>
+                              <button
+                                onClick={() => { setGaveUpProd(false); loadOrders() }}
+                                className="text-[11px] underline text-fuchsia-300 hover:text-fuchsia-200"
+                              >
+                                Atualizar agora
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}

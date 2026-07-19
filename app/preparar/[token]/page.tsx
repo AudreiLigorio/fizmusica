@@ -146,6 +146,40 @@ export default function PrepararPage() {
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [token])
 
+  const paid      = order?.paymentStatus === "PAID"
+  const delivered = order?.status === "DELIVERED"
+  const approved  = !!order?.lyricsApproved
+  // Versões liberadas, cliente ainda não escolheu a principal (sem slug). Tem
+  // prioridade sobre o estado "sendo criada" — a música já está pronta pra ouvir.
+  const escolhaPendente = !!paid && order?.sunoStatus === "RELEASED" && !order?.slug && (order?.tracks?.length ?? 0) > 0
+  // "Sendo criada": pago e aprovado, mas ainda não liberou versões nem entregou.
+  const isCreating = !!paid && (approved || done) && !escolhaPendente && !delivered
+
+  // Auto-refresh: enquanto a música é criada, re-checa a cada 8s e a tela troca
+  // sozinha quando fica pronta. Pausa com a aba oculta; desiste após ~3 min (rede
+  // de segurança) — daí é só o e-mail avisar.
+  const [refreshing, setRefreshing] = useState(false)
+  const [gaveUp, setGaveUp] = useState(false)
+
+  useEffect(() => {
+    if (!isCreating) return
+    setGaveUp(false)
+    const started = Date.now()
+    const id = setInterval(() => {
+      if (document.hidden) return
+      if (Date.now() - started > 3 * 60 * 1000) { setGaveUp(true); clearInterval(id); return }
+      load()
+    }, 8000)
+    return () => clearInterval(id)
+    // eslint-disable-next-line
+  }, [isCreating])
+
+  async function manualRefresh() {
+    setRefreshing(true); setGaveUp(false)
+    await load()
+    setRefreshing(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#07060d" }}>
@@ -168,13 +202,6 @@ export default function PrepararPage() {
       </Shell>
     )
   }
-
-  const paid      = order.paymentStatus === "PAID"
-  const delivered = order.status === "DELIVERED"
-  const approved  = !!order.lyricsApproved
-  // Versões liberadas, cliente ainda não escolheu a principal (sem slug). Tem
-  // prioridade sobre o estado "sendo criada" — a música já está pronta pra ouvir.
-  const escolhaPendente = paid && order.sunoStatus === "RELEASED" && !order.slug && (order.tracks?.length ?? 0) > 0
 
   // Pagamento pendente
   if (!paid) {
@@ -225,20 +252,39 @@ export default function PrepararPage() {
     )
   }
 
-  // Aprovou agora (done) ou já estava aprovado → música sendo criada
+  // Aprovou agora (done) ou já estava aprovado → música sendo criada.
+  // A tela se atualiza sozinha (polling de 8s) e troca pra "escolher versão"
+  // quando fica pronta — sem o cliente precisar recarregar.
   if (done || approved) {
     return (
       <Shell>
         <div className="text-center py-16">
           <FizMascot mood={moodFromEmotion(order.emotion)} />
           <h1 className="text-2xl font-bold mb-2 mt-2">Pronto! Sua música está sendo criada</h1>
-          <p className="text-white/50 text-sm mb-6">
+          <p className="text-white/50 text-sm mb-4">
             Você não precisa fazer mais nada agora — avisaremos por <strong className="text-white/70">e-mail</strong> assim que ficar pronta.
-            Você também pode acompanhar tudo na sua área.
           </p>
-          <a href="/minha-musica" className="inline-block px-6 py-3 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
-            Acompanhar na minha área →
-          </a>
+
+          {gaveUp ? (
+            <p className="text-white/40 text-xs mb-6 max-w-sm mx-auto leading-relaxed">
+              Está levando um pouco mais que o normal — pode fechar a página, avisamos por e-mail assim que sair. 💜
+            </p>
+          ) : (
+            <p className="text-fuchsia-300/80 text-xs mb-6 flex items-center justify-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse" />
+              Checando se já ficou pronta… normalmente leva cerca de 1 minuto.
+            </p>
+          )}
+
+          <button
+            onClick={manualRefresh}
+            disabled={refreshing}
+            className="inline-block px-6 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-60"
+            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+          >
+            {refreshing ? "Atualizando…" : "🔄 Atualizar agora"}
+          </button>
+          <a href="/minha-musica" className="block mt-4 text-white/40 text-xs underline">Acompanhar na minha área</a>
         </div>
         <SalvarAcesso token={token} />
       </Shell>
