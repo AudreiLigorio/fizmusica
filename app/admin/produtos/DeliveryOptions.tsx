@@ -18,6 +18,7 @@ export default function DeliveryOptions({ productId }: { productId: string }) {
   const [editing, setEditing] = useState<Option | null>(null)
   const [form, setForm] = useState({ label: "", days: 5, price_extra: 0, sort_order: 0 })
   const [saving, setSaving] = useState(false)
+  const [bulking, setBulking] = useState(false)
 
   async function load() {
     setLoading(true)
@@ -27,7 +28,24 @@ export default function DeliveryOptions({ productId }: { productId: string }) {
     setLoading(false)
   }
 
-  useEffect(() => { if (open) load() }, [open])
+  // Carrega no mount pro interruptor mestre já saber o estado (sem abrir o painel).
+  useEffect(() => { load() /* eslint-disable-next-line */ }, [])
+
+  const hasOptions = options.length > 0
+  const anyActive  = options.some((o) => o.active)
+
+  // Interruptor mestre: liga/desliga TODAS as opções de uma vez. Sem nenhuma
+  // opção ativa, o cliente compra em 1 clique (a /produtos pula a etapa de prazo).
+  async function toggleAll() {
+    setBulking(true)
+    await fetch(`/api/admin/produtos/${productId}/delivery`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !anyActive }),
+    })
+    await load()
+    setBulking(false)
+  }
 
   function startNew() {
     setEditing(null)
@@ -77,14 +95,36 @@ export default function DeliveryOptions({ productId }: { productId: string }) {
 
   return (
     <div className="mt-4 border-t border-white/5 pt-4">
-      <button
-        onClick={() => setOpen(!open)}
-        className="text-sm text-gray-400 hover:text-pink-400 transition-colors flex items-center gap-2"
-      >
-        <span>⏱</span>
-        {open ? "Fechar prazos" : "Gerenciar prazos de entrega"}
-        <span className="text-xs">{open ? "▲" : "▼"}</span>
-      </button>
+      <div className="flex items-center gap-3 flex-wrap">
+        <button
+          onClick={() => setOpen(!open)}
+          className="text-sm text-gray-400 hover:text-pink-400 transition-colors flex items-center gap-2"
+        >
+          <span>⏱</span>
+          {open ? "Fechar prazos" : "Gerenciar prazos de entrega"}
+          <span className="text-xs">{open ? "▲" : "▼"}</span>
+        </button>
+
+        {/* Interruptor mestre: prazos ativos vs. compra em 1 clique */}
+        {hasOptions ? (
+          <button
+            onClick={toggleAll}
+            disabled={bulking}
+            title={anyActive
+              ? "Desativar todos os prazos — o cliente compra em 1 clique"
+              : "Reativar os prazos de entrega"}
+            className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors disabled:opacity-50 ${
+              anyActive
+                ? "border-green-500/30 bg-green-500/10 text-green-300 hover:bg-green-500/20"
+                : "border-yellow-500/30 bg-yellow-500/10 text-yellow-300 hover:bg-yellow-500/20"
+            }`}
+          >
+            {bulking ? "…" : anyActive ? "🟢 Prazos ON · desativar" : "⚡ 1 clique · ativar prazos"}
+          </button>
+        ) : (
+          <span className="text-xs text-gray-500">⚡ Compra em 1 clique (sem prazos)</span>
+        )}
+      </div>
 
       {open && (
         <div className="mt-4 space-y-3">
