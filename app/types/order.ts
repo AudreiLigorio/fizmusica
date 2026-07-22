@@ -59,19 +59,32 @@ export interface ProductDTO {
 }
 
 // Payload do webhook n8n
+// Contrato externo: o workflow do n8n faz switch por `event` e usa `whatsappE164`
+// para chamar a API do WhatsApp Business. Mudar campo aqui = mudar o workflow lá.
+export type N8nEvent =
+  | "order.created"
+  | "payment.confirmed"
+  | "music.delivered"
+  | "feedback.request"
+
 export interface N8nOrderWebhookPayload {
-  event: "order.created" | "music.delivered"
+  event: N8nEvent
   orderId: string
   nome: string
   whatsapp: string
+  /** Só dígitos, com DDI 55 — formato que a API do WhatsApp aceita. */
+  whatsappE164: string
   email: string
-  context: string
   subcategory: string
   musicalStyle: string
-  voiceType: string
-  emotion: string
-  answers: AnswerDTO[]
   createdAt: string
+  // Campos do wizard — só vão no order.created/payment.confirmed.
+  context?: string
+  voiceType?: string
+  emotion?: string
+  answers?: AnswerDTO[]
+  // Entrega / feedback.
   publicUrl?: string
   musicName?: string
+  feedbackUrl?: string
 }

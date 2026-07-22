@@ -3,6 +3,7 @@ import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { sendNewOrderPaidNotification } from "@/app/services/emailService"
 import { triggerN8nWebhook } from "@/app/services/orderService"
+import { toE164 } from "@/lib/n8n/events"
 import { ensurePaymentPrep } from "@/lib/payments/prep"
 
 export const dynamic = "force-dynamic"
@@ -62,11 +63,12 @@ export async function POST(req: NextRequest) {
       })
       await triggerN8nWebhook({
         event: "payment.confirmed", orderId: order.id, nome: order.nome,
-        email: order.email, whatsapp: order.whatsapp, context: "",
+        email: order.email, whatsapp: order.whatsapp,
+        whatsappE164: toE164(order.whatsapp),
         subcategory: order.subcategory, musicalStyle: order.musicalStyle,
         voiceType: order.voiceType, emotion: order.emotion,
-        answers: [], createdAt: order.createdAt,
-      } as any)
+        createdAt: order.createdAt,
+      })
     }
 
     return NextResponse.json({ ok: true, mpStatus, updated: true, message: "Pagamento confirmado e pedido atualizado!" })

@@ -1,6 +1,7 @@
 import type { createServerClient } from "@/lib/supabase"
 import { sendMusicDeliveryEmail, sendMusicReadyForReviewNotification } from "@/app/services/emailService"
 import { getActivePublicCoupon, couponLabel } from "@/lib/coupons"
+import { notifyN8nMusicDelivered } from "@/lib/n8n/events"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -49,6 +50,12 @@ export async function notifyMusicReady(supabase: DB, orderId: string): Promise<v
       loyaltyCoupon: promo ? { code: promo.code, label: couponLabel(promo) } : null,
     })
     if (!r.ok) console.error("[notifyMusicReady] e-mail falhou:", r.error)
+
+    // WhatsApp pelo n8n — mesmo link do e-mail (token, sem login).
+    await notifyN8nMusicDelivered(supabase, orderId, {
+      publicUrl: areaUrl,
+      musicName: gm?.musicName || gm?.personName,
+    })
   } catch (e) {
     console.error("[notifyMusicReady] erro:", e instanceof Error ? e.message : e)
   }

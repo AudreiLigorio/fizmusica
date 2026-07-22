@@ -4,6 +4,7 @@ import { createServerClient } from "@/lib/supabase"
 import { sendNewOrderPaidNotification } from "@/app/services/emailService"
 import { ensurePaymentPrep } from "@/lib/payments/prep"
 import { triggerN8nWebhook } from "@/app/services/orderService"
+import { toE164 } from "@/lib/n8n/events"
 import { detectDuplicatePayment } from "@/lib/paymentAlerts"
 
 const client = new MercadoPago({
@@ -108,14 +109,13 @@ export async function POST(req: Request) {
           nome:         order.nome,
           email:        order.email,
           whatsapp:     order.whatsapp,
-          context:      "",
+          whatsappE164: toE164(order.whatsapp),
           subcategory:  order.subcategory,
           musicalStyle: order.musicalStyle,
           voiceType:    order.voiceType,
           emotion:      order.emotion,
-          answers:      [],
           createdAt:    order.createdAt,
-        } as Parameters<typeof triggerN8nWebhook>[0])
+        })
       }
     } else if (status === "rejected") {
       await supabase
