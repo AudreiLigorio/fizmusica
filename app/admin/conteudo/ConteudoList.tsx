@@ -94,7 +94,7 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
 
         {draft.hook_text && (
           <p className="text-white font-bold text-sm mb-1.5">
-            💬 "{draft.hook_text}" <span className="text-white/40 font-normal text-[11px]">(confere se saiu certo na imagem)</span>
+            💬 "{draft.hook_text}" <span className="text-white/40 font-normal text-[11px]">(gancho na imagem final)</span>
           </p>
         )}
         <p className="text-white/80 text-sm mb-1 whitespace-pre-wrap">{draft.caption ?? "—"}</p>

@@ -4,10 +4,19 @@ import { generateCaption, type CaptionSource } from "@/lib/content/caption"
 import { generateImage, getImageTaskResult } from "@/lib/content/kie-image"
 import { logContentEvent } from "@/lib/content/events"
 import { logOrderEvent } from "@/lib/orderEvents"
+import { composeBrandedImage } from "@/lib/content/brand-image"
 
 type DB = ReturnType<typeof createServerClient>
 
 const BUCKET = "content-media"
+
+// Proporção que a KIE gera por plataforma. Só precisa cobrir bem o canvas final
+// (que é definido em brand-image via object-fit cover), não bater exatamente.
+function aspectFor(platform: string): "1:1" | "2:3" | "9:16" | "16:9" {
+  if (platform === "tiktok") return "9:16"
+  if (platform === "youtube") return "16:9"
+  return "2:3" // instagram (cobre bem o 4:5 final)
+}
 
 async function ensureBucket(supabase: DB) {
   const { data } = await supabase.storage.getBucket(BUCKET)
@@ -83,15 +92,16 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
   }
 
   try {
-    // Só o GANCHO vai queimado na imagem — nunca a legenda. Frase longa dentro
-    // de imagem gerada por IA sai cheia de erro de ortografia; frase curta erra
-    // bem menos (mas ainda erra — por isso a UI pede conferência humana).
+    // A KIE gera SÓ o fundo visual — sem nenhum texto. O gancho, o logo e a marca
+    // são compostos por nós depois (lib/content/brand-image), com fonte real e
+    // precisão de pixel. Isso elimina o erro de ortografia na origem: a IA nunca
+    // escreve texto, então nunca erra.
     const imagePrompt =
-      `Quote card quadrado pra rede social. Fundo: fotografia calorosa e aconchegante, cores suaves, ` +
-      `tema música/emoção. Uma ÚNICA frase centralizada, tipografia grande, negrito, alto contraste, ` +
-      `MUITO legível, ortografia perfeita, exatamente este texto e nada além dele: "${hook}". ` +
-      `Não escreva mais nenhum outro texto, legenda ou palavra na imagem.`
-    const taskId = await generateImage({ prompt: imagePrompt })
+      `Fotografia/ilustração calorosa e aconchegante para post de rede social, tema música e emoção ` +
+      `ligado a: "${hook}". Cena bonita, cores suaves, boa profundidade, espaço "respirável" na parte ` +
+      `de baixo. NÃO escreva absolutamente nenhum texto, palavra, letra, número ou legenda na imagem — ` +
+      `apenas a cena visual, sem tipografia de nenhum tipo.`
+    const taskId = await generateImage({ prompt: imagePrompt, aspectRatio: aspectFor(input.platform) })
     await supabase.from("content_drafts").update({ image_task_id: taskId }).eq("id", draft.id)
     draft.image_task_id = taskId
   } catch (e) {
@@ -109,7 +119,7 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
 export async function syncImageTask(supabase: DB, draftId: string) {
   const { data: draft } = await supabase
     .from("content_drafts")
-    .select("id, image_task_id, image_url, image_error")
+    .select("id, image_task_id, image_url, image_error, hook_text, platform")
     .eq("id", draftId)
     .maybeSingle()
 
@@ -122,11 +132,23 @@ export async function syncImageTask(supabase: DB, draftId: string) {
   if (result.state === "success" && result.imageUrl) {
     await ensureBucket(supabase)
     const res = await fetch(result.imageUrl)
-    const bytes = Buffer.from(await res.arrayBuffer())
+    const bgBytes = Buffer.from(await res.arrayBuffer())
+    // Compõe a marca por cima do fundo (gancho + logo + faixa + handle/CTA).
+    // Se a composição falhar por algum motivo, cai no fundo cru pra não travar.
+    let finalBytes: Buffer = bgBytes
+    try {
+      finalBytes = await composeBrandedImage({
+        backgroundBytes: bgBytes,
+        hook: draft.hook_text ?? "",
+        platform: draft.platform ?? "instagram",
+      })
+    } catch (e) {
+      console.error("[content] composição da marca falhou, usando fundo cru:", e instanceof Error ? e.message : e)
+    }
     const path = `${draftId}/${crypto.randomUUID()}.png`
     const { error: uploadErr } = await supabase.storage
       .from(BUCKET)
-      .upload(path, bytes, { contentType: "image/png", upsert: false })
+      .upload(path, finalBytes, { contentType: "image/png", upsert: false })
     if (uploadErr) throw new Error("Falha ao salvar a imagem gerada.")
 
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
