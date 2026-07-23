@@ -8,6 +8,8 @@ export type ContentEventType =
   | "imagem_falhou"
   | "aprovado"
   | "rejeitado"
+  | "video_concluido"
+  | "video_falhou"
 
 // Registra um evento no histórico do rascunho — append-only, mesmo padrão de
 // lib/orderEvents.ts. Falhas de log nunca devem quebrar o fluxo principal.

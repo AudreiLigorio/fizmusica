@@ -18,13 +18,16 @@ function aspectFor(platform: string): "1:1" | "2:3" | "9:16" | "16:9" {
   return "2:3" // instagram (cobre bem o 4:5 final)
 }
 
+// Mesmo bucket serve imagens (post estático) e, via scripts/video-worker,
+// áudio bruto (mp3 do Suno) + o MP4 final — por isso os tipos/limite cobrem
+// os três. 50MB é o teto aceito pelo plano do Supabase (100MB foi rejeitado).
 async function ensureBucket(supabase: DB) {
   const { data } = await supabase.storage.getBucket(BUCKET)
   if (!data) {
     await supabase.storage.createBucket(BUCKET, {
       public: true,
-      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp"],
-      fileSizeLimit: "8MB",
+      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "audio/mpeg", "video/mp4"],
+      fileSizeLimit: "50MB",
     })
   }
 }

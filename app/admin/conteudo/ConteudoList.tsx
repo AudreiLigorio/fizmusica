@@ -16,7 +16,146 @@ type Draft = {
   image_task_id: string | null
   image_error: string | null
   rejection_reason: string | null
+  video_url: string | null
   created_at: string
+}
+
+type VideoScene = { description: string; caption: string }
+type VideoJob = {
+  id: string
+  status: string
+  video_url: string | null
+  error: string | null
+}
+
+const JOB_STATUS_LABEL: Record<string, string> = {
+  gerando_ingredientes: "Gerando imagens e música…",
+  pronto_pra_renderizar: "Ingredientes prontos — aguardando o worker renderizar (rode `npm run worker:video`)",
+  renderizando: "Worker renderizando o vídeo…",
+  concluido: "Vídeo pronto!",
+  falhou: "Falhou",
+}
+
+const JOB_TERMINAL = new Set(["concluido", "falhou"])
+
+// Formulário de criação de vídeo — N cenas (descrição + legenda) + tema/estilo
+// da música. O Next.js só gera os ingredientes (imagens KIE + música Suno); a
+// montagem final roda no worker local (ffmpeg não roda no Vercel).
+function VideoForm({ draftId, onDone }: { draftId: string; onDone: () => void }) {
+  const [scenes, setScenes] = useState<VideoScene[]>([
+    { description: "", caption: "" },
+    { description: "", caption: "" },
+    { description: "", caption: "" },
+  ])
+  const [songTheme, setSongTheme] = useState("")
+  const [songStyle, setSongStyle] = useState("pop acústico emotivo, violão e piano, cordas suaves")
+  const [job, setJob] = useState<VideoJob | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [msg, setMsg] = useState("")
+
+  useEffect(() => {
+    if (!job || JOB_TERMINAL.has(job.status)) return
+    const tick = async () => {
+      try {
+        const d = await fetch(`/api/admin/conteudo/${draftId}/video`).then((r) => r.json())
+        if (d.job) setJob(d.job)
+        if (d.job?.status === "concluido") onDone()
+      } catch { /* ignora, tenta de novo */ }
+    }
+    const t = setInterval(tick, 10000)
+    return () => clearInterval(t)
+  }, [job, draftId, onDone])
+
+  function updateScene(i: number, field: keyof VideoScene, value: string) {
+    setScenes((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)))
+  }
+  function addScene() {
+    if (scenes.length >= 6) return
+    setScenes((prev) => [...prev, { description: "", caption: "" }])
+  }
+  function removeScene(i: number) {
+    if (scenes.length <= 3) return
+    setScenes((prev) => prev.filter((_, idx) => idx !== i))
+  }
+
+  async function criar() {
+    if (scenes.some((s) => !s.description.trim() || !s.caption.trim())) {
+      setMsg("❌ Preencha descrição e legenda de todas as cenas."); return
+    }
+    if (!songTheme.trim()) { setMsg("❌ Informe o tema da música."); return }
+    setCreating(true); setMsg("")
+    const res = await fetch(`/api/admin/conteudo/${draftId}/video`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scenes, songTheme, songStyle }),
+    })
+    const d = await res.json()
+    setCreating(false)
+    if (d.ok) setJob(d.job)
+    else setMsg(`❌ ${d.error}`)
+  }
+
+  if (job) {
+    return (
+      <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3">
+        <p className="text-white/70 text-xs flex items-center gap-2">
+          {!JOB_TERMINAL.has(job.status) && (
+            <span className="w-3 h-3 border-2 border-fuchsia-400 border-t-transparent rounded-full animate-spin" />
+          )}
+          {JOB_STATUS_LABEL[job.status] ?? job.status}
+        </p>
+        {job.error && <p className="text-red-400 text-xs mt-1">{job.error}</p>}
+        {job.video_url && (
+          <video controls className="w-full max-w-xs rounded-lg mt-2" src={job.video_url} />
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)}
+          placeholder="Tema da música (ex.: chá revelação, expectativa de bebê)"
+          className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+        <input value={songStyle} onChange={(e) => setSongStyle(e.target.value)}
+          placeholder="Estilo/gênero"
+          className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+      </div>
+
+      {scenes.map((s, i) => (
+        <div key={i} className="border border-white/10 rounded-lg p-2 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-white/50 text-[11px]">Cena {i + 1}</span>
+            {scenes.length > 3 && (
+              <button onClick={() => removeScene(i)} className="text-white/40 text-[11px] hover:text-red-400">remover</button>
+            )}
+          </div>
+          <textarea value={s.description} onChange={(e) => updateScene(i, "description", e.target.value)}
+            placeholder="Descrição visual da cena (ex.: casal grávido sorrindo, mão na barriga, luz dourada)"
+            rows={2}
+            className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+          <input value={s.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
+            placeholder="Legenda dessa cena (texto que aparece no vídeo)"
+            className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+        </div>
+      ))}
+
+      <div className="flex items-center gap-2">
+        {scenes.length < 6 && (
+          <button onClick={addScene} className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/60 hover:bg-white/5">
+            + adicionar cena
+          </button>
+        )}
+        <button onClick={criar} disabled={creating}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50 ml-auto"
+          style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
+          {creating ? "Criando…" : "🎬 Gerar vídeo"}
+        </button>
+      </div>
+      {msg && <p className="text-red-400 text-xs">{msg}</p>}
+    </div>
+  )
 }
 
 type EligibleOrder = { id: string; nome: string; subcategory: string }
@@ -34,6 +173,7 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
+  const [showVideoForm, setShowVideoForm] = useState(false)
   const pending = !draft.image_url && !draft.image_error && draft.status === "rascunho"
 
   useEffect(() => {
@@ -132,6 +272,16 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
           </div>
         )}
         {msg && <p className="text-red-400 text-xs mt-2">{msg}</p>}
+
+        {draft.video_url ? (
+          <video controls className="w-full max-w-xs rounded-lg mt-3" src={draft.video_url} />
+        ) : (
+          <button onClick={() => setShowVideoForm((v) => !v)}
+            className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/60 hover:bg-white/5 mt-3">
+            {showVideoForm ? "Fechar" : "🎬 Criar vídeo (multi-cena)"}
+          </button>
+        )}
+        {showVideoForm && !draft.video_url && <VideoForm draftId={draft.id} onDone={onChange} />}
       </div>
     </div>
   )
