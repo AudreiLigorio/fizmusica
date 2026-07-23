@@ -6,16 +6,20 @@ export type CaptionSource =
   | { type: "generico"; topic: string; platform: string }
 
 export type CaptionResult = {
+  hook: string
   caption: string
   hashtags: string
   promptUsed: string
 }
 
 const SYSTEM_PROMPT =
-  "Você escreve legendas de post para redes sociais (Instagram, TikTok, YouTube) da FizMusica, " +
-  "uma empresa que cria músicas personalizadas por encomenda. Responda em português, tom caloroso " +
-  "e emocional (não corporativo). Formato da resposta, sem nenhum texto extra:\n" +
-  "LEGENDA: <legenda de até 4 frases>\n" +
+  "Você escreve conteúdo de conversão para redes sociais (Instagram, TikTok, YouTube) da FizMusica, " +
+  "uma empresa que cria músicas personalizadas por encomenda. O que converte em feed é imagem com " +
+  "frase curta + legenda direta — não parágrafo longo. Responda em português. Formato da resposta, " +
+  "sem nenhum texto extra:\n" +
+  "GANCHO: <frase de 4 a 8 palavras, pra queimar na imagem — direta, emocional ou de curiosidade, " +
+  "sem ponto final, tipo manchete>\n" +
+  "LEGENDA: <no máximo 2 frases curtas, terminando com uma chamada pra ação clara>\n" +
   "HASHTAGS: <5 a 8 hashtags separadas por espaço, começando com #, em português>"
 
 function buildUserContent(source: CaptionSource): string {
@@ -30,18 +34,21 @@ function buildUserContent(source: CaptionSource): string {
   return `Plataforma: ${source.platform}\nTema livre de marketing: ${source.topic}`
 }
 
-function parseResponse(raw: string): { caption: string; hashtags: string } {
+function parseResponse(raw: string): { hook: string; caption: string; hashtags: string } {
+  const hookMatch = raw.match(/GANCHO:\s*([\s\S]*?)(?:\nLEGENDA:|$)/i)
   const captionMatch = raw.match(/LEGENDA:\s*([\s\S]*?)(?:\nHASHTAGS:|$)/i)
   const hashtagsMatch = raw.match(/HASHTAGS:\s*([\s\S]*)/i)
-  const caption = (captionMatch?.[1] ?? raw).trim()
+  const hook = (hookMatch?.[1] ?? "").trim().replace(/["'.]+$/, "")
+  const caption = (captionMatch?.[1] ?? "").trim()
   const hashtags = (hashtagsMatch?.[1] ?? "").trim()
+  if (!hook) throw new Error("A IA não retornou gancho.")
   if (!caption) throw new Error("A IA não retornou legenda.")
-  return { caption, hashtags }
+  return { hook, caption, hashtags }
 }
 
-// Gera legenda + hashtags via Gemini. Reaproveita o mesmo cliente/config do
-// compositor de letras (lib/composer/gemini.ts) — mesma conta, model/location
-// configuráveis pelo admin.
+// Gera gancho + legenda + hashtags via Gemini. Reaproveita o mesmo
+// cliente/config do compositor de letras (lib/composer/gemini.ts) — mesma
+// conta, model/location configuráveis pelo admin.
 export async function generateCaption(source: CaptionSource): Promise<CaptionResult> {
   const settings = await getComposerSettings()
   const userContent = buildUserContent(source)
@@ -53,6 +60,6 @@ export async function generateCaption(source: CaptionSource): Promise<CaptionRes
     userContent,
   })
 
-  const { caption, hashtags } = parseResponse(raw)
-  return { caption, hashtags, promptUsed: userContent }
+  const { hook, caption, hashtags } = parseResponse(raw)
+  return { hook, caption, hashtags, promptUsed: userContent }
 }
