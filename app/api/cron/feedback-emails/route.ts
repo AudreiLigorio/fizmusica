@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { sendFeedbackRequestEmail } from "@/app/services/emailService"
+import { notifyN8nFeedbackRequest } from "@/lib/n8n/events"
 
 export const dynamic = "force-dynamic"
 
@@ -44,6 +45,9 @@ export async function GET(req: NextRequest) {
 
     if (r.ok) {
       await supabase.from("feedbacks").update({ email_sent: true }).eq("id", fb.id)
+      // WhatsApp pelo n8n — mesmo momento e mesmo link do e-mail. Não repete
+      // porque `email_sent` tira este feedback da próxima rodada do cron.
+      await notifyN8nFeedbackRequest(supabase, fb.orderId, { feedbackUrl, musicName })
     }
 
     results.push({ id: fb.id, ok: r.ok, error: r.ok ? undefined : String(r.error) })

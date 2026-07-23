@@ -5,6 +5,7 @@ import { sendOrderConfirmationEmail, sendOrderNotificationEmail } from "@/app/se
 import { createOrderSchema } from "@/lib/validators/order"
 import { createServerClient } from "@/lib/supabase"
 import { extractClientIp, lookupState } from "@/lib/geoip"
+import { toE164 } from "@/lib/n8n/events"
 
 export async function GET(req: NextRequest) {
   // Identidade: prioriza o token de login (Bearer) — busca por e-mail OU userId
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
         orderId: order.id,
         nome: order.nome,
         whatsapp: order.whatsapp,
+        whatsappE164: toE164(order.whatsapp),
         email: order.email,
         context: order.context,
         subcategory: order.subcategory,

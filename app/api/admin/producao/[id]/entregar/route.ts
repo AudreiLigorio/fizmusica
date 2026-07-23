@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { sendMusicDeliveryEmail } from "@/app/services/emailService"
-import { triggerN8nWebhook } from "@/app/services/orderService"
+import { notifyN8nMusicDelivered } from "@/lib/n8n/events"
 import { getActivePublicCoupon, couponLabel } from "@/lib/coupons"
 import { logOrderEvent } from "@/lib/orderEvents"
 import crypto from "crypto"
@@ -110,42 +110,14 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
   }
 
   // ── 4. n8n: music.delivered (WhatsApp com link da música) ──
-  await triggerN8nWebhook({
-    event:        "music.delivered",
-    orderId:      id,
-    nome:         order.nome,
-    email:        order.email,
-    whatsapp:     order.whatsapp,
-    context:      "",
-    subcategory:  order.subcategory,
-    musicalStyle: order.musicalStyle,
-    voiceType:    "",
-    emotion:      "",
-    answers:      [],
-    createdAt:    new Date().toISOString(),
+  // O feedback.request não sai daqui: quem dispara é o cron, junto com o e-mail
+  // de avaliação. Aqui ele chegaria um dia antes do e-mail e duplicaria a cobrança.
+  await notifyN8nMusicDelivered(supabase, id, {
     publicUrl,
-    musicName:    music.musicName ?? "",
-  } as Parameters<typeof triggerN8nWebhook>[0])
+    musicName: music.musicName,
+  })
 
-  // ── 5. n8n: feedback.request (WhatsApp com link de avaliação) ──
-  await triggerN8nWebhook({
-    event:        "feedback.request" as any,
-    orderId:      id,
-    nome:         order.nome,
-    email:        order.email,
-    whatsapp:     order.whatsapp,
-    context:      feedbackUrl,   // feedbackUrl no campo context (disponível no n8n)
-    subcategory:  order.subcategory,
-    musicalStyle: order.musicalStyle,
-    voiceType:    "",
-    emotion:      "",
-    answers:      [],
-    createdAt:    new Date().toISOString(),
-    publicUrl:    feedbackUrl,
-    musicName:    music.musicName ?? "",
-  } as Parameters<typeof triggerN8nWebhook>[0])
-
-  // ── 6. Marca pedido como DELIVERED ──
+  // ── 5. Marca pedido como DELIVERED ──
   await supabase
     .from("orders")
     .update({ status: "DELIVERED", updatedAt: new Date().toISOString() })
