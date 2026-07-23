@@ -57,7 +57,7 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
     captionSource = { type: "generico", platform: input.platform, topic: input.topic }
   }
 
-  const { caption, hashtags, promptUsed } = await generateCaption(captionSource)
+  const { hook, caption, hashtags, promptUsed } = await generateCaption(captionSource)
 
   const { data: draft, error } = await supabase
     .from("content_drafts")
@@ -67,6 +67,7 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
       source_type: input.sourceType,
       sourceOrderId,
       topic: input.sourceType === "generico" ? input.topic : null,
+      hook_text: hook,
       caption,
       hashtags,
       prompt_used: promptUsed,
@@ -82,7 +83,15 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
   }
 
   try {
-    const taskId = await generateImage({ prompt: `${caption}\n\nEstilo: fotografia calorosa, cores suaves.` })
+    // Só o GANCHO vai queimado na imagem — nunca a legenda. Frase longa dentro
+    // de imagem gerada por IA sai cheia de erro de ortografia; frase curta erra
+    // bem menos (mas ainda erra — por isso a UI pede conferência humana).
+    const imagePrompt =
+      `Quote card quadrado pra rede social. Fundo: fotografia calorosa e aconchegante, cores suaves, ` +
+      `tema música/emoção. Uma ÚNICA frase centralizada, tipografia grande, negrito, alto contraste, ` +
+      `MUITO legível, ortografia perfeita, exatamente este texto e nada além dele: "${hook}". ` +
+      `Não escreva mais nenhum outro texto, legenda ou palavra na imagem.`
+    const taskId = await generateImage({ prompt: imagePrompt })
     await supabase.from("content_drafts").update({ image_task_id: taskId }).eq("id", draft.id)
     draft.image_task_id = taskId
   } catch (e) {

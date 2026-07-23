@@ -9,6 +9,7 @@ type Draft = {
   source_type: string
   sourceOrderId: string | null
   topic: string | null
+  hook_text: string | null
   caption: string | null
   hashtags: string | null
   image_url: string | null
@@ -91,6 +92,11 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
           </span>
         </div>
 
+        {draft.hook_text && (
+          <p className="text-white font-bold text-sm mb-1.5">
+            💬 "{draft.hook_text}" <span className="text-white/40 font-normal text-[11px]">(confere se saiu certo na imagem)</span>
+          </p>
+        )}
         <p className="text-white/80 text-sm mb-1 whitespace-pre-wrap">{draft.caption ?? "—"}</p>
         {draft.hashtags && <p className="text-fuchsia-300/70 text-xs mb-2">{draft.hashtags}</p>}
         {draft.image_error && <p className="text-red-400 text-xs mb-2">Imagem: {draft.image_error}</p>}
