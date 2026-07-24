@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { syncImageTask } from "@/lib/content/generate"
+import { publishDraft } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
 
 export const dynamic = "force-dynamic"
-export const maxDuration = 30
+export const maxDuration = 300 // publicação de Reels espera o processamento do vídeo (polling)
 
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // Ações do admin sobre um rascunho.
-// body: { action: "sincronizar" | "aprovar" | "rejeitar", rejectionReason? }
+// body: { action: "sincronizar" | "aprovar" | "rejeitar" | "publicar", rejectionReason? }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
@@ -61,6 +62,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     await logContentEvent(supabase, id, "rejeitado", rejectionReason, "admin")
     return NextResponse.json({ ok: true, status: "rejeitado" })
+  }
+
+  if (action === "publicar") {
+    try {
+      const result = await publishDraft(supabase, id)
+      return NextResponse.json({ ok: true, ...result })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao publicar." }, { status: 500 })
+    }
   }
 
   return NextResponse.json({ error: "Ação inválida." }, { status: 400 })
