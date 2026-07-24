@@ -17,6 +17,9 @@ type Draft = {
   image_error: string | null
   rejection_reason: string | null
   video_url: string | null
+  published_at: string | null
+  published_permalink: string | null
+  publish_error: string | null
   created_at: string
 }
 
@@ -169,7 +172,7 @@ const PLATFORMS = [
 // Card de um rascunho — sincroniza a geração de imagem a cada 8s enquanto ela
 // não tem image_url nem image_error (mesmo padrão de polling do SunoPanel).
 function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) {
-  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | null>(null)
+  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
@@ -192,7 +195,7 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
     return () => clearInterval(t)
   }, [pending, draft.id, onChange])
 
-  async function acao(action: "aprovar" | "rejeitar", reason?: string) {
+  async function acao(action: "aprovar" | "rejeitar" | "publicar", reason?: string) {
     setBusy(action); setMsg("")
     const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
       method: "POST",
@@ -204,6 +207,8 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
     if (d.ok) onChange()
     else setMsg(`❌ ${d.error}`)
   }
+
+  const canPublish = draft.status === "aprovado" && draft.platform === "instagram" && !draft.published_at
 
   return (
     <div className="bg-black/30 border border-white/10 rounded-lg p-4 flex gap-4">
@@ -272,6 +277,33 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
           </div>
         )}
         {msg && <p className="text-red-400 text-xs mt-2">{msg}</p>}
+
+        {draft.published_at ? (
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] px-2 py-0.5 rounded-full border border-fuchsia-500/30 text-fuchsia-300">
+              📤 Publicado no Instagram
+            </span>
+            {draft.published_permalink && (
+              <a href={draft.published_permalink} target="_blank" rel="noreferrer"
+                className="text-[11px] text-fuchsia-300 underline hover:text-fuchsia-200">
+                ver post ↗
+              </a>
+            )}
+          </div>
+        ) : canPublish ? (
+          <div className="mt-3">
+            <button onClick={() => acao("publicar")} disabled={busy !== null}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
+              {busy === "publicar" ? "Publicando…" : "📤 Publicar no Instagram"}
+            </button>
+            {draft.publish_error && <p className="text-red-400 text-xs mt-1">Falha anterior: {draft.publish_error}</p>}
+          </div>
+        ) : draft.status === "aprovado" && draft.platform !== "instagram" ? (
+          <p className="text-white/40 text-[11px] mt-3">
+            Publicação automática ainda não disponível para {draft.platform} (só Instagram por enquanto).
+          </p>
+        ) : null}
 
         {draft.video_url ? (
           <video controls className="w-full max-w-xs rounded-lg mt-3" src={draft.video_url} />
