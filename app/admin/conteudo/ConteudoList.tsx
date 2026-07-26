@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import type { TiktokConnectionStatus } from "@/lib/content/publishers/tiktok-auth"
 
 type Draft = {
   id: string
@@ -319,12 +321,43 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
   )
 }
 
+// Login Kit do TikTok — só autenticação (user.info.basic), pra habilitar a
+// publicação de verdade é preciso uma segunda aprovação (Content Posting API).
+function TiktokConnectBox({ status }: { status: TiktokConnectionStatus }) {
+  const params = useSearchParams()
+  const result = params.get("tiktok")
+  const resultMsg = params.get("tiktok_msg")
+
+  return (
+    <div className="mb-6 rounded-xl border border-white/10 bg-black/20 p-4 flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <p className="text-white/80 text-sm font-semibold">TikTok — Login Kit</p>
+        {status.connected ? (
+          <p className="text-green-400 text-xs mt-0.5">
+            ✅ Conectado (open_id {status.openId.slice(0, 8)}…, escopo {status.scope})
+          </p>
+        ) : (
+          <p className="text-white/40 text-xs mt-0.5">Não conectado — necessário pro vídeo demo do App Review.</p>
+        )}
+        {result === "conectado" && <p className="text-green-400 text-xs mt-1">Conectado com sucesso!</p>}
+        {result === "erro" && <p className="text-red-400 text-xs mt-1">Falha ao conectar: {resultMsg ?? "erro desconhecido"}</p>}
+      </div>
+      <a href="/api/admin/conteudo/tiktok/login"
+        className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 text-white/80 hover:bg-white/5">
+        {status.connected ? "🔁 Reconectar" : "🔌 Conectar TikTok"}
+      </a>
+    </div>
+  )
+}
+
 export default function ConteudoList({
   initialDrafts,
   eligibleOrders,
+  tiktokStatus,
 }: {
   initialDrafts: Draft[]
   eligibleOrders: EligibleOrder[]
+  tiktokStatus: TiktokConnectionStatus
 }) {
   const [platform, setPlatform] = useState("instagram")
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
@@ -353,6 +386,8 @@ export default function ConteudoList({
 
   return (
     <div>
+      <TiktokConnectBox status={tiktokStatus} />
+
       <div className="mb-6 rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-4">
         <p className="text-fuchsia-200 font-semibold text-sm mb-3">✨ Gerar novo rascunho</p>
 

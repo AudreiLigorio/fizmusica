@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase"
+import { getConnectionStatus } from "@/lib/content/publishers/tiktok-auth"
 import ConteudoList from "./ConteudoList"
 
 export const dynamic = "force-dynamic"
@@ -26,6 +27,7 @@ async function getDrafts() {
 
 export default async function ConteudoPage() {
   const { drafts, eligibleOrders } = await getDrafts()
+  const tiktokStatus = await getConnectionStatus()
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl">
@@ -35,7 +37,7 @@ export default async function ConteudoPage() {
         Nada aqui é publicado automaticamente em nenhuma rede.
       </p>
       <div className="rounded-2xl border border-white/10 bg-black/40 p-6">
-        <ConteudoList initialDrafts={drafts} eligibleOrders={eligibleOrders} />
+        <ConteudoList initialDrafts={drafts} eligibleOrders={eligibleOrders} tiktokStatus={tiktokStatus} />
       </div>
     </div>
   )
