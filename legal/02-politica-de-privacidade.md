@@ -52,6 +52,8 @@ A Fiz Música compartilha dados, na medida necessária, com prestadores que atua
 | Google | Login social opcional (OAuth) | EUA |
 | Provedores de inteligência artificial | Geração da **letra** e da **música** por IA | Brasil / Exterior |
 | n8n | Automação de eventos | Nuvem |
+| Meta (Instagram) | Publicação de conteúdo nos perfis oficiais da Fiz Música | EUA |
+| TikTok | Autenticação e publicação de conteúdo no perfil oficial da Fiz Música | EUA / Exterior |
 
 Todos os parceiros devem observar padrões adequados de segurança e proteção de dados.
 
@@ -72,6 +74,20 @@ Por padrão, as músicas permanecem privadas e acessíveis apenas ao cliente aut
 ## 9. Uso de Músicas para Divulgação
 
 A Fiz Música não utilizará músicas, letras, histórias, imagens ou homenagens para fins publicitários sem autorização específica do cliente, solicitada separadamente e revogável a qualquer momento (ver Autorização de Publicação).
+
+## 9.1. Integrações com Redes Sociais (Instagram e TikTok)
+
+A Fiz Música mantém perfis oficiais em redes sociais — **Instagram (@fiz_musica)** e **TikTok (@fizmusica)** — e utiliza as APIs oficiais dessas plataformas para publicar conteúdo próprio de divulgação.
+
+**Não pedimos que o cliente faça login com Instagram ou TikTok.** A conexão é feita exclusivamente pela **administração da Fiz Música**, autorizando as **nossas próprias contas corporativas**. Nenhum dado de conta de rede social do cliente ou de visitantes do site é coletado por meio dessas integrações.
+
+**Dados que recebemos das plataformas.** Ao conectar nossas contas corporativas por OAuth, recebemos e armazenamos: o **identificador da conta** (no TikTok, o `open_id`), as **informações públicas básicas do perfil** correspondentes ao escopo autorizado (no TikTok, `user.info.basic`) e os **tokens de acesso e de renovação** necessários para manter a integração ativa. Esses dados **não são dados pessoais de clientes**, referem-se às contas da própria empresa e ficam guardados em nosso banco de dados com acesso restrito à administração (controle de acesso por linha — RLS), sendo utilizados **apenas** para publicar conteúdo nos nossos perfis.
+
+**Dados que enviamos às plataformas.** Ao publicar, transmitimos o material do post — imagem ou vídeo, legenda e demais elementos da peça — aos servidores da Meta e/ou do TikTok, que podem estar **localizados no exterior** (art. 33 da LGPD). Quando a peça envolver conteúdo de um pedido de cliente (música, letra, história, imagem ou homenagem), a publicação ocorre **somente** mediante a **Autorização de Publicação** específica prevista no item 9, revogável a qualquer momento.
+
+**Uso e retenção.** Os dados obtidos dessas integrações **não** são usados para perfilamento publicitário, não são combinados com dados de clientes e não são compartilhados com terceiros. Os tokens são mantidos apenas enquanto a integração estiver ativa: ao desconectar a conta ou ao expirarem sem renovação, deixam de ser utilizados e são eliminados. Os conteúdos já publicados permanecem sujeitos às políticas da respectiva plataforma, podendo ser removidos por nós a qualquer momento nos perfis oficiais.
+
+**Conteúdo gerado por inteligência artificial.** Parte das peças publicadas é produzida com apoio de IA (ver item 7.1) e é sinalizada como tal quando a plataforma oferecer esse recurso.
 
 ## 10. Prazo de Armazenamento
 
