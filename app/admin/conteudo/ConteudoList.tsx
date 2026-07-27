@@ -590,6 +590,131 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
   )
 }
 
+type ContentSettings = {
+  modo: "manual" | "semi" | "auto"
+  dias_semana: number[]
+  plataformas: string[]
+  nota_minima_auto: number
+  luto_sempre_manual: boolean
+  pedido_real_manual: boolean
+  teto_semanal: number
+}
+
+const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"]
+
+const MODOS: { valor: ContentSettings["modo"]; titulo: string; desc: string }[] = [
+  { valor: "manual", titulo: "Manual", desc: "Nada roda sozinho. Você gera, aprova e publica." },
+  { valor: "semi", titulo: "Semi-automático", desc: "O CMO produz no cronograma e a peça espera sua aprovação." },
+  { valor: "auto", titulo: "Automático", desc: "O CMO produz e publica sozinho, respeitando as travas." },
+]
+
+// Parametrização da esteira: é aqui que se decide se você precisa entrar todo
+// dia ou não. O cron roda diariamente; quem define se HOJE é dia de produzir
+// é este painel — mudar cronograma não exige deploy.
+function EsteiraBox({ inicial }: { inicial: ContentSettings }) {
+  const [s, setS] = useState(inicial)
+  const [salvando, setSalvando] = useState(false)
+  const [msg, setMsg] = useState("")
+
+  async function salvar(patch: Partial<ContentSettings>) {
+    const novo = { ...s, ...patch }
+    setS(novo); setSalvando(true); setMsg("")
+    const res = await fetch("/api/admin/conteudo/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    })
+    const d = await res.json()
+    setSalvando(false)
+    if (d.ok) { setS(d.settings); setMsg("salvo ✓"); setTimeout(() => setMsg(""), 2000) }
+    else { setMsg(`❌ ${d.error}`); setS(s) }
+  }
+
+  function toggleDia(dia: number) {
+    const dias = s.dias_semana.includes(dia)
+      ? s.dias_semana.filter((d) => d !== dia)
+      : [...s.dias_semana, dia].sort()
+    salvar({ dias_semana: dias })
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4 mb-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-white/80 text-sm font-semibold">🤖 Esteira de conteúdo</p>
+        <span className="text-white/40 text-[11px]">{salvando ? "salvando…" : msg}</span>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-2 mb-4">
+        {MODOS.map((m) => (
+          <button key={m.valor} onClick={() => salvar({ modo: m.valor })}
+            className={`text-left rounded-lg border p-2.5 transition-colors ${
+              s.modo === m.valor
+                ? "border-fuchsia-500/60 bg-fuchsia-500/10"
+                : "border-white/10 bg-black/20 hover:bg-white/5"}`}>
+            <p className={`text-xs font-semibold ${s.modo === m.valor ? "text-fuchsia-300" : "text-white/70"}`}>
+              {m.titulo}
+            </p>
+            <p className="text-white/45 text-[11px] mt-0.5 leading-snug">{m.desc}</p>
+          </button>
+        ))}
+      </div>
+
+      {s.modo !== "manual" && (
+        <>
+          <p className="text-white/50 text-[11px] mb-1.5">Dias em que o CMO produz</p>
+          <div className="flex gap-1 flex-wrap mb-3">
+            {DIAS.map((nome, i) => (
+              <button key={i} onClick={() => toggleDia(i)}
+                className={`text-[11px] px-2.5 py-1 rounded-lg border ${
+                  s.dias_semana.includes(i)
+                    ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200"
+                    : "border-white/10 text-white/40 hover:bg-white/5"}`}>
+                {nome}
+              </button>
+            ))}
+          </div>
+
+          <label className="text-[11px] text-white/50 flex items-center gap-2 mb-3">
+            Teto de peças automáticas por semana
+            <input type="number" min={1} max={50} value={s.teto_semanal}
+              onChange={(e) => salvar({ teto_semanal: Number(e.target.value) })}
+              className="w-16 bg-black/40 border border-white/15 rounded px-2 py-1 text-white text-[11px]" />
+          </label>
+        </>
+      )}
+
+      {s.modo === "auto" && (
+        <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-2.5 space-y-1.5">
+          <p className="text-amber-300 text-[11px] font-semibold">Travas da publicação automática</p>
+          <label className="text-[11px] text-white/60 flex items-center gap-2">
+            Só publica sozinho com nota
+            <input type="number" min={0} max={10} step={0.5} value={s.nota_minima_auto}
+              onChange={(e) => salvar({ nota_minima_auto: Number(e.target.value) })}
+              className="w-14 bg-black/40 border border-white/15 rounded px-2 py-0.5 text-white text-[11px]" />
+            ou mais
+          </label>
+          <label className="text-[11px] text-white/60 flex items-center gap-2">
+            <input type="checkbox" checked={s.luto_sempre_manual}
+              onChange={(e) => salvar({ luto_sempre_manual: e.target.checked })} />
+            Peça de luto/despedida sempre espera aprovação
+          </label>
+          <label className="text-[11px] text-white/60 flex items-center gap-2">
+            <input type="checkbox" checked={s.pedido_real_manual}
+              onChange={(e) => salvar({ pedido_real_manual: e.target.checked })} />
+            Peça de história real de cliente sempre espera aprovação
+          </label>
+        </div>
+      )}
+
+      <p className="text-white/35 text-[11px] mt-3">
+        {s.modo === "manual"
+          ? "Hoje nada é produzido sozinho — você precisa entrar e gerar."
+          : `O CMO escolhe o tema (calendário + histórico + cliques) e produz ${s.dias_semana.length}× por semana, por volta das 10h.`}
+      </p>
+    </div>
+  )
+}
+
 // Login Kit do TikTok — só autenticação (user.info.basic), pra habilitar a
 // publicação de verdade é preciso uma segunda aprovação (Content Posting API).
 function TiktokConnectBox({ status }: { status: TiktokConnectionStatus }) {
@@ -624,11 +749,13 @@ export default function ConteudoList({
   eligibleOrders,
   tiktokStatus,
   clicksByDraft,
+  settings,
 }: {
   initialDrafts: Draft[]
   eligibleOrders: EligibleOrder[]
   tiktokStatus: TiktokConnectionStatus
   clicksByDraft: Record<string, number>
+  settings: ContentSettings
 }) {
   const [platform, setPlatform] = useState("instagram")
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
@@ -657,6 +784,7 @@ export default function ConteudoList({
 
   return (
     <div>
+      <EsteiraBox inicial={settings} />
       <TiktokConnectBox status={tiktokStatus} />
 
       <div className="mb-6 rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-4">

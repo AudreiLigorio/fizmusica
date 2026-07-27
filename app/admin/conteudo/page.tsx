@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase"
 import { getConnectionStatus } from "@/lib/content/publishers/tiktok-auth"
 import { bucketUsageBytes } from "@/lib/content/media"
+import { getContentSettings } from "@/lib/content/cmo"
 import ConteudoList from "./ConteudoList"
 
 export const dynamic = "force-dynamic"
@@ -51,6 +52,7 @@ export default async function ConteudoPage() {
   const storageMb = storageBytes / 1024 / 1024
   const storagePct = (storageMb / 1024) * 100
   const tiktokStatus = await getConnectionStatus()
+  const settings = await getContentSettings(createServerClient())
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl">
@@ -72,6 +74,7 @@ export default async function ConteudoPage() {
           eligibleOrders={eligibleOrders}
           tiktokStatus={tiktokStatus}
           clicksByDraft={clicksByDraft}
+          settings={settings}
         />
       </div>
     </div>
