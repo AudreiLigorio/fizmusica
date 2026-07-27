@@ -1,6 +1,7 @@
 import crypto from "crypto"
 import type { createServerClient } from "@/lib/supabase"
 import { gerarRoteiro, type RoteiroSource } from "@/lib/content/roteirista"
+import { ensureDraftLink } from "@/lib/content/links"
 import { generateImage, getImageTaskResult } from "@/lib/content/kie-image"
 import { logContentEvent } from "@/lib/content/events"
 import { logOrderEvent } from "@/lib/orderEvents"
@@ -101,6 +102,17 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
   if (error) throw new Error(error.message)
 
   await logContentEvent(supabase, draft.id, "rascunho_criado", `origem: ${input.sourceType}`)
+
+  // Link rastreado do rascunho: é ele que vai pra bio/descrição, e é ele que
+  // permite saber depois se esta peça trouxe visita. Falha aqui não derruba o
+  // rascunho (ensureDraftLink já engole o erro e devolve null).
+  const linkSlug = await ensureDraftLink(
+    supabase,
+    draft.id,
+    input.platform,
+    input.sourceType === "generico" ? input.topic : roteiroSource.type === "pedido" ? roteiroSource.subcategory : null,
+  )
+  if (linkSlug) draft.link_slug = linkSlug
   if (sourceOrderId) {
     await logOrderEvent(supabase, sourceOrderId, "conteudo_gerado", `plataforma: ${input.platform}`, "admin")
   }

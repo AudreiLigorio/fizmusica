@@ -28,6 +28,7 @@ type Draft = {
   quality_score: number | null
   quality_report: Parecer | null
   needs_human: boolean | null
+  link_slug: string | null
 }
 
 type ParecerItem = { pergunta: string; ok: boolean; observacao: string }
@@ -270,7 +271,38 @@ const PLATFORMS = [
 
 // Card de um rascunho — sincroniza a geração de imagem a cada 8s enquanto ela
 // não tem image_url nem image_error (mesmo padrão de polling do SunoPanel).
-function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) {
+// Link rastreado do rascunho: é o que vai pra bio (Instagram/TikTok) ou pra
+// descrição (YouTube). Sem ele não existe atribuição — post bom e post ruim
+// ficam indistinguíveis.
+function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
+  const [copiado, setCopiado] = useState(false)
+  const url = `https://www.fizmusica.com.br/r/${slug}`
+
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 2000)
+    } catch { /* navegador sem clipboard: o texto está visível pra copiar na mão */ }
+  }
+
+  return (
+    <div className="mt-3 flex items-center gap-2 flex-wrap text-[11px]">
+      <span className="text-white/40">🔗</span>
+      <code className="text-white/70 bg-black/40 border border-white/10 rounded px-1.5 py-0.5">
+        fizmusica.com.br/r/{slug}
+      </code>
+      <button onClick={copiar} className="px-2 py-0.5 rounded border border-white/15 text-white/60 hover:bg-white/5">
+        {copiado ? "copiado ✓" : "copiar"}
+      </button>
+      <span className={cliques > 0 ? "text-emerald-300" : "text-white/40"}>
+        {cliques} {cliques === 1 ? "clique" : "cliques"}
+      </span>
+    </div>
+  )
+}
+
+function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number; onChange: () => void }) {
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
@@ -424,6 +456,8 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
           </button>
         )}
         {showVideoForm && !draft.video_url && <VideoForm draft={draft} onDone={onChange} />}
+
+        {draft.link_slug && <LinkRastreado slug={draft.link_slug} cliques={cliques} />}
       </div>
     </div>
   )
@@ -462,10 +496,12 @@ export default function ConteudoList({
   initialDrafts,
   eligibleOrders,
   tiktokStatus,
+  clicksByDraft,
 }: {
   initialDrafts: Draft[]
   eligibleOrders: EligibleOrder[]
   tiktokStatus: TiktokConnectionStatus
+  clicksByDraft: Record<string, number>
 }) {
   const [platform, setPlatform] = useState("instagram")
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
@@ -539,7 +575,7 @@ export default function ConteudoList({
       ) : (
         <div className="space-y-3">
           {initialDrafts.map((d) => (
-            <DraftCard key={d.id} draft={d} onChange={reload} />
+            <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0} onChange={reload} />
           ))}
         </div>
       )}
