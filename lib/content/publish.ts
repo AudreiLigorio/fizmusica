@@ -13,7 +13,7 @@ const BUCKET = "content-media"
 export async function publishDraft(supabase: DB, draftId: string) {
   const { data: draft } = await supabase
     .from("content_drafts")
-    .select("id, platform, status, caption, hashtags, image_url, video_url, published_at")
+    .select("id, platform, status, caption, hashtags, image_url, video_url, published_at, sourceOrderId")
     .eq("id", draftId)
     .maybeSingle()
 
@@ -26,6 +26,24 @@ export async function publishDraft(supabase: DB, draftId: string) {
       `Publicação automática ainda não disponível para ${draft.platform}. ` +
       `Só o Instagram tem integração ativa por enquanto.`
     )
+  }
+
+  // Peça feita a partir da história de um cliente real: o consentimento é
+  // conferido AQUI, no instante da publicação, e não no da criação. O cliente
+  // pode ter revogado a Autorização de Publicação nesse meio-tempo, e o aviso
+  // na tela não impede uma chamada direta à API. Barrar é a única garantia.
+  if (draft.sourceOrderId) {
+    const { data: order } = await supabase
+      .from("orders")
+      .select("publication_consent")
+      .eq("id", draft.sourceOrderId)
+      .maybeSingle()
+    if (!order?.publication_consent) {
+      throw new Error(
+        "O cliente não autoriza (ou revogou) a publicação desta história. " +
+        "Esta peça não pode ir ao ar."
+      )
+    }
   }
 
   const caption = [draft.caption?.trim(), draft.hashtags?.trim()].filter(Boolean).join("\n\n")

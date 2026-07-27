@@ -33,6 +33,8 @@ type Draft = {
   media_purged_at: string | null
 }
 
+type OrigemReal = { nome: string; honoreeName: string | null; consent: boolean; fotos: number }
+
 type ParecerItem = { pergunta: string; ok: boolean; observacao: string }
 type Parecer = { aprovado: boolean; nota: number; itens: ParecerItem[]; correcoes: string }
 
@@ -85,6 +87,35 @@ function Lightbox({ src, tipo, onClose }: { src: string; tipo: "imagem" | "video
           abrir em nova aba
         </a>
       </div>
+    </div>
+  )
+}
+
+// Alerta de peça feita a partir de gente de verdade. Precisa gritar: aqui não
+// se trata de conteúdo genérico, e sim da história (e possivelmente das fotos)
+// de um cliente e de quem ele homenageou. O consentimento é conferido AGORA —
+// pode ter sido revogado depois que a peça foi gerada.
+function AlertaClienteReal({ origem }: { origem: OrigemReal }) {
+  const revogado = !origem.consent
+
+  return (
+    <div className={`mb-3 rounded-lg border-2 p-3 ${
+      revogado ? "border-red-500 bg-red-500/15" : "border-amber-400/70 bg-amber-400/10"}`}>
+      <p className={`text-sm font-bold ${revogado ? "text-red-300" : "text-amber-200"}`}>
+        {revogado
+          ? "⛔ CONSENTIMENTO REVOGADO — NÃO PUBLICAR"
+          : "⚠️ PESSOA REAL — história de cliente nesta peça"}
+      </p>
+      <p className="text-white/70 text-[11px] mt-1 leading-relaxed">
+        Cliente: <strong className="text-white/90">{origem.nome}</strong>
+        {origem.honoreeName && <> · homenageado(a): <strong className="text-white/90">{origem.honoreeName}</strong></>}
+        {origem.fotos > 0 && <> · <strong className="text-amber-200">{origem.fotos} foto(s) do cliente no pedido</strong></>}
+      </p>
+      <p className={`text-[11px] mt-1.5 ${revogado ? "text-red-200" : "text-white/50"}`}>
+        {revogado
+          ? "O cliente retirou a Autorização de Publicação. Publicar agora usaria dados de uma pessoa sem autorização — rejeite esta peça."
+          : "Antes de aprovar: confira se o texto não expõe nada que a família não queira ver publicado, e se nenhum dado pessoal (nome completo, endereço, data) escapou pra legenda."}
+      </p>
     </div>
   )
 }
@@ -351,7 +382,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
   )
 }
 
-function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number; onChange: () => void }) {
+function DraftCard({ draft, cliques, origem, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; onChange: () => void }) {
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
@@ -419,6 +450,15 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
   }
 
   async function acao(action: "aprovar" | "rejeitar" | "publicar", reason?: string) {
+    // Peça com gente de verdade não passa por clique distraído.
+    if (origem && (action === "aprovar" || action === "publicar")) {
+      if (!origem.consent) {
+        setMsg("⛔ Consentimento revogado — esta peça não pode ser publicada.")
+        return
+      }
+      const quem = origem.honoreeName ? `${origem.nome} (homenagem a ${origem.honoreeName})` : origem.nome
+      if (!confirm(`Esta peça usa a história real de ${quem}.\n\nVocê conferiu que o conteúdo está adequado e que a Autorização de Publicação cobre este uso?`)) return
+    }
     setBusy(action); setMsg("")
     const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
       method: "POST",
@@ -434,7 +474,8 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
   const canPublish = draft.status === "aprovado" && draft.platform === "instagram" && !draft.published_at
 
   return (
-    <div className="bg-black/30 border border-white/10 rounded-lg p-4 flex gap-4">
+    <div className={`bg-black/30 border rounded-lg p-4 flex gap-4 ${
+      origem ? (origem.consent ? "border-amber-400/40" : "border-red-500/60") : "border-white/10"}`}>
       <div className="w-28 h-28 shrink-0 rounded-lg bg-white/5 overflow-hidden flex items-center justify-center">
         {draft.image_url
           ? <img src={draft.image_url} alt="" onClick={() => setLightbox({ src: draft.image_url!, tipo: "imagem" })}
@@ -460,6 +501,8 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
             {draft.status}
           </span>
         </div>
+
+        {origem && <AlertaClienteReal origem={origem} />}
 
         {gerando && (
           <p className="text-fuchsia-300 text-xs mb-1.5 flex items-center gap-2">
@@ -774,12 +817,14 @@ export default function ConteudoList({
   tiktokStatus,
   clicksByDraft,
   settings,
+  origens,
 }: {
   initialDrafts: Draft[]
   eligibleOrders: EligibleOrder[]
   tiktokStatus: TiktokConnectionStatus
   clicksByDraft: Record<string, number>
   settings: ContentSettings
+  origens: Record<string, OrigemReal>
 }) {
   const [platform, setPlatform] = useState("instagram")
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
@@ -854,7 +899,8 @@ export default function ConteudoList({
       ) : (
         <div className="space-y-3">
           {initialDrafts.map((d) => (
-            <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0} onChange={reload} />
+            <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0}
+              origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined} onChange={reload} />
           ))}
         </div>
       )}

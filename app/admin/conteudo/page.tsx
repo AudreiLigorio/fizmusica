@@ -24,6 +24,31 @@ async function getDrafts() {
     .order("createdAt", { ascending: false })
     .limit(200)
 
+  // Dados do pedido de origem das peças que usam história/foto de cliente
+  // real. O consentimento é lido AGORA, não no momento em que a peça nasceu:
+  // ele pode ter sido revogado no meio do caminho, e publicar depois disso
+  // seria usar dado de uma pessoa sem autorização.
+  const origemIds = (drafts ?? []).map((d) => d.sourceOrderId).filter(Boolean) as string[]
+  const origens: Record<string, { nome: string; honoreeName: string | null; consent: boolean; fotos: number }> = {}
+  if (origemIds.length) {
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("id, nome, honoreeName, publication_consent")
+      .in("id", origemIds)
+    const { data: fotos } = await supabase
+      .from("order_photos")
+      .select("orderId")
+      .in("orderId", origemIds)
+    for (const o of orders ?? []) {
+      origens[o.id] = {
+        nome: o.nome ?? "—",
+        honoreeName: o.honoreeName ?? null,
+        consent: !!o.publication_consent,
+        fotos: (fotos ?? []).filter((f) => f.orderId === o.id).length,
+      }
+    }
+  }
+
   // Cliques por rascunho. O volume é baixo (um clique = uma visita vinda de
   // post), então contar em memória sai mais simples que view agregada no banco.
   const { data: links } = await supabase.from("content_links").select("id, draft_id")
@@ -44,11 +69,11 @@ async function getDrafts() {
     // Contagem é informativa: falhar aqui não pode derrubar a tela.
   }
 
-  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes }
+  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens }
 }
 
 export default async function ConteudoPage() {
-  const { drafts, eligibleOrders, clicksByDraft, storageBytes } = await getDrafts()
+  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens } = await getDrafts()
   const storageMb = storageBytes / 1024 / 1024
   const storagePct = (storageMb / 1024) * 100
   const tiktokStatus = await getConnectionStatus()
@@ -75,6 +100,7 @@ export default async function ConteudoPage() {
           tiktokStatus={tiktokStatus}
           clicksByDraft={clicksByDraft}
           settings={settings}
+          origens={origens}
         />
       </div>
     </div>
