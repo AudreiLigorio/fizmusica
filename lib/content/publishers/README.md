@@ -13,10 +13,23 @@ banco).
 |---|---|---|---|
 | `IG_LONG_LIVED_TOKEN` (Instagram) | 2026-07-24 | 60 dias | `bash scripts/ig-token-check.sh`, depois atualizar no `.env.local` **e** na Vercel |
 | TikTok `refresh_token` (`tiktok_auth`) | (ainda não conectado) | ~365 dias | Reconectar em `/admin/conteudo` → "Conectar TikTok" |
+| YouTube — refresh token do OAuth Google | (ainda não configurado) | não expira por tempo **se** a tela de consentimento estiver publicada | Reautorizar no fluxo OAuth do Google |
+| Facebook/Meta — client secret do app | (não expira) | — | Só é invalidado se o secret for **redefinido** no painel da Meta |
 
 O `access_token` do TikTok (24h) se renova sozinho pelo `refresh_token` — não
 precisa de lembrete. O que expira de vez é o **refresh**: se ficar ~365 dias
 sem uso/renovação, a conta precisa ser reconectada na mão.
+
+**Armadilhas de prazo que valem pra quando essas duas forem ligadas:**
+
+- **YouTube**: se a tela de consentimento do Google Cloud ficar em modo
+  *Testing* em vez de publicada, o refresh token expira em **7 dias** — é a
+  pegadinha clássica. Publicada, ele não expira por tempo, mas é revogado
+  depois de ~6 meses sem uso.
+- **Facebook/Meta**: hoje não existe credencial do Facebook com prazo, porque
+  a integração do Instagram usa o fluxo *Instagram Login* e **não** depende de
+  página do Facebook. Se um dia passarmos a publicar em Página, entra um user
+  token de 60 dias (o page token derivado dele é duradouro).
 
 ## Instagram — ATIVO ✅
 
