@@ -31,6 +31,20 @@ sem uso/renovação, a conta precisa ser reconectada na mão.
   página do Facebook. Se um dia passarmos a publicar em Página, entra um user
   token de 60 dias (o page token derivado dele é duradouro).
 
+## Facebook — por crossposting nativo, não por código (decisão 2026-07-27)
+
+A Página do Facebook é alimentada pelo **compartilhamento automático do
+próprio Instagram** (Configurações → Compartilhamento em outros apps), ligado
+manualmente na conta. **Não construir publisher de Facebook**: exigiria
+Facebook Login + `pages_manage_posts` e mais um App Review da Meta, para
+entregar o que a sincronização nativa já faz de graça.
+
+⚠️ **A verificar na prática**: o crossposting é garantido para posts feitos
+pelo app do Instagram; para posts publicados via **API** (que é o nosso caso)
+nem sempre dispara. Depois da próxima publicação por `/admin/conteudo`, conferir
+se ela apareceu na Página. Se não aparecer, a alternativa barata é publicar
+essa peça manualmente, não construir a integração.
+
 ## Instagram — ATIVO ✅
 
 Fluxo "Instagram API with Instagram Login" (endpoint `graph.instagram.com`,
