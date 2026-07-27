@@ -49,6 +49,21 @@ async function getDrafts() {
     }
   }
 
+  // Job de vídeo de cada rascunho. Precisa vir JÁ na lista, e não só dentro do
+  // formulário: sem isso, um F5 fechava o formulário e o card ficava mudo,
+  // como se o vídeo em produção não existisse.
+  const { data: videoJobs } = await supabase
+    .from("video_jobs")
+    .select("id, contentDraftId, status, error, video_url, created_at")
+    .order("created_at", { ascending: false })
+
+  const jobPorDraft: Record<string, { id: string; status: string; error: string | null; video_url: string | null }> = {}
+  for (const j of videoJobs ?? []) {
+    if (!jobPorDraft[j.contentDraftId]) {
+      jobPorDraft[j.contentDraftId] = { id: j.id, status: j.status, error: j.error, video_url: j.video_url }
+    }
+  }
+
   // Cliques por rascunho. O volume é baixo (um clique = uma visita vinda de
   // post), então contar em memória sai mais simples que view agregada no banco.
   const { data: links } = await supabase.from("content_links").select("id, draft_id")
@@ -69,11 +84,11 @@ async function getDrafts() {
     // Contagem é informativa: falhar aqui não pode derrubar a tela.
   }
 
-  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens }
+  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft }
 }
 
 export default async function ConteudoPage() {
-  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens } = await getDrafts()
+  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft } = await getDrafts()
   const storageMb = storageBytes / 1024 / 1024
   const storagePct = (storageMb / 1024) * 100
   const tiktokStatus = await getConnectionStatus()
@@ -101,6 +116,7 @@ export default async function ConteudoPage() {
           clicksByDraft={clicksByDraft}
           settings={settings}
           origens={origens}
+          jobPorDraft={jobPorDraft}
         />
       </div>
     </div>

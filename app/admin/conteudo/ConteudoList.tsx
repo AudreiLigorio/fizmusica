@@ -120,6 +120,39 @@ function AlertaClienteReal({ origem }: { origem: OrigemReal }) {
   )
 }
 
+type JobResumo = { id: string; status: string; error: string | null; video_url: string | null }
+
+// Estado do vídeo visível NO CARD, sem precisar abrir o formulário. Um F5
+// fecha o formulário; sem isto, o card ficava mudo e parecia que o trabalho
+// tinha sumido — quando na verdade o job estava vivo, esperando o worker.
+function VideoStatusBar({ job, onAbrir }: { job: JobResumo; onAbrir: () => void }) {
+  const esperandoWorker = job.status === "pronto_pra_renderizar"
+  const rodando = !JOB_TERMINAL.has(job.status)
+
+  if (job.status === "concluido") return null
+
+  return (
+    <div className={`mt-3 rounded-lg border p-2.5 ${
+      job.status === "falhou" ? "border-red-500/30 bg-red-500/5" : "border-fuchsia-500/30 bg-fuchsia-500/5"}`}>
+      <p className="text-xs flex items-center gap-2 text-white/80">
+        {rodando && <span className="w-3 h-3 border-2 border-fuchsia-400 border-t-transparent rounded-full animate-spin shrink-0" />}
+        🎬 {JOB_STATUS_LABEL[job.status] ?? job.status}
+      </p>
+      {esperandoWorker && (
+        <p className="text-amber-200/80 text-[11px] mt-1.5">
+          Nada se perdeu: as imagens e a música já estão prontas. Falta só montar o vídeo na sua
+          máquina — rode <code className="bg-black/40 px-1 rounded">npm run worker:video</code> no
+          terminal do projeto e ele pega este job sozinho.
+        </p>
+      )}
+      {job.error && <p className="text-red-300 text-[11px] mt-1">{job.error}</p>}
+      <button onClick={onAbrir} className="text-[11px] text-white/50 underline hover:text-white/80 mt-1.5">
+        ver a receita que você escreveu
+      </button>
+    </div>
+  )
+}
+
 // Parecer do revisor crítico (segunda passada do roteirista). Mostra a nota e
 // só detalha o que FALHOU — item aprovado não precisa ocupar espaço na tela.
 function ParecerBox({ parecer }: { parecer: Parecer }) {
@@ -210,7 +243,18 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
     let cancelado = false
     fetch(`/api/admin/conteudo/${draftId}/video`)
       .then((r) => r.json())
-      .then((d) => { if (!cancelado && d.job) setJob(d.job) })
+      .then((d) => {
+        if (cancelado || !d.job) return
+        setJob(d.job)
+        // Repõe no formulário o que o admin tinha escrito: a receita fica
+        // salva no job, então nada do texto dele se perde num F5.
+        const r = d.job.recipe
+        if (r?.scenes?.length) {
+          setScenes(r.scenes)
+          setSongTheme(r.songTheme ?? "")
+          setSongStyle(r.songStyle ?? "")
+        }
+      })
       .catch(() => { /* sem job, formulário limpo mesmo */ })
     return () => { cancelado = true }
   }, [draftId])
@@ -382,7 +426,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
   )
 }
 
-function DraftCard({ draft, cliques, origem, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; onChange: () => void }) {
+function DraftCard({ draft, cliques, origem, job, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; onChange: () => void }) {
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
@@ -606,10 +650,12 @@ function DraftCard({ draft, cliques, origem, onChange }: { draft: Draft; cliques
               onClick={() => setLightbox({ src: draft.video_url!, tipo: "video" })} muted playsInline />
             <p className="text-white/40 text-[11px] mt-1">clique pra assistir em tela cheia</p>
           </div>
+        ) : job && !JOB_TERMINAL.has(job.status) ? (
+          <VideoStatusBar job={job} onAbrir={() => setShowVideoForm((v) => !v)} />
         ) : (
           <button onClick={() => setShowVideoForm((v) => !v)}
             className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/60 hover:bg-white/5 mt-3">
-            {showVideoForm ? "Fechar" : "🎬 Criar vídeo (multi-cena)"}
+            {showVideoForm ? "Fechar" : job?.status === "falhou" ? "🎬 Refazer vídeo" : "🎬 Criar vídeo (multi-cena)"}
           </button>
         )}
         {showVideoForm && !draft.video_url && <VideoForm draft={draft} onDone={onChange} />}
@@ -818,6 +864,7 @@ export default function ConteudoList({
   clicksByDraft,
   settings,
   origens,
+  jobPorDraft,
 }: {
   initialDrafts: Draft[]
   eligibleOrders: EligibleOrder[]
@@ -825,6 +872,7 @@ export default function ConteudoList({
   clicksByDraft: Record<string, number>
   settings: ContentSettings
   origens: Record<string, OrigemReal>
+  jobPorDraft: Record<string, JobResumo>
 }) {
   const [platform, setPlatform] = useState("instagram")
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
@@ -900,7 +948,8 @@ export default function ConteudoList({
         <div className="space-y-3">
           {initialDrafts.map((d) => (
             <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0}
-              origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined} onChange={reload} />
+              origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined}
+              job={jobPorDraft[d.id]} onChange={reload} />
           ))}
         </div>
       )}
