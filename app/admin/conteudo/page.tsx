@@ -64,6 +64,25 @@ async function getDrafts() {
     }
   }
 
+  // Catálogo de trilhas: músicas já entregues cujo pedido autoriza publicação.
+  // Serve pra usar uma canção real como trilha de qualquer peça, não só da que
+  // nasceu daquele pedido.
+  const { data: consentidos } = await supabase
+    .from("orders")
+    .select("id, honoreeName, subcategory")
+    .eq("publication_consent", true)
+  const { data: musicas } = await supabase
+    .from("generated_music")
+    .select("orderId, musicName")
+    .not("mp3Url", "is", null)
+
+  const trilhas = (musicas ?? [])
+    .filter((m) => (consentidos ?? []).some((o) => o.id === m.orderId))
+    .map((m) => {
+      const o = (consentidos ?? []).find((x) => x.id === m.orderId)!
+      return { orderId: m.orderId, label: `${m.musicName ?? "sem título"} — ${o.subcategory ?? "pedido"}` }
+    })
+
   // Cliques por rascunho. O volume é baixo (um clique = uma visita vinda de
   // post), então contar em memória sai mais simples que view agregada no banco.
   const { data: links } = await supabase.from("content_links").select("id, draft_id")
@@ -84,11 +103,11 @@ async function getDrafts() {
     // Contagem é informativa: falhar aqui não pode derrubar a tela.
   }
 
-  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft }
+  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft, trilhas }
 }
 
 export default async function ConteudoPage() {
-  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft } = await getDrafts()
+  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft, trilhas } = await getDrafts()
   const storageMb = storageBytes / 1024 / 1024
   const storagePct = (storageMb / 1024) * 100
   const tiktokStatus = await getConnectionStatus()
@@ -117,6 +136,7 @@ export default async function ConteudoPage() {
           settings={settings}
           origens={origens}
           jobPorDraft={jobPorDraft}
+          trilhas={trilhas}
         />
       </div>
     </div>

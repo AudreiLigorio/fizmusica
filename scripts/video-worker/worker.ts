@@ -90,8 +90,12 @@ async function processJob(supabase: ReturnType<typeof createServerClient>, job: 
     const withTextPath = path.join(tmp, "withtext.mp4")
     await overlayPngs(concatPath, overlays, withTextPath)
 
-    // 5. Detecta o clímax da música e monta o vídeo final
-    const climaxStart = await detectClimaxStart(path.join(tmp, "song.mp3"), totalDur)
+    // 5. Escolhe o trecho do áudio e monta o vídeo final.
+    // Música (nova ou do pedido): corta no clímax — a janela de maior volume
+    // médio, que é onde o refrão está. Narração: começa do zero, porque a
+    // primeira palavra é o começo da frase, não um pico de volume.
+    const ehNarracao = (job.recipe as { songSource?: string })?.songSource === "narracao"
+    const climaxStart = ehNarracao ? 0 : await detectClimaxStart(path.join(tmp, "song.mp3"), totalDur)
     const finalPath = path.join(tmp, "final.mp4")
     await muxAudio(withTextPath, path.join(tmp, "song.mp3"), climaxStart, totalDur, finalPath)
 

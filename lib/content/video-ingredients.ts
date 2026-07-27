@@ -2,6 +2,7 @@ import type { createServerClient } from "@/lib/supabase"
 import { generateImage, getImageTaskResult, type ImageTaskResult } from "@/lib/content/kie-image"
 import { generateMusic, getMusicDetails } from "@/lib/suno/client"
 import { generateSongLyrics } from "@/lib/content/song-lyrics"
+import { gerarNarracao, type VozId } from "@/lib/content/narracao"
 import { logContentEvent } from "@/lib/content/events"
 import { garantirMidiaPropria } from "@/lib/content/guardas"
 
@@ -22,26 +23,35 @@ export type VideoRecipe = {
    *              sozinho — o detectClimaxStart acha a janela mais alta da
    *              faixa, que é justamente onde o refrão está.
    */
-  songSource?: "suno" | "pedido"
+  songSource?: "suno" | "pedido" | "narracao"
+  /** Pedido cuja música entregue será a trilha (quando songSource="pedido"). Padrão: o pedido que originou o rascunho. */
+  songOrderId?: string
+  /** Texto lido pela voz sintética (quando songSource="narracao"). */
+  narracaoTexto?: string
+  narracaoVoz?: string
 }
 
 // Localiza a música entregue ao cliente do pedido que originou o rascunho.
 // Exige consentimento de publicação vigente: a peça usa uma obra feita para
 // uma pessoa real, e essa checagem não pode depender só da tela.
-async function musicaDoPedido(supabase: DB, draftId: string): Promise<string> {
-  const { data: draft } = await supabase
-    .from("content_drafts")
-    .select("sourceOrderId")
-    .eq("id", draftId)
-    .maybeSingle()
-  if (!draft?.sourceOrderId) {
-    throw new Error("Este rascunho não veio de um pedido — não há música de cliente pra usar.")
+async function musicaDoPedido(supabase: DB, draftId: string, orderIdEscolhido?: string): Promise<string> {
+  let orderId = orderIdEscolhido
+  if (!orderId) {
+    const { data: draft } = await supabase
+      .from("content_drafts")
+      .select("sourceOrderId")
+      .eq("id", draftId)
+      .maybeSingle()
+    orderId = draft?.sourceOrderId ?? undefined
+  }
+  if (!orderId) {
+    throw new Error("Escolha de qual pedido vem a música (ou gere uma nova).")
   }
 
   const { data: order } = await supabase
     .from("orders")
     .select("publication_consent")
-    .eq("id", draft.sourceOrderId)
+    .eq("id", orderId)
     .maybeSingle()
   if (!order?.publication_consent) {
     throw new Error("O cliente não autoriza a publicação — não é possível usar a música dele.")
@@ -50,7 +60,7 @@ async function musicaDoPedido(supabase: DB, draftId: string): Promise<string> {
   const { data: music } = await supabase
     .from("generated_music")
     .select("mp3Url")
-    .eq("orderId", draft.sourceOrderId)
+    .eq("orderId", orderId)
     .maybeSingle()
   if (!music?.mp3Url) throw new Error("O pedido ainda não tem música entregue.")
 
@@ -90,8 +100,25 @@ export async function createVideoJob(supabase: DB, draftId: string, recipe: Vide
   )
 
   // Áudio: ou a música real do pedido, ou uma nova gerada no Suno.
+  if (recipe.songSource === "narracao") {
+    const wav = await gerarNarracao(recipe.narracaoTexto ?? "", (recipe.narracaoVoz ?? "Kore") as VozId)
+    const path = `video-jobs/${job.id}/narracao.wav`
+    const { error: upErr } = await supabase.storage
+      .from("content-media")
+      .upload(path, wav, { contentType: "audio/wav", upsert: true })
+    if (upErr) throw new Error(`Falha ao subir a narração: ${upErr.message}`)
+    const songUrl = supabase.storage.from("content-media").getPublicUrl(path).data.publicUrl
+
+    await supabase
+      .from("video_jobs")
+      .update({ scene_image_task_ids: imageTaskIds, song_url: songUrl })
+      .eq("id", job.id)
+    await logContentEvent(supabase, draftId, "rascunho_criado", "vídeo: trilha narrada por voz sintética")
+    return { ...job, scene_image_task_ids: imageTaskIds, song_url: songUrl }
+  }
+
   if (recipe.songSource === "pedido") {
-    const songUrl = await musicaDoPedido(supabase, draftId)
+    const songUrl = await musicaDoPedido(supabase, draftId, recipe.songOrderId)
     await supabase
       .from("video_jobs")
       .update({ scene_image_task_ids: imageTaskIds, song_url: songUrl })

@@ -34,6 +34,14 @@ type Draft = {
 }
 
 type OrigemReal = { nome: string; honoreeName: string | null; consent: boolean; fotos: number }
+type Trilha = { orderId: string; label: string }
+
+const VOZES = [
+  { id: "Kore", label: "Kore — feminina, firme" },
+  { id: "Aoede", label: "Aoede — feminina, suave" },
+  { id: "Charon", label: "Charon — masculina, grave" },
+  { id: "Puck", label: "Puck — masculina, leve" },
+]
 
 type ParecerItem = { pergunta: string; ok: boolean; observacao: string }
 type Parecer = { aprovado: boolean; nota: number; itens: ParecerItem[]; correcoes: string }
@@ -190,7 +198,7 @@ function ParecerBox({ parecer }: { parecer: Parecer }) {
 // Formulário de criação de vídeo — N cenas (descrição + legenda) + tema/estilo
 // da música. O Next.js só gera os ingredientes (imagens KIE + música Suno); a
 // montagem final roda no worker local (ffmpeg não roda no Vercel).
-function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
+function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]; onDone: () => void }) {
   const draftId = draft.id
   const [scenes, setScenes] = useState<VideoScene[]>([
     { description: "", caption: "" },
@@ -205,7 +213,10 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
   // Peça de pedido real pode usar a MÚSICA que o cliente recebeu, em vez de
   // gerar uma nova: é a canção que existiu de verdade, e o worker corta no
   // refrão sozinho (detecta a janela mais alta da faixa).
-  const [songSource, setSongSource] = useState<"suno" | "pedido">(draft.sourceOrderId ? "pedido" : "suno")
+  const [songSource, setSongSource] = useState<"suno" | "pedido" | "narracao">(draft.sourceOrderId ? "pedido" : "suno")
+  const [songOrderId, setSongOrderId] = useState(draft.sourceOrderId ?? trilhas[0]?.orderId ?? "")
+  const [narracaoTexto, setNarracaoTexto] = useState("")
+  const [narracaoVoz, setNarracaoVoz] = useState("Kore")
   const [roteirizando, setRoteirizando] = useState(false)
   const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
   const [parecer, setParecer] = useState<Parecer | null>(null)
@@ -293,11 +304,18 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
       setMsg("❌ Preencha descrição e legenda de todas as cenas."); return
     }
     if (songSource === "suno" && !songTheme.trim()) { setMsg("❌ Informe o tema da música."); return }
+    if (songSource === "narracao" && !narracaoTexto.trim()) { setMsg("❌ Escreva o texto da narração."); return }
+    if (songSource === "pedido" && !songOrderId) { setMsg("❌ Escolha de qual música vem a trilha."); return }
     setCreating(true); setMsg("")
     const res = await fetch(`/api/admin/conteudo/${draftId}/video`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scenes, songTheme, songStyle, songSource, platform: draft.platform }),
+      body: JSON.stringify({
+        scenes, songTheme, songStyle, songSource, platform: draft.platform,
+        songOrderId: songSource === "pedido" ? songOrderId : undefined,
+        narracaoTexto: songSource === "narracao" ? narracaoTexto : undefined,
+        narracaoVoz: songSource === "narracao" ? narracaoVoz : undefined,
+      }),
     })
     const d = await res.json()
     setCreating(false)
@@ -345,26 +363,48 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
 
       {parecer && <ParecerBox parecer={parecer} />}
 
-      {draft.sourceOrderId && (
-        <div className="rounded-lg border border-white/10 bg-black/20 p-2.5">
-          <p className="text-white/60 text-[11px] mb-1.5">Trilha do vídeo</p>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] text-white/70 flex items-start gap-2">
-              <input type="radio" checked={songSource === "pedido"} onChange={() => setSongSource("pedido")} className="mt-0.5" />
-              <span>
-                <strong className="text-fuchsia-300">Usar a música real deste pedido</strong> — um trecho do
-                refrão, escolhido sozinho pelo ponto mais forte da faixa. Não gasta geração de música.
-              </span>
-            </label>
-            <label className="text-[11px] text-white/70 flex items-start gap-2">
-              <input type="radio" checked={songSource === "suno"} onChange={() => setSongSource("suno")} className="mt-0.5" />
-              <span>Gerar uma música nova para a peça</span>
-            </label>
-          </div>
-        </div>
-      )}
+      <div className="rounded-lg border border-white/10 bg-black/20 p-2.5 space-y-2">
+        <p className="text-white/60 text-[11px]">🎧 Trilha do vídeo</p>
 
-      <div className={`grid grid-cols-2 gap-2 ${songSource === "pedido" ? "hidden" : ""}`}>
+        <label className="text-[11px] text-white/70 flex items-start gap-2">
+          <input type="radio" checked={songSource === "suno"} onChange={() => setSongSource("suno")} className="mt-0.5" />
+          <span><strong className="text-white/85">Criar uma música nova</strong> — você descreve tema e estilo</span>
+        </label>
+
+        <label className="text-[11px] text-white/70 flex items-start gap-2">
+          <input type="radio" checked={songSource === "pedido"} onChange={() => setSongSource("pedido")}
+            disabled={!trilhas.length} className="mt-0.5" />
+          <span>
+            <strong className="text-fuchsia-300">Usar uma música real já criada</strong> — trecho do refrão, escolhido
+            sozinho pelo ponto mais forte da faixa. Não gasta geração.
+            {!trilhas.length && <em className="text-white/40"> (nenhuma música com consentimento ainda)</em>}
+          </span>
+        </label>
+        {songSource === "pedido" && trilhas.length > 0 && (
+          <select value={songOrderId} onChange={(e) => setSongOrderId(e.target.value)}
+            className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white ml-5">
+            {trilhas.map((t) => <option key={t.orderId} value={t.orderId}>{t.label}</option>)}
+          </select>
+        )}
+
+        <label className="text-[11px] text-white/70 flex items-start gap-2">
+          <input type="radio" checked={songSource === "narracao"} onChange={() => setSongSource("narracao")} className="mt-0.5" />
+          <span><strong className="text-white/85">Narração</strong> — uma voz lê o texto que você escrever</span>
+        </label>
+        {songSource === "narracao" && (
+          <div className="ml-5 space-y-1.5">
+            <textarea value={narracaoTexto} onChange={(e) => setNarracaoTexto(e.target.value)} rows={3}
+              placeholder="Texto que a voz vai narrar. Escreva como fala, não como texto escrito — frases curtas, sem jargão."
+              className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+            <select value={narracaoVoz} onChange={(e) => setNarracaoVoz(e.target.value)}
+              className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+              {VOZES.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+
+      <div className={`grid grid-cols-2 gap-2 ${songSource !== "suno" ? "hidden" : ""}`}>
         <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)}
           placeholder="Tema da música (ex.: chá revelação, expectativa de bebê)"
           className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
@@ -449,7 +489,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
   )
 }
 
-function DraftCard({ draft, cliques, origem, job, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; onChange: () => void }) {
+function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; onChange: () => void }) {
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
@@ -681,7 +721,7 @@ function DraftCard({ draft, cliques, origem, job, onChange }: { draft: Draft; cl
             {showVideoForm ? "Fechar" : job?.status === "falhou" ? "🎬 Refazer vídeo" : "🎬 Criar vídeo (multi-cena)"}
           </button>
         )}
-        {showVideoForm && !draft.video_url && <VideoForm draft={draft} onDone={onChange} />}
+        {showVideoForm && !draft.video_url && <VideoForm draft={draft} trilhas={trilhas} onDone={onChange} />}
 
         {draft.link_slug && <LinkRastreado slug={draft.link_slug} cliques={cliques} />}
 
@@ -888,6 +928,7 @@ export default function ConteudoList({
   settings,
   origens,
   jobPorDraft,
+  trilhas,
 }: {
   initialDrafts: Draft[]
   eligibleOrders: EligibleOrder[]
@@ -896,6 +937,7 @@ export default function ConteudoList({
   settings: ContentSettings
   origens: Record<string, OrigemReal>
   jobPorDraft: Record<string, JobResumo>
+  trilhas: Trilha[]
 }) {
   const [platform, setPlatform] = useState("instagram")
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
@@ -972,7 +1014,7 @@ export default function ConteudoList({
           {initialDrafts.map((d) => (
             <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0}
               origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined}
-              job={jobPorDraft[d.id]} onChange={reload} />
+              job={jobPorDraft[d.id]} trilhas={trilhas} onChange={reload} />
           ))}
         </div>
       )}
