@@ -19,6 +19,19 @@ DESFECHO         → a reação, o rosto, o silêncio
 CTA              → curto, uma linha só
 ```
 
+### Regras duras das cenas
+
+- **A última cena é o desfecho emocional — NUNCA o CTA.** Legenda de cena
+  vendendo ("transforme sua história em música", "o presente que não se compra")
+  quebra a emoção no exato segundo em que ela deveria estourar. O CTA vive na
+  legenda do post, não dentro do vídeo.
+- **Varie a estrutura entre peças.** "Pessoa ouve → close no rosto → lágrima →
+  abraço" é UM caminho, não o único. Alterne com: começar pelo desfecho e voltar;
+  contar pela perspectiva de quem faz a surpresa; mostrar o objeto/lugar antes
+  da pessoa; terminar num detalhe pequeno em vez do abraço. Se a peça anterior
+  terminou em abraço, esta não termina.
+- Nenhuma cena descreve texto escrito dentro da imagem.
+
 ## Estrutura padrão (post estático)
 
 ```

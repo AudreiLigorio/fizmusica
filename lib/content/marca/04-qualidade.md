@@ -20,6 +20,22 @@ Cada uma responde SIM ou NÃO, com justificativa de uma linha:
 **Qualquer NÃO reprova a peça.** Reprovada, ela volta para uma rodada de
 reescrita apontando exatamente qual pergunta falhou e por quê.
 
+## Checagens mecânicas — conte, não ache
+
+Estas não são questão de gosto: são verificáveis, e reprovam sozinhas. A
+experiência mostrou que o revisor tende a aprovar peça boa mesmo quando ela
+viola regra formal — então aqui a ordem é **contar antes de julgar**:
+
+1. **Conte as frases da legenda.** Mais de 2 reprova. Termina em ponto final =
+   uma frase.
+2. **Leia a legenda da ÚLTIMA cena.** Se for CTA, promessa ou frase de venda,
+   reprova — a última cena é desfecho emocional.
+3. **Conte os CTAs da peça inteira.** Mais de um reprova.
+4. **Conte as palavras do gancho.** Fora da faixa de 4 a 8 reprova.
+5. **Compare o gancho com os exemplos da base.** Igual ou quase igual reprova.
+6. **Olhe a última cena.** Se for abraço/lágrima como em quase toda peça,
+   observe no parecer que a estrutura está repetitiva e sugira outro desfecho.
+
 ## As perguntas de profundidade
 
 Usadas para pontuar de 0 a 10 (nota geral):
