@@ -805,9 +805,10 @@ function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: 
         {draft.status === "rascunho" && rejeitando && (
           <div className="flex gap-2">
             <input value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Motivo da rejeição (opcional)"
+              placeholder="Motivo (opcional) — rejeitar APAGA a peça inteira"
               className="flex-1 bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
-            <button onClick={() => acao("rejeitar", rejectionReason)} disabled={busy !== null}
+            <button onClick={() => { if (confirm("Rejeitar apaga a peça inteira — texto, imagem, vídeo e link. Não dá pra desfazer. Continuar?")) acao("rejeitar", rejectionReason) }}
+              disabled={busy !== null}
               className="text-xs px-3 py-1.5 rounded-lg border border-red-500/40 text-red-300 hover:bg-red-500/10 disabled:opacity-50">
               {busy === "rejeitar" ? "…" : "Confirmar"}
             </button>
@@ -1071,6 +1072,8 @@ export default function ConteudoList({
   origens,
   jobPorDraft,
   trilhas,
+  pagina,
+  totalPaginas,
 }: {
   initialDrafts: Draft[]
   eligibleOrders: EligibleOrder[]
@@ -1080,6 +1083,8 @@ export default function ConteudoList({
   origens: Record<string, OrigemReal>
   jobPorDraft: Record<string, JobResumo>
   trilhas: Trilha[]
+  pagina: number
+  totalPaginas: number
 }) {
   const [platform, setPlatform] = useState("instagram")
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
@@ -1158,6 +1163,26 @@ export default function ConteudoList({
               origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined}
               job={jobPorDraft[d.id]} trilhas={trilhas} onChange={reload} />
           ))}
+        </div>
+      )}
+
+      {totalPaginas > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-4">
+          <a href={`/admin/conteudo?page=${pagina - 1}`} aria-disabled={pagina <= 1}
+            className={`text-xs px-3 py-1.5 rounded-lg border ${
+              pagina <= 1
+                ? "border-white/5 text-white/20 pointer-events-none"
+                : "border-white/15 text-white/70 hover:bg-white/5"}`}>
+            ← anteriores
+          </a>
+          <span className="text-white/40 text-xs">página {pagina} de {totalPaginas}</span>
+          <a href={`/admin/conteudo?page=${pagina + 1}`} aria-disabled={pagina >= totalPaginas}
+            className={`text-xs px-3 py-1.5 rounded-lg border ${
+              pagina >= totalPaginas
+                ? "border-white/5 text-white/20 pointer-events-none"
+                : "border-white/15 text-white/70 hover:bg-white/5"}`}>
+            próximas →
+          </a>
         </div>
       )}
     </div>

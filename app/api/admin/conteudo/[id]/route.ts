@@ -80,25 +80,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: true, status: "aprovado" })
   }
 
+  // Rejeitar apaga tudo: peça recusada não vira histórico, vira lixo no painel.
+  // Ordem importa — primeiro os arquivos (o registro é quem sabe onde eles
+  // estão), depois o link rastreado (nunca foi publicado, então nada aponta
+  // pra ele), e só então a linha. As tabelas filhas (content_events,
+  // video_jobs) somem por cascade.
   if (action === "rejeitar") {
-    const { error } = await supabase
-      .from("content_drafts")
-      .update({
-        status: "rejeitado",
-        reviewed_at: new Date().toISOString(),
-        rejection_reason: rejectionReason ?? null,
-      })
-      .eq("id", id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    await logContentEvent(supabase, id, "rejeitado", rejectionReason, "admin")
-
-    // Mídia de peça rejeitada não serve pra nada: sai na hora, antes de virar
-    // peso no bucket. Falha aqui não impede a rejeição.
     const purge = await purgeDraftMedia(supabase, id)
-    if (purge.arquivos > 0) {
-      await logContentEvent(supabase, id, "rejeitado", `mídia descartada (${purge.arquivos} arquivo(s))`, "system")
-    }
-    return NextResponse.json({ ok: true, status: "rejeitado", midiaApagada: purge.arquivos })
+
+    await supabase.from("content_links").delete().eq("draft_id", id)
+
+    const { error } = await supabase.from("content_drafts").delete().eq("id", id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ ok: true, removido: true, midiaApagada: purge.arquivos })
   }
 
   // Exclusão manual — pra peça aprovada/publicada que já cumpriu seu papel.

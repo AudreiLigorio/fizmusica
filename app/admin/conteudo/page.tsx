@@ -6,14 +6,19 @@ import ConteudoList from "./ConteudoList"
 
 export const dynamic = "force-dynamic"
 
-async function getDrafts() {
+const POR_PAGINA = 10
+
+async function getDrafts(pagina: number) {
   const supabase = createServerClient()
 
-  const { data: drafts } = await supabase
+  // Paginado: a lista cresce todo dia com a esteira rodando, e rolar 200 cards
+  // pra achar o de hoje não é navegação, é castigo.
+  const de = (pagina - 1) * POR_PAGINA
+  const { data: drafts, count: totalDrafts } = await supabase
     .from("content_drafts")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(200)
+    .range(de, de + POR_PAGINA - 1)
 
   // Pedidos elegíveis como fonte: só os com consentimento de publicação
   // (mesma regra do Catálogo, /admin/musicas).
@@ -103,11 +108,14 @@ async function getDrafts() {
     // Contagem é informativa: falhar aqui não pode derrubar a tela.
   }
 
-  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft, trilhas }
+  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, totalDrafts: totalDrafts ?? 0, porPagina: POR_PAGINA }
 }
 
-export default async function ConteudoPage() {
-  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft, trilhas } = await getDrafts()
+export default async function ConteudoPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const { page } = await searchParams
+  const pagina = Math.max(1, Number(page) || 1)
+  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, totalDrafts, porPagina } =
+    await getDrafts(pagina)
   const storageMb = storageBytes / 1024 / 1024
   const storagePct = (storageMb / 1024) * 100
   const tiktokStatus = await getConnectionStatus()
@@ -137,6 +145,8 @@ export default async function ConteudoPage() {
           origens={origens}
           jobPorDraft={jobPorDraft}
           trilhas={trilhas}
+          pagina={pagina}
+          totalPaginas={Math.max(1, Math.ceil(totalDrafts / porPagina))}
         />
       </div>
     </div>
