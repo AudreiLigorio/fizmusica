@@ -615,6 +615,24 @@ function EsteiraBox({ inicial }: { inicial: ContentSettings }) {
   const [s, setS] = useState(inicial)
   const [salvando, setSalvando] = useState(false)
   const [msg, setMsg] = useState("")
+  const [rodando, setRodando] = useState(false)
+
+  // Dispara a esteira na hora, sem esperar o dia agendado. Útil pra testar o
+  // critério do CMO e pra encaixar uma peça fora do cronograma.
+  async function rodarAgora() {
+    if (!confirm("Rodar a esteira agora? O CMO vai escolher a pauta e gerar uma peça (consome créditos de IA).")) return
+    setRodando(true); setMsg("")
+    try {
+      const d = await fetch("/api/admin/conteudo/esteira", { method: "POST" }).then((r) => r.json())
+      if (d.error) setMsg(`❌ ${d.error}`)
+      else if (d.pulou) setMsg(`pulou: ${d.pulou}`)
+      else { window.location.reload(); return }
+    } catch {
+      setMsg("❌ falha ao rodar a esteira")
+    } finally {
+      setRodando(false)
+    }
+  }
 
   async function salvar(patch: Partial<ContentSettings>) {
     const novo = { ...s, ...patch }
@@ -641,7 +659,13 @@ function EsteiraBox({ inicial }: { inicial: ContentSettings }) {
     <div className="rounded-xl border border-white/10 bg-black/20 p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
         <p className="text-white/80 text-sm font-semibold">🤖 Esteira de conteúdo</p>
-        <span className="text-white/40 text-[11px]">{salvando ? "salvando…" : msg}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-white/40 text-[11px]">{salvando ? "salvando…" : msg}</span>
+          <button onClick={rodarAgora} disabled={rodando}
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-white/15 text-white/60 hover:bg-white/5 disabled:opacity-50">
+            {rodando ? "rodando…" : "▶️ rodar agora"}
+          </button>
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-2 mb-4">
