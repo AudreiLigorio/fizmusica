@@ -2,6 +2,22 @@
 
 Publicação automática dos rascunhos aprovados em `/admin/conteudo`.
 
+## ⏳ Validade das credenciais — ATUALIZE AO RENOVAR
+
+Tabela lida por uma rotina agendada mensal (nuvem), que avisa quando falta
+pouco. **Ao renovar/reconectar, edite a data aqui e faça commit** — a rotina
+não tem como descobrir isso sozinha (não acessa `.env.local`, Vercel nem o
+banco).
+
+| Credencial | Última renovação | Validade | Como renovar |
+|---|---|---|---|
+| `IG_LONG_LIVED_TOKEN` (Instagram) | 2026-07-24 | 60 dias | `bash scripts/ig-token-check.sh`, depois atualizar no `.env.local` **e** na Vercel |
+| TikTok `refresh_token` (`tiktok_auth`) | (ainda não conectado) | ~365 dias | Reconectar em `/admin/conteudo` → "Conectar TikTok" |
+
+O `access_token` do TikTok (24h) se renova sozinho pelo `refresh_token` — não
+precisa de lembrete. O que expira de vez é o **refresh**: se ficar ~365 dias
+sem uso/renovação, a conta precisa ser reconectada na mão.
+
 ## Instagram — ATIVO ✅
 
 Fluxo "Instagram API with Instagram Login" (endpoint `graph.instagram.com`,
