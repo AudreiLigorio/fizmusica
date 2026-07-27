@@ -1,5 +1,5 @@
 import type { createServerClient } from "@/lib/supabase"
-import { generateImage, getImageTaskResult } from "@/lib/content/kie-image"
+import { generateImage, getImageTaskResult, type ImageTaskResult } from "@/lib/content/kie-image"
 import { generateMusic, getMusicDetails } from "@/lib/suno/client"
 import { generateSongLyrics } from "@/lib/content/song-lyrics"
 import { logContentEvent } from "@/lib/content/events"
@@ -12,6 +12,48 @@ export type VideoRecipe = {
   songTheme: string
   songStyle: string
   platform: string
+  /**
+   * De onde vem o áudio do vídeo:
+   *   "suno"   → gera uma música nova (padrão, único caminho pra tema livre)
+   *   "pedido" → usa a MÚSICA REAL entregue ao cliente daquele pedido. Mais
+   *              autêntico (é a canção que existiu de verdade), sai de graça
+   *              (não gasta geração no Suno) e o worker já corta no refrão
+   *              sozinho — o detectClimaxStart acha a janela mais alta da
+   *              faixa, que é justamente onde o refrão está.
+   */
+  songSource?: "suno" | "pedido"
+}
+
+// Localiza a música entregue ao cliente do pedido que originou o rascunho.
+// Exige consentimento de publicação vigente: a peça usa uma obra feita para
+// uma pessoa real, e essa checagem não pode depender só da tela.
+async function musicaDoPedido(supabase: DB, draftId: string): Promise<string> {
+  const { data: draft } = await supabase
+    .from("content_drafts")
+    .select("sourceOrderId")
+    .eq("id", draftId)
+    .maybeSingle()
+  if (!draft?.sourceOrderId) {
+    throw new Error("Este rascunho não veio de um pedido — não há música de cliente pra usar.")
+  }
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("publication_consent")
+    .eq("id", draft.sourceOrderId)
+    .maybeSingle()
+  if (!order?.publication_consent) {
+    throw new Error("O cliente não autoriza a publicação — não é possível usar a música dele.")
+  }
+
+  const { data: music } = await supabase
+    .from("generated_music")
+    .select("mp3Url")
+    .eq("orderId", draft.sourceOrderId)
+    .maybeSingle()
+  if (!music?.mp3Url) throw new Error("O pedido ainda não tem música entregue.")
+
+  return music.mp3Url
 }
 
 // Cria o job e dispara a geração assíncrona dos ingredientes (N imagens KIE +
@@ -46,7 +88,17 @@ export async function createVideoJob(supabase: DB, draftId: string, recipe: Vide
     ),
   )
 
-  // Dispara a letra (Gemini) + música (Suno).
+  // Áudio: ou a música real do pedido, ou uma nova gerada no Suno.
+  if (recipe.songSource === "pedido") {
+    const songUrl = await musicaDoPedido(supabase, draftId)
+    await supabase
+      .from("video_jobs")
+      .update({ scene_image_task_ids: imageTaskIds, song_url: songUrl })
+      .eq("id", job.id)
+    await logContentEvent(supabase, draftId, "rascunho_criado", "vídeo: usando a música real do pedido")
+    return { ...job, scene_image_task_ids: imageTaskIds, song_url: songUrl }
+  }
+
   const { title, lyrics } = await generateSongLyrics(recipe.songTheme, recipe.songStyle)
   const songTaskId = await generateMusic({
     prompt: lyrics,
@@ -63,6 +115,26 @@ export async function createVideoJob(supabase: DB, draftId: string, recipe: Vide
     .eq("id", job.id)
 
   return { ...job, scene_image_task_ids: imageTaskIds, song_task_id: songTaskId }
+}
+
+// URLs da KIE expiram — as imagens precisam virar arquivo nosso antes que o
+// worker vá buscá-las. Compartilhado pelos dois caminhos de áudio.
+async function subirImagensDeCena(
+  supabase: DB,
+  jobId: string,
+  imageResults: ImageTaskResult[],
+): Promise<string[]> {
+  return Promise.all(
+    imageResults.map(async (r, i) => {
+      const bytes = Buffer.from(await (await fetch(r.imageUrl!)).arrayBuffer())
+      const path = `video-jobs/${jobId}/scene-${i + 1}.png`
+      const { error: upErr } = await supabase.storage
+        .from("content-media")
+        .upload(path, bytes, { contentType: "image/png", upsert: true })
+      if (upErr) throw new Error(`Falha ao subir imagem de cena: ${upErr.message}`)
+      return supabase.storage.from("content-media").getPublicUrl(path).data.publicUrl
+    }),
+  )
 }
 
 // Consulta o progresso dos ingredientes; quando tudo estiver pronto, baixa e
@@ -84,6 +156,23 @@ export async function syncVideoIngredients(supabase: DB, jobId: string) {
   }
 
   const imagesReady = imageResults.every((r) => r.state === "success")
+
+  // Música vinda do pedido já está pronta desde a criação: não há o que
+  // esperar do Suno, só as imagens.
+  if (job.song_url && !job.song_task_id) {
+    if (!imagesReady) return job
+    const sceneImageUrls = await subirImagensDeCena(supabase, jobId, imageResults)
+    const { data: updated, error } = await supabase
+      .from("video_jobs")
+      .update({ scene_image_urls: sceneImageUrls, status: "pronto_pra_renderizar" })
+      .eq("id", jobId)
+      .select("*")
+      .single()
+    if (error) throw new Error(error.message)
+    await logContentEvent(supabase, job.contentDraftId, "imagem_gerada", "vídeo: ingredientes prontos (música do pedido)")
+    return updated
+  }
+
   const songDetails: any = await getMusicDetails(job.song_task_id)
   const songStatus = songDetails?.data?.status
   const songReady = songStatus === "SUCCESS"
@@ -97,17 +186,7 @@ export async function syncVideoIngredients(supabase: DB, jobId: string) {
   if (!imagesReady || !songReady) return job // ainda gerando
 
   // Baixa tudo e sobe pro bucket (URLs temporárias da KIE/Suno expiram).
-  const sceneImageUrls = await Promise.all(
-    imageResults.map(async (r, i) => {
-      const bytes = Buffer.from(await (await fetch(r.imageUrl!)).arrayBuffer())
-      const path = `video-jobs/${jobId}/scene-${i + 1}.png`
-      const { error: upErr } = await supabase.storage
-        .from("content-media")
-        .upload(path, bytes, { contentType: "image/png", upsert: true })
-      if (upErr) throw new Error(`Falha ao subir imagem de cena: ${upErr.message}`)
-      return supabase.storage.from("content-media").getPublicUrl(path).data.publicUrl
-    }),
-  )
+  const sceneImageUrls = await subirImagensDeCena(supabase, jobId, imageResults)
 
   const track = songDetails?.data?.response?.sunoData?.[0]
   if (!track?.audioUrl) throw new Error("Suno não retornou áudio.")

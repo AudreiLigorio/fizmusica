@@ -202,6 +202,10 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
   const [job, setJob] = useState<VideoJob | null>(null)
   const [creating, setCreating] = useState(false)
   const [msg, setMsg] = useState("")
+  // Peça de pedido real pode usar a MÚSICA que o cliente recebeu, em vez de
+  // gerar uma nova: é a canção que existiu de verdade, e o worker corta no
+  // refrão sozinho (detecta a janela mais alta da faixa).
+  const [songSource, setSongSource] = useState<"suno" | "pedido">(draft.sourceOrderId ? "pedido" : "suno")
   const [roteirizando, setRoteirizando] = useState(false)
   const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
   const [parecer, setParecer] = useState<Parecer | null>(null)
@@ -288,12 +292,12 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
     if (scenes.some((s) => !s.description.trim() || !s.caption.trim())) {
       setMsg("❌ Preencha descrição e legenda de todas as cenas."); return
     }
-    if (!songTheme.trim()) { setMsg("❌ Informe o tema da música."); return }
+    if (songSource === "suno" && !songTheme.trim()) { setMsg("❌ Informe o tema da música."); return }
     setCreating(true); setMsg("")
     const res = await fetch(`/api/admin/conteudo/${draftId}/video`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scenes, songTheme, songStyle }),
+      body: JSON.stringify({ scenes, songTheme, songStyle, songSource, platform: draft.platform }),
     })
     const d = await res.json()
     setCreating(false)
@@ -341,7 +345,26 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
 
       {parecer && <ParecerBox parecer={parecer} />}
 
-      <div className="grid grid-cols-2 gap-2">
+      {draft.sourceOrderId && (
+        <div className="rounded-lg border border-white/10 bg-black/20 p-2.5">
+          <p className="text-white/60 text-[11px] mb-1.5">Trilha do vídeo</p>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] text-white/70 flex items-start gap-2">
+              <input type="radio" checked={songSource === "pedido"} onChange={() => setSongSource("pedido")} className="mt-0.5" />
+              <span>
+                <strong className="text-fuchsia-300">Usar a música real deste pedido</strong> — um trecho do
+                refrão, escolhido sozinho pelo ponto mais forte da faixa. Não gasta geração de música.
+              </span>
+            </label>
+            <label className="text-[11px] text-white/70 flex items-start gap-2">
+              <input type="radio" checked={songSource === "suno"} onChange={() => setSongSource("suno")} className="mt-0.5" />
+              <span>Gerar uma música nova para a peça</span>
+            </label>
+          </div>
+        </div>
+      )}
+
+      <div className={`grid grid-cols-2 gap-2 ${songSource === "pedido" ? "hidden" : ""}`}>
         <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)}
           placeholder="Tema da música (ex.: chá revelação, expectativa de bebê)"
           className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />

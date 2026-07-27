@@ -18,20 +18,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
   const body = await req.json().catch(() => ({}))
-  const { scenes, songTheme, songStyle, platform } = body ?? {}
+  const { scenes, songTheme, songStyle, platform, songSource } = body ?? {}
 
   if (!Array.isArray(scenes) || scenes.length < 3 || scenes.length > 6) {
     return NextResponse.json({ error: "Informe de 3 a 6 cenas." }, { status: 400 })
   }
-  if (!songTheme?.trim() || !songStyle?.trim()) {
+  // Tema e estilo só fazem sentido quando a música vai ser criada agora. Se o
+  // áudio é a música real do pedido, não há o que descrever.
+  if (songSource !== "pedido" && (!songTheme?.trim() || !songStyle?.trim())) {
     return NextResponse.json({ error: "Informe o tema e o estilo da música." }, { status: 400 })
   }
 
   const recipe: VideoRecipe = {
     scenes,
-    songTheme,
-    songStyle,
+    songTheme: songTheme ?? "",
+    songStyle: songStyle ?? "",
     platform: platform || "instagram",
+    songSource: songSource === "pedido" ? "pedido" : "suno",
   }
 
   const supabase = createServerClient()
