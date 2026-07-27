@@ -1,5 +1,6 @@
 import { generateLyrics } from "@/lib/composer/gemini"
 import { getComposerSettings } from "@/lib/composer/settings"
+import { loadMarca } from "@/lib/content/marca"
 
 export type CaptionSource =
   | { type: "pedido"; musicName: string; subcategory: string; lyricsExcerpt: string; platform: string }
@@ -12,15 +13,29 @@ export type CaptionResult = {
   promptUsed: string
 }
 
-const SYSTEM_PROMPT =
-  "Você escreve conteúdo de conversão para redes sociais (Instagram, TikTok, YouTube) da FizMusica, " +
-  "uma empresa que cria músicas personalizadas por encomenda. O que converte em feed é imagem com " +
-  "frase curta + legenda direta — não parágrafo longo. Responda em português. Formato da resposta, " +
-  "sem nenhum texto extra:\n" +
-  "GANCHO: <frase de 4 a 8 palavras, pra queimar na imagem — direta, emocional ou de curiosidade, " +
-  "sem ponto final, tipo manchete>\n" +
-  "LEGENDA: <no máximo 2 frases curtas, terminando com uma chamada pra ação clara>\n" +
-  "HASHTAGS: <5 a 8 hashtags separadas por espaço, começando com #, em português>"
+// O system prompt é montado a cada chamada porque injeta a base de
+// conhecimento da marca (lib/content/marca) — voz/tom, banco de ganchos e
+// regras por rede. Editar aqueles markdowns muda o comportamento do agente
+// sem tocar em código.
+function buildSystemPrompt(): string {
+  return (
+    "Você escreve conteúdo de conversão para redes sociais (Instagram, TikTok, YouTube) da FizMusica, " +
+    "uma empresa que transforma histórias reais em músicas personalizadas. O que converte em feed é " +
+    "imagem com frase curta + legenda direta — não parágrafo longo. Responda em português.\n\n" +
+    "Siga RIGOROSAMENTE a base de conhecimento da marca abaixo. Ela tem precedência sobre qualquer " +
+    "hábito seu de escrita publicitária:\n\n" +
+    "<base_de_conhecimento>\n" +
+    loadMarca(["voz", "ganchos", "redes"]) +
+    "\n</base_de_conhecimento>\n\n" +
+    "Antes de escrever, decida em silêncio: qual persona está falando, qual emoção quer provocar e " +
+    "qual gancho interrompe o scroll. Não escreva esse raciocínio na resposta.\n\n" +
+    "Formato da resposta, sem nenhum texto extra:\n" +
+    "GANCHO: <frase de 4 a 8 palavras, pra queimar na imagem — direta, emocional ou de curiosidade, " +
+    "sem ponto final, tipo manchete>\n" +
+    "LEGENDA: <no máximo 2 frases curtas, terminando com UMA chamada pra ação clara>\n" +
+    "HASHTAGS: <5 a 8 hashtags separadas por espaço, começando com #, em português>"
+  )
+}
 
 function buildUserContent(source: CaptionSource): string {
   if (source.type === "pedido") {
@@ -54,7 +69,7 @@ export async function generateCaption(source: CaptionSource): Promise<CaptionRes
   const userContent = buildUserContent(source)
 
   const raw = await generateLyrics({
-    systemPrompt: SYSTEM_PROMPT,
+    systemPrompt: buildSystemPrompt(),
     model: settings.model,
     location: settings.location,
     userContent,
