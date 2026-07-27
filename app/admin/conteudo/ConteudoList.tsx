@@ -109,12 +109,12 @@ function AlertaClienteReal({ origem }: { origem: OrigemReal }) {
       <p className="text-white/70 text-[11px] mt-1 leading-relaxed">
         Cliente: <strong className="text-white/90">{origem.nome}</strong>
         {origem.honoreeName && <> · homenageado(a): <strong className="text-white/90">{origem.honoreeName}</strong></>}
-        {origem.fotos > 0 && <> · <strong className="text-amber-200">{origem.fotos} foto(s) do cliente no pedido</strong></>}
+        {origem.fotos > 0 && <> · {origem.fotos} foto(s) no pedido — <strong className="text-emerald-300">nunca usadas na peça</strong></>}
       </p>
       <p className={`text-[11px] mt-1.5 ${revogado ? "text-red-200" : "text-white/50"}`}>
         {revogado
           ? "O cliente retirou a Autorização de Publicação. Publicar agora usaria dados de uma pessoa sem autorização — rejeite esta peça."
-          : "Antes de aprovar: confira se o texto não expõe nada que a família não queira ver publicado, e se nenhum dado pessoal (nome completo, endereço, data) escapou pra legenda."}
+          : "As imagens da peça são criadas por nós — foto de cliente é proibida em divulgação e o sistema bloqueia. O que você precisa conferir é o TEXTO: nada que a família não queira ver publicado, e nenhum dado que identifique quem encomendou (nome, cidade, profissão, data)."}
       </p>
     </div>
   )

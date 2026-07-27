@@ -3,6 +3,7 @@ import { generateImage, getImageTaskResult, type ImageTaskResult } from "@/lib/c
 import { generateMusic, getMusicDetails } from "@/lib/suno/client"
 import { generateSongLyrics } from "@/lib/content/song-lyrics"
 import { logContentEvent } from "@/lib/content/events"
+import { garantirMidiaPropria } from "@/lib/content/guardas"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -187,6 +188,7 @@ export async function syncVideoIngredients(supabase: DB, jobId: string) {
 
   // Baixa tudo e sobe pro bucket (URLs temporárias da KIE/Suno expiram).
   const sceneImageUrls = await subirImagensDeCena(supabase, jobId, imageResults)
+  garantirMidiaPropria(sceneImageUrls, "Montagem de vídeo bloqueada")
 
   const track = songDetails?.data?.response?.sunoData?.[0]
   if (!track?.audioUrl) throw new Error("Suno não retornou áudio.")

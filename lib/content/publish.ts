@@ -1,6 +1,7 @@
 import crypto from "crypto"
 import type { createServerClient } from "@/lib/supabase"
 import { logContentEvent } from "@/lib/content/events"
+import { garantirMidiaPropria } from "@/lib/content/guardas"
 import { publishImage, publishReel, pngUrlToJpegBytes } from "@/lib/content/publishers/instagram"
 
 type DB = ReturnType<typeof createServerClient>
@@ -45,6 +46,9 @@ export async function publishDraft(supabase: DB, draftId: string) {
       )
     }
   }
+
+  // Última barreira antes do conteúdo virar público.
+  garantirMidiaPropria([draft.image_url, draft.video_url], "Publicação bloqueada")
 
   const caption = [draft.caption?.trim(), draft.hashtags?.trim()].filter(Boolean).join("\n\n")
 
