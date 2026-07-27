@@ -6,6 +6,7 @@ import { generateImage, getImageTaskResult } from "@/lib/content/kie-image"
 import { logContentEvent } from "@/lib/content/events"
 import { logOrderEvent } from "@/lib/orderEvents"
 import { composeBrandedImage } from "@/lib/content/brand-image"
+import sharp from "sharp"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -227,10 +228,16 @@ export async function syncImageTask(supabase: DB, draftId: string) {
     } catch (e) {
       console.error("[content] composição da marca falhou, usando fundo cru:", e instanceof Error ? e.message : e)
     }
-    const path = `${draftId}/${crypto.randomUUID()}.png`
+    // Guarda em JPEG, não PNG. A peça é uma foto com texto sobreposto: o PNG
+    // sem perda custava ~2,3 MB por imagem (≈430 imagens até estourar 1 GB) e
+    // o JPEG de qualidade 90 é visualmente idêntico por uma fração disso.
+    // Bônus: é o formato que o Instagram exige, então a publicação deixa de
+    // converter e de subir uma SEGUNDA cópia do mesmo post.
+    const jpegBytes = await sharp(finalBytes).jpeg({ quality: 90, mozjpeg: true }).toBuffer()
+    const path = `${draftId}/${crypto.randomUUID()}.jpg`
     const { error: uploadErr } = await supabase.storage
       .from(BUCKET)
-      .upload(path, finalBytes, { contentType: "image/png", upsert: false })
+      .upload(path, jpegBytes, { contentType: "image/jpeg", upsert: false })
     if (uploadErr) throw new Error("Falha ao salvar a imagem gerada.")
 
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)

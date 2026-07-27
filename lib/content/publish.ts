@@ -37,15 +37,20 @@ export async function publishDraft(supabase: DB, draftId: string) {
       // Vídeo vira Reels — a URL do MP4 no bucket já é pública.
       result = await publishReel({ videoUrl: draft.video_url, caption })
     } else if (draft.image_url) {
-      // Imagem: converte PNG→JPEG (exigência do IG), re-sobe e publica.
-      const jpegBytes = await pngUrlToJpegBytes(draft.image_url)
-      const path = `${draftId}/${crypto.randomUUID()}.jpg`
-      const { error: upErr } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, jpegBytes, { contentType: "image/jpeg", upsert: false })
-      if (upErr) throw new Error("Falha ao preparar a imagem JPEG para publicação.")
-      const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
-      result = await publishImage({ imageUrl: publicUrl, caption })
+      // Desde a higiene de storage o rascunho já nasce em JPEG — o formato que
+      // o IG exige — então publica direto, sem segunda cópia no bucket. Só os
+      // rascunhos antigos (PNG) ainda passam pela conversão.
+      let imageUrl = draft.image_url
+      if (!/\.jpe?g($|\?)/i.test(imageUrl)) {
+        const jpegBytes = await pngUrlToJpegBytes(draft.image_url)
+        const path = `${draftId}/${crypto.randomUUID()}.jpg`
+        const { error: upErr } = await supabase.storage
+          .from(BUCKET)
+          .upload(path, jpegBytes, { contentType: "image/jpeg", upsert: false })
+        if (upErr) throw new Error("Falha ao preparar a imagem JPEG para publicação.")
+        imageUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+      }
+      result = await publishImage({ imageUrl, caption })
     } else {
       throw new Error("Rascunho sem imagem nem vídeo para publicar.")
     }
