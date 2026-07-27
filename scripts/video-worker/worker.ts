@@ -22,6 +22,7 @@ import {
   concatWithCrossfade,
   overlayPngs,
   muxAudio,
+  muxNarrationOverMusic,
   detectClimaxStart,
 } from "./ffmpeg"
 
@@ -54,9 +55,11 @@ async function processJob(supabase: ReturnType<typeof createServerClient>, job: 
     const canvas = CANVAS[platform] ?? CANVAS.instagram
     const sceneUrls: string[] = job.scene_image_urls
 
-    // 1. Baixa ingredientes
+    // 1. Baixa ingredientes. A narração, quando existe, é uma faixa à parte:
+    // song_url passa a ser a música de FUNDO (pode nem existir).
     await Promise.all(sceneUrls.map((url, i) => download(url, path.join(tmp, `scene-${i + 1}.png`))))
-    await download(job.song_url, path.join(tmp, "song.mp3"))
+    if (job.narration_url) await download(job.narration_url, path.join(tmp, "narracao.wav"))
+    if (job.song_url) await download(job.song_url, path.join(tmp, "song.mp3"))
 
     // 2. Ken Burns por cena
     const sceneClips: string[] = []
@@ -94,10 +97,20 @@ async function processJob(supabase: ReturnType<typeof createServerClient>, job: 
     // Música (nova ou do pedido): corta no clímax — a janela de maior volume
     // médio, que é onde o refrão está. Narração: começa do zero, porque a
     // primeira palavra é o começo da frase, não um pico de volume.
-    const ehNarracao = (job.recipe as { songSource?: string })?.songSource === "narracao"
-    const climaxStart = ehNarracao ? 0 : await detectClimaxStart(path.join(tmp, "song.mp3"), totalDur)
     const finalPath = path.join(tmp, "final.mp4")
-    await muxAudio(withTextPath, path.join(tmp, "song.mp3"), climaxStart, totalDur, finalPath)
+
+    if (job.narration_url && job.song_url) {
+      // Voz + música: a música entra no refrão e abaixa sozinha sob a voz.
+      const musicStart = await detectClimaxStart(path.join(tmp, "song.mp3"), totalDur)
+      await muxNarrationOverMusic(withTextPath, path.join(tmp, "narracao.wav"), path.join(tmp, "song.mp3"), musicStart, totalDur, finalPath)
+      console.log(`[worker] narração + música (fundo a partir de ${musicStart.toFixed(1)}s)`)
+    } else if (job.narration_url) {
+      // Só voz: começa do zero — a primeira palavra é o começo da frase.
+      await muxAudio(withTextPath, path.join(tmp, "narracao.wav"), 0, totalDur, finalPath)
+    } else {
+      const climaxStart = await detectClimaxStart(path.join(tmp, "song.mp3"), totalDur)
+      await muxAudio(withTextPath, path.join(tmp, "song.mp3"), climaxStart, totalDur, finalPath)
+    }
 
     // 6. Sobe o resultado
     const bytes = await fs.readFile(finalPath)
@@ -110,7 +123,7 @@ async function processJob(supabase: ReturnType<typeof createServerClient>, job: 
 
     await supabase.from("video_jobs").update({ status: "concluido", video_url: publicUrl }).eq("id", job.id)
     await supabase.from("content_drafts").update({ video_url: publicUrl }).eq("id", job.contentDraftId)
-    await logContentEvent(supabase, job.contentDraftId, "video_concluido", `${scenes.length} cenas, clímax em ${climaxStart.toFixed(1)}s`, "system")
+    await logContentEvent(supabase, job.contentDraftId, "video_concluido", `${scenes.length} cenas`, "system")
 
     // As imagens de cena e o MP3 já estão DENTRO do MP4 — guardar os dois é
     // pagar duas vezes pelo mesmo conteúdo. Some com eles assim que o vídeo

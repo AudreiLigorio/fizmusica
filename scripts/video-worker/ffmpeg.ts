@@ -83,6 +83,42 @@ export async function muxAudio(videoPath: string, audioPath: string, trimStart: 
   ])
 }
 
+// Narração por cima de música de fundo, com DUCKING de verdade: a música
+// abaixa sozinha enquanto a voz fala e volta a subir nos silêncios. É o que
+// separa comercial de "música tocando junto com alguém falando" — sem isso a
+// voz briga com o refrão e ninguém entende nem um nem outro.
+//
+// sidechaincompress usa a voz como gatilho pra comprimir a música; o amix
+// depois junta as duas. O volume=2 no fim compensa a atenuação que o próprio
+// amix aplica ao dividir pelo número de entradas.
+export async function muxNarrationOverMusic(
+  videoPath: string,
+  narrationPath: string,
+  musicPath: string,
+  musicStart: number,
+  duration: number,
+  outPath: string,
+) {
+  const fadeOutStart = Math.max(0, duration - 1.5)
+  await ffmpeg([
+    "-ss", String(musicStart), "-t", String(duration), "-i", musicPath,
+    "-i", narrationPath,
+    "-i", videoPath,
+    "-filter_complex",
+    // A música entra baixa (0.45) já de saída: é fundo, não protagonista.
+    // apad garante que a voz "dure" o vídeo inteiro pro amix não cortar antes.
+    "[0:a]volume=0.45[bg];" +
+    "[1:a]apad,atrim=0:" + duration + ",asetpts=PTS-STARTPTS[voz];" +
+    "[bg][voz]sidechaincompress=threshold=0.03:ratio=12:attack=5:release=300[bgduck];" +
+    "[bgduck][voz]amix=inputs=2:duration=first:dropout_transition=0,volume=2," +
+    `afade=t=in:d=0.6,afade=t=out:st=${fadeOutStart}:d=1.5[aout]`,
+    "-map", "2:v", "-map", "[aout]",
+    "-c:v", "libx264", "-preset", "medium", "-crf", "19", "-pix_fmt", "yuv420p",
+    "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest",
+    outPath,
+  ])
+}
+
 // Analisa o volume momentâneo (EBU R128) segundo a segundo e acha a janela de
 // `windowDur` segundos com maior volume médio — é o "clímax" da música, onde a
 // cena final (revelação/ápice) deve cair. Generalização da análise que fiz na

@@ -29,6 +29,8 @@ export type VideoRecipe = {
   /** Texto lido pela voz sintética (quando songSource="narracao"). */
   narracaoTexto?: string
   narracaoVoz?: string
+  /** Música de fundo sob a narração: nenhuma, uma já criada, ou uma nova. */
+  narracaoFundo?: "nenhum" | "pedido" | "suno"
 }
 
 // Localiza a música entregue ao cliente do pedido que originou o rascunho.
@@ -107,14 +109,46 @@ export async function createVideoJob(supabase: DB, draftId: string, recipe: Vide
       .from("content-media")
       .upload(path, wav, { contentType: "audio/wav", upsert: true })
     if (upErr) throw new Error(`Falha ao subir a narração: ${upErr.message}`)
-    const songUrl = supabase.storage.from("content-media").getPublicUrl(path).data.publicUrl
+    const narrationUrl = supabase.storage.from("content-media").getPublicUrl(path).data.publicUrl
+
+    const fundo = recipe.narracaoFundo ?? "nenhum"
+
+    // Fundo vindo de música já criada: já está pronta, nada a esperar.
+    if (fundo === "pedido") {
+      const songUrl = await musicaDoPedido(supabase, draftId, recipe.songOrderId)
+      await supabase
+        .from("video_jobs")
+        .update({ scene_image_task_ids: imageTaskIds, narration_url: narrationUrl, song_url: songUrl })
+        .eq("id", job.id)
+      await logContentEvent(supabase, draftId, "rascunho_criado", "vídeo: narração sobre música já criada")
+      return { ...job, scene_image_task_ids: imageTaskIds, narration_url: narrationUrl, song_url: songUrl }
+    }
+
+    // Fundo gerado agora: entra na mesma espera das imagens (polling do Suno).
+    if (fundo === "suno") {
+      const { title, lyrics } = await generateSongLyrics(recipe.songTheme, recipe.songStyle)
+      const songTaskId = await generateMusic({
+        prompt: lyrics,
+        style: recipe.songStyle,
+        title,
+        vocalGender: "f",
+        model: "V5",
+        callBackUrl: "https://fizmusica.com.br/api/suno/callback-not-used-polling-instead",
+      })
+      await supabase
+        .from("video_jobs")
+        .update({ scene_image_task_ids: imageTaskIds, narration_url: narrationUrl, song_task_id: songTaskId })
+        .eq("id", job.id)
+      await logContentEvent(supabase, draftId, "rascunho_criado", "vídeo: narração sobre música nova")
+      return { ...job, scene_image_task_ids: imageTaskIds, narration_url: narrationUrl, song_task_id: songTaskId }
+    }
 
     await supabase
       .from("video_jobs")
-      .update({ scene_image_task_ids: imageTaskIds, song_url: songUrl })
+      .update({ scene_image_task_ids: imageTaskIds, narration_url: narrationUrl })
       .eq("id", job.id)
-    await logContentEvent(supabase, draftId, "rascunho_criado", "vídeo: trilha narrada por voz sintética")
-    return { ...job, scene_image_task_ids: imageTaskIds, song_url: songUrl }
+    await logContentEvent(supabase, draftId, "rascunho_criado", "vídeo: trilha narrada, sem música de fundo")
+    return { ...job, scene_image_task_ids: imageTaskIds, narration_url: narrationUrl }
   }
 
   if (recipe.songSource === "pedido") {
@@ -187,7 +221,7 @@ export async function syncVideoIngredients(supabase: DB, jobId: string) {
 
   // Música vinda do pedido já está pronta desde a criação: não há o que
   // esperar do Suno, só as imagens.
-  if (job.song_url && !job.song_task_id) {
+  if ((job.song_url || job.narration_url) && !job.song_task_id) {
     if (!imagesReady) return job
     const sceneImageUrls = await subirImagensDeCena(supabase, jobId, imageResults)
     const { data: updated, error } = await supabase

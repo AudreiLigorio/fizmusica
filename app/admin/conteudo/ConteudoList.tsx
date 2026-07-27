@@ -217,6 +217,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
   const [songOrderId, setSongOrderId] = useState(draft.sourceOrderId ?? trilhas[0]?.orderId ?? "")
   const [narracaoTexto, setNarracaoTexto] = useState("")
   const [narracaoVoz, setNarracaoVoz] = useState("Kore")
+  const [narracaoFundo, setNarracaoFundo] = useState<"nenhum" | "pedido" | "suno">("nenhum")
   const [roteirizando, setRoteirizando] = useState(false)
   const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
   const [parecer, setParecer] = useState<Parecer | null>(null)
@@ -303,7 +304,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
     if (scenes.some((s) => !s.description.trim() || !s.caption.trim())) {
       setMsg("❌ Preencha descrição e legenda de todas as cenas."); return
     }
-    if (songSource === "suno" && !songTheme.trim()) { setMsg("❌ Informe o tema da música."); return }
+    if ((songSource === "suno" || (songSource === "narracao" && narracaoFundo === "suno")) && !songTheme.trim()) { setMsg("❌ Informe o tema da música."); return }
     if (songSource === "narracao" && !narracaoTexto.trim()) { setMsg("❌ Escreva o texto da narração."); return }
     if (songSource === "pedido" && !songOrderId) { setMsg("❌ Escolha de qual música vem a trilha."); return }
     setCreating(true); setMsg("")
@@ -315,6 +316,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
         songOrderId: songSource === "pedido" ? songOrderId : undefined,
         narracaoTexto: songSource === "narracao" ? narracaoTexto : undefined,
         narracaoVoz: songSource === "narracao" ? narracaoVoz : undefined,
+        narracaoFundo: songSource === "narracao" ? narracaoFundo : undefined,
       }),
     })
     const d = await res.json()
@@ -400,11 +402,30 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
               className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
               {VOZES.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
             </select>
+
+            <div className="pt-1">
+              <p className="text-white/50 text-[11px] mb-1">Música de fundo sob a voz</p>
+              <select value={narracaoFundo} onChange={(e) => setNarracaoFundo(e.target.value as typeof narracaoFundo)}
+                className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+                <option value="nenhum">Sem música — só a voz</option>
+                <option value="pedido" disabled={!trilhas.length}>Uma música já criada</option>
+                <option value="suno">Uma música nova (descreva abaixo)</option>
+              </select>
+              {narracaoFundo === "pedido" && trilhas.length > 0 && (
+                <select value={songOrderId} onChange={(e) => setSongOrderId(e.target.value)}
+                  className="w-full mt-1.5 bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white">
+                  {trilhas.map((t) => <option key={t.orderId} value={t.orderId}>{t.label}</option>)}
+                </select>
+              )}
+              <p className="text-white/35 text-[11px] mt-1">
+                A música abaixa sozinha enquanto a voz fala e volta a subir nos silêncios.
+              </p>
+            </div>
           </div>
         )}
       </div>
 
-      <div className={`grid grid-cols-2 gap-2 ${songSource !== "suno" ? "hidden" : ""}`}>
+      <div className={`grid grid-cols-2 gap-2 ${songSource === "suno" || (songSource === "narracao" && narracaoFundo === "suno") ? "" : "hidden"}`}>
         <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)}
           placeholder="Tema da música (ex.: chá revelação, expectativa de bebê)"
           className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
