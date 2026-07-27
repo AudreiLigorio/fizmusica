@@ -218,6 +218,41 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
   const [narracaoTexto, setNarracaoTexto] = useState("")
   const [narracaoVoz, setNarracaoVoz] = useState("Kore")
   const [narracaoFundo, setNarracaoFundo] = useState<"nenhum" | "pedido" | "suno">("nenhum")
+  const [previa, setPrevia] = useState<{ url: string; segundos: number } | null>(null)
+  const [ouvindo, setOuvindo] = useState(false)
+
+  // Prévia da narração: gera o áudio e mede a duração ANTES de renderizar. É o
+  // que evita descobrir no vídeo pronto que o texto não cabia.
+  async function ouvirPrevia() {
+    if (!narracaoTexto.trim()) { setMsg("❌ Escreva o texto da narração."); return }
+    setOuvindo(true); setMsg("")
+    try {
+      const res = await fetch("/api/admin/conteudo/narracao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: narracaoTexto, voz: narracaoVoz }),
+      })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setMsg(`❌ ${d.error ?? "Falha na prévia."}`)
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      await new Promise<void>((resolve) => {
+        audio.addEventListener("loadedmetadata", () => resolve(), { once: true })
+        audio.addEventListener("error", () => resolve(), { once: true })
+      })
+      if (previa?.url) URL.revokeObjectURL(previa.url)
+      setPrevia({ url, segundos: Number.isFinite(audio.duration) ? audio.duration : 0 })
+      audio.play().catch(() => { /* autoplay bloqueado: o player abaixo resolve */ })
+    } catch {
+      setMsg("❌ Falha ao gerar a prévia.")
+    } finally {
+      setOuvindo(false)
+    }
+  }
   const [roteirizando, setRoteirizando] = useState(false)
   const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
   const [parecer, setParecer] = useState<Parecer | null>(null)
@@ -402,6 +437,30 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
               className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
               {VOZES.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
             </select>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button onClick={ouvirPrevia} disabled={ouvindo || creating}
+                className="text-[11px] px-2.5 py-1 rounded-lg border border-fuchsia-500/40 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50">
+                {ouvindo ? "gerando…" : "🔊 ouvir prévia"}
+              </button>
+              {previa && (
+                <>
+                  <audio src={previa.url} controls className="h-7" style={{ maxWidth: 220 }} />
+                  {previa.segundos > 0 && (() => {
+                    const alvo = duracaoDoVideo(scenes.length)
+                    const sobra = alvo - previa.segundos
+                    return (
+                      <span className={`text-[11px] ${sobra < 0 ? "text-red-300" : sobra < 1.5 ? "text-amber-300" : "text-emerald-300"}`}>
+                        {previa.segundos.toFixed(1)}s de narração · vídeo terá {alvo.toFixed(1)}s
+                        {sobra < 0
+                          ? ` — vai cortar ${Math.abs(sobra).toFixed(1)}s: encurte o texto ou adicione cena`
+                          : sobra < 1.5 ? " — no limite" : " — cabe"}
+                      </span>
+                    )
+                  })()}
+                </>
+              )}
+            </div>
 
             <div className="pt-1">
               <p className="text-white/50 text-[11px] mb-1">Música de fundo sob a voz</p>
@@ -824,6 +883,9 @@ type ContentSettings = {
 }
 
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"]
+
+// Mesma conta do worker: cada cena dura 5s e o crossfade come 0,6s por emenda.
+const duracaoDoVideo = (nCenas: number) => nCenas * 5 - (nCenas - 1) * 0.6
 
 const MODOS: { valor: ContentSettings["modo"]; titulo: string; desc: string }[] = [
   { valor: "manual", titulo: "Manual", desc: "Nada roda sozinho. Você gera, aprova e publica." },
