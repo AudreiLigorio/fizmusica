@@ -1,6 +1,6 @@
 import crypto from "crypto"
 import type { createServerClient } from "@/lib/supabase"
-import { generateCaption, type CaptionSource } from "@/lib/content/caption"
+import { gerarRoteiro, type RoteiroSource } from "@/lib/content/roteirista"
 import { generateImage, getImageTaskResult } from "@/lib/content/kie-image"
 import { logContentEvent } from "@/lib/content/events"
 import { logOrderEvent } from "@/lib/orderEvents"
@@ -39,7 +39,7 @@ export type CreateDraftInput =
 // Cria um rascunho: gera legenda via Gemini (síncrono), dispara a geração de
 // imagem na KIE.ai (assíncrono — o taskId fica salvo pra sincronizar depois).
 export async function createDraft(supabase: DB, input: CreateDraftInput) {
-  let captionSource: CaptionSource
+  let roteiroSource: RoteiroSource
   let sourceOrderId: string | null = null
 
   if (input.sourceType === "pedido") {
@@ -57,19 +57,24 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
       .eq("orderId", input.sourceOrderId)
       .maybeSingle()
 
-    captionSource = {
+    roteiroSource = {
       type: "pedido",
-      platform: input.platform,
       musicName: music?.musicName?.trim() || music?.personName?.trim() || "música personalizada",
       subcategory: order.subcategory ?? "",
       lyricsExcerpt: order.lyricsDraft ?? "",
     }
     sourceOrderId = order.id
   } else {
-    captionSource = { type: "generico", platform: input.platform, topic: input.topic }
+    roteiroSource = { type: "generico", topic: input.topic }
   }
 
-  const { hook, caption, hashtags, promptUsed } = await generateCaption(captionSource)
+  // O roteirista já vem com a segunda passada (revisor crítico) embutida —
+  // o que chega aqui ou passou no crivo, ou está marcado como needs_human.
+  const { roteiro, parecer, precisaDeHumano } = await gerarRoteiro({
+    formato: "post",
+    platform: input.platform,
+    source: roteiroSource,
+  })
 
   const { data: draft, error } = await supabase
     .from("content_drafts")
@@ -79,10 +84,16 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
       source_type: input.sourceType,
       sourceOrderId,
       topic: input.sourceType === "generico" ? input.topic : null,
-      hook_text: hook,
-      caption,
-      hashtags,
-      prompt_used: promptUsed,
+      hook_text: roteiro.hook,
+      caption: roteiro.caption,
+      hashtags: roteiro.hashtags,
+      prompt_used: roteiro.historia,
+      roteiro,
+      emocao_alvo: roteiro.emocao,
+      persona: roteiro.persona,
+      quality_report: parecer,
+      quality_score: parecer.nota,
+      needs_human: precisaDeHumano,
     })
     .select("*")
     .single()
@@ -99,10 +110,14 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
     // são compostos por nós depois (lib/content/brand-image), com fonte real e
     // precisão de pixel. Isso elimina o erro de ortografia na origem: a IA nunca
     // escreve texto, então nunca erra.
+    // A cena vem do roteiro (história + emoção-alvo), não só do gancho solto —
+    // é o que faz a imagem conversar com o texto em vez de ilustrar palavra.
     const imagePrompt =
-      `Fotografia/ilustração calorosa e aconchegante para post de rede social, tema música e emoção ` +
-      `ligado a: "${hook}". Cena bonita, cores suaves, boa profundidade, espaço "respirável" na parte ` +
-      `de baixo. NÃO escreva absolutamente nenhum texto, palavra, letra, número ou legenda na imagem — ` +
+      `Fotografia realista e calorosa para post de rede social. Pessoas brasileiras, expressões ` +
+      `genuínas, luz natural — parece foto de verdade, não ilustração digital. ` +
+      `Emoção a transmitir: ${roteiro.emocao}. Cena: ${roteiro.historia} ` +
+      `Cores suaves, boa profundidade, espaço "respirável" na parte de baixo. ` +
+      `NÃO escreva absolutamente nenhum texto, palavra, letra, número ou legenda na imagem — ` +
       `apenas a cena visual, sem tipografia de nenhum tipo.`
     const taskId = await generateImage({ prompt: imagePrompt, aspectRatio: aspectFor(input.platform) })
     await supabase.from("content_drafts").update({ image_task_id: taskId }).eq("id", draft.id)

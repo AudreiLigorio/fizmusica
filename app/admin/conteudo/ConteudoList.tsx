@@ -23,7 +23,15 @@ type Draft = {
   published_permalink: string | null
   publish_error: string | null
   created_at: string
+  emocao_alvo: string | null
+  persona: string | null
+  quality_score: number | null
+  quality_report: Parecer | null
+  needs_human: boolean | null
 }
+
+type ParecerItem = { pergunta: string; ok: boolean; observacao: string }
+type Parecer = { aprovado: boolean; nota: number; itens: ParecerItem[]; correcoes: string }
 
 type VideoScene = { description: string; caption: string }
 type VideoJob = {
@@ -43,10 +51,45 @@ const JOB_STATUS_LABEL: Record<string, string> = {
 
 const JOB_TERMINAL = new Set(["concluido", "falhou"])
 
+// Parecer do revisor crítico (segunda passada do roteirista). Mostra a nota e
+// só detalha o que FALHOU — item aprovado não precisa ocupar espaço na tela.
+function ParecerBox({ parecer }: { parecer: Parecer }) {
+  const [aberto, setAberto] = useState(false)
+  const falhas = (parecer.itens ?? []).filter((i) => !i.ok)
+  const cor = parecer.aprovado ? "emerald" : "amber"
+
+  return (
+    <div className={`rounded-lg border p-2.5 ${parecer.aprovado ? "border-emerald-500/25 bg-emerald-500/5" : "border-amber-500/30 bg-amber-500/5"}`}>
+      <button onClick={() => setAberto((v) => !v)} className="w-full flex items-center justify-between text-left">
+        <span className={`text-[11px] font-semibold text-${cor}-300`}>
+          {parecer.aprovado ? "✅ Aprovado no crivo" : "⚠️ Reprovado no crivo — revise antes de gerar"}
+          <span className="text-white/50 font-normal"> · nota {parecer.nota}/10</span>
+        </span>
+        <span className="text-white/40 text-[11px]">{aberto ? "ocultar" : "ver parecer"}</span>
+      </button>
+
+      {!parecer.aprovado && parecer.correcoes && (
+        <p className="text-amber-200/80 text-[11px] mt-1.5">{parecer.correcoes}</p>
+      )}
+
+      {aberto && (
+        <ul className="mt-2 space-y-1">
+          {(falhas.length ? falhas : parecer.itens ?? []).map((i, idx) => (
+            <li key={idx} className="text-[11px] text-white/60">
+              {i.ok ? "✔" : "✘"} <span className="text-white/80">{i.pergunta}</span> — {i.observacao}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // Formulário de criação de vídeo — N cenas (descrição + legenda) + tema/estilo
 // da música. O Next.js só gera os ingredientes (imagens KIE + música Suno); a
 // montagem final roda no worker local (ffmpeg não roda no Vercel).
-function VideoForm({ draftId, onDone }: { draftId: string; onDone: () => void }) {
+function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
+  const draftId = draft.id
   const [scenes, setScenes] = useState<VideoScene[]>([
     { description: "", caption: "" },
     { description: "", caption: "" },
@@ -57,6 +100,39 @@ function VideoForm({ draftId, onDone }: { draftId: string; onDone: () => void })
   const [job, setJob] = useState<VideoJob | null>(null)
   const [creating, setCreating] = useState(false)
   const [msg, setMsg] = useState("")
+  const [roteirizando, setRoteirizando] = useState(false)
+  const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
+  const [parecer, setParecer] = useState<Parecer | null>(null)
+
+  // Roteirista: preenche a receita inteira (cenas + música) em vez de o admin
+  // escrever cada cena na mão. Já vem com a segunda passada crítica aplicada —
+  // o parecer aparece na tela pra decidir se aceita ou ajusta antes de gerar.
+  async function roteirizar() {
+    setRoteirizando(true); setMsg(""); setParecer(null)
+    try {
+      const res = await fetch("/api/admin/conteudo/roteiro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: draft.platform,
+          sourceType: draft.source_type,
+          topic: draft.topic,
+          sourceOrderId: draft.sourceOrderId,
+        }),
+      })
+      const d = await res.json()
+      if (!d.ok) { setMsg(`❌ ${d.error}`); return }
+      setScenes(d.roteiro.cenas)
+      setSongTheme(d.roteiro.songTheme)
+      setSongStyle(d.roteiro.songStyle)
+      setRoteiro({ persona: d.roteiro.persona, emocao: d.roteiro.emocao, historia: d.roteiro.historia })
+      setParecer(d.parecer)
+    } catch {
+      setMsg("❌ Falha ao gerar o roteiro.")
+    } finally {
+      setRoteirizando(false)
+    }
+  }
 
   useEffect(() => {
     if (!job || JOB_TERMINAL.has(job.status)) return
@@ -119,6 +195,27 @@ function VideoForm({ draftId, onDone }: { draftId: string; onDone: () => void })
 
   return (
     <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 space-y-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <button onClick={roteirizar} disabled={roteirizando || creating}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
+          {roteirizando ? "Roteirizando…" : "✨ Gerar roteiro com IA"}
+        </button>
+        <span className="text-white/40 text-[11px]">preenche cenas e música — você ajusta antes de gerar</span>
+      </div>
+
+      {roteiro && (
+        <div className="rounded-lg border border-fuchsia-500/25 bg-fuchsia-500/5 p-2.5 space-y-1">
+          <p className="text-[11px] text-white/70">
+            <span className="text-fuchsia-300">Emoção-alvo:</span> {roteiro.emocao} ·{" "}
+            <span className="text-fuchsia-300">Persona:</span> {roteiro.persona}
+          </p>
+          <p className="text-[11px] text-white/60 italic">"{roteiro.historia}"</p>
+        </div>
+      )}
+
+      {parecer && <ParecerBox parecer={parecer} />}
+
       <div className="grid grid-cols-2 gap-2">
         <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)}
           placeholder="Tema da música (ex.: chá revelação, expectativa de bebê)"
@@ -239,11 +336,22 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
           </span>
         </div>
 
+        {(draft.emocao_alvo || draft.persona) && (
+          <p className="text-[11px] text-white/50 mb-1.5">
+            🎯 {draft.emocao_alvo ?? "—"}
+            {draft.persona && <> · 👤 {draft.persona}</>}
+            {draft.quality_score != null && <> · nota {draft.quality_score}/10</>}
+            {draft.needs_human && <span className="text-amber-300"> · ⚠️ reprovado no crivo, precisa de você</span>}
+          </p>
+        )}
+
         {draft.hook_text && (
           <p className="text-white font-bold text-sm mb-1.5">
             💬 "{draft.hook_text}" <span className="text-white/40 font-normal text-[11px]">(gancho na imagem final)</span>
           </p>
         )}
+
+        {draft.quality_report && <div className="mb-2"><ParecerBox parecer={draft.quality_report} /></div>}
         <p className="text-white/80 text-sm mb-1 whitespace-pre-wrap">{draft.caption ?? "—"}</p>
         {draft.hashtags && <p className="text-fuchsia-300/70 text-xs mb-2">{draft.hashtags}</p>}
         {draft.image_error && <p className="text-red-400 text-xs mb-2">Imagem: {draft.image_error}</p>}
@@ -315,7 +423,7 @@ function DraftCard({ draft, onChange }: { draft: Draft; onChange: () => void }) 
             {showVideoForm ? "Fechar" : "🎬 Criar vídeo (multi-cena)"}
           </button>
         )}
-        {showVideoForm && !draft.video_url && <VideoForm draftId={draft.id} onDone={onChange} />}
+        {showVideoForm && !draft.video_url && <VideoForm draft={draft} onDone={onChange} />}
       </div>
     </div>
   )
