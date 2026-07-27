@@ -30,6 +30,7 @@ type Draft = {
   needs_human: boolean | null
   link_slug: string | null
   generation_error: string | null
+  media_purged_at: string | null
 }
 
 type ParecerItem = { pergunta: string; ok: boolean; observacao: string }
@@ -52,6 +53,41 @@ const JOB_STATUS_LABEL: Record<string, string> = {
 }
 
 const JOB_TERMINAL = new Set(["concluido", "falhou"])
+
+// Visualizador em tela cheia. A miniatura de 112px não deixa julgar imagem
+// nem vídeo — e é justamente isso que o admin precisa fazer antes de aprovar.
+// Fecha no ESC, no clique fora e no botão; a mídia nunca passa da tela.
+function Lightbox({ src, tipo, onClose }: { src: string; tipo: "imagem" | "video"; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    window.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      document.body.style.overflow = ""
+    }
+  }, [onClose])
+
+  return (
+    <div onClick={onClose}
+      className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+      style={{ backdropFilter: "blur(4px)" }}>
+      <button onClick={onClose} aria-label="Fechar"
+        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white text-xl leading-none hover:bg-white/20">
+        ×
+      </button>
+      <div onClick={(e) => e.stopPropagation()} className="max-w-full max-h-full">
+        {tipo === "video"
+          ? <video src={src} controls autoPlay playsInline className="max-w-full rounded-xl" style={{ maxHeight: "88vh" }} />
+          : <img src={src} alt="" className="max-w-full rounded-xl object-contain" style={{ maxHeight: "88vh" }} />}
+        <a href={src} target="_blank" rel="noreferrer"
+          className="block text-center text-white/50 text-[11px] mt-3 underline hover:text-white/80">
+          abrir em nova aba
+        </a>
+      </div>
+    </div>
+  )
+}
 
 // Parecer do revisor crítico (segunda passada do roteirista). Mostra a nota e
 // só detalha o que FALHOU — item aprovado não precisa ocupar espaço na tela.
@@ -316,11 +352,12 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
 }
 
 function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number; onChange: () => void }) {
-  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | null>(null)
+  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
   const [showVideoForm, setShowVideoForm] = useState(false)
+  const [lightbox, setLightbox] = useState<{ src: string; tipo: "imagem" | "video" } | null>(null)
   const gerando = draft.status === "gerando"
   const pending = !draft.image_url && !draft.image_error && draft.status === "rascunho"
 
@@ -367,6 +404,20 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
     else setMsg(`❌ ${d.error}`)
   }
 
+  async function apagarMidia() {
+    if (!confirm("Apagar a imagem e o vídeo deste rascunho? Os textos e o registro da publicação continuam.")) return
+    setBusy("apagar_midia"); setMsg("")
+    const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "apagar_midia" }),
+    })
+    const d = await res.json()
+    setBusy(null)
+    if (d.ok) onChange()
+    else setMsg(`❌ ${d.error}`)
+  }
+
   async function acao(action: "aprovar" | "rejeitar" | "publicar", reason?: string) {
     setBusy(action); setMsg("")
     const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
@@ -386,7 +437,8 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
     <div className="bg-black/30 border border-white/10 rounded-lg p-4 flex gap-4">
       <div className="w-28 h-28 shrink-0 rounded-lg bg-white/5 overflow-hidden flex items-center justify-center">
         {draft.image_url
-          ? <img src={draft.image_url} alt="" className="w-full h-full object-cover" />
+          ? <img src={draft.image_url} alt="" onClick={() => setLightbox({ src: draft.image_url!, tipo: "imagem" })}
+              className="w-full h-full object-cover cursor-zoom-in hover:opacity-80 transition-opacity" />
           : draft.image_error
             ? <span className="text-red-400 text-2xl">⚠️</span>
             : <span className="w-5 h-5 border-2 border-fuchsia-400 border-t-transparent rounded-full animate-spin" />}
@@ -506,7 +558,11 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
         ) : null}
 
         {draft.video_url ? (
-          <video controls className="w-full max-w-xs rounded-lg mt-3" src={draft.video_url} />
+          <div className="mt-3">
+            <video src={draft.video_url} className="w-full max-w-xs rounded-lg cursor-zoom-in"
+              onClick={() => setLightbox({ src: draft.video_url!, tipo: "video" })} muted playsInline />
+            <p className="text-white/40 text-[11px] mt-1">clique pra assistir em tela cheia</p>
+          </div>
         ) : (
           <button onClick={() => setShowVideoForm((v) => !v)}
             className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/60 hover:bg-white/5 mt-3">
@@ -516,6 +572,19 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
         {showVideoForm && !draft.video_url && <VideoForm draft={draft} onDone={onChange} />}
 
         {draft.link_slug && <LinkRastreado slug={draft.link_slug} cliques={cliques} />}
+
+        {draft.media_purged_at && !draft.image_url && !draft.video_url && (
+          <p className="text-white/35 text-[11px] mt-2">🧹 mídia já descartada — textos preservados</p>
+        )}
+
+        {(draft.image_url || draft.video_url) && draft.status !== "gerando" && (
+          <button onClick={apagarMidia} disabled={busy !== null}
+            className="mt-2 text-[11px] text-white/40 hover:text-red-300 disabled:opacity-50">
+            {busy === "apagar_midia" ? "apagando…" : "🗑️ apagar mídia (libera espaço)"}
+          </button>
+        )}
+
+        {lightbox && <Lightbox src={lightbox.src} tipo={lightbox.tipo} onClose={() => setLightbox(null)} />}
       </div>
     </div>
   )

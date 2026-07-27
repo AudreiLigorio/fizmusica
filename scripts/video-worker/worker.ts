@@ -16,6 +16,7 @@ import { execFile } from "child_process"
 import { promisify } from "util"
 import { createServerClient } from "@/lib/supabase"
 import { logContentEvent } from "@/lib/content/events"
+import { purgeVideoIngredients } from "@/lib/content/media"
 import {
   renderSceneClip,
   concatWithCrossfade,
@@ -106,6 +107,16 @@ async function processJob(supabase: ReturnType<typeof createServerClient>, job: 
     await supabase.from("video_jobs").update({ status: "concluido", video_url: publicUrl }).eq("id", job.id)
     await supabase.from("content_drafts").update({ video_url: publicUrl }).eq("id", job.contentDraftId)
     await logContentEvent(supabase, job.contentDraftId, "video_concluido", `${scenes.length} cenas, clímax em ${climaxStart.toFixed(1)}s`, "system")
+
+    // As imagens de cena e o MP3 já estão DENTRO do MP4 — guardar os dois é
+    // pagar duas vezes pelo mesmo conteúdo. Some com eles assim que o vídeo
+    // final sobe (~70% do peso do job). Falhar aqui não invalida o vídeo.
+    try {
+      const apagados = await purgeVideoIngredients(supabase, job.id)
+      if (apagados) console.log(`[worker] ingredientes descartados: ${apagados} arquivo(s)`)
+    } catch (e) {
+      console.error("[worker] não consegui descartar os ingredientes:", e instanceof Error ? e.message : e)
+    }
     console.log(`[worker] job ${job.id} concluído: ${publicUrl}`)
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Erro desconhecido ao renderizar."

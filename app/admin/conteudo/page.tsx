@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase"
 import { getConnectionStatus } from "@/lib/content/publishers/tiktok-auth"
+import { bucketUsageBytes } from "@/lib/content/media"
 import ConteudoList from "./ConteudoList"
 
 export const dynamic = "force-dynamic"
@@ -33,11 +34,22 @@ async function getDrafts() {
     clicksByDraft[link.draft_id] = (clicks ?? []).filter((c) => c.link_id === link.id).length
   }
 
-  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft }
+  // Uso do storage: o plano tem teto e mídia acumula rápido (cada vídeo pesa).
+  // Melhor ver o número crescendo do que descobrir quando parar de subir.
+  let storageBytes = 0
+  try {
+    storageBytes = await bucketUsageBytes(supabase)
+  } catch {
+    // Contagem é informativa: falhar aqui não pode derrubar a tela.
+  }
+
+  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes }
 }
 
 export default async function ConteudoPage() {
-  const { drafts, eligibleOrders, clicksByDraft } = await getDrafts()
+  const { drafts, eligibleOrders, clicksByDraft, storageBytes } = await getDrafts()
+  const storageMb = storageBytes / 1024 / 1024
+  const storagePct = (storageMb / 1024) * 100
   const tiktokStatus = await getConnectionStatus()
 
   return (
@@ -47,6 +59,13 @@ export default async function ConteudoPage() {
         Rascunhos roteirizados por IA (roteiro + revisão crítica via Gemini, imagem via KIE.ai),
         aguardando sua aprovação. Nada é publicado automaticamente em nenhuma rede.
       </p>
+      <p className="text-xs mb-6">
+        <span className={storagePct > 80 ? "text-red-400" : storagePct > 50 ? "text-amber-400" : "text-gray-500"}>
+          🗄️ Mídia armazenada: {storageMb.toFixed(1)} MB ({storagePct.toFixed(1)}% de 1 GB)
+        </span>
+        <span className="text-gray-600"> — rejeitado apaga sozinho; aprovado tem o botão “apagar mídia” no card.</span>
+      </p>
+
       <div className="rounded-2xl border border-white/10 bg-black/40 p-6">
         <ConteudoList
           initialDrafts={drafts}

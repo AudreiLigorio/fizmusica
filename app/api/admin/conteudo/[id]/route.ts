@@ -4,6 +4,7 @@ import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { syncImageTask, runGeneration } from "@/lib/content/generate"
 import { publishDraft } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
+import { purgeDraftMedia } from "@/lib/content/media"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300 // publicação de Reels espera o processamento do vídeo (polling)
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // Ações do admin sobre um rascunho.
-// body: { action: "sincronizar" | "regerar" | "aprovar" | "rejeitar" | "publicar", rejectionReason? }
+// body: { action: "sincronizar" | "regerar" | "aprovar" | "rejeitar" | "publicar" | "apagar_midia", rejectionReason? }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
@@ -72,7 +73,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .eq("id", id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     await logContentEvent(supabase, id, "rejeitado", rejectionReason, "admin")
-    return NextResponse.json({ ok: true, status: "rejeitado" })
+
+    // Mídia de peça rejeitada não serve pra nada: sai na hora, antes de virar
+    // peso no bucket. Falha aqui não impede a rejeição.
+    const purge = await purgeDraftMedia(supabase, id)
+    if (purge.arquivos > 0) {
+      await logContentEvent(supabase, id, "rejeitado", `mídia descartada (${purge.arquivos} arquivo(s))`, "system")
+    }
+    return NextResponse.json({ ok: true, status: "rejeitado", midiaApagada: purge.arquivos })
+  }
+
+  // Exclusão manual — pra peça aprovada/publicada que já cumpriu seu papel.
+  // Os textos e o registro da publicação ficam; some só o peso.
+  if (action === "apagar_midia") {
+    const { arquivos, erro } = await purgeDraftMedia(supabase, id)
+    if (erro) return NextResponse.json({ error: erro }, { status: 500 })
+    await logContentEvent(supabase, id, "rascunho_criado", `mídia apagada manualmente (${arquivos} arquivo(s))`, "admin")
+    return NextResponse.json({ ok: true, midiaApagada: arquivos })
   }
 
   if (action === "publicar") {
