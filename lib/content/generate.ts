@@ -39,7 +39,64 @@ export type CreateDraftInput =
 
 // Cria um rascunho: gera legenda via Gemini (síncrono), dispara a geração de
 // imagem na KIE.ai (assíncrono — o taskId fica salvo pra sincronizar depois).
+// Cria a LINHA primeiro, gera depois. Assim o trabalho existe desde o
+// primeiro segundo: se o admin sair da tela, se a conexão cair ou se a função
+// morrer no meio, o rascunho está lá — em 'gerando' ou em 'falhou' com o
+// motivo, nunca em silêncio. Antes disso a linha só nascia no fim, e um
+// timeout apagava tudo sem deixar rastro.
 export async function createDraft(supabase: DB, input: CreateDraftInput) {
+  const { data: draft, error: insertError } = await supabase
+    .from("content_drafts")
+    .insert({
+      platform: input.platform,
+      status: "gerando",
+      source_type: input.sourceType,
+      sourceOrderId: input.sourceType === "pedido" ? input.sourceOrderId : null,
+      topic: input.sourceType === "generico" ? input.topic : null,
+    })
+    .select("*")
+    .single()
+  if (insertError) throw new Error(insertError.message)
+
+  await logContentEvent(supabase, draft.id, "rascunho_criado", `origem: ${input.sourceType}`)
+
+  try {
+    return await runGeneration(supabase, draft.id)
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Falha ao gerar o rascunho."
+    await supabase
+      .from("content_drafts")
+      .update({ status: "falhou", generation_error: msg })
+      .eq("id", draft.id)
+    await logContentEvent(supabase, draft.id, "imagem_falhou", msg)
+    return { ...draft, status: "falhou", generation_error: msg }
+  }
+}
+
+// Roda (ou re-roda) a geração de um rascunho já existente: roteirista +
+// imagem + link rastreado. Chamado na criação e no botão "tentar de novo".
+export async function runGeneration(supabase: DB, draftId: string) {
+  const { data: existing } = await supabase
+    .from("content_drafts")
+    .select("id, platform, source_type, sourceOrderId, topic")
+    .eq("id", draftId)
+    .maybeSingle()
+  if (!existing) throw new Error("Rascunho não encontrado.")
+
+  const input: CreateDraftInput =
+    existing.source_type === "pedido"
+      ? { platform: existing.platform, sourceType: "pedido", sourceOrderId: existing.sourceOrderId }
+      : { platform: existing.platform, sourceType: "generico", topic: existing.topic ?? "" }
+
+  await supabase
+    .from("content_drafts")
+    .update({ status: "gerando", generation_error: null })
+    .eq("id", draftId)
+
+  return fillDraft(supabase, draftId, input)
+}
+
+async function fillDraft(supabase: DB, draftId: string, input: CreateDraftInput) {
   let roteiroSource: RoteiroSource
   let sourceOrderId: string | null = null
 
@@ -79,12 +136,8 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
 
   const { data: draft, error } = await supabase
     .from("content_drafts")
-    .insert({
-      platform: input.platform,
+    .update({
       status: "rascunho",
-      source_type: input.sourceType,
-      sourceOrderId,
-      topic: input.sourceType === "generico" ? input.topic : null,
       hook_text: roteiro.hook,
       caption: roteiro.caption,
       hashtags: roteiro.hashtags,
@@ -96,12 +149,11 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
       quality_score: parecer.nota,
       needs_human: precisaDeHumano,
     })
+    .eq("id", draftId)
     .select("*")
     .single()
 
   if (error) throw new Error(error.message)
-
-  await logContentEvent(supabase, draft.id, "rascunho_criado", `origem: ${input.sourceType}`)
 
   // Link rastreado do rascunho: é ele que vai pra bio/descrição, e é ele que
   // permite saber depois se esta peça trouxe visita. Falha aqui não derruba o

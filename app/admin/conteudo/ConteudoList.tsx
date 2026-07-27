@@ -29,6 +29,7 @@ type Draft = {
   quality_report: Parecer | null
   needs_human: boolean | null
   link_slug: string | null
+  generation_error: string | null
 }
 
 type ParecerItem = { pergunta: string; ok: boolean; observacao: string }
@@ -134,6 +135,18 @@ function VideoForm({ draft, onDone }: { draft: Draft; onDone: () => void }) {
       setRoteirizando(false)
     }
   }
+
+  // Ao (re)montar, pergunta ao servidor se já existe job pra este rascunho.
+  // Sem isto, sair da tela e voltar mostrava o formulário em branco como se
+  // nada estivesse rodando — o job continuava vivo no banco, invisível.
+  useEffect(() => {
+    let cancelado = false
+    fetch(`/api/admin/conteudo/${draftId}/video`)
+      .then((r) => r.json())
+      .then((d) => { if (!cancelado && d.job) setJob(d.job) })
+      .catch(() => { /* sem job, formulário limpo mesmo */ })
+    return () => { cancelado = true }
+  }, [draftId])
 
   useEffect(() => {
     if (!job || JOB_TERMINAL.has(job.status)) return
@@ -303,12 +316,27 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
 }
 
 function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number; onChange: () => void }) {
-  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | null>(null)
+  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
   const [showVideoForm, setShowVideoForm] = useState(false)
+  const gerando = draft.status === "gerando"
   const pending = !draft.image_url && !draft.image_error && draft.status === "rascunho"
+
+  // Rascunho em geração: pergunta o estado a cada 5s até virar rascunho ou
+  // falhar. É o que faz o card se resolver sozinho mesmo se o admin sair da
+  // tela e voltar — a geração roda no servidor, não no navegador.
+  useEffect(() => {
+    if (!gerando) return
+    const t = setInterval(async () => {
+      try {
+        const d = await fetch(`/api/admin/conteudo/${draft.id}`).then((r) => r.json())
+        if (d.status && d.status !== "gerando") onChange()
+      } catch { /* ignora, tenta de novo */ }
+    }, 5000)
+    return () => clearInterval(t)
+  }, [gerando, draft.id, onChange])
 
   useEffect(() => {
     if (!pending) return
@@ -325,6 +353,19 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
     const t = setInterval(tick, 8000)
     return () => clearInterval(t)
   }, [pending, draft.id, onChange])
+
+  async function regerar() {
+    setBusy("regerar"); setMsg("")
+    const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "regerar" }),
+    })
+    const d = await res.json()
+    setBusy(null)
+    if (d.ok) onChange()
+    else setMsg(`❌ ${d.error}`)
+  }
 
   async function acao(action: "aprovar" | "rejeitar" | "publicar", reason?: string) {
     setBusy(action); setMsg("")
@@ -367,6 +408,23 @@ function DraftCard({ draft, cliques, onChange }: { draft: Draft; cliques: number
             {draft.status}
           </span>
         </div>
+
+        {gerando && (
+          <p className="text-fuchsia-300 text-xs mb-1.5 flex items-center gap-2">
+            <span className="w-3 h-3 border-2 border-fuchsia-400 border-t-transparent rounded-full animate-spin" />
+            Roteirizando e revisando… pode fechar a tela, isso roda no servidor.
+          </p>
+        )}
+
+        {draft.status === "falhou" && (
+          <div className="mb-2 rounded-lg border border-red-500/30 bg-red-500/5 p-2.5">
+            <p className="text-red-300 text-xs">A geração falhou: {draft.generation_error ?? "motivo não registrado"}</p>
+            <button onClick={regerar} disabled={busy !== null}
+              className="mt-2 text-[11px] px-2.5 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+              {busy === "regerar" ? "Regerando…" : "🔄 Tentar de novo"}
+            </button>
+          </div>
+        )}
 
         {(draft.emocao_alvo || draft.persona) && (
           <p className="text-[11px] text-white/50 mb-1.5">

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
-import { syncImageTask } from "@/lib/content/generate"
+import { syncImageTask, runGeneration } from "@/lib/content/generate"
 import { publishDraft } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
 
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // Ações do admin sobre um rascunho.
-// body: { action: "sincronizar" | "aprovar" | "rejeitar" | "publicar", rejectionReason? }
+// body: { action: "sincronizar" | "regerar" | "aprovar" | "rejeitar" | "publicar", rejectionReason? }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
@@ -37,6 +37,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ ok: true, draft })
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao sincronizar." }, { status: 500 })
+    }
+  }
+
+  // Refaz a geração de um rascunho que falhou (ou que ficou preso em
+  // "gerando" porque a função morreu no meio). Reaproveita a mesma linha.
+  if (action === "regerar") {
+    try {
+      const draft = await runGeneration(supabase, id)
+      return NextResponse.json({ ok: true, draft })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao regerar." }, { status: 500 })
     }
   }
 
