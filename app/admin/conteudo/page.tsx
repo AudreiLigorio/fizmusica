@@ -92,7 +92,7 @@ async function getDrafts(pagina: number) {
   // raiz (derivado_de). Sem isso não dá pra responder "essa história já foi
   // publicada onde?", que é a pergunta que se faz olhando o painel.
   const raizes = Array.from(new Set((drafts ?? []).map((d) => d.derivado_de ?? d.id)))
-  const familia: Record<string, { platform: string; status: string; publicado: boolean; permalink: string | null }[]> = {}
+  const familia: Record<string, { platform: string; status: string; publicado: boolean; permalink: string | null; publicadoEm: string | null }[]> = {}
   if (raizes.length) {
     const { data: irmas } = await supabase
       .from("content_drafts")
@@ -105,6 +105,7 @@ async function getDrafts(pagina: number) {
         status: p.status,
         publicado: !!p.published_at,
         permalink: p.published_permalink,
+        publicadoEm: p.published_at,
       })
     }
   }

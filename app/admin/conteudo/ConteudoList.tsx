@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { TiktokConnectionStatus } from "@/lib/content/publishers/tiktok-auth"
+import { parseDbDate } from "@/lib/date"
+
+// Data curta pro painel. Passa pelo parseDbDate porque coluna sem timezone
+// vem sem "Z" e o navegador interpreta como local — armadilha recorrente
+// neste projeto.
+function dataCurta(iso: string): string {
+  return parseDbDate(iso).toLocaleString("pt-BR", {
+    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+  })
+}
 
 type Draft = {
   id: string
@@ -36,7 +46,7 @@ type Draft = {
 
 type OrigemReal = { nome: string; honoreeName: string | null; consent: boolean; fotos: number }
 type Trilha = { orderId: string; label: string }
-type PecaDaFamilia = { platform: string; status: string; publicado: boolean; permalink: string | null }
+type PecaDaFamilia = { platform: string; status: string; publicado: boolean; permalink: string | null; publicadoEm: string | null }
 
 const REDES = [
   { id: "instagram", nome: "Instagram" },
@@ -64,7 +74,7 @@ function StatusPorRede({
           return (
             <a key={rede.id} href={peca.permalink ?? "#"} target="_blank" rel="noreferrer"
               className="text-[11px] px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20">
-              ✅ {rede.nome} — publicado {peca.permalink && "↗"}
+              ✅ {rede.nome} — publicado {peca.publicadoEm ? `em ${dataCurta(peca.publicadoEm)}` : ""} {peca.permalink && "↗"}
             </a>
           )
         }
@@ -620,7 +630,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
 }
 
 function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; familia: PecaDaFamilia[]; onChange: () => void }) {
-  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | null>(null)
+  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | "excluir" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
@@ -711,6 +721,30 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
       setMsg("❌ Falha ao adaptar.")
     } finally {
       setAdaptando(null)
+    }
+  }
+
+  // Exclusão definitiva da peça inteira — o mesmo caminho da rejeição, mas
+  // disponível em qualquer estado. "Apagar mídia" libera espaço e mantém o
+  // texto; isto aqui não deixa nada.
+  async function excluirPeca() {
+    const aviso = draft.published_at
+      ? "Esta peça JÁ FOI PUBLICADA. Excluir apaga o registro daqui (o post na rede continua no ar) e o histórico de cliques do link. Não dá pra desfazer. Continuar?"
+      : "Excluir apaga a peça inteira — texto, imagem, vídeo e link rastreado. Não dá pra desfazer. Continuar?"
+    if (!confirm(aviso)) return
+    setBusy("excluir"); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${draft.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "excluir" }),
+      }).then((r) => r.json())
+      if (d.ok) onChange()
+      else setMsg(`❌ ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao excluir.")
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -939,6 +973,13 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
           <button onClick={apagarMidia} disabled={busy !== null}
             className="mt-2 text-[11px] text-white/40 hover:text-red-300 disabled:opacity-50">
             {busy === "apagar_midia" ? "apagando…" : "🗑️ apagar mídia (libera espaço)"}
+          </button>
+        )}
+
+        {draft.status !== "gerando" && (
+          <button onClick={excluirPeca} disabled={busy !== null}
+            className="mt-2 ml-3 text-[11px] text-white/40 hover:text-red-400 disabled:opacity-50">
+            {busy === "excluir" ? "excluindo…" : "✖️ excluir peça (definitivo)"}
           </button>
         )}
 

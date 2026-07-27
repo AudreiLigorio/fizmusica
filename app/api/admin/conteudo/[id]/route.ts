@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // Ações do admin sobre um rascunho.
-// body: { action: "sincronizar" | "editar" | "regerar" | "aprovar" | "rejeitar" | "publicar" | "apagar_midia", rejectionReason?, caption?, hashtags? }
+// body: { action: "sincronizar" | "editar" | "regerar" | "aprovar" | "rejeitar" | "publicar" | "apagar_midia" | "excluir" | "adaptar", rejectionReason?, caption?, hashtags?, platform? }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
@@ -109,6 +109,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     await logContentEvent(supabase, id, "aprovado", undefined, "admin")
     return NextResponse.json({ ok: true, status: "aprovado" })
+  }
+
+  // Exclusão definitiva a pedido do admin — mesmo efeito da rejeição, mas
+  // disponível em qualquer estado, inclusive peça já publicada (o post na rede
+  // continua no ar; o que sai é o registro daqui).
+  if (action === "excluir") {
+    const purge = await purgeDraftMedia(supabase, id)
+    await supabase.from("content_links").delete().eq("draft_id", id)
+    const { error } = await supabase.from("content_drafts").delete().eq("id", id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, removido: true, midiaApagada: purge.arquivos })
   }
 
   // Rejeitar apaga tudo: peça recusada não vira histórico, vira lixo no painel.
