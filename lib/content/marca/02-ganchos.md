@@ -27,6 +27,17 @@ LEGENDA          → 2 frases: a história em uma, o convite na outra
 CTA              → uma ação só (salvar, marcar, comentar OU link)
 ```
 
+## ⚠️ Os exemplos abaixo são PADRÕES, não frases prontas
+
+Cada exemplo existe para ensinar o **mecanismo** do gancho — nunca para ser
+copiado. **É proibido reutilizar literalmente qualquer frase de exemplo deste
+arquivo.** Se o gancho gerado for igual ou quase igual a um exemplo, ele está
+errado e deve ser reescrito.
+
+O que se aproveita é a estrutura ("cena imediatamente antes do clímax", "o
+detalhe específico que só aquela família conhece"); o que se inventa é a frase,
+sempre nova e sempre colada na história específica daquela peça.
+
 ## Tipos de gancho que funcionam neste nicho
 
 **1. A frase que nunca foi dita**

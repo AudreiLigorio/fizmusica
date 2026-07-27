@@ -42,6 +42,9 @@ Independente da nota, reprova na hora se a peça:
 - Promete prazo, preço ou resultado que a operação não garante
 - Abre falando da marca ou do produto
 - Tem mais de um CTA
+- **Copia literalmente uma frase de exemplo da base de conhecimento** (o banco
+  de ganchos ensina padrão, não fornece frase pronta — gancho reciclado gera
+  conteúdo repetido, e conteúdo repetido perde alcance)
 - Usa palavra proibida da lista de voz e tom ("solução", "experiência única",
   "revolucionário", "através da nossa plataforma")
 
