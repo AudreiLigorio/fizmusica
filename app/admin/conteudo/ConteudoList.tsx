@@ -511,12 +511,15 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
 }
 
 function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; onChange: () => void }) {
-  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | null>(null)
+  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
   const [showVideoForm, setShowVideoForm] = useState(false)
   const [lightbox, setLightbox] = useState<{ src: string; tipo: "imagem" | "video" } | null>(null)
+  const [editando, setEditando] = useState(false)
+  const [captionEdit, setCaptionEdit] = useState(draft.caption ?? "")
+  const [hashtagsEdit, setHashtagsEdit] = useState(draft.hashtags ?? "")
   const gerando = draft.status === "gerando"
   const pending = !draft.image_url && !draft.image_error && draft.status === "rascunho"
 
@@ -549,6 +552,21 @@ function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: 
     const t = setInterval(tick, 8000)
     return () => clearInterval(t)
   }, [pending, draft.id, onChange])
+
+  // Corrigir texto sem jogar a peça fora. Erro de legenda não deveria custar
+  // uma imagem, uma música e um render inteiro.
+  async function salvarTexto() {
+    setBusy("editar"); setMsg("")
+    const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "editar", caption: captionEdit, hashtags: hashtagsEdit }),
+    })
+    const d = await res.json()
+    setBusy(null)
+    if (d.ok) { setEditando(false); onChange() }
+    else setMsg(`❌ ${d.error}`)
+  }
 
   async function regerar() {
     setBusy("regerar"); setMsg("")
@@ -665,8 +683,40 @@ function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: 
         )}
 
         {draft.quality_report && <div className="mb-2"><ParecerBox parecer={draft.quality_report} /></div>}
-        <p className="text-white/80 text-sm mb-1 whitespace-pre-wrap">{draft.caption ?? "—"}</p>
-        {draft.hashtags && <p className="text-fuchsia-300/70 text-xs mb-2">{draft.hashtags}</p>}
+        {editando ? (
+          <div className="mb-2 space-y-1.5">
+            <textarea value={captionEdit} onChange={(e) => setCaptionEdit(e.target.value)} rows={3}
+              className="w-full bg-black/40 border border-fuchsia-500/40 rounded-lg px-2 py-1.5 text-sm text-white" />
+            <input value={hashtagsEdit} onChange={(e) => setHashtagsEdit(e.target.value)}
+              placeholder="hashtags"
+              className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-fuchsia-300/80" />
+            <div className="flex gap-2 items-center">
+              <button onClick={salvarTexto} disabled={busy !== null}
+                className="text-[11px] font-semibold px-3 py-1 rounded-lg text-white disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}>
+                {busy === "editar" ? "salvando…" : "salvar texto"}
+              </button>
+              <button onClick={() => { setEditando(false); setCaptionEdit(draft.caption ?? ""); setHashtagsEdit(draft.hashtags ?? "") }}
+                className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/60 hover:bg-white/5">
+                cancelar
+              </button>
+              <span className="text-white/35 text-[11px]">
+                o gancho está dentro da imagem — mudá-lo exigiria gerar a imagem de novo
+              </span>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-white/80 text-sm mb-1 whitespace-pre-wrap">{draft.caption ?? "—"}</p>
+            {draft.hashtags && <p className="text-fuchsia-300/70 text-xs mb-1">{draft.hashtags}</p>}
+            {!draft.published_at && draft.status !== "gerando" && (
+              <button onClick={() => setEditando(true)}
+                className="text-[11px] text-white/40 hover:text-fuchsia-300 mb-2">
+                ✏️ editar legenda
+              </button>
+            )}
+          </>
+        )}
         {draft.image_error && <p className="text-red-400 text-xs mb-2">Imagem: {draft.image_error}</p>}
         {draft.rejection_reason && <p className="text-white/40 text-xs mb-2">Motivo da rejeição: {draft.rejection_reason}</p>}
 

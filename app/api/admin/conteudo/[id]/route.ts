@@ -25,11 +25,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // Ações do admin sobre um rascunho.
-// body: { action: "sincronizar" | "regerar" | "aprovar" | "rejeitar" | "publicar" | "apagar_midia", rejectionReason? }
+// body: { action: "sincronizar" | "editar" | "regerar" | "aprovar" | "rejeitar" | "publicar" | "apagar_midia", rejectionReason?, caption?, hashtags? }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
-  const { action, rejectionReason } = await req.json().catch(() => ({}))
+  const { action, rejectionReason, caption, hashtags } = await req.json().catch(() => ({}))
   const supabase = createServerClient()
 
   if (action === "sincronizar") {
@@ -50,6 +50,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao regerar." }, { status: 500 })
     }
+  }
+
+  // Correção de texto sem perder a mídia. Legenda e hashtags são publicadas
+  // como texto do post — não estão dentro da imagem —, então dá pra ajustar à
+  // vontade sem regerar nada. (O gancho é diferente: ele é queimado na imagem
+  // final, e mudá-lo exigiria uma imagem nova.)
+  if (action === "editar") {
+    if (typeof caption !== "string" || !caption.trim()) {
+      return NextResponse.json({ error: "A legenda não pode ficar vazia." }, { status: 400 })
+    }
+    const { error } = await supabase
+      .from("content_drafts")
+      .update({ caption: caption.trim(), hashtags: typeof hashtags === "string" ? hashtags.trim() : undefined })
+      .eq("id", id)
+      .is("published_at", null) // peça já publicada não se reescreve: o post lá fora não muda junto
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    await logContentEvent(supabase, id, "rascunho_criado", "texto editado pelo admin", "admin")
+    return NextResponse.json({ ok: true })
   }
 
   if (action === "aprovar") {
