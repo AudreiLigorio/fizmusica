@@ -29,12 +29,62 @@ type Draft = {
   quality_report: Parecer | null
   needs_human: boolean | null
   link_slug: string | null
+  derivado_de: string | null
   generation_error: string | null
   media_purged_at: string | null
 }
 
 type OrigemReal = { nome: string; honoreeName: string | null; consent: boolean; fotos: number }
 type Trilha = { orderId: string; label: string }
+type PecaDaFamilia = { platform: string; status: string; publicado: boolean; permalink: string | null }
+
+const REDES = [
+  { id: "instagram", nome: "Instagram" },
+  { id: "tiktok", nome: "TikTok" },
+  { id: "youtube", nome: "YouTube" },
+]
+
+// Onde esta história está em cada rede. Responde de bate-pronto a pergunta que
+// se faz olhando o painel: "já publiquei isso onde?".
+function StatusPorRede({
+  familia, atual, onAdaptar, adaptando,
+}: {
+  familia: PecaDaFamilia[]
+  atual: string
+  onAdaptar: (rede: string) => void
+  adaptando: string | null
+}) {
+  return (
+    <div className="mt-3 flex items-center gap-2 flex-wrap">
+      {REDES.map((rede) => {
+        const peca = familia.find((p) => p.platform === rede.id)
+        const ehAtual = rede.id === atual
+
+        if (peca?.publicado) {
+          return (
+            <a key={rede.id} href={peca.permalink ?? "#"} target="_blank" rel="noreferrer"
+              className="text-[11px] px-2 py-0.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20">
+              ✅ {rede.nome} — publicado {peca.permalink && "↗"}
+            </a>
+          )
+        }
+        if (peca) {
+          return (
+            <span key={rede.id} className="text-[11px] px-2 py-0.5 rounded-full border border-white/15 text-white/50">
+              {ehAtual ? "◉" : "○"} {rede.nome} — {peca.status}
+            </span>
+          )
+        }
+        return (
+          <button key={rede.id} onClick={() => onAdaptar(rede.id)} disabled={adaptando !== null}
+            className="text-[11px] px-2 py-0.5 rounded-full border border-dashed border-fuchsia-500/40 text-fuchsia-300/80 hover:bg-fuchsia-500/10 disabled:opacity-50">
+            {adaptando === rede.id ? `adaptando pro ${rede.nome}…` : `+ adaptar pro ${rede.nome}`}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 const VOZES = [
   { id: "Kore", label: "Kore — feminina, firme" },
@@ -569,7 +619,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
   )
 }
 
-function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; onChange: () => void }) {
+function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; familia: PecaDaFamilia[]; onChange: () => void }) {
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
@@ -638,6 +688,30 @@ function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: 
     setBusy(null)
     if (d.ok) onChange()
     else setMsg(`❌ ${d.error}`)
+  }
+
+  const [adaptando, setAdaptando] = useState<string | null>(null)
+
+  // Mesma história, outra rede: cria uma peça nova, adaptada às regras da rede
+  // de destino (o roteirista mantém emoção, persona e história; muda ritmo,
+  // comprimento e CTA).
+  async function adaptar(rede: string) {
+    const nome = REDES.find((r) => r.id === rede)?.nome ?? rede
+    if (!confirm(`Criar uma versão desta história para ${nome}? Gera uma peça nova (consome créditos de IA).`)) return
+    setAdaptando(rede); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${draft.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "adaptar", platform: rede }),
+      }).then((r) => r.json())
+      if (d.ok) onChange()
+      else setMsg(`❌ ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao adaptar.")
+    } finally {
+      setAdaptando(null)
+    }
   }
 
   async function apagarMidia() {
@@ -820,19 +894,11 @@ function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: 
         )}
         {msg && <p className="text-red-400 text-xs mt-2">{msg}</p>}
 
-        {draft.published_at ? (
-          <div className="mt-3 flex items-center gap-2 flex-wrap">
-            <span className="text-[11px] px-2 py-0.5 rounded-full border border-fuchsia-500/30 text-fuchsia-300">
-              📤 Publicado no Instagram
-            </span>
-            {draft.published_permalink && (
-              <a href={draft.published_permalink} target="_blank" rel="noreferrer"
-                className="text-[11px] text-fuchsia-300 underline hover:text-fuchsia-200">
-                ver post ↗
-              </a>
-            )}
-          </div>
-        ) : canPublish ? (
+        {draft.status !== "gerando" && draft.status !== "falhou" && (
+          <StatusPorRede familia={familia} atual={draft.platform} onAdaptar={adaptar} adaptando={adaptando} />
+        )}
+
+        {draft.published_at ? null : canPublish ? (
           <div className="mt-3">
             <button onClick={() => acao("publicar")} disabled={busy !== null}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
@@ -1072,6 +1138,7 @@ export default function ConteudoList({
   origens,
   jobPorDraft,
   trilhas,
+  familia,
   pagina,
   totalPaginas,
 }: {
@@ -1083,6 +1150,7 @@ export default function ConteudoList({
   origens: Record<string, OrigemReal>
   jobPorDraft: Record<string, JobResumo>
   trilhas: Trilha[]
+  familia: Record<string, PecaDaFamilia[]>
   pagina: number
   totalPaginas: number
 }) {
@@ -1161,7 +1229,8 @@ export default function ConteudoList({
           {initialDrafts.map((d) => (
             <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0}
               origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined}
-              job={jobPorDraft[d.id]} trilhas={trilhas} onChange={reload} />
+              job={jobPorDraft[d.id]} trilhas={trilhas}
+              familia={familia[d.derivado_de ?? d.id] ?? []} onChange={reload} />
           ))}
         </div>
       )}

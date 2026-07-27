@@ -24,6 +24,13 @@ export type RoteiroInput = {
   formato: RoteiroFormato
   platform: string
   source: RoteiroSource
+  /**
+   * Adaptação de uma peça que já existe para outra rede. A regra da base de
+   * conhecimento vale aqui: muda o comprimento, o ritmo do gancho, o CTA e o
+   * nível de contexto — NÃO muda a emoção-alvo, a persona nem a história. Se
+   * a essência mudou, virou outra peça, não uma adaptação.
+   */
+  adaptarDe?: { historia: string; persona: string; emocao: string; hook: string; plataformaOriginal: string }
 }
 
 export type RoteiroCena = { description: string; caption: string }
@@ -187,6 +194,17 @@ async function criar(
     `Plataforma-alvo: ${input.platform}\n` +
     `Formato: ${input.formato === "video" ? "vídeo multi-cena" : "post estático"}\n` +
     sourceToText(input.source)
+
+  if (input.adaptarDe) {
+    userContent +=
+      `\n\n--- ADAPTAÇÃO DE REDE ---\n` +
+      `Esta peça já existe para ${input.adaptarDe.plataformaOriginal} e vai ser adaptada para ` +
+      `${input.platform}. MANTENHA a mesma emoção-alvo (${input.adaptarDe.emocao}), a mesma persona ` +
+      `(${input.adaptarDe.persona}) e a MESMA HISTÓRIA:\n"${input.adaptarDe.historia}"\n\n` +
+      `MUDE o que a rede de destino exige: comprimento, ritmo do gancho, nível de contexto e CTA. ` +
+      `O gancho precisa ser NOVO — não repita "${input.adaptarDe.hook}", porque a mesma frase nas duas ` +
+      `redes é conteúdo duplicado, não adaptação.`
+  }
 
   if (correcoes) {
     userContent +=

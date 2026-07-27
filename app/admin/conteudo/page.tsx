@@ -88,6 +88,27 @@ async function getDrafts(pagina: number) {
       return { orderId: m.orderId, label: `${m.musicName ?? "sem título"} — ${o.subcategory ?? "pedido"}` }
     })
 
+  // Status da HISTÓRIA em cada rede: uma peça por rede, todas ligadas pela
+  // raiz (derivado_de). Sem isso não dá pra responder "essa história já foi
+  // publicada onde?", que é a pergunta que se faz olhando o painel.
+  const raizes = Array.from(new Set((drafts ?? []).map((d) => d.derivado_de ?? d.id)))
+  const familia: Record<string, { platform: string; status: string; publicado: boolean; permalink: string | null }[]> = {}
+  if (raizes.length) {
+    const { data: irmas } = await supabase
+      .from("content_drafts")
+      .select("id, derivado_de, platform, status, published_at, published_permalink")
+      .or(`id.in.(${raizes.join(",")}),derivado_de.in.(${raizes.join(",")})`)
+    for (const p of irmas ?? []) {
+      const raiz = p.derivado_de ?? p.id
+      ;(familia[raiz] ||= []).push({
+        platform: p.platform,
+        status: p.status,
+        publicado: !!p.published_at,
+        permalink: p.published_permalink,
+      })
+    }
+  }
+
   // Cliques por rascunho. O volume é baixo (um clique = uma visita vinda de
   // post), então contar em memória sai mais simples que view agregada no banco.
   const { data: links } = await supabase.from("content_links").select("id, draft_id")
@@ -108,13 +129,13 @@ async function getDrafts(pagina: number) {
     // Contagem é informativa: falhar aqui não pode derrubar a tela.
   }
 
-  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, totalDrafts: totalDrafts ?? 0, porPagina: POR_PAGINA }
+  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, familia, totalDrafts: totalDrafts ?? 0, porPagina: POR_PAGINA }
 }
 
 export default async function ConteudoPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const { page } = await searchParams
   const pagina = Math.max(1, Number(page) || 1)
-  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, totalDrafts, porPagina } =
+  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, familia, totalDrafts, porPagina } =
     await getDrafts(pagina)
   const storageMb = storageBytes / 1024 / 1024
   const storagePct = (storageMb / 1024) * 100
@@ -145,6 +166,7 @@ export default async function ConteudoPage({ searchParams }: { searchParams: Pro
           origens={origens}
           jobPorDraft={jobPorDraft}
           trilhas={trilhas}
+          familia={familia}
           pagina={pagina}
           totalPaginas={Math.max(1, Math.ceil(totalDrafts / porPagina))}
         />

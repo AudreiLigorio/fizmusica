@@ -35,8 +35,8 @@ async function ensureBucket(supabase: DB) {
 }
 
 export type CreateDraftInput =
-  | { platform: string; sourceType: "generico"; topic: string }
-  | { platform: string; sourceType: "pedido"; sourceOrderId: string }
+  | { platform: string; sourceType: "generico"; topic: string; derivadoDe?: string }
+  | { platform: string; sourceType: "pedido"; sourceOrderId: string; derivadoDe?: string }
 
 // Cria um rascunho: gera legenda via Gemini (síncrono), dispara a geração de
 // imagem na KIE.ai (assíncrono — o taskId fica salvo pra sincronizar depois).
@@ -54,6 +54,7 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
       source_type: input.sourceType,
       sourceOrderId: input.sourceType === "pedido" ? input.sourceOrderId : null,
       topic: input.sourceType === "generico" ? input.topic : null,
+      derivado_de: input.derivadoDe ?? null,
     })
     .select("*")
     .single()
@@ -79,15 +80,15 @@ export async function createDraft(supabase: DB, input: CreateDraftInput) {
 export async function runGeneration(supabase: DB, draftId: string) {
   const { data: existing } = await supabase
     .from("content_drafts")
-    .select("id, platform, source_type, sourceOrderId, topic")
+    .select("id, platform, source_type, sourceOrderId, topic, derivado_de")
     .eq("id", draftId)
     .maybeSingle()
   if (!existing) throw new Error("Rascunho não encontrado.")
 
   const input: CreateDraftInput =
     existing.source_type === "pedido"
-      ? { platform: existing.platform, sourceType: "pedido", sourceOrderId: existing.sourceOrderId }
-      : { platform: existing.platform, sourceType: "generico", topic: existing.topic ?? "" }
+      ? { platform: existing.platform, sourceType: "pedido", sourceOrderId: existing.sourceOrderId, derivadoDe: existing.derivado_de ?? undefined }
+      : { platform: existing.platform, sourceType: "generico", topic: existing.topic ?? "", derivadoDe: existing.derivado_de ?? undefined }
 
   await supabase
     .from("content_drafts")
@@ -129,10 +130,31 @@ async function fillDraft(supabase: DB, draftId: string, input: CreateDraftInput)
 
   // O roteirista já vem com a segunda passada (revisor crítico) embutida —
   // o que chega aqui ou passou no crivo, ou está marcado como needs_human.
+  // Adaptação de rede: busca a peça original pra manter emoção, persona e
+  // história, mudando só o que a rede de destino exige.
+  let adaptarDe
+  if (input.derivadoDe) {
+    const { data: origem } = await supabase
+      .from("content_drafts")
+      .select("platform, hook_text, persona, emocao_alvo, roteiro")
+      .eq("id", input.derivadoDe)
+      .maybeSingle()
+    if (origem?.roteiro) {
+      adaptarDe = {
+        historia: (origem.roteiro as { historia?: string }).historia ?? "",
+        persona: origem.persona ?? "",
+        emocao: origem.emocao_alvo ?? "",
+        hook: origem.hook_text ?? "",
+        plataformaOriginal: origem.platform,
+      }
+    }
+  }
+
   const { roteiro, parecer, precisaDeHumano } = await gerarRoteiro({
     formato: "post",
     platform: input.platform,
     source: roteiroSource,
+    adaptarDe,
   })
 
   const { data: draft, error } = await supabase

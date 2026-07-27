@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
-import { syncImageTask, runGeneration } from "@/lib/content/generate"
+import { syncImageTask, runGeneration, createDraft } from "@/lib/content/generate"
 import { publishDraft } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
 import { purgeDraftMedia } from "@/lib/content/media"
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
-  const { action, rejectionReason, caption, hashtags } = await req.json().catch(() => ({}))
+  const { action, rejectionReason, caption, hashtags, platform } = await req.json().catch(() => ({}))
   const supabase = createServerClient()
 
   if (action === "sincronizar") {
@@ -68,6 +68,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     await logContentEvent(supabase, id, "rascunho_criado", "texto editado pelo admin", "admin")
     return NextResponse.json({ ok: true })
+  }
+
+  // Mesma história, outra rede. Cria uma peça NOVA (a rede de destino tem
+  // formato, ritmo e CTA próprios) ligada à original por derivado_de — é essa
+  // ligação que mostra depois "esta história já foi publicada onde".
+  if (action === "adaptar") {
+    if (!["instagram", "tiktok", "youtube"].includes(platform)) {
+      return NextResponse.json({ error: "Rede de destino inválida." }, { status: 400 })
+    }
+    const { data: origem } = await supabase
+      .from("content_drafts")
+      .select("id, platform, source_type, sourceOrderId, topic, derivado_de")
+      .eq("id", id)
+      .maybeSingle()
+    if (!origem) return NextResponse.json({ error: "Peça de origem não encontrada." }, { status: 404 })
+    if (origem.platform === platform) {
+      return NextResponse.json({ error: "A peça já é dessa rede." }, { status: 400 })
+    }
+
+    // A raiz da família é sempre a peça original, não a adaptação — assim uma
+    // adaptação de adaptação não cria corrente.
+    const raiz = origem.derivado_de ?? origem.id
+
+    try {
+      const nova = origem.source_type === "pedido"
+        ? await createDraft(supabase, { platform, sourceType: "pedido", sourceOrderId: origem.sourceOrderId, derivadoDe: raiz })
+        : await createDraft(supabase, { platform, sourceType: "generico", topic: origem.topic ?? "", derivadoDe: raiz })
+      return NextResponse.json({ ok: true, draft: nova })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao adaptar." }, { status: 500 })
+    }
   }
 
   if (action === "aprovar") {
