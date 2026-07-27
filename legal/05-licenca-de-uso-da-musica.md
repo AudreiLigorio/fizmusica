@@ -59,7 +59,9 @@ Sem autorização expressa da Fiz Música, o Cliente **não** poderá:
 
 ## 9. Direito de Exploração pela Fiz Música
 
-A Fiz Música poderá, a seu exclusivo critério: publicar, licenciar, distribuir, comercializar e disponibilizar a obra em plataformas digitais; integrá-la em playlists e catálogos musicais; licenciá-la para artistas, gravadoras e produtoras; utilizá-la em projetos audiovisuais e publicidade; e criar versões, remixes, adaptações ou obras derivadas.
+A Fiz Música poderá, a seu exclusivo critério: publicar, licenciar, distribuir, comercializar e disponibilizar a obra em plataformas digitais; integrá-la em playlists e catálogos musicais; licenciá-la para artistas, gravadoras e produtoras; utilizá-la em projetos audiovisuais e publicidade, **inteira ou em trechos e sincronizada com imagens**; e criar versões, remixes, adaptações ou obras derivadas.
+
+O uso da obra em peça publicitária que **identifique** o Cliente ou o homenageado segue dependendo da Autorização de Publicação (documento 07), conforme a fronteira do item 10.
 
 ## 10. Utilização de Nomes e Elementos Identificáveis
 

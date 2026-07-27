@@ -1,6 +1,6 @@
 # Termo de Autorização de Publicação e Uso de Conteúdo (Opcional)
 
-Última atualização: Junho de 2026
+Última atualização: Julho de 2026
 
 ## 1. Objeto
 
@@ -10,7 +10,9 @@ Por meio deste Termo, o Cliente autoriza, de forma livre, informada e inequívoc
 
 A autorização abrange exclusivamente a **música produzida e a sua letra** (a "Obra"). A Obra pode, por sua própria natureza, **conter nomes e a história real** que inspiraram a composição — esses elementos fazem parte do conteúdo criativo e estão incluídos na divulgação da Obra.
 
-A autorização **não abrange**: o reuso de **fotos ou vídeos** enviados; depoimentos; nem qualquer exposição que **identifique o Cliente (autor do pedido)**.
+A divulgação da Obra compreende, além dela por inteiro, o uso de **trechos** (por exemplo, um recorte do refrão), de **versões editadas ou reduzidas** e a **sincronização da Obra com imagens** em peças audiovisuais de divulgação — inclusive peças **produzidas com auxílio de inteligência artificial**, sinalizadas como tal quando a plataforma de destino exigir.
+
+A autorização **não abrange**: o reuso de **fotos ou vídeos** enviados pelo Cliente; depoimentos; nem qualquer exposição que **identifique o Cliente (autor do pedido)**. As imagens que acompanham as peças de divulgação são **criadas por nós**, e não são fotos das pessoas envolvidas.
 
 > **Nota:** o compartilhamento da música por link pelo próprio Cliente é uma funcionalidade da plataforma controlada pelo próprio Cliente e não depende deste Termo. Este Termo trata exclusivamente do uso da Obra **pela Fiz Música** para fins de marketing e divulgação.
 
@@ -23,7 +25,7 @@ Portfólio institucional; site oficial; redes sociais; materiais promocionais; c
 > **Nota de fronteira:** esta autorização trata da **divulgação pública da Obra** (música + letra) pela Fiz Música. Ela **complementa, sem substituir**, a [Licença de Uso da Música / Direitos Autorais](05-licenca-de-uso-da-musica.md), que rege os **direitos autorais sobre a obra**. A Fiz Música pode, a seu critério, explorar a Obra de forma **anonimizada/adaptada** — especialmente em casos sensíveis — independentemente desta autorização.
 
 **Autorizo a divulgação da Música e da Letra**
-Autorizo a Fiz Música a divulgar a música e a letra criadas para mim, em seus canais e materiais de marketing. Reconheço que a Obra pode conter **nomes e a história real** como parte do seu conteúdo. A Fiz Música **não divulgará a identidade de quem encomendou** a música, **não utilizará as fotos** enviadas e **não exporá depoimentos** sem autorização específica e separada.
+Autorizo a Fiz Música a divulgar a música e a letra criadas para mim, em seus canais e materiais de marketing, **por inteiro ou em trechos, inclusive sincronizadas com imagens em peças de vídeo**. Reconheço que a Obra pode conter **nomes e a história real** como parte do seu conteúdo. A Fiz Música **não divulgará a identidade de quem encomendou** a música, **não utilizará as fotos** enviadas e **não exporá depoimentos** sem autorização específica e separada.
 ( ) Sim ( ) Não
 
 Esta autorização é **opcional**, **não é requisito** para a contratação dos serviços, e pode ser **revogada a qualquer momento** (ver seção 7).

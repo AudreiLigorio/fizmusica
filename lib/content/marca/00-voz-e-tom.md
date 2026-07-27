@@ -67,3 +67,25 @@ fosse depoimento.
 
 Isso não é só ética: depoimento inventado é propaganda enganosa (CDC) e, num
 nicho de luto e homenagem, é o tipo de erro que não se recupera.
+
+## Peça feita a partir de um pedido real: quem pode aparecer
+
+A Autorização de Publicação assinada pelo cliente cobre **a música e a letra**
+— incluindo os nomes e a história que estão dentro da obra. Ela **não** cobre
+identificar **quem encomendou**.
+
+Na prática, ao escrever uma peça a partir de um pedido real:
+
+- **Nunca** nomeie, descreva ou torne identificável **o comprador** ("a Maria
+  encomendou pro pai dela", "um cliente de Belo Horizonte"). Escreva na
+  terceira pessoa genérica: "uma filha", "um marido", "uma turma inteira".
+- O **homenageado** só pode ser nomeado se o nome já faz parte da própria
+  obra (letra/título). Fora disso, não invente e não acrescente.
+- **Nunca** cite dado que não é da obra: cidade, profissão, data do evento,
+  nome completo, parentesco específico demais que permita reconhecer a
+  família.
+- **Nunca** trate a peça como depoimento ("ela disse que chorou") — a menos
+  que exista autorização específica de depoimento, que é outro documento.
+
+A imagem da peça é sempre **criada por nós**. Foto enviada pelo cliente nunca
+entra em conteúdo de divulgação — isso está explicitamente fora da autorização.

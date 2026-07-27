@@ -54,6 +54,9 @@ Independente da nota, reprova na hora se a peça:
 
 - Inventa depoimento, cliente ou reação que não aconteceu
 - Usa história de pedido real sem `publication_consent = true`
+- **Identifica quem encomendou** a música, ou cita dado que permita reconhecer
+  a família (cidade, profissão, data do evento, nome completo). A autorização
+  cobre a obra e os nomes que estão dentro dela — não o comprador.
 - Usa luto como alavanca de venda ou CTA agressivo em peça de despedida
 - Promete prazo, preço ou resultado que a operação não garante
 - Abre falando da marca ou do produto
