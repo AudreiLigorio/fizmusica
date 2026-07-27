@@ -4,7 +4,10 @@ import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { createDraft } from "@/lib/content/generate"
 
 export const dynamic = "force-dynamic"
-export const maxDuration = 30
+// O roteirista faz 2 chamadas ao Gemini (criação + revisão) e até 4 quando o
+// crivo reprova. Com os 30s do padrão a função morria no meio e o rascunho se
+// perdia — foi o que aconteceu de verdade em 27/07.
+export const maxDuration = 120
 
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value
