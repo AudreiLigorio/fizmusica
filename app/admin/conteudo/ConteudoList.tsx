@@ -665,15 +665,22 @@ function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: 
       if (!confirm(`Esta peça usa a história real de ${quem}.\n\nVocê conferiu que o conteúdo está adequado e que a Autorização de Publicação cobre este uso?`)) return
     }
     setBusy(action); setMsg("")
-    const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, rejectionReason: reason }),
-    })
-    const d = await res.json()
-    setBusy(null)
-    if (d.ok) onChange()
-    else setMsg(`❌ ${d.error}`)
+    try {
+      const res = await fetch(`/api/admin/conteudo/${draft.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, rejectionReason: reason }),
+      })
+      const d = await res.json().catch(() => ({ error: "resposta inválida do servidor" }))
+      if (d.ok) onChange()
+      else setMsg(`❌ ${d.error ?? "falhou"}`)
+    } catch {
+      // Sem isto, uma queda de rede deixava o botão girando pra sempre e o
+      // admin sem saber se publicou ou não.
+      setMsg("❌ A conexão caiu no meio. Recarregue e confira se a peça foi publicada antes de tentar de novo.")
+    } finally {
+      setBusy(null)
+    }
   }
 
   const canPublish = draft.status === "aprovado" && draft.platform === "instagram" && !draft.published_at
@@ -685,7 +692,9 @@ function DraftCard({ draft, cliques, origem, job, trilhas, onChange }: { draft: 
         {draft.image_url
           ? <img src={draft.image_url} alt="" onClick={() => setLightbox({ src: draft.image_url!, tipo: "imagem" })}
               className="w-full h-full object-cover cursor-zoom-in hover:opacity-80 transition-opacity" />
-          : draft.image_error
+          : draft.media_purged_at
+            ? <span className="text-white/25 text-[10px] text-center px-1 leading-tight">mídia<br />apagada</span>
+            : draft.image_error
             ? <span className="text-red-400 text-2xl">⚠️</span>
             : <span className="w-5 h-5 border-2 border-fuchsia-400 border-t-transparent rounded-full animate-spin" />}
       </div>

@@ -77,7 +77,26 @@ export async function publishImage({ imageUrl, caption }: IgImageInput): Promise
   const userId = await getUserId()
   const container = await igPost(`${userId}/media`, { image_url: imageUrl, caption })
   const creationId = String(container.id)
+
+  // A Meta também PROCESSA container de imagem (baixa o arquivo da nossa URL,
+  // valida formato e dimensões). Publicar antes disso devolve "Media ID is not
+  // available" — erro que parece de permissão e é só pressa. Costuma levar 1 a
+  // 3 segundos; esperamos até ~40s por segurança.
+  await esperarContainer(creationId, 20, 2000)
+
   return finishPublish(userId, creationId)
+}
+
+// Aguarda o container ficar FINISHED. Vale pra imagem e pra vídeo — muda só a
+// paciência: vídeo demora minutos, imagem demora segundos.
+async function esperarContainer(creationId: string, tentativas: number, intervaloMs: number) {
+  for (let i = 0; i < tentativas; i++) {
+    const st = await igGet(`${creationId}`, { fields: "status_code" })
+    if (st.status_code === "FINISHED") return
+    if (st.status_code === "ERROR") throw new Error("IG: o processamento da mídia falhou.")
+    await new Promise((r) => setTimeout(r, intervaloMs))
+  }
+  throw new Error("IG: tempo esgotado esperando a mídia ficar pronta para publicação.")
 }
 
 // Publica um vídeo como Reels (único tipo de vídeo aceito pela API hoje).
@@ -90,15 +109,8 @@ export async function publishReel({ videoUrl, caption }: IgVideoInput): Promise<
   })
   const creationId = String(container.id)
 
-  // Espera o processamento do vídeo terminar (FINISHED) antes de publicar.
-  // Timeout defensivo: ~5 min (30 tentativas x 10s).
-  for (let i = 0; i < 30; i++) {
-    const st = await igGet(`${creationId}`, { fields: "status_code" })
-    if (st.status_code === "FINISHED") break
-    if (st.status_code === "ERROR") throw new Error("IG: processamento do Reels falhou.")
-    if (i === 29) throw new Error("IG: tempo esgotado processando o Reels.")
-    await new Promise((r) => setTimeout(r, 10000))
-  }
+  // Vídeo leva minutos: ~5 min de paciência (30 tentativas x 10s).
+  await esperarContainer(creationId, 30, 10000)
 
   return finishPublish(userId, creationId)
 }
