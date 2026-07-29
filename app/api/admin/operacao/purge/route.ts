@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
+import { runPurge } from "@/lib/purge"
+import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 
 export const dynamic = "force-dynamic"
 
@@ -139,4 +141,30 @@ export async function PUT(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true })
+}
+
+// Executa o expurgo na hora, sem esperar o cron das 7h. Uma rotina que apaga
+// dado pessoal precisa poder ser rodada e conferida sob supervisão — e foi
+// assim que descobrimos que ela estava travada há três semanas.
+export async function POST(req: NextRequest) {
+  const token = req.cookies.get(COOKIE_NAME)?.value
+  if (!token || !(await verifyAdminToken(token))) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
+  }
+
+  const supabase = createServerClient()
+  try {
+    const purge = await runPurge(supabase)
+    await supabase.from("purge_log").insert({
+      photos_purged:      purge.photosPurged,
+      leads_purged:       purge.leadsPurged,
+      music_purged:       purge.musicPurged ?? 0,
+      paid_photos_purged: purge.paidPhotosPurged ?? 0,
+      recovery_sent:      0,
+      errors:             purge.errors.length ? purge.errors.join(" | ") : null,
+    })
+    return NextResponse.json({ ok: true, purge })
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Falha no expurgo." }, { status: 500 })
+  }
 }

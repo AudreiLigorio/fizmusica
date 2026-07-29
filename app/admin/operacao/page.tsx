@@ -29,6 +29,8 @@ export default function OperacaoPage() {
   const [saving, setSaving]     = useState(false)
   const [savedMsg, setSavedMsg] = useState("")
   const [copied, setCopied]     = useState("")
+  const [rodando, setRodando]   = useState(false)
+  const [resultado, setResultado] = useState("")
 
   async function load() {
     const d = await fetch("/api/admin/operacao/purge", { cache: "no-store" }).then((r) => r.json())
@@ -38,6 +40,26 @@ export default function OperacaoPage() {
     setPending(d.pending ?? { photos: 0, leads: 0 })
     setMusics(d.musics ?? [])
     setLoading(false)
+  }
+
+  // Roda o expurgo sob supervisão, sem esperar o cron das 7h.
+  async function rodarAgora() {
+    if (!confirm("Executar o expurgo agora? Fotos e cadastros vencidos são APAGADOS em definitivo.")) return
+    setRodando(true); setResultado("")
+    try {
+      const d = await fetch("/api/admin/operacao/purge", { method: "POST" }).then((r) => r.json())
+      if (d.error) setResultado(`❌ ${d.error}`)
+      else {
+        const p = d.purge
+        setResultado(`✅ ${p.leadsPurged} cadastro(s), ${p.photosPurged} foto(s), ${p.musicPurged} link(s) desativado(s)` +
+          (p.errors?.length ? ` · ${p.errors.length} aviso(s)` : ""))
+        await load()
+      }
+    } catch {
+      setResultado("❌ Falha ao executar.")
+    } finally {
+      setRodando(false)
+    }
   }
 
   async function copyUrl(url: string) {
@@ -167,6 +189,14 @@ export default function OperacaoPage() {
         <StatCard label="Fotos de pedidos pagos removidas (30 dias)" value={totals.paidPhotos} color="text-purple-400" />
         <StatCard label="Fotos aguardando expurgo" value={pending.photos} color="text-yellow-400" />
         <StatCard label="Cadastros aguardando expurgo" value={pending.leads} color="text-orange-400" />
+      </div>
+
+      <div className="flex items-center gap-3 mb-8">
+        <button onClick={rodarAgora} disabled={rodando}
+          className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+          {rodando ? "executando…" : "▶️ rodar expurgo agora"}
+        </button>
+        <span className="text-white/50 text-xs">{resultado}</span>
       </div>
 
       {/* Configuração */}
