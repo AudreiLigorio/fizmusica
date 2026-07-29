@@ -2,6 +2,7 @@ import crypto from "crypto"
 import type { createServerClient } from "@/lib/supabase"
 import { logContentEvent } from "@/lib/content/events"
 import { garantirMidiaPropria } from "@/lib/content/guardas"
+import { purgeVideoIngredients } from "@/lib/content/media"
 import { publishImage, publishReel, pngUrlToJpegBytes } from "@/lib/content/publishers/instagram"
 
 type DB = ReturnType<typeof createServerClient>
@@ -75,6 +76,16 @@ export async function publishDraft(supabase: DB, draftId: string) {
       result = await publishImage({ imageUrl, caption })
     } else {
       throw new Error("Rascunho sem imagem nem vídeo para publicar.")
+    }
+
+    // Publicou: acabou a iteração. Agora sim os ingredientes viram peso morto
+    // (o conteúdo deles está dentro do MP4 que foi ao ar). Falhar aqui não
+    // pode invalidar uma publicação bem-sucedida.
+    try {
+      const { data: jobs } = await supabase.from("video_jobs").select("id").eq("contentDraftId", draftId)
+      for (const j of jobs ?? []) await purgeVideoIngredients(supabase, j.id)
+    } catch (e) {
+      console.error("[publish] ingredientes não descartados:", e instanceof Error ? e.message : e)
     }
 
     await supabase

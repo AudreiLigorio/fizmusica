@@ -420,6 +420,23 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
     else setMsg(`❌ ${d.error}`)
   }
 
+  async function remontar() {
+    setCreating(true); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${draftId}/video`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scenes }),
+      }).then((r) => r.json())
+      if (d.ok) setJob(d.job)
+      else setMsg(`❌ ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao remontar.")
+    } finally {
+      setCreating(false)
+    }
+  }
+
   if (job) {
     return (
       <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3">
@@ -432,6 +449,28 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
         {job.error && <p className="text-red-400 text-xs mt-1">{job.error}</p>}
         {job.video_url && (
           <video controls className="w-full max-w-xs rounded-lg mt-2" src={job.video_url} />
+        )}
+
+        {JOB_TERMINAL.has(job.status) && (
+          <div className="mt-3 border-t border-white/10 pt-3 space-y-2">
+            <p className="text-white/60 text-[11px]">
+              Ajuste as legendas das cenas e remonte — reaproveita as imagens, a narração e a música
+              que já existem. <strong className="text-white/80">Não gasta geração nenhuma.</strong>
+            </p>
+            {scenes.map((s, i) => (
+              <input key={i} value={s.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
+                placeholder={`Legenda da cena ${i + 1}`}
+                className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+            ))}
+            <button onClick={remontar} disabled={creating}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
+              {creating ? "enviando…" : "🔁 remontar vídeo (grátis)"}
+            </button>
+            <p className="text-white/35 text-[11px]">
+              Precisa do worker rodando: <code className="bg-black/40 px-1 rounded">npm run worker:video</code>
+            </p>
+          </div>
         )}
       </div>
     )

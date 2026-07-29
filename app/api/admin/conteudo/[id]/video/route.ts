@@ -59,6 +59,49 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 // Estado do job (polling, pra tela de qualificação acompanhar a geração dos
 // ingredientes até ficar "pronto_pra_renderizar" — daí em diante é o worker).
+// Remonta o vídeo a partir dos ingredientes que já existem — custo ZERO de
+// IA, só o tempo do worker. É o que faltava: até aqui, mudar uma legenda de
+// cena obrigava a regerar imagens e música do zero.
+// body: { scenes?, songTheme?, songStyle? } — ajustes de texto entram na receita.
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
+  const { id } = await params
+  const supabase = createServerClient()
+
+  const { data: job } = await supabase
+    .from("video_jobs")
+    .select("id, status, recipe, scene_image_urls, song_url, narration_url")
+    .eq("contentDraftId", id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (!job) return NextResponse.json({ error: "Não há vídeo para remontar." }, { status: 404 })
+
+  // Ingrediente apagado (peça já publicada, ou job antigo) não volta: remontar
+  // sem as imagens produziria um vídeo quebrado, e é melhor dizer isso.
+  if (!job.scene_image_urls?.length || (!job.song_url && !job.narration_url)) {
+    return NextResponse.json(
+      { error: "Os ingredientes deste vídeo já foram descartados (a peça foi publicada). Crie um vídeo novo." },
+      { status: 400 },
+    )
+  }
+
+  const body = await req.json().catch(() => ({}))
+  const receita = { ...(job.recipe as Record<string, unknown>) }
+  if (Array.isArray(body.scenes) && body.scenes.length) receita.scenes = body.scenes
+  if (typeof body.songTheme === "string") receita.songTheme = body.songTheme
+  if (typeof body.songStyle === "string") receita.songStyle = body.songStyle
+
+  const { error } = await supabase
+    .from("video_jobs")
+    .update({ recipe: receita, status: "pronto_pra_renderizar", error: null, claimed_at: null })
+    .eq("id", job.id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true, job: { ...job, status: "pronto_pra_renderizar" } })
+}
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
