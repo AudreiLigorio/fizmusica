@@ -1,6 +1,8 @@
 import { generateLyrics } from "@/lib/composer/gemini"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { loadMarca } from "@/lib/content/marca"
+import { carregarLicoes } from "@/lib/content/licoes"
+import { createServerClient } from "@/lib/supabase"
 
 // Roteirista — o agente que decide O QUE contar antes de qualquer imagem ou
 // música ser gerada. Duas passadas na mesma chamada de negócio:
@@ -79,13 +81,13 @@ function sourceToText(source: RoteiroSource): string {
   return `Origem: tema livre de marketing.\nTema: ${source.topic}`
 }
 
-function criacaoSystemPrompt(formato: RoteiroFormato): string {
+function criacaoSystemPrompt(formato: RoteiroFormato, licoes: string): string {
   const base =
     "Você é o roteirista-chefe da FizMusica, que transforma histórias reais em músicas personalizadas. " +
     "Seu trabalho é decidir O QUE contar e COMO contar antes de qualquer imagem ou música existir.\n\n" +
     "Siga RIGOROSAMENTE a base de conhecimento abaixo. Ela tem precedência sobre qualquer hábito seu " +
     "de escrita publicitária:\n\n<base_de_conhecimento>\n" +
-    loadMarca(["voz", "personas", "ganchos", "redes"]) +
+    loadMarca(["voz", "personas", "ganchos", "redes"]) + licoes +
     "\n</base_de_conhecimento>\n\n" +
     "Antes de escrever, responda para si mesmo, nesta ordem: (1) qual emoção quero provocar; " +
     "(2) para qual persona estou falando; (3) qual história vou contar; (4) qual gancho interrompe " +
@@ -134,12 +136,12 @@ function criacaoSystemPrompt(formato: RoteiroFormato): string {
   )
 }
 
-function revisaoSystemPrompt(): string {
+function revisaoSystemPrompt(licoes: string): string {
   return (
     "Você é o revisor crítico de conteúdo da FizMusica. Você NÃO reescreve nada — você julga, e é " +
     "rigoroso de propósito: é mais barato reprovar aqui do que publicar conteúdo morno.\n\n" +
     "Aplique exatamente o crivo abaixo:\n\n<crivo>\n" +
-    loadMarca(["qualidade", "voz"]) +
+    loadMarca(["qualidade", "voz"]) + licoes +
     "\n</crivo>\n\n" +
     "Responda SOMENTE com um objeto JSON válido, sem markdown, sem crases:\n" +
     `{
@@ -183,7 +185,7 @@ function validarRoteiro(r: Roteiro, formato: RoteiroFormato): void {
   }
 }
 
-type Gemini = { model: string; location: string }
+type Gemini = { model: string; location: string; licoes: string }
 
 async function criar(
   gemini: Gemini,
@@ -220,7 +222,7 @@ async function criar(
   }
 
   const raw = await generateLyrics({
-    systemPrompt: criacaoSystemPrompt(input.formato),
+    systemPrompt: criacaoSystemPrompt(input.formato, gemini.licoes),
     model: gemini.model,
     location: gemini.location,
     userContent,
@@ -234,7 +236,7 @@ async function criar(
 
 async function revisar(gemini: Gemini, input: RoteiroInput, roteiro: Roteiro): Promise<Parecer> {
   const raw = await generateLyrics({
-    systemPrompt: revisaoSystemPrompt(),
+    systemPrompt: revisaoSystemPrompt(gemini.licoes),
     model: gemini.model,
     location: gemini.location,
     userContent:
@@ -254,7 +256,10 @@ async function revisar(gemini: Gemini, input: RoteiroInput, roteiro: Roteiro): P
 // Ponto de entrada: cria, revisa e — se reprovado — reescreve UMA vez.
 export async function gerarRoteiro(input: RoteiroInput): Promise<RoteiroResult> {
   const settings = await getComposerSettings()
-  const gemini: Gemini = { model: settings.model, location: settings.location }
+  // As lições entram junto da base de conhecimento, nos DOIS agentes: quem
+  // escreve para não repetir o erro, e quem revisa para saber cobrá-lo.
+  const licoes = await carregarLicoes(createServerClient())
+  const gemini: Gemini = { model: settings.model, location: settings.location, licoes }
 
   const roteiro1 = await criar(gemini, input)
   const parecer1 = await revisar(gemini, input, roteiro1)

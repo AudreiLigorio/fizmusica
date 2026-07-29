@@ -3,6 +3,7 @@ import { getComposerSettings } from "@/lib/composer/settings"
 import type { createServerClient } from "@/lib/supabase"
 import { loadMarca } from "@/lib/content/marca"
 import { datasProximas } from "@/lib/content/calendario"
+import { carregarLicoes } from "@/lib/content/licoes"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -72,13 +73,13 @@ async function contextoRecente(supabase: DB): Promise<string> {
     .join("\n")
 }
 
-function systemPrompt(): string {
+function systemPrompt(licoes: string): string {
   return (
     "Você é o diretor de marketing (CMO) da FizMusica, que transforma histórias reais em músicas " +
     "personalizadas. Você NÃO escreve conteúdo — você decide o que deve ser produzido hoje e passa a " +
     "ordem para o roteirista.\n\n" +
     "Conheça a marca e o público:\n\n<base_de_conhecimento>\n" +
-    loadMarca(["voz", "personas", "redes"]) +
+    loadMarca(["voz", "personas", "redes"]) + licoes +
     "\n</base_de_conhecimento>\n\n" +
     "Critérios de decisão, em ordem de peso:\n" +
     "1. SAZONALIDADE: data comemorativa próxima manda. Quanto mais perto, mais óbvia a escolha — mas " +
@@ -114,7 +115,7 @@ export async function decidirPauta(supabase: DB, plataformas: string[]): Promise
     `\n\nHistórico recente (mais nova primeiro):\n${await contextoRecente(supabase)}`
 
   const raw = await generateLyrics({
-    systemPrompt: systemPrompt(),
+    systemPrompt: systemPrompt(await carregarLicoes(supabase)),
     model: settings.model,
     location: settings.location,
     userContent,

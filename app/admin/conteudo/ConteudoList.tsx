@@ -913,7 +913,7 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
         {draft.status === "rascunho" && rejeitando && (
           <div className="flex gap-2">
             <input value={rejectionReason} onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="Motivo (opcional) — rejeitar APAGA a peça inteira"
+              placeholder="O que ficou errado? Vira regra pros próximos (rejeitar APAGA a peça)"
               className="flex-1 bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
             <button onClick={() => { if (confirm("Rejeitar apaga a peça inteira — texto, imagem, vídeo e link. Não dá pra desfazer. Continuar?")) acao("rejeitar", rejectionReason) }}
               disabled={busy !== null}
@@ -1000,6 +1000,71 @@ type ContentSettings = {
 }
 
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"]
+
+type Licao = { id: string; regra: string; feedback_original: string | null; ativa: boolean; created_at: string }
+
+// Lições aprendidas: o que o sistema passou a evitar por causa das suas
+// críticas. Elas entram em vigor sozinhas (sem aprovação), então esta lista é
+// a única forma de ver o que mudou — e de desligar uma regra que saiu ruim.
+function LicoesBox() {
+  const [licoes, setLicoes] = useState<Licao[]>([])
+  const [aberto, setAberto] = useState(false)
+  const [carregado, setCarregado] = useState(false)
+
+  async function carregar() {
+    const d = await fetch("/api/admin/conteudo/licoes").then((r) => r.json()).catch(() => ({}))
+    setLicoes(d.licoes ?? [])
+    setCarregado(true)
+  }
+
+  async function alternar(l: Licao) {
+    setLicoes((prev) => prev.map((x) => (x.id === l.id ? { ...x, ativa: !x.ativa } : x)))
+    await fetch("/api/admin/conteudo/licoes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: l.id, ativa: !l.ativa }),
+    })
+  }
+
+  useEffect(() => { if (aberto && !carregado) carregar() }, [aberto, carregado])
+
+  const ativas = licoes.filter((l) => l.ativa).length
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4 mb-4">
+      <button onClick={() => setAberto((v) => !v)} className="w-full flex items-center justify-between text-left">
+        <span className="text-white/80 text-sm font-semibold">
+          🎓 Lições aprendidas {carregado && <span className="text-white/40 font-normal">· {ativas} em vigor</span>}
+        </span>
+        <span className="text-white/40 text-[11px]">{aberto ? "ocultar" : "ver"}</span>
+      </button>
+
+      {aberto && (
+        <div className="mt-3 space-y-2">
+          {!carregado && <p className="text-white/40 text-[11px]">carregando…</p>}
+          {carregado && licoes.length === 0 && (
+            <p className="text-white/40 text-[11px]">
+              Nenhuma ainda. Ao rejeitar uma peça, escreva o motivo: ele vira uma regra que todos os
+              agentes passam a seguir.
+            </p>
+          )}
+          {licoes.map((l) => (
+            <div key={l.id} className={`rounded-lg border p-2.5 ${l.ativa ? "border-emerald-500/25 bg-emerald-500/5" : "border-white/10 opacity-50"}`}>
+              <p className="text-white/85 text-[12px]">{l.regra}</p>
+              {l.feedback_original && (
+                <p className="text-white/35 text-[11px] mt-1 italic">você escreveu: "{l.feedback_original}"</p>
+              )}
+              <button onClick={() => alternar(l)}
+                className="text-[11px] mt-1.5 text-white/40 hover:text-white/80">
+                {l.ativa ? "desativar esta regra" : "reativar"}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Mesma conta do worker: cada cena dura 5s e o crossfade come 0,6s por emenda.
 const duracaoDoVideo = (nCenas: number) => nCenas * 5 - (nCenas - 1) * 0.6
@@ -1223,6 +1288,7 @@ export default function ConteudoList({
   return (
     <div>
       <EsteiraBox inicial={settings} />
+      <LicoesBox />
       <TiktokConnectBox status={tiktokStatus} />
 
       <div className="mb-6 rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/[0.05] p-4">

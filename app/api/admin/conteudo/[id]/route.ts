@@ -5,6 +5,7 @@ import { syncImageTask, runGeneration, createDraft } from "@/lib/content/generat
 import { publishDraft } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
 import { purgeDraftMedia } from "@/lib/content/media"
+import { registrarLicao } from "@/lib/content/licoes"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300 // publicação de Reels espera o processamento do vídeo (polling)
@@ -128,6 +129,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // pra ele), e só então a linha. As tabelas filhas (content_events,
   // video_jobs) somem por cascade.
   if (action === "rejeitar") {
+    // O motivo da rejeição é o único momento em que a insatisfação vira texto.
+    // Precisa ser lido ANTES do delete: depois, a peça e a crítica somem juntas.
+    let licao: string | null = null
+    if (typeof rejectionReason === "string" && rejectionReason.trim()) {
+      const { data: peca } = await supabase
+        .from("content_drafts")
+        .select("platform, topic, hook_text, caption, persona, emocao_alvo, roteiro")
+        .eq("id", id)
+        .maybeSingle()
+
+      if (peca) {
+        const cenas = (peca.roteiro as { cenas?: { caption: string; description: string }[] } | null)?.cenas ?? []
+        const contexto =
+          `Rede: ${peca.platform} · tema: ${peca.topic ?? "de pedido real"}\n` +
+          `Persona: ${peca.persona ?? "?"} · emoção: ${peca.emocao_alvo ?? "?"}\n` +
+          `Gancho: ${peca.hook_text ?? "—"}\n` +
+          `Legenda: ${peca.caption ?? "—"}` +
+          (cenas.length ? `\nCenas:\n${cenas.map((c, i) => `  ${i + 1}. [${c.caption}] ${c.description}`).join("\n")}` : "")
+
+        licao = await registrarLicao(supabase, { feedback: rejectionReason, contexto })
+      }
+    }
+
     const purge = await purgeDraftMedia(supabase, id)
 
     await supabase.from("content_links").delete().eq("draft_id", id)
@@ -135,7 +159,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { error } = await supabase.from("content_drafts").delete().eq("id", id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-    return NextResponse.json({ ok: true, removido: true, midiaApagada: purge.arquivos })
+    return NextResponse.json({ ok: true, removido: true, midiaApagada: purge.arquivos, licao })
   }
 
   // Exclusão manual — pra peça aprovada/publicada que já cumpriu seu papel.
