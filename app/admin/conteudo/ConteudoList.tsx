@@ -633,6 +633,8 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | "excluir" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
+  const [ressalva, setRessalva] = useState(false)
+  const [ressalvaTexto, setRessalvaTexto] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
   const [showVideoForm, setShowVideoForm] = useState(false)
   const [lightbox, setLightbox] = useState<{ src: string; tipo: "imagem" | "video" } | null>(null)
@@ -760,6 +762,23 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
     setBusy(null)
     if (d.ok) onChange()
     else setMsg(`❌ ${d.error}`)
+  }
+
+  async function aprovarComRessalva() {
+    setBusy("aprovar"); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${draft.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "aprovar", feedback: ressalvaTexto }),
+      }).then((r) => r.json())
+      if (d.ok) onChange()
+      else setMsg(`❌ ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao aprovar.")
+    } finally {
+      setBusy(null)
+    }
   }
 
   async function acao(action: "aprovar" | "rejeitar" | "publicar", reason?: string) {
@@ -896,8 +915,25 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
         {draft.image_error && <p className="text-red-400 text-xs mb-2">Imagem: {draft.image_error}</p>}
         {draft.rejection_reason && <p className="text-white/40 text-xs mb-2">Motivo da rejeição: {draft.rejection_reason}</p>}
 
-        {draft.status === "rascunho" && !rejeitando && (
-          <div className="flex gap-2">
+        {draft.status === "rascunho" && ressalva && (
+          <div className="flex gap-2 mb-2">
+            <input value={ressalvaTexto} onChange={(e) => setRessalvaTexto(e.target.value)}
+              placeholder="O que dava pra melhorar? Vira regra pros próximos"
+              className="flex-1 bg-black/40 border border-amber-500/30 rounded-lg px-2 py-1.5 text-xs text-white" />
+            <button onClick={aprovarComRessalva} disabled={busy !== null || !ressalvaTexto.trim()}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
+              style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}>
+              {busy === "aprovar" ? "…" : "Aprovar e ensinar"}
+            </button>
+            <button onClick={() => { setRessalva(false); setRessalvaTexto("") }} disabled={busy !== null}
+              className="text-xs px-2 py-1.5 rounded-lg border border-white/15 text-white/60 hover:bg-white/5">
+              cancelar
+            </button>
+          </div>
+        )}
+
+        {draft.status === "rascunho" && !rejeitando && !ressalva && (
+          <div className="flex gap-2 items-center">
             <button onClick={() => acao("aprovar")} disabled={busy !== null}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}>
@@ -906,6 +942,10 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
             <button onClick={() => setRejeitando(true)} disabled={busy !== null}
               className="text-xs px-3 py-1.5 rounded-lg border border-white/15 text-white/60 hover:bg-white/5 disabled:opacity-50">
               Rejeitar
+            </button>
+            <button onClick={() => setRessalva(true)} disabled={busy !== null}
+              className="text-[11px] text-white/40 hover:text-amber-300 disabled:opacity-50">
+              aprovar com ressalva…
             </button>
           </div>
         )}

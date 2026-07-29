@@ -10,6 +10,26 @@ import { registrarLicao } from "@/lib/content/licoes"
 export const dynamic = "force-dynamic"
 export const maxDuration = 300 // publicação de Reels espera o processamento do vídeo (polling)
 
+// Retrato da peça pra IA entender a crítica. Usado na aprovação com ressalva e
+// na rejeição — nos dois casos o que ensina é a crítica ANCORADA na peça.
+async function contextoDaPeca(supabase: ReturnType<typeof createServerClient>, id: string) {
+  const { data: peca } = await supabase
+    .from("content_drafts")
+    .select("platform, topic, hook_text, caption, persona, emocao_alvo, roteiro")
+    .eq("id", id)
+    .maybeSingle()
+  if (!peca) return null
+
+  const cenas = (peca.roteiro as { cenas?: { caption: string; description: string }[] } | null)?.cenas ?? []
+  return (
+    `Rede: ${peca.platform} · tema: ${peca.topic ?? "de pedido real"}\n` +
+    `Persona: ${peca.persona ?? "?"} · emoção: ${peca.emocao_alvo ?? "?"}\n` +
+    `Gancho: ${peca.hook_text ?? "—"}\n` +
+    `Legenda: ${peca.caption ?? "—"}` +
+    (cenas.length ? `\nCenas:\n${cenas.map((c, i) => `  ${i + 1}. [${c.caption}] ${c.description}`).join("\n")}` : "")
+  )
+}
+
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value
   return token ? verifyAdminToken(token) : false
@@ -30,7 +50,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
-  const { action, rejectionReason, caption, hashtags, platform } = await req.json().catch(() => ({}))
+  const { action, rejectionReason, caption, hashtags, platform, feedback } = await req.json().catch(() => ({}))
   const supabase = createServerClient()
 
   if (action === "sincronizar") {
@@ -108,8 +128,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       .update({ status: "aprovado", reviewed_at: new Date().toISOString() })
       .eq("id", id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    await logContentEvent(supabase, id, "aprovado", undefined, "admin")
-    return NextResponse.json({ ok: true, status: "aprovado" })
+
+    // Aprovação com ressalva: a peça serve, mas algo dava pra melhorar. É o
+    // sinal mais comum e o que mais se perdia — ninguém rejeita uma peça boa
+    // só porque um detalhe incomodou, então esse aprendizado sumia.
+    let licao: string | null = null
+    if (typeof feedback === "string" && feedback.trim()) {
+      const contexto = await contextoDaPeca(supabase, id)
+      if (contexto) licao = await registrarLicao(supabase, { feedback, contexto })
+    }
+
+    await logContentEvent(supabase, id, "aprovado", feedback ? `ressalva: ${feedback}` : undefined, "admin")
+    return NextResponse.json({ ok: true, status: "aprovado", licao })
   }
 
   // Exclusão definitiva a pedido do admin — mesmo efeito da rejeição, mas
@@ -133,23 +163,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // Precisa ser lido ANTES do delete: depois, a peça e a crítica somem juntas.
     let licao: string | null = null
     if (typeof rejectionReason === "string" && rejectionReason.trim()) {
-      const { data: peca } = await supabase
-        .from("content_drafts")
-        .select("platform, topic, hook_text, caption, persona, emocao_alvo, roteiro")
-        .eq("id", id)
-        .maybeSingle()
-
-      if (peca) {
-        const cenas = (peca.roteiro as { cenas?: { caption: string; description: string }[] } | null)?.cenas ?? []
-        const contexto =
-          `Rede: ${peca.platform} · tema: ${peca.topic ?? "de pedido real"}\n` +
-          `Persona: ${peca.persona ?? "?"} · emoção: ${peca.emocao_alvo ?? "?"}\n` +
-          `Gancho: ${peca.hook_text ?? "—"}\n` +
-          `Legenda: ${peca.caption ?? "—"}` +
-          (cenas.length ? `\nCenas:\n${cenas.map((c, i) => `  ${i + 1}. [${c.caption}] ${c.description}`).join("\n")}` : "")
-
-        licao = await registrarLicao(supabase, { feedback: rejectionReason, contexto })
-      }
+      const contexto = await contextoDaPeca(supabase, id)
+      if (contexto) licao = await registrarLicao(supabase, { feedback: rejectionReason, contexto })
     }
 
     const purge = await purgeDraftMedia(supabase, id)
