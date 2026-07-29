@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { createVideoJob, syncVideoIngredients, type VideoRecipe } from "@/lib/content/video-ingredients"
+import { trocarCena, trocarNarracao, trocarMusica, sincronizarMusicaNova } from "@/lib/content/video-partes"
 
 export const dynamic = "force-dynamic"
-export const maxDuration = 60
+export const maxDuration = 300 // gerar uma cena nova espera a KIE responder
 
 async function requireAdmin(req: NextRequest) {
   const token = req.cookies.get(COOKIE_NAME)?.value
@@ -59,6 +60,36 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
 // Estado do job (polling, pra tela de qualificação acompanhar a geração dos
 // ingredientes até ficar "pronto_pra_renderizar" — daí em diante é o worker).
+// Troca UMA parte do vídeo, preservando o resto. É a diferença entre corrigir
+// e recomeçar: a cena 2 saiu errada, mas a narração e a música estavam boas.
+// body: { parte: "cena", indice, description?, caption? }
+//     | { parte: "narracao", texto?, voz? }
+//     | { parte: "musica", origem: "pedido", orderId } | { parte: "musica", origem: "suno" }
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
+  const { id } = await params
+  const body = await req.json().catch(() => ({}))
+  const supabase = createServerClient()
+
+  try {
+    if (body.parte === "cena") {
+      const r = await trocarCena(supabase, id, Number(body.indice), body.description, body.caption)
+      return NextResponse.json({ ok: true, ...r })
+    }
+    if (body.parte === "narracao") {
+      const r = await trocarNarracao(supabase, id, body.texto, body.voz)
+      return NextResponse.json({ ok: true, ...r })
+    }
+    if (body.parte === "musica") {
+      const r = await trocarMusica(supabase, id, body.origem, body.orderId)
+      return NextResponse.json({ ok: true, ...r })
+    }
+    return NextResponse.json({ error: "Parte inválida." }, { status: 400 })
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Falha ao trocar a parte." }, { status: 500 })
+  }
+}
+
 // Remonta o vídeo a partir dos ingredientes que já existem — custo ZERO de
 // IA, só o tempo do worker. É o que faltava: até aqui, mudar uma legenda de
 // cena obrigava a regerar imagens e música do zero.
@@ -115,6 +146,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .maybeSingle()
 
   if (!job) return NextResponse.json({})
+
+  // Música nova pedida numa troca de parte: o Suno leva minutos, então o
+  // polling da tela é quem descobre que ficou pronta.
+  if (job.status !== "gerando_ingredientes" && job.song_task_id && !job.song_url) {
+    const atualizado = await sincronizarMusicaNova(supabase, job.id)
+    return NextResponse.json({ job: atualizado })
+  }
+
   if (job.status !== "gerando_ingredientes") return NextResponse.json({ job })
 
   try {

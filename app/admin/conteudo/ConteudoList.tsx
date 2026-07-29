@@ -112,6 +112,9 @@ type VideoJob = {
   status: string
   video_url: string | null
   error: string | null
+  narration_url?: string | null
+  song_url?: string | null
+  recipe?: { scenes?: VideoScene[]; songTheme?: string; songStyle?: string; narracaoTexto?: string; narracaoVoz?: string } | null
 }
 
 const JOB_STATUS_LABEL: Record<string, string> = {
@@ -316,6 +319,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
   const [roteirizando, setRoteirizando] = useState(false)
   const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
   const [parecer, setParecer] = useState<Parecer | null>(null)
+  const [trocando, setTrocando] = useState<string | null>(null)
 
   // Roteirista: preenche a receita inteira (cenas + música) em vez de o admin
   // escrever cada cena na mão. Já vem com a segunda passada crítica aplicada —
@@ -420,6 +424,27 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
     else setMsg(`❌ ${d.error}`)
   }
 
+  // Troca de uma parte só: a cena errada, a voz, ou a trilha. O que estava bom
+  // permanece — e o que já foi gerado (e pago) não é jogado fora.
+  async function trocarParte(corpo: Record<string, unknown>, rotulo: string) {
+    setTrocando(rotulo); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${draftId}/video`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(corpo),
+      }).then((r) => r.json())
+      if (d.ok) {
+        setJob(d.job)
+        setMsg(d.aguardando === "musica" ? "🎵 música nova sendo gerada — a tela avisa quando ficar pronta" : "")
+      } else setMsg(`❌ ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao trocar.")
+    } finally {
+      setTrocando(null)
+    }
+  }
+
   async function remontar() {
     setCreating(true); setMsg("")
     try {
@@ -458,10 +483,45 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
               que já existem. <strong className="text-white/80">Não gasta geração nenhuma.</strong>
             </p>
             {scenes.map((s, i) => (
-              <input key={i} value={s.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
-                placeholder={`Legenda da cena ${i + 1}`}
-                className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+              <div key={i} className="border border-white/10 rounded-lg p-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/50 text-[11px]">Cena {i + 1}</span>
+                  <button onClick={() => trocarParte({ parte: "cena", indice: i, description: s.description, caption: s.caption }, `cena${i}`)}
+                    disabled={trocando !== null || creating}
+                    className="text-[11px] px-2 py-0.5 rounded border border-fuchsia-500/40 text-fuchsia-300 hover:bg-fuchsia-500/10 disabled:opacity-50">
+                    {trocando === `cena${i}` ? "gerando imagem…" : "🔄 refazer só esta cena"}
+                  </button>
+                </div>
+                <textarea value={s.description} onChange={(e) => updateScene(i, "description", e.target.value)} rows={2}
+                  placeholder="Descrição visual — ajuste e refaça só esta cena"
+                  className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-[11px] text-white" />
+                <input value={s.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
+                  placeholder={`Legenda da cena ${i + 1}`}
+                  className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+              </div>
             ))}
+
+            <div className="flex flex-wrap gap-2 items-center pt-1">
+              {job.narration_url && (
+                <button onClick={() => trocarParte({ parte: "narracao", texto: narracaoTexto || undefined, voz: narracaoVoz }, "voz")}
+                  disabled={trocando !== null || creating}
+                  className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+                  {trocando === "voz" ? "regravando…" : "🎙️ refazer só a narração"}
+                </button>
+              )}
+              <button onClick={() => trocarParte({ parte: "musica", origem: "suno" }, "musica")}
+                disabled={trocando !== null || creating}
+                className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+                {trocando === "musica" ? "pedindo…" : "🎵 refazer só a música"}
+              </button>
+              {trilhas.length > 0 && (
+                <button onClick={() => trocarParte({ parte: "musica", origem: "pedido", orderId: songOrderId || trilhas[0].orderId }, "musica")}
+                  disabled={trocando !== null || creating}
+                  className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+                  💿 usar música do catálogo
+                </button>
+              )}
+            </div>
             <button onClick={remontar} disabled={creating}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
