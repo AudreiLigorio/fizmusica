@@ -5,6 +5,15 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Fotos do cliente vêm do storage público do Supabase. Liberar o host aqui
+  // permite servi-las por next/image, que entrega no tamanho da tela e em
+  // formato moderno — inclusive as que já foram enviadas antes da compressão
+  // no upload existir (pedidos entregues não têm como voltar atrás).
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co", pathname: "/storage/v1/object/public/**" },
+    ],
+  },
   // Desliga o cache do cliente das rotas dinâmicas para o painel sempre mostrar
   // dados frescos. (static tem mínimo de 30s no Next 16, então não o forçamos.)
   experimental: {

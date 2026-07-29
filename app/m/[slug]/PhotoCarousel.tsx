@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { Autoplay, EffectFade, EffectCards, EffectCoverflow } from "swiper/modules"
 
@@ -14,19 +15,32 @@ const MODULES = [Autoplay, EffectFade, EffectCards, EffectCoverflow]
 
 /* Mostra a foto INTEIRA (object-contain) sobre uma cópia borrada que preenche
    o quadro — assim nenhum efeito corta a imagem e não fica barra vazia feia. */
-function Frame({ url }: { url: string }) {
+function Frame({ url, prioridade }: { url: string; prioridade: boolean }) {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      {/* Fundo borrado: pode ser minúsculo, ninguém vê detalhe atrás de 28px
+          de blur. 64px de largura resolve e pesa quase nada. */}
+      <Image
         src={url}
         alt=""
         aria-hidden
-        className="absolute inset-0 w-full h-full object-cover scale-110"
+        fill
+        sizes="64px"
+        quality={40}
+        className="object-cover scale-110"
         style={{ filter: "blur(28px) brightness(0.55)" }}
       />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" className="absolute inset-0 w-full h-full object-contain" />
+      {/* Foto em si: servida no tamanho da tela e em formato moderno, em vez
+          do arquivo original de 3 a 5 MB que sai do celular. As primeiras
+          entram com prioridade pra não haver quadro vazio na largada. */}
+      <Image
+        src={url}
+        alt=""
+        fill
+        sizes="(max-width: 768px) 100vw, 640px"
+        priority={prioridade}
+        className="object-contain"
+      />
     </div>
   )
 }
@@ -69,7 +83,7 @@ export default function PhotoCarousel({
           >
             {photos.map((url, i) => (
               <SwiperSlide key={i} className="rounded-3xl overflow-hidden">
-                <Frame url={url} />
+                <Frame url={url} prioridade={i < 2} />
               </SwiperSlide>
             ))}
           </Swiper>
@@ -89,7 +103,7 @@ export default function PhotoCarousel({
       >
         {photos.map((url, i) => (
           <SwiperSlide key={i}>
-            <Frame url={url} />
+            <Frame url={url} prioridade={i < 2} />
           </SwiperSlide>
         ))}
       </Swiper>

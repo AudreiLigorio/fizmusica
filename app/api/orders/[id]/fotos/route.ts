@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
 import { validateImageUpload } from "@/lib/imageValidation"
+import { otimizarFoto } from "@/lib/imageResize"
+import { renumerarFotos } from "@/lib/photoOrder"
 import { getPhotoLimit, countClientPhotos } from "@/lib/photoLimit"
 import { logOrderEvent } from "@/lib/orderEvents"
 
@@ -71,11 +73,14 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   await ensureBucket(supabase)
 
-  const path = `${order.id}/${crypto.randomUUID()}.${v.type.ext}`
+  // Comprime antes de guardar: o player só precisa da largura da tela,
+  // e foto de celular chega com 3 a 5 MB.
+  const foto = await otimizarFoto(v.bytes)
+  const path = `${order.id}/${crypto.randomUUID()}.${foto.ext}`
 
   const { error: uploadErr } = await supabase.storage
     .from(BUCKET)
-    .upload(path, v.bytes, { contentType: v.type.mime, upsert: false })
+    .upload(path, foto.bytes, { contentType: foto.mime, upsert: false })
   if (uploadErr) return NextResponse.json({ error: "Falha ao salvar a foto." }, { status: 500 })
 
   const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
@@ -92,10 +97,14 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     .select("id, url, is_cover, sort_order")
     .single()
 
+
   if (dbErr) {
     await supabase.storage.from(BUCKET).remove([path])
     return NextResponse.json({ error: "Falha ao registrar a foto." }, { status: 500 })
   }
+
+  // Mantém a numeração sequencial: upload simultâneo dava número repetido.
+  await renumerarFotos(supabase, id)
 
   await logOrderEvent(supabase, order.id, "foto_enviada")
 
@@ -124,6 +133,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Params }) {
   }
 
   await Promise.all(reorder.map((pid: string, i: number) => supabase.from("order_photos").update({ sort_order: i }).eq("id", pid)))
+  await renumerarFotos(supabase, id)
   return NextResponse.json({ ok: true })
 }
 
@@ -146,6 +156,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
   await supabase.storage.from(BUCKET).remove([(img as any).storage_path])
   await supabase.from("order_photos").delete().eq("id", photoId).eq("orderId", order.id)
   await logOrderEvent(supabase, order.id, "foto_removida")
+  await renumerarFotos(supabase, id)
 
   return NextResponse.json({ ok: true })
 }
