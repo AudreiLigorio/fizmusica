@@ -28,7 +28,16 @@ async function ensureBucket(supabase: DB) {
   if (!data) {
     await supabase.storage.createBucket(BUCKET, {
       public: true,
-      allowedMimeTypes: ["image/jpeg", "image/png", "image/webp", "audio/mpeg", "video/mp4"],
+      // A lista é branca: MIME fora dela é RECUSADO no upload, com uma
+      // mensagem que não diz qual bucket nem qual regra. Já custou duas
+      // rodadas de depuração (áudio do Suno em 23/07, narração WAV em 29/07)
+      // — quando um formato novo entrar na pipeline, ele precisa entrar aqui
+      // E no bucket que já existe (criar não atualiza o que está criado).
+      allowedMimeTypes: [
+        "image/jpeg", "image/png", "image/webp",
+        "audio/mpeg", "audio/wav", "audio/x-wav", "audio/wave",
+        "video/mp4",
+      ],
       fileSizeLimit: "50MB",
     })
   }
