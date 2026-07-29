@@ -45,12 +45,26 @@ export async function GET() {
   const photosCutoff = new Date(Date.now() - photosDays * 864e5).toISOString()
   const leadCutoff   = new Date(Date.now() - leadDays * 864e5).toISOString()
 
-  const { count: pendingPhotos } = await supabase
+  // Conta FOTOS de verdade, não pedidos. Antes este número vinha da tabela
+  // `orders` e o painel exibia "52 fotos aguardando expurgo" quando o passivo
+  // real era zero — os pedidos existiam, as fotos já tinham sido apagadas.
+  const { data: pedidosComFotoVencida } = await supabase
     .from("orders")
-    .select("id", { count: "exact", head: true })
+    .select("id")
     .eq("paymentStatus", "UNPAID")
     .neq("is_revision", true)
     .lt("createdAt", photosCutoff)
+    .limit(500)
+
+  let pendingPhotos = 0
+  const idsFoto = (pedidosComFotoVencida ?? []).map((o) => o.id)
+  if (idsFoto.length > 0) {
+    const { count } = await supabase
+      .from("order_photos")
+      .select("id", { count: "exact", head: true })
+      .in("orderId", idsFoto)
+    pendingPhotos = count ?? 0
+  }
 
   const { count: pendingLeads } = await supabase
     .from("orders")

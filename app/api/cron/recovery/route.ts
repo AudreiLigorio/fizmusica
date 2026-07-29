@@ -223,21 +223,54 @@ async function runPurge(supabase: ReturnType<typeof createServerClient>) {
       .limit(200)
 
     const ids = (deadLeads ?? []).map((o) => o.id)
+
     if (ids.length > 0) {
-      // remove dependências antes do pedido
-      await supabase.from("order_answers").delete().in("orderId", ids)
-      await supabase.from("generated_music").delete().in("orderId", ids)
-      await supabase.from("revision_requests").delete().in("orderId", ids)
-      // fotos remanescentes (caso lead_days < photos_days, improvável)
-      const { data: leftover } = await supabase.from("order_photos").select("id, storage_path").in("orderId", ids)
-      if (leftover && leftover.length > 0) {
-        const paths = leftover.map((p) => p.storage_path).filter(Boolean)
-        if (paths.length > 0) await supabase.storage.from(BUCKET).remove(paths)
-        await supabase.from("order_photos").delete().in("id", leftover.map((p) => p.id))
+      // TRAVA: pedido marcado como não pago PODE ter um pagamento aprovado que
+      // não sincronizou de volta (já aconteceu neste projeto). Apagar destruiria
+      // a prova de uma venda real, então esses ficam de fora e são reportados.
+      const { data: pagamentos } = await supabase
+        .from("payments")
+        .select("id, orderId, status")
+        .in("orderId", ids)
+
+      const suspeitos = new Set(
+        (pagamentos ?? []).filter((p) => (p.status ?? "").toUpperCase() !== "UNPAID").map((p) => p.orderId),
+      )
+      if (suspeitos.size > 0) {
+        errors.push(
+          `${suspeitos.size} pedido(s) preservados: marcados UNPAID mas com pagamento em outro status — ` +
+          `confira antes de apagar (${[...suspeitos].join(", ")})`,
+        )
       }
-      const { error: delErr } = await supabase.from("orders").delete().in("id", ids)
-      if (delErr) errors.push(`orders delete: ${delErr.message}`)
-      else leadsPurged = ids.length
+
+      const alvos = ids.filter((id) => !suspeitos.has(id))
+
+      // Um a um, e não em lote: no lote, um único pedido que viole chave
+      // estrangeira aborta a instrução inteira e os outros 47 ficam para trás
+      // — foi o que manteve o expurgo parado desde 09/07/2026.
+      for (const id of alvos) {
+        // Dependências que não têm "on delete cascade" precisam sair antes.
+        // payments é a que faltava: checkout abandonado deixa a linha lá, com
+        // payer_email dentro, e o banco recusava o delete do pedido.
+        await supabase.from("payments").delete().eq("orderId", id)
+        await supabase.from("order_answers").delete().eq("orderId", id)
+        await supabase.from("generated_music").delete().eq("orderId", id)
+        await supabase.from("revision_requests").delete().eq("orderId", id)
+
+        const { data: leftover } = await supabase
+          .from("order_photos")
+          .select("id, storage_path")
+          .eq("orderId", id)
+        if (leftover && leftover.length > 0) {
+          const paths = leftover.map((p) => p.storage_path).filter(Boolean)
+          if (paths.length > 0) await supabase.storage.from(BUCKET).remove(paths)
+          await supabase.from("order_photos").delete().eq("orderId", id)
+        }
+
+        const { error: delErr } = await supabase.from("orders").delete().eq("id", id)
+        if (delErr) errors.push(`orders delete (${id}): ${delErr.message}`)
+        else leadsPurged++
+      }
     }
   } catch (e: any) {
     errors.push(`lead: ${e?.message ?? e}`)
