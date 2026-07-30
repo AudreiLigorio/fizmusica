@@ -109,11 +109,29 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   if (!job) return NextResponse.json({ error: "Não há vídeo para remontar." }, { status: 404 })
 
-  // Ingrediente apagado (peça já publicada, ou job antigo) não volta: remontar
-  // sem as imagens produziria um vídeo quebrado, e é melhor dizer isso.
+  // Ingrediente apagado não volta. Conferir a LISTA de URLs não bastava: elas
+  // continuam gravadas no job depois de o arquivo ser apagado, e a remontagem
+  // ia até o worker pra falhar lá com "HTTP 400" — foi o que aconteceu.
   if (!job.scene_image_urls?.length || (!job.song_url && !job.narration_url)) {
     return NextResponse.json(
-      { error: "Os ingredientes deste vídeo já foram descartados (a peça foi publicada). Crie um vídeo novo." },
+      { error: "Os ingredientes deste vídeo já foram descartados. Crie um vídeo novo." },
+      { status: 400 },
+    )
+  }
+
+  const faltando: string[] = []
+  for (const url of [...job.scene_image_urls, job.narration_url, job.song_url].filter(Boolean) as string[]) {
+    const r = await fetch(url, { method: "HEAD" }).catch(() => null)
+    if (!r?.ok) faltando.push(url.split("/").pop() ?? url)
+  }
+  if (faltando.length) {
+    return NextResponse.json(
+      {
+        error:
+          `Faltam ingredientes no storage (${faltando.join(", ")}). ` +
+          `Isso acontece quando o vídeo foi montado por um worker antigo, que apagava os arquivos ao concluir. ` +
+          `Reinicie o worker e crie um vídeo novo.`,
+      },
       { status: 400 },
     )
   }

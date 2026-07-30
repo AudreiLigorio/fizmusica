@@ -160,8 +160,15 @@ async function tick(supabase: ReturnType<typeof createServerClient>) {
   await processJob(supabase, job)
 }
 
+// Assinatura das capacidades desta versão. O processo carrega o código ao
+// INICIAR: um worker aberto antes de uma mudança segue rodando o código
+// antigo, indiferente ao que está no disco — e isso já custou um vídeo sem
+// narração e ingredientes apagados. Imprimir isso torna o problema visível.
+const CAPACIDADES = ["narracao", "ducking", "preserva-ingredientes", "musica-do-pedido"]
+
 async function main() {
   console.log("[worker] iniciado — verificando video_jobs a cada", POLL_MS / 1000, "segundos. Ctrl+C pra parar.")
+  console.log("[worker] versão com:", CAPACIDADES.join(", "))
   const supabase = createServerClient()
   for (;;) {
     try {
