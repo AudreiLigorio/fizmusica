@@ -23,6 +23,29 @@ async function requireAdmin(req: NextRequest) {
 // Cria um job de vídeo pro rascunho — gera as N imagens de cena + a música,
 // mas não monta o vídeo (isso é o worker local, ver scripts/video-worker/).
 // body: { scenes: [{description, caption}], songTheme, songStyle, platform }
+// Descarta o vídeo do rascunho (registro + arquivos) pra poder começar de
+// novo. Necessário porque job cujos ingredientes foram apagados não tem
+// recuperação: sem isto o card fica preso exibindo um erro eterno, sem
+// oferecer caminho nenhum.
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
+  const { id } = await params
+  const supabase = createServerClient()
+
+  const { data: jobs } = await supabase.from("video_jobs").select("id").eq("contentDraftId", id)
+
+  for (const j of jobs ?? []) {
+    const { data: itens } = await supabase.storage.from("content-media").list(`video-jobs/${j.id}`)
+    const caminhos = (itens ?? []).filter((i) => i.id).map((i) => `video-jobs/${j.id}/${i.name}`)
+    if (caminhos.length) await supabase.storage.from("content-media").remove(caminhos)
+  }
+
+  await supabase.from("video_jobs").delete().eq("contentDraftId", id)
+  await supabase.from("content_drafts").update({ video_url: null }).eq("id", id)
+
+  return NextResponse.json({ ok: true, descartados: (jobs ?? []).length })
+}
+
 // Etapa 1 do vídeo: cria o STORYBOARD. Não gera imagem, não gera áudio e não
 // monta MP4 — a ordem antiga (gerar tudo de uma vez e montar) obrigava a
 // descobrir os erros depois do render, e corrigir custava o conjunto todo.

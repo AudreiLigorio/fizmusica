@@ -489,6 +489,18 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
                 style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
                 {busy === "remontar" ? "enviando…" : "🔁 remontar (grátis)"}
               </button>
+              <button onClick={async () => {
+                  if (!confirm("Descartar este vídeo (registro e arquivos) e começar um storyboard novo? Não dá pra desfazer.")) return
+                  setBusy("descartar"); setMsg("")
+                  try {
+                    const d = await fetch(`/api/admin/conteudo/${draftId}/video`, { method: "DELETE" }).then((r) => r.json())
+                    if (d.ok) { setJob(null); onDone() } else setMsg(`❌ ${d.error}`)
+                  } catch { setMsg("❌ Falha ao descartar.") } finally { setBusy(null) }
+                }}
+                disabled={busy !== null}
+                className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/40 hover:text-red-300 disabled:opacity-50">
+                {busy === "descartar" ? "descartando…" : "✖️ descartar e começar de novo"}
+              </button>
             </div>
           </div>
         )}
