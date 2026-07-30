@@ -1090,7 +1090,16 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
           <div className="mt-3">
             <video src={draft.video_url} className="w-full max-w-xs rounded-lg cursor-zoom-in"
               onClick={() => setLightbox({ src: draft.video_url!, tipo: "video" })} muted playsInline />
-            <p className="text-white/40 text-[11px] mt-1">clique pra assistir em tela cheia</p>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <p className="text-white/40 text-[11px]">clique pra assistir em tela cheia</p>
+              {/* Sem este botão os controles de ajuste ficavam inalcançáveis
+                  justamente quando o vídeo termina — que é quando se descobre
+                  qual cena saiu errada. */}
+              <button onClick={() => setShowVideoForm((v) => !v)}
+                className="text-[11px] px-2 py-0.5 rounded-lg border border-fuchsia-500/40 text-fuchsia-300 hover:bg-fuchsia-500/10">
+                {showVideoForm ? "fechar ajustes" : "🔧 ajustar cenas / trilha"}
+              </button>
+            </div>
           </div>
         ) : job && !JOB_TERMINAL.has(job.status) ? (
           <VideoStatusBar job={job} onAbrir={() => setShowVideoForm((v) => !v)} />
@@ -1100,7 +1109,7 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
             {showVideoForm ? "Fechar" : job?.status === "falhou" ? "🎬 Refazer vídeo" : "🎬 Criar vídeo (multi-cena)"}
           </button>
         )}
-        {showVideoForm && !draft.video_url && <VideoForm draft={draft} trilhas={trilhas} onDone={onChange} />}
+        {showVideoForm && <VideoForm draft={draft} trilhas={trilhas} onDone={onChange} />}
 
         {draft.link_slug && <LinkRastreado slug={draft.link_slug} cliques={cliques} />}
 
