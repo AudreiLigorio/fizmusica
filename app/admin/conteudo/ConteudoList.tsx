@@ -1243,6 +1243,10 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
 
 type ContentSettings = {
   modo: "manual" | "semi" | "auto"
+  auto_resposta?: boolean
+  resposta_publica?: string | null
+  resposta_dm?: string | null
+  auto_resposta_luto?: boolean
   dias_semana: number[]
   plataformas: string[]
   nota_minima_auto: number
@@ -1448,6 +1452,39 @@ function EsteiraBox({ inicial }: { inicial: ContentSettings }) {
           </label>
         </div>
       )}
+
+      <div className="border-t border-white/10 mt-3 pt-3 space-y-2">
+        <label className="text-[11px] text-white/70 flex items-center gap-2">
+          <input type="checkbox" checked={!!s.auto_resposta}
+            onChange={(e) => salvar({ auto_resposta: e.target.checked } as Partial<ContentSettings>)} />
+          <strong className="text-white/85">Responder comentários automaticamente</strong>
+        </label>
+        <p className="text-white/40 text-[11px]">
+          Quem comentar perguntando preço recebe uma resposta pública curta e um direct com o link.
+          Só dispara em comentário com sinal de compra — comentário emocional não recebe venda.
+        </p>
+
+        {s.auto_resposta && (
+          <div className="space-y-1.5">
+            <input value={s.resposta_publica ?? ""} onChange={(e) => setS({ ...s, resposta_publica: e.target.value })}
+              onBlur={(e) => salvar({ resposta_publica: e.target.value } as Partial<ContentSettings>)}
+              placeholder="Resposta pública no comentário"
+              className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-[11px] text-white" />
+            <textarea value={s.resposta_dm ?? ""} onChange={(e) => setS({ ...s, resposta_dm: e.target.value })}
+              onBlur={(e) => salvar({ resposta_dm: e.target.value } as Partial<ContentSettings>)}
+              rows={3} placeholder="Mensagem do direct (com o link)"
+              className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-[11px] text-white" />
+            <label className="text-[11px] text-white/60 flex items-center gap-2">
+              <input type="checkbox" checked={s.auto_resposta_luto !== false}
+                onChange={(e) => salvar({ auto_resposta_luto: e.target.checked } as Partial<ContentSettings>)} />
+              Nunca responder automaticamente em peça de luto ou despedida
+            </label>
+            <p className="text-amber-200/70 text-[11px]">
+              ⚠️ A Meta permite UMA resposta privada por comentário, até 7 dias. Depois disso, só manual.
+            </p>
+          </div>
+        )}
+      </div>
 
       <p className="text-white/35 text-[11px] mt-3">
         {s.modo === "manual"

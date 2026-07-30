@@ -88,8 +88,18 @@ sempre nova e sempre colada na história específica daquela peça.
 | Salvamento | "Salva pra quando chegar a data" |
 | Comentário | "Conta aqui pra quem você faria" |
 | Conversão | "Conta a história de vocês no link" |
+| **Conversão direta** | **"Comenta PREÇO que eu te mando no direct"** |
 
 **Um CTA por peça.** Dois CTAs equivalem a nenhum.
+
+**Sobre o CTA de comentário ("comenta PREÇO"):** ele existe porque dispara a
+resposta automática — quem comenta recebe na hora uma resposta pública e um
+direct com o link. É o CTA que mais converte no Instagram, e o único que
+transforma alcance em conversa. Use quando o objetivo for venda; use "salva"
+quando a data ainda está longe e "marca alguém" quando o objetivo for alcance.
+
+**Nunca** use CTA de venda em peça de luto ou despedida. Ali o CTA certo é
+nenhum, ou no máximo um convite silencioso ("a gente ajuda a eternizar").
 
 ## Gatilhos emocionais aprovados
 

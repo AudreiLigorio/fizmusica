@@ -49,6 +49,10 @@ export async function POST(req: NextRequest) {
     if (Number.isNaN(n) || n < 1 || n > 50) return NextResponse.json({ error: "Teto semanal inválido." }, { status: 400 })
     patch.teto_semanal = n
   }
+  if (body.auto_resposta !== undefined) patch.auto_resposta = !!body.auto_resposta
+  if (body.auto_resposta_luto !== undefined) patch.auto_resposta_luto = !!body.auto_resposta_luto
+  if (typeof body.resposta_publica === "string") patch.resposta_publica = body.resposta_publica.slice(0, 300)
+  if (typeof body.resposta_dm === "string") patch.resposta_dm = body.resposta_dm.slice(0, 900)
   if (body.luto_sempre_manual !== undefined) patch.luto_sempre_manual = !!body.luto_sempre_manual
   if (body.pedido_real_manual !== undefined) patch.pedido_real_manual = !!body.pedido_real_manual
 

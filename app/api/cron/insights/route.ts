@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { coletarTudo } from "@/lib/content/insights"
+import { responderComentariosPendentes } from "@/lib/content/auto-resposta"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 120
@@ -16,8 +17,12 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const r = await coletarTudo(createServerClient())
-    return NextResponse.json({ ok: true, ...r })
+    const supabase = createServerClient()
+    const r = await coletarTudo(supabase)
+    // Responder vem DEPOIS de coletar: o comentário precisa existir no banco
+    // pra ser respondido uma vez só.
+    const respostas = await responderComentariosPendentes(supabase)
+    return NextResponse.json({ ok: true, ...r, respostas })
   } catch (e) {
     console.error("[cron/insights]", e instanceof Error ? e.message : e)
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "falhou" })
