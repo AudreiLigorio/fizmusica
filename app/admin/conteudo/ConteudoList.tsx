@@ -322,6 +322,18 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
     return () => { cancelado = true }
   }, [draftId])
 
+  // Storyboard incompleto: cutuca o servidor a cada 8s. É isto que torna a
+  // geração à prova de F5 — o trabalho vive no banco, não na aba aberta.
+  useEffect(() => {
+    if (!job || job.status !== "storyboard") return
+    const receita = job.recipe?.scenes?.length ?? 0
+    const prontas = ((job as unknown as { scene_image_urls?: string[] }).scene_image_urls ?? []).filter(Boolean).length
+    if (receita === 0 || prontas >= receita) return
+    avancar()
+    const t = setInterval(avancar, 8000)
+    return () => clearInterval(t)
+  }, [job])
+
   // Polling só enquanto há algo em andamento no servidor (render ou música).
   useEffect(() => {
     const emAndamento = job && (["pronto_pra_renderizar", "renderizando"].includes(job.status) || esperandoMusica)
@@ -417,21 +429,18 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
     }, "storyboard")
   }
 
-  // Gera as cenas em sequência, uma chamada por cena (cada uma leva de 30 a 90s
-  // e a primeira é referência das outras).
-  async function gerarCenasRestantes() {
-    setBusy("cenas"); setMsg("")
+  // Dá um "tique" no storyboard: o servidor recolhe o que ficou pronto e
+  // dispara a próxima cena. Não espera a imagem — quem espera é o polling.
+  async function avancar() {
     try {
-      for (let i = 0; i < 6; i++) {
-        const d = await fetch(`/api/admin/conteudo/${draftId}/video`, {
-          method: "PATCH", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ acao: "gerar_proxima" }),
-        }).then((r) => r.json())
-        if (!d.ok) { setMsg(`❌ ${d.error}`); break }
-        if (d.job) setJob(d.job)
-        if (d.concluido) break
-      }
-    } finally { setBusy(null) }
+      const d = await fetch(`/api/admin/conteudo/${draftId}/video`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ acao: "avancar" }),
+      }).then((r) => r.json())
+      if (!d.ok) { setMsg(`❌ ${d.error}`); return }
+      if (d.job) setJob(d.job)
+      if (d.erro) setMsg(`⚠️ ${d.erro}`)
+    } catch { /* tenta no próximo tique */ }
   }
 
   const dur = (n: number) => Math.max(0, n * 5 - (n - 1) * 0.6)
@@ -547,11 +556,16 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
         </div>
 
         {faltamCenas > 0 && (
-          <button onClick={gerarCenasRestantes} disabled={busy !== null}
-            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
-            {busy === "cenas" ? `gerando… (${imagens.length}/${cenasDoJob.length})` : `🖼️ gerar as ${faltamCenas} imagens que faltam`}
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={avancar}
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
+              🖼️ gerar as {faltamCenas} imagens que faltam
+            </button>
+            <span className="text-white/45 text-[11px]">
+              gera uma por vez (30-90s cada) e continua sozinho — pode fechar a aba, nada se perde
+            </span>
+          </div>
         )}
 
         {faltamCenas === 0 && (

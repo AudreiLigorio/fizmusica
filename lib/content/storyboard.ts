@@ -56,18 +56,16 @@ function promptDeCena(descricao: string, comReferencia: boolean): string {
   )
 }
 
-/** Gera uma imagem e espera ficar pronta (a KIE leva de 30 a 90s por cena). */
-async function gerarEEsperar(prompt: string, aspectRatio: "9:16" | "16:9", referencias?: string[]): Promise<Buffer> {
-  const taskId = await generateImage({ prompt, aspectRatio, imageUrls: referencias })
-  for (let i = 0; i < 40; i++) {
-    const r = await getImageTaskResult(taskId)
-    if (r.state === "success" && r.imageUrl) {
-      return Buffer.from(await (await fetch(r.imageUrl)).arrayBuffer())
-    }
-    if (r.state === "fail") throw new Error(r.failMsg ?? "A KIE não conseguiu gerar a cena.")
-    await new Promise((res) => setTimeout(res, 5000))
-  }
-  throw new Error("Tempo esgotado esperando a imagem da cena.")
+/**
+ * Inicia a geração de uma cena na KIE e devolve o taskId, SEM esperar.
+ *
+ * Esperar dentro da requisição foi um erro caro: cada cena leva de 30 a 90s, e
+ * um F5 no meio matava a conexão — a KIE já tinha sido acionada e cobrado, mas
+ * o resultado não tinha mais onde ser gravado. Guardando o taskId, o trabalho
+ * pago sobrevive a qualquer coisa que aconteça no navegador.
+ */
+async function iniciarCena(descricao: string, aspectRatio: "9:16" | "16:9", referencias?: string[]): Promise<string> {
+  return generateImage({ prompt: promptDeCena(descricao, !!referencias), aspectRatio, imageUrls: referencias })
 }
 
 async function subir(supabase: DB, jobId: string, indice: number, bytes: Buffer): Promise<string> {
@@ -89,7 +87,13 @@ export async function criarStoryboard(supabase: DB, draftId: string, receita: Re
 
   const { data: job, error } = await supabase
     .from("video_jobs")
-    .insert({ contentDraftId: draftId, status: "storyboard", recipe: receita, scene_image_urls: [] })
+    .insert({
+      contentDraftId: draftId,
+      status: "storyboard",
+      recipe: receita,
+      scene_image_urls: [],
+      scene_image_task_ids: [],
+    })
     .select("*")
     .single()
   if (error) throw new Error(error.message)
@@ -99,46 +103,82 @@ export async function criarStoryboard(supabase: DB, draftId: string, receita: Re
 }
 
 /**
- * Etapa 1b: gera a PRÓXIMA cena que falta — uma por chamada.
+ * Motor do storyboard: uma passada que (1) recolhe as cenas que ficaram
+ * prontas e (2) dispara a próxima. Devolve na hora, sem esperar nada.
  *
- * Uma cena por requisição, e não todas de uma vez, por dois motivos: seis cenas
- * a 30-90s cada estouram o tempo máximo de uma requisição, e assim você vê o
- * storyboard aparecendo em vez de esperar no escuro. A cena 1 entra como
- * referência das seguintes — daí serem sequenciais.
+ * A tela chama isto em intervalos. Como todo estado mora no banco — taskId
+ * pendente e URLs já salvas —, fechar a aba, dar F5 ou perder a rede não
+ * cancela nem repete geração nenhuma: a próxima chamada continua de onde parou.
  */
-export async function gerarProximaCena(supabase: DB, jobId: string) {
+export async function avancarStoryboard(supabase: DB, jobId: string) {
   const { data: job } = await supabase.from("video_jobs").select("*").eq("id", jobId).maybeSingle()
   if (!job) throw new Error("Storyboard não encontrado.")
 
   const receita = job.recipe as ReceitaStoryboard
-  const urls: string[] = [...(job.scene_image_urls ?? [])]
-  const indice = urls.length
+  const total = receita.scenes.length
+  const urls: (string | null)[] = [...(job.scene_image_urls ?? [])]
+  const tasks: (string | null)[] = [...(job.scene_image_task_ids ?? [])]
+  let mudou = false
+  let erro: string | null = null
 
-  if (indice >= receita.scenes.length) {
-    return { job, faltam: 0, concluido: true }
+  // 1) Recolhe o que a KIE já terminou.
+  for (let i = 0; i < total; i++) {
+    const taskId = tasks[i]
+    if (!taskId || urls[i]) continue
+
+    const r = await getImageTaskResult(taskId)
+    if (r.state === "success" && r.imageUrl) {
+      const bytes = Buffer.from(await (await fetch(r.imageUrl)).arrayBuffer())
+      urls[i] = await subir(supabase, jobId, i, bytes)
+      tasks[i] = null
+      mudou = true
+      await logContentEvent(supabase, job.contentDraftId, "imagem_gerada", `cena ${i + 1} do storyboard`)
+    } else if (r.state === "fail") {
+      tasks[i] = null
+      erro = r.failMsg ?? `A KIE não conseguiu gerar a cena ${i + 1}.`
+      mudou = true
+    }
   }
 
-  const referencias = urls.length ? [urls[0]] : undefined
-  const bytes = await gerarEEsperar(
-    promptDeCena(receita.scenes[indice].description, !!referencias),
-    aspecto(receita.platform),
-    referencias,
-  )
-  urls.push(await subir(supabase, jobId, indice, bytes))
+  // 2) Dispara a próxima que falta. Uma de cada vez: a cena 1 é a referência
+  // de elenco das seguintes, então elas só podem começar depois que ela existe.
+  const pendente = tasks.some((t, i) => t && !urls[i])
+  if (!pendente) {
+    const proxima = Array.from({ length: total }, (_, i) => i).find((i) => !urls[i] && !tasks[i])
+    if (proxima !== undefined) {
+      const podeReferenciar = proxima > 0 && !!urls[0]
+      tasks[proxima] = await iniciarCena(
+        receita.scenes[proxima].description,
+        aspecto(receita.platform),
+        podeReferenciar ? [urls[0] as string] : undefined,
+      )
+      mudou = true
+    }
+  }
 
-  const { data } = await supabase
-    .from("video_jobs")
-    .update({ scene_image_urls: urls, error: null })
-    .eq("id", jobId)
-    .select("*")
-    .single()
+  if (mudou) {
+    await supabase
+      .from("video_jobs")
+      .update({ scene_image_urls: urls, scene_image_task_ids: tasks, error: erro })
+      .eq("id", jobId)
+  }
 
-  const faltam = receita.scenes.length - urls.length
-  await logContentEvent(supabase, job.contentDraftId, "imagem_gerada", `cena ${indice + 1} do storyboard`)
-  return { job: data, faltam, concluido: faltam === 0 }
+  const { data: atualizado } = await supabase.from("video_jobs").select("*").eq("id", jobId).single()
+  const prontas = urls.filter(Boolean).length
+  return {
+    job: atualizado,
+    prontas,
+    total,
+    gerando: tasks.some((t, i) => t && !urls[i]),
+    concluido: prontas === total,
+    erro,
+  }
 }
 
-/** Refaz UMA cena do storyboard, mantendo a referência de personagem. */
+/**
+ * Refaz UMA cena: limpa a imagem atual e dispara a geração nova. Quem recolhe
+ * é o mesmo motor — então também sobrevive a F5.
+ */
 export async function refazerCenaStoryboard(
   supabase: DB,
   jobId: string,
@@ -158,22 +198,26 @@ export async function refazerCenaStoryboard(
   if (legenda?.trim()) cena.caption = legenda.trim()
   cenas[indice] = cena
 
-  const urls: string[] = [...(job.scene_image_urls ?? [])]
-  // A cena 1 é a âncora do elenco; refazendo ela, as outras perdem a referência
-  // (mas não são regeradas — quem decide isso é você, cena por cena).
-  const referencias = indice === 0 ? undefined : urls[0] ? [urls[0]] : undefined
+  const urls: (string | null)[] = [...(job.scene_image_urls ?? [])]
+  const tasks: (string | null)[] = [...(job.scene_image_task_ids ?? [])]
 
-  const bytes = await gerarEEsperar(promptDeCena(cena.description, !!referencias), aspecto(receita.platform), referencias)
-  urls[indice] = await subir(supabase, jobId, indice, bytes)
+  // A cena 1 é a âncora do elenco; refazendo ela, as outras seguem como estão
+  // (quem decide refazê-las é você, uma a uma).
+  const podeReferenciar = indice > 0 && !!urls[0]
+  tasks[indice] = await iniciarCena(
+    cena.description,
+    aspecto(receita.platform),
+    podeReferenciar ? [urls[0] as string] : undefined,
+  )
+  urls[indice] = null
 
   const { data } = await supabase
     .from("video_jobs")
-    .update({ scene_image_urls: urls, recipe: { ...receita, scenes: cenas }, error: null })
+    .update({ scene_image_urls: urls, scene_image_task_ids: tasks, recipe: { ...receita, scenes: cenas }, error: null })
     .eq("id", jobId)
     .select("*")
     .single()
 
-  await logContentEvent(supabase, job.contentDraftId, "imagem_gerada", `cena ${indice + 1} refeita no storyboard`)
   return data
 }
 

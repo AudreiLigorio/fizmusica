@@ -5,7 +5,7 @@ import { createVideoJob, syncVideoIngredients, type VideoRecipe } from "@/lib/co
 import { trocarCena, trocarNarracao, trocarMusica, sincronizarMusicaNova } from "@/lib/content/video-partes"
 import {
   criarStoryboard,
-  gerarProximaCena,
+  avancarStoryboard,
   refazerCenaStoryboard,
   prepararAudio,
   compilar,
@@ -108,8 +108,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   try {
     // ── etapas do storyboard (antes de existir MP4) ──
-    if (body.acao === "gerar_proxima") {
-      return NextResponse.json({ ok: true, ...(await gerarProximaCena(supabase, await jobAtual())) })
+    // Um "tique" do storyboard: recolhe o que ficou pronto e dispara a próxima.
+    // A tela chama em intervalos; o estado mora no banco, então F5 não perde nada.
+    if (body.acao === "avancar") {
+      return NextResponse.json({ ok: true, ...(await avancarStoryboard(supabase, await jobAtual())) })
     }
     if (body.acao === "refazer_cena") {
       const job = await refazerCenaStoryboard(supabase, await jobAtual(), Number(body.indice), body.description, body.caption)
