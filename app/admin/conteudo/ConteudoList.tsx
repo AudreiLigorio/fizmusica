@@ -46,6 +46,10 @@ type Draft = {
 
 type OrigemReal = { nome: string; honoreeName: string | null; consent: boolean; fotos: number }
 type Trilha = { orderId: string; label: string }
+type Metrica = { reach: number | null; likes: number | null; saved: number | null; shares: number | null; dia: string }
+type Lead = { id: string; username: string | null; texto: string; criado_em: string | null; respondido: boolean }
+type Seguidores = { dia: string; followers_count: number | null }
+
 type PecaDaFamilia = { platform: string; status: string; publicado: boolean; permalink: string | null; publicadoEm: string | null }
 
 const REDES = [
@@ -815,7 +819,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
   )
 }
 
-function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; familia: PecaDaFamilia[]; onChange: () => void }) {
+function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; familia: PecaDaFamilia[]; metrica?: Metrica; onChange: () => void }) {
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | "excluir" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
@@ -1203,6 +1207,14 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
         )}
         {showVideoForm && <VideoForm draft={draft} trilhas={trilhas} onDone={onChange} />}
 
+        {draft.published_at && metrica && (
+          <p className="text-[11px] text-white/60 mt-2">
+            📊 alcance {metrica.reach ?? "—"} · ❤️ {metrica.likes ?? "—"} · 🔖 {metrica.saved ?? "—"} ·
+            ↗️ {metrica.shares ?? "—"}
+            <span className="text-white/30"> · medido em {metrica.dia}</span>
+          </p>
+        )}
+
         {draft.link_slug && <LinkRastreado slug={draft.link_slug} cliques={cliques} />}
 
         {draft.media_purged_at && !draft.image_url && !draft.video_url && (
@@ -1446,6 +1458,64 @@ function EsteiraBox({ inicial }: { inicial: ContentSettings }) {
   )
 }
 
+// Comentários com intenção de compra. Resposta é sempre humana: resposta
+// automática em post emocional queima a marca — aqui só destacamos o lead.
+function LeadsBox({ leads, seguidores }: { leads: Lead[]; seguidores: Seguidores[] }) {
+  const hoje = seguidores[0]?.followers_count ?? null
+  const antes = seguidores[seguidores.length - 1]?.followers_count ?? null
+  const delta = hoje !== null && antes !== null ? hoje - antes : null
+
+  async function marcar(id: string) {
+    await fetch("/api/admin/conteudo/comentarios", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, respondido: true }),
+    })
+    window.location.reload()
+  }
+
+  if (!leads.length && hoje === null) return null
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-white/80 text-sm font-semibold">💬 Comentários e audiência</p>
+        {hoje !== null && (
+          <span className="text-white/50 text-[11px]">
+            {hoje} seguidor(es)
+            {delta !== null && delta !== 0 && (
+              <span className={delta > 0 ? "text-emerald-300" : "text-red-300"}>
+                {" "}({delta > 0 ? "+" : ""}{delta} na série)
+              </span>
+            )}
+          </span>
+        )}
+      </div>
+
+      {leads.length === 0 ? (
+        <p className="text-white/40 text-[11px]">
+          Nenhum comentário com pergunta de preço ou de "como faço" ainda. Quando aparecer, ele fica
+          aqui — responder rápido converte.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {leads.map((l) => (
+            <div key={l.id} className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-2.5">
+              <p className="text-amber-200 text-[11px] font-semibold">
+                🔥 possível cliente · @{l.username ?? "?"}
+              </p>
+              <p className="text-white/80 text-[12px] mt-0.5">"{l.texto}"</p>
+              <button onClick={() => marcar(l.id)}
+                className="text-[11px] text-white/40 hover:text-white/80 mt-1">
+                marcar como respondido
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Login Kit do TikTok — só autenticação (user.info.basic), pra habilitar a
 // publicação de verdade é preciso uma segunda aprovação (Content Posting API).
 function TiktokConnectBox({ status }: { status: TiktokConnectionStatus }) {
@@ -1485,6 +1555,9 @@ export default function ConteudoList({
   jobPorDraft,
   trilhas,
   familia,
+  metricaPorDraft,
+  leads,
+  seguidores,
   pagina,
   totalPaginas,
 }: {
@@ -1497,6 +1570,9 @@ export default function ConteudoList({
   jobPorDraft: Record<string, JobResumo>
   trilhas: Trilha[]
   familia: Record<string, PecaDaFamilia[]>
+  metricaPorDraft: Record<string, Metrica>
+  leads: Lead[]
+  seguidores: Seguidores[]
   pagina: number
   totalPaginas: number
 }) {
@@ -1528,6 +1604,7 @@ export default function ConteudoList({
   return (
     <div>
       <EsteiraBox inicial={settings} />
+      <LeadsBox leads={leads} seguidores={seguidores} />
       <LicoesBox />
       <TiktokConnectBox status={tiktokStatus} />
 
@@ -1577,7 +1654,7 @@ export default function ConteudoList({
             <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0}
               origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined}
               job={jobPorDraft[d.id]} trilhas={trilhas}
-              familia={familia[d.derivado_de ?? d.id] ?? []} onChange={reload} />
+              familia={familia[d.derivado_de ?? d.id] ?? []} metrica={metricaPorDraft[d.id]} onChange={reload} />
           ))}
         </div>
       )}

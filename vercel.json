@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/conteudo",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/insights",
+      "schedule": "0 11 * * *"
     }
   ]
 }

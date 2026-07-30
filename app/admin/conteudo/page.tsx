@@ -110,6 +110,33 @@ async function getDrafts(pagina: number) {
     }
   }
 
+  // Métrica mais recente de cada post publicado + comentários que parecem lead.
+  const { data: metricas } = await supabase
+    .from("content_metrics")
+    .select("draft_id, reach, likes, saved, shares, dia")
+    .order("dia", { ascending: false })
+
+  const metricaPorDraft: Record<string, { reach: number | null; likes: number | null; saved: number | null; shares: number | null; dia: string }> = {}
+  for (const m of metricas ?? []) {
+    if (m.draft_id && !metricaPorDraft[m.draft_id]) {
+      metricaPorDraft[m.draft_id] = { reach: m.reach, likes: m.likes, saved: m.saved, shares: m.shares, dia: m.dia }
+    }
+  }
+
+  const { data: leads } = await supabase
+    .from("content_comments")
+    .select("id, username, texto, criado_em, respondido")
+    .eq("intencao_compra", true)
+    .eq("respondido", false)
+    .order("criado_em", { ascending: false })
+    .limit(20)
+
+  const { data: seguidores } = await supabase
+    .from("account_metrics")
+    .select("dia, followers_count")
+    .order("dia", { ascending: false })
+    .limit(8)
+
   // Cliques por rascunho. O volume é baixo (um clique = uma visita vinda de
   // post), então contar em memória sai mais simples que view agregada no banco.
   const { data: links } = await supabase.from("content_links").select("id, draft_id")
@@ -130,13 +157,13 @@ async function getDrafts(pagina: number) {
     // Contagem é informativa: falhar aqui não pode derrubar a tela.
   }
 
-  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, familia, totalDrafts: totalDrafts ?? 0, porPagina: POR_PAGINA }
+  return { drafts: drafts ?? [], eligibleOrders: eligibleOrders ?? [], clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, familia, metricaPorDraft, leads: leads ?? [], seguidores: seguidores ?? [], totalDrafts: totalDrafts ?? 0, porPagina: POR_PAGINA }
 }
 
 export default async function ConteudoPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const { page } = await searchParams
   const pagina = Math.max(1, Number(page) || 1)
-  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, familia, totalDrafts, porPagina } =
+  const { drafts, eligibleOrders, clicksByDraft, storageBytes, origens, jobPorDraft, trilhas, familia, metricaPorDraft, leads, seguidores, totalDrafts, porPagina } =
     await getDrafts(pagina)
   const storageMb = storageBytes / 1024 / 1024
   const storagePct = (storageMb / 1024) * 100
@@ -168,6 +195,9 @@ export default async function ConteudoPage({ searchParams }: { searchParams: Pro
           jobPorDraft={jobPorDraft}
           trilhas={trilhas}
           familia={familia}
+          metricaPorDraft={metricaPorDraft}
+          leads={leads}
+          seguidores={seguidores}
           pagina={pagina}
           totalPaginas={Math.max(1, Math.ceil(totalDrafts / porPagina))}
         />
