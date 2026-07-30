@@ -110,6 +110,7 @@ type VideoScene = { description: string; caption: string }
 type VideoJob = {
   id: string
   status: string
+  worker_caps?: string[] | null
   video_url: string | null
   error: string | null
   narration_url?: string | null
@@ -461,6 +462,23 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
           </p>
         )}
         {job.error && <p className="text-red-300 text-[11px]">{job.error}</p>}
+
+        {/* Worker antigo não sabe mixar narração e apaga os ingredientes ao
+            concluir. Sem este aviso, o sintoma aparece como "a narração sumiu". */}
+        {JOB_TERMINAL.has(job.status) && !job.worker_caps?.includes("preserva-ingredientes") && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-2.5">
+            <p className="text-amber-200 text-[11px] font-semibold">
+              ⚠️ Este vídeo foi montado por um worker desatualizado
+            </p>
+            <p className="text-white/60 text-[11px] mt-1">
+              Ele não mixa narração e apaga os ingredientes ao terminar — por isso o áudio pode ter
+              vindo só com música. Pare o worker (Ctrl+C) e rode de novo:{" "}
+              <code className="bg-black/40 px-1 rounded">cd ~/fizmusica && npm run worker:video</code>.
+              Ao subir, ele precisa listar <em>preserva-ingredientes</em>.
+            </p>
+          </div>
+        )}
+
         {job.video_url && <video controls className="w-full max-w-xs rounded-lg" src={job.video_url} />}
 
         {JOB_TERMINAL.has(job.status) && (

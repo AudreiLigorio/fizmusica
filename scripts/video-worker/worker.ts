@@ -153,7 +153,7 @@ async function tick(supabase: ReturnType<typeof createServerClient>) {
 
   const { error: claimErr } = await supabase
     .from("video_jobs")
-    .update({ status: "renderizando", claimed_at: new Date().toISOString() })
+    .update({ status: "renderizando", claimed_at: new Date().toISOString(), worker_caps: CAPACIDADES })
     .eq("id", job.id)
     .eq("status", "pronto_pra_renderizar") // evita corrida se dois workers rodarem juntos
   if (claimErr) return
