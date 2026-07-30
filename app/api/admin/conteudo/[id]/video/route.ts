@@ -3,6 +3,14 @@ import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { createVideoJob, syncVideoIngredients, type VideoRecipe } from "@/lib/content/video-ingredients"
 import { trocarCena, trocarNarracao, trocarMusica, sincronizarMusicaNova } from "@/lib/content/video-partes"
+import {
+  criarStoryboard,
+  gerarProximaCena,
+  refazerCenaStoryboard,
+  prepararAudio,
+  compilar,
+  type ReceitaStoryboard,
+} from "@/lib/content/storyboard"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300 // gerar uma cena nova espera a KIE responder
@@ -15,6 +23,11 @@ async function requireAdmin(req: NextRequest) {
 // Cria um job de vídeo pro rascunho — gera as N imagens de cena + a música,
 // mas não monta o vídeo (isso é o worker local, ver scripts/video-worker/).
 // body: { scenes: [{description, caption}], songTheme, songStyle, platform }
+// Etapa 1 do vídeo: cria o STORYBOARD. Não gera imagem, não gera áudio e não
+// monta MP4 — a ordem antiga (gerar tudo de uma vez e montar) obrigava a
+// descobrir os erros depois do render, e corrigir custava o conjunto todo.
+// body: { scenes, platform?, songSource?, songOrderId?, songTheme?, songStyle?,
+//         narracaoTexto?, narracaoVoz?, narracaoFundo? }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
@@ -24,26 +37,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!Array.isArray(scenes) || scenes.length < 3 || scenes.length > 6) {
     return NextResponse.json({ error: "Informe de 3 a 6 cenas." }, { status: 400 })
   }
-  // Tema e estilo só fazem sentido quando a música vai ser criada agora. Se o
-  // áudio é a música real do pedido, não há o que descrever.
-  if (songSource === "narracao" && !narracaoTexto?.trim()) {
-    return NextResponse.json({ error: "Escreva o texto da narração." }, { status: 400 })
-  }
-  // Música nova é exigida tanto como trilha principal quanto como fundo da
-  // narração — nos dois casos alguém precisa dizer tema e estilo.
-  const precisaDescreverMusica =
-    (!songSource || songSource === "suno") || (songSource === "narracao" && narracaoFundo === "suno")
-  if (precisaDescreverMusica && (!songTheme?.trim() || !songStyle?.trim())) {
-    return NextResponse.json({ error: "Informe o tema e o estilo da música." }, { status: 400 })
+  if (scenes.some((c: { description?: string }) => !c?.description?.trim())) {
+    return NextResponse.json({ error: "Toda cena precisa de descrição visual." }, { status: 400 })
   }
 
-  const recipe: VideoRecipe = {
+  const receita: ReceitaStoryboard = {
     scenes,
-    songTheme: songTheme ?? "",
-    songStyle: songStyle ?? "",
     platform: platform || "instagram",
     songSource: ["pedido", "narracao"].includes(songSource) ? songSource : "suno",
     songOrderId: songOrderId || undefined,
+    songTheme: songTheme ?? "",
+    songStyle: songStyle ?? "",
     narracaoTexto: narracaoTexto || undefined,
     narracaoVoz: narracaoVoz || undefined,
     narracaoFundo: ["nenhum", "pedido", "suno"].includes(narracaoFundo) ? narracaoFundo : "nenhum",
@@ -51,10 +55,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const supabase = createServerClient()
   try {
-    const job = await createVideoJob(supabase, id, recipe)
+    const job = await criarStoryboard(supabase, id, receita)
     return NextResponse.json({ ok: true, job })
   } catch (e) {
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao criar job de vídeo." }, { status: 500 })
+    return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao criar o storyboard." }, { status: 500 })
   }
 }
 
@@ -71,7 +75,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const body = await req.json().catch(() => ({}))
   const supabase = createServerClient()
 
+  const jobAtual = async () => {
+    const { data } = await supabase.from("video_jobs").select("id").eq("contentDraftId", id)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle()
+    if (!data) throw new Error("Storyboard não encontrado.")
+    return data.id as string
+  }
+
   try {
+    // ── etapas do storyboard (antes de existir MP4) ──
+    if (body.acao === "gerar_proxima") {
+      return NextResponse.json({ ok: true, ...(await gerarProximaCena(supabase, await jobAtual())) })
+    }
+    if (body.acao === "refazer_cena") {
+      const job = await refazerCenaStoryboard(supabase, await jobAtual(), Number(body.indice), body.description, body.caption)
+      return NextResponse.json({ ok: true, job })
+    }
+    if (body.acao === "audio") {
+      return NextResponse.json({ ok: true, ...(await prepararAudio(supabase, await jobAtual())) })
+    }
+    if (body.acao === "compilar") {
+      const job = await compilar(supabase, await jobAtual())
+      return NextResponse.json({ ok: true, job })
+    }
+
+    // ── trocas em vídeo já montado ──
     if (body.parte === "cena") {
       const r = await trocarCena(supabase, id, Number(body.indice), body.description, body.caption)
       return NextResponse.json({ ok: true, ...r })

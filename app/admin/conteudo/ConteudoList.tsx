@@ -118,6 +118,7 @@ type VideoJob = {
 }
 
 const JOB_STATUS_LABEL: Record<string, string> = {
+  storyboard: "Storyboard em edição — aprove as cenas antes de compilar",
   gerando_ingredientes: "Gerando imagens e música…",
   pronto_pra_renderizar: "Ingredientes prontos — aguardando o worker renderizar (rode `npm run worker:video`)",
   renderizando: "Worker renderizando o vídeo…",
@@ -261,6 +262,10 @@ function ParecerBox({ parecer }: { parecer: Parecer }) {
 // Formulário de criação de vídeo — N cenas (descrição + legenda) + tema/estilo
 // da música. O Next.js só gera os ingredientes (imagens KIE + música Suno); a
 // montagem final roda no worker local (ffmpeg não roda no Vercel).
+// Editor de vídeo em três etapas. A ordem anterior gerava tudo e montava o MP4
+// de uma vez: você só via o resultado no fim, e qualquer erro custava o
+// conjunto. Agora o storyboard vem primeiro, você aprova cena por cena, e a
+// compilação é o último passo.
 function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]; onDone: () => void }) {
   const draftId = draft.id
   const [scenes, setScenes] = useState<VideoScene[]>([
@@ -271,11 +276,12 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
   const [songTheme, setSongTheme] = useState("")
   const [songStyle, setSongStyle] = useState("pop acústico emotivo, violão e piano, cordas suaves")
   const [job, setJob] = useState<VideoJob | null>(null)
-  const [creating, setCreating] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
   const [msg, setMsg] = useState("")
-  // Peça de pedido real pode usar a MÚSICA que o cliente recebeu, em vez de
-  // gerar uma nova: é a canção que existiu de verdade, e o worker corta no
-  // refrão sozinho (detecta a janela mais alta da faixa).
+  const [roteirizando, setRoteirizando] = useState(false)
+  const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
+  const [parecer, setParecer] = useState<Parecer | null>(null)
+
   const [songSource, setSongSource] = useState<"suno" | "pedido" | "narracao">(draft.sourceOrderId ? "pedido" : "suno")
   const [songOrderId, setSongOrderId] = useState(draft.sourceOrderId ?? trilhas[0]?.orderId ?? "")
   const [narracaoTexto, setNarracaoTexto] = useState("")
@@ -284,76 +290,14 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
   const [previa, setPrevia] = useState<{ url: string; segundos: number } | null>(null)
   const [ouvindo, setOuvindo] = useState(false)
 
-  // Prévia da narração: gera o áudio e mede a duração ANTES de renderizar. É o
-  // que evita descobrir no vídeo pronto que o texto não cabia.
-  async function ouvirPrevia() {
-    if (!narracaoTexto.trim()) { setMsg("❌ Escreva o texto da narração."); return }
-    setOuvindo(true); setMsg("")
-    try {
-      const res = await fetch("/api/admin/conteudo/narracao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ texto: narracaoTexto, voz: narracaoVoz }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        setMsg(`❌ ${d.error ?? "Falha na prévia."}`)
-        return
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      await new Promise<void>((resolve) => {
-        audio.addEventListener("loadedmetadata", () => resolve(), { once: true })
-        audio.addEventListener("error", () => resolve(), { once: true })
-      })
-      if (previa?.url) URL.revokeObjectURL(previa.url)
-      setPrevia({ url, segundos: Number.isFinite(audio.duration) ? audio.duration : 0 })
-      audio.play().catch(() => { /* autoplay bloqueado: o player abaixo resolve */ })
-    } catch {
-      setMsg("❌ Falha ao gerar a prévia.")
-    } finally {
-      setOuvindo(false)
-    }
-  }
-  const [roteirizando, setRoteirizando] = useState(false)
-  const [roteiro, setRoteiro] = useState<{ persona: string; emocao: string; historia: string } | null>(null)
-  const [parecer, setParecer] = useState<Parecer | null>(null)
-  const [trocando, setTrocando] = useState<string | null>(null)
+  const imagens: string[] = (job as unknown as { scene_image_urls?: string[] })?.scene_image_urls ?? []
+  const cenasDoJob: VideoScene[] = job?.recipe?.scenes ?? scenes
+  const faltamCenas = Math.max(0, cenasDoJob.length - imagens.length)
+  const temAudio = !!(job?.narration_url || job?.song_url)
+  const esperandoMusica = !!(job as unknown as { song_task_id?: string })?.song_task_id && !job?.song_url
 
-  // Roteirista: preenche a receita inteira (cenas + música) em vez de o admin
-  // escrever cada cena na mão. Já vem com a segunda passada crítica aplicada —
-  // o parecer aparece na tela pra decidir se aceita ou ajusta antes de gerar.
-  async function roteirizar() {
-    setRoteirizando(true); setMsg(""); setParecer(null)
-    try {
-      const res = await fetch("/api/admin/conteudo/roteiro", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          platform: draft.platform,
-          sourceType: draft.source_type,
-          topic: draft.topic,
-          sourceOrderId: draft.sourceOrderId,
-        }),
-      })
-      const d = await res.json()
-      if (!d.ok) { setMsg(`❌ ${d.error}`); return }
-      setScenes(d.roteiro.cenas)
-      setSongTheme(d.roteiro.songTheme)
-      setSongStyle(d.roteiro.songStyle)
-      setRoteiro({ persona: d.roteiro.persona, emocao: d.roteiro.emocao, historia: d.roteiro.historia })
-      setParecer(d.parecer)
-    } catch {
-      setMsg("❌ Falha ao gerar o roteiro.")
-    } finally {
-      setRoteirizando(false)
-    }
-  }
-
-  // Ao (re)montar, pergunta ao servidor se já existe job pra este rascunho.
-  // Sem isto, sair da tela e voltar mostrava o formulário em branco como se
-  // nada estivesse rodando — o job continuava vivo no banco, invisível.
+  // Restaura o job existente ao abrir: sem isso, sair da tela e voltar mostrava
+  // formulário em branco com o trabalho vivo no banco.
   useEffect(() => {
     let cancelado = false
     fetch(`/api/admin/conteudo/${draftId}/video`)
@@ -361,31 +305,34 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
       .then((d) => {
         if (cancelado || !d.job) return
         setJob(d.job)
-        // Repõe no formulário o que o admin tinha escrito: a receita fica
-        // salva no job, então nada do texto dele se perde num F5.
         const r = d.job.recipe
         if (r?.scenes?.length) {
           setScenes(r.scenes)
           setSongTheme(r.songTheme ?? "")
           setSongStyle(r.songStyle ?? "")
+          if (r.songSource) setSongSource(r.songSource)
+          if (r.narracaoTexto) setNarracaoTexto(r.narracaoTexto)
+          if (r.narracaoVoz) setNarracaoVoz(r.narracaoVoz)
+          if (r.narracaoFundo) setNarracaoFundo(r.narracaoFundo)
         }
       })
-      .catch(() => { /* sem job, formulário limpo mesmo */ })
+      .catch(() => {})
     return () => { cancelado = true }
   }, [draftId])
 
+  // Polling só enquanto há algo em andamento no servidor (render ou música).
   useEffect(() => {
-    if (!job || JOB_TERMINAL.has(job.status)) return
-    const tick = async () => {
+    const emAndamento = job && (["pronto_pra_renderizar", "renderizando"].includes(job.status) || esperandoMusica)
+    if (!emAndamento) return
+    const t = setInterval(async () => {
       try {
         const d = await fetch(`/api/admin/conteudo/${draftId}/video`).then((r) => r.json())
         if (d.job) setJob(d.job)
         if (d.job?.status === "concluido") onDone()
-      } catch { /* ignora, tenta de novo */ }
-    }
-    const t = setInterval(tick, 10000)
+      } catch { /* tenta no próximo tick */ }
+    }, 10000)
     return () => clearInterval(t)
-  }, [job, draftId, onDone])
+  }, [job, esperandoMusica, draftId, onDone])
 
   function updateScene(i: number, field: keyof VideoScene, value: string) {
     setScenes((prev) => prev.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)))
@@ -399,256 +346,320 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
     setScenes((prev) => prev.filter((_, idx) => idx !== i))
   }
 
-  async function criar() {
-    if (scenes.some((s) => !s.description.trim() || !s.caption.trim())) {
-      setMsg("❌ Preencha descrição e legenda de todas as cenas."); return
-    }
-    if ((songSource === "suno" || (songSource === "narracao" && narracaoFundo === "suno")) && !songTheme.trim()) { setMsg("❌ Informe o tema da música."); return }
-    if (songSource === "narracao" && !narracaoTexto.trim()) { setMsg("❌ Escreva o texto da narração."); return }
-    if (songSource === "pedido" && !songOrderId) { setMsg("❌ Escolha de qual música vem a trilha."); return }
-    setCreating(true); setMsg("")
-    const res = await fetch(`/api/admin/conteudo/${draftId}/video`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        scenes, songTheme, songStyle, songSource, platform: draft.platform,
-        songOrderId: songSource === "pedido" ? songOrderId : undefined,
-        narracaoTexto: songSource === "narracao" ? narracaoTexto : undefined,
-        narracaoVoz: songSource === "narracao" ? narracaoVoz : undefined,
-        narracaoFundo: songSource === "narracao" ? narracaoFundo : undefined,
-      }),
-    })
-    const d = await res.json()
-    setCreating(false)
-    if (d.ok) setJob(d.job)
-    else setMsg(`❌ ${d.error}`)
-  }
-
-  // Troca de uma parte só: a cena errada, a voz, ou a trilha. O que estava bom
-  // permanece — e o que já foi gerado (e pago) não é jogado fora.
-  async function trocarParte(corpo: Record<string, unknown>, rotulo: string) {
-    setTrocando(rotulo); setMsg("")
+  async function chamar(metodo: "POST" | "PATCH" | "PUT", corpo: Record<string, unknown>, rotulo: string) {
+    setBusy(rotulo); setMsg("")
     try {
       const d = await fetch(`/api/admin/conteudo/${draftId}/video`, {
-        method: "PATCH",
+        method: metodo,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(corpo),
       }).then((r) => r.json())
-      if (d.ok) {
-        setJob(d.job)
-        setMsg(d.aguardando === "musica" ? "🎵 música nova sendo gerada — a tela avisa quando ficar pronta" : "")
-      } else setMsg(`❌ ${d.error}`)
+      if (!d.ok) { setMsg(`❌ ${d.error}`); return null }
+      if (d.job) setJob(d.job)
+      return d
     } catch {
-      setMsg("❌ Falha ao trocar.")
+      setMsg("❌ Falha na chamada.")
+      return null
     } finally {
-      setTrocando(null)
+      setBusy(null)
     }
   }
 
-  async function remontar() {
-    setCreating(true); setMsg("")
+  async function roteirizar() {
+    setRoteirizando(true); setMsg(""); setParecer(null)
     try {
-      const d = await fetch(`/api/admin/conteudo/${draftId}/video`, {
-        method: "PUT",
+      const d = await fetch("/api/admin/conteudo/roteiro", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ scenes }),
+        body: JSON.stringify({
+          platform: draft.platform, sourceType: draft.source_type,
+          topic: draft.topic, sourceOrderId: draft.sourceOrderId,
+        }),
       }).then((r) => r.json())
-      if (d.ok) setJob(d.job)
-      else setMsg(`❌ ${d.error}`)
-    } catch {
-      setMsg("❌ Falha ao remontar.")
-    } finally {
-      setCreating(false)
-    }
+      if (!d.ok) { setMsg(`❌ ${d.error}`); return }
+      setScenes(d.roteiro.cenas)
+      setSongTheme(d.roteiro.songTheme)
+      setSongStyle(d.roteiro.songStyle)
+      setRoteiro({ persona: d.roteiro.persona, emocao: d.roteiro.emocao, historia: d.roteiro.historia })
+      setParecer(d.parecer)
+    } catch { setMsg("❌ Falha ao gerar o roteiro.") } finally { setRoteirizando(false) }
   }
 
-  if (job) {
+  async function ouvirPrevia() {
+    if (!narracaoTexto.trim()) { setMsg("❌ Escreva o texto da narração."); return }
+    setOuvindo(true); setMsg("")
+    try {
+      const res = await fetch("/api/admin/conteudo/narracao", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: narracaoTexto, voz: narracaoVoz }),
+      })
+      if (!res.ok) { setMsg(`❌ ${(await res.json().catch(() => ({}))).error ?? "Falha na prévia."}`); return }
+      const blob = await res.blob()
+      if (previa?.url) URL.revokeObjectURL(previa.url)
+      const url = URL.createObjectURL(blob)
+      const a = new Audio(url)
+      a.addEventListener("loadedmetadata", () => setPrevia({ url, segundos: a.duration || 0 }))
+      setPrevia({ url, segundos: 0 })
+    } catch { setMsg("❌ Falha ao gerar a prévia.") } finally { setOuvindo(false) }
+  }
+
+  const criarStoryboard = () => {
+    if (scenes.some((s) => !s.description.trim())) { setMsg("❌ Toda cena precisa de descrição visual."); return }
+    chamar("POST", {
+      scenes, songTheme, songStyle, platform: draft.platform, songSource,
+      songOrderId: songSource === "pedido" || narracaoFundo === "pedido" ? songOrderId : undefined,
+      narracaoTexto: songSource === "narracao" ? narracaoTexto : undefined,
+      narracaoVoz: songSource === "narracao" ? narracaoVoz : undefined,
+      narracaoFundo: songSource === "narracao" ? narracaoFundo : undefined,
+    }, "storyboard")
+  }
+
+  // Gera as cenas em sequência, uma chamada por cena (cada uma leva de 30 a 90s
+  // e a primeira é referência das outras).
+  async function gerarCenasRestantes() {
+    setBusy("cenas"); setMsg("")
+    try {
+      for (let i = 0; i < 6; i++) {
+        const d = await fetch(`/api/admin/conteudo/${draftId}/video`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ acao: "gerar_proxima" }),
+        }).then((r) => r.json())
+        if (!d.ok) { setMsg(`❌ ${d.error}`); break }
+        if (d.job) setJob(d.job)
+        if (d.concluido) break
+      }
+    } finally { setBusy(null) }
+  }
+
+  const dur = (n: number) => Math.max(0, n * 5 - (n - 1) * 0.6)
+
+  /* ── vídeo pronto: mostra o MP4 e as trocas por parte ── */
+  if (job && ["pronto_pra_renderizar", "renderizando", "concluido", "falhou"].includes(job.status)) {
     return (
-      <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3">
+      <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 space-y-3">
         <p className="text-white/70 text-xs flex items-center gap-2">
           {!JOB_TERMINAL.has(job.status) && (
             <span className="w-3 h-3 border-2 border-fuchsia-400 border-t-transparent rounded-full animate-spin" />
           )}
           {JOB_STATUS_LABEL[job.status] ?? job.status}
         </p>
-        {job.error && <p className="text-red-400 text-xs mt-1">{job.error}</p>}
-        {job.video_url && (
-          <video controls className="w-full max-w-xs rounded-lg mt-2" src={job.video_url} />
+        {job.status === "pronto_pra_renderizar" && (
+          <p className="text-amber-200/80 text-[11px]">
+            Precisa do worker rodando: <code className="bg-black/40 px-1 rounded">npm run worker:video</code>
+          </p>
         )}
+        {job.error && <p className="text-red-300 text-[11px]">{job.error}</p>}
+        {job.video_url && <video controls className="w-full max-w-xs rounded-lg" src={job.video_url} />}
 
         {JOB_TERMINAL.has(job.status) && (
-          <div className="mt-3 border-t border-white/10 pt-3 space-y-2">
-            <p className="text-white/60 text-[11px]">
-              Ajuste as legendas das cenas e remonte — reaproveita as imagens, a narração e a música
-              que já existem. <strong className="text-white/80">Não gasta geração nenhuma.</strong>
-            </p>
-            {scenes.map((s, i) => (
-              <div key={i} className="border border-white/10 rounded-lg p-2 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/50 text-[11px]">Cena {i + 1}</span>
-                  <button onClick={() => trocarParte({ parte: "cena", indice: i, description: s.description, caption: s.caption }, `cena${i}`)}
-                    disabled={trocando !== null || creating}
+          <div className="border-t border-white/10 pt-3 space-y-2">
+            <p className="text-white/60 text-[11px]">Trocar uma parte e remontar — o resto é reaproveitado.</p>
+            {cenasDoJob.map((c, i) => (
+              <div key={i} className="border border-white/10 rounded-lg p-2 flex gap-2">
+                {imagens[i] && <img src={imagens[i]} alt="" className="w-14 h-20 object-cover rounded" />}
+                <div className="flex-1 space-y-1.5">
+                  <textarea value={scenes[i]?.description ?? c.description} onChange={(e) => updateScene(i, "description", e.target.value)} rows={2}
+                    className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white" />
+                  <input value={scenes[i]?.caption ?? c.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
+                    className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white" />
+                  <button onClick={() => chamar("PATCH", { parte: "cena", indice: i, description: scenes[i]?.description, caption: scenes[i]?.caption }, `cena${i}`)}
+                    disabled={busy !== null}
                     className="text-[11px] px-2 py-0.5 rounded border border-fuchsia-500/40 text-fuchsia-300 hover:bg-fuchsia-500/10 disabled:opacity-50">
-                    {trocando === `cena${i}` ? "gerando imagem…" : "🔄 refazer só esta cena"}
+                    {busy === `cena${i}` ? "gerando…" : "🔄 refazer esta cena"}
                   </button>
                 </div>
-                <textarea value={s.description} onChange={(e) => updateScene(i, "description", e.target.value)} rows={2}
-                  placeholder="Descrição visual — ajuste e refaça só esta cena"
-                  className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-[11px] text-white" />
-                <input value={s.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
-                  placeholder={`Legenda da cena ${i + 1}`}
-                  className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
               </div>
             ))}
-
-            <div className="flex flex-wrap gap-2 items-center pt-1">
+            <div className="flex flex-wrap gap-2">
               {job.narration_url && (
-                <button onClick={() => trocarParte({ parte: "narracao", texto: narracaoTexto || undefined, voz: narracaoVoz }, "voz")}
-                  disabled={trocando !== null || creating}
-                  className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
-                  {trocando === "voz" ? "regravando…" : "🎙️ refazer só a narração"}
+                <button onClick={() => chamar("PATCH", { parte: "narracao", texto: narracaoTexto || undefined, voz: narracaoVoz }, "voz")}
+                  disabled={busy !== null} className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+                  {busy === "voz" ? "regravando…" : "🎙️ refazer a narração"}
                 </button>
               )}
-              <button onClick={() => trocarParte({ parte: "musica", origem: "suno" }, "musica")}
-                disabled={trocando !== null || creating}
-                className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
-                {trocando === "musica" ? "pedindo…" : "🎵 refazer só a música"}
+              <button onClick={() => chamar("PATCH", { parte: "musica", origem: "suno" }, "musica")}
+                disabled={busy !== null} className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+                🎵 refazer a música
               </button>
-              {trilhas.length > 0 && (
-                <button onClick={() => trocarParte({ parte: "musica", origem: "pedido", orderId: songOrderId || trilhas[0].orderId }, "musica")}
-                  disabled={trocando !== null || creating}
-                  className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
-                  💿 usar música do catálogo
-                </button>
-              )}
+              <button onClick={() => chamar("PUT", { scenes }, "remontar")}
+                disabled={busy !== null} className="text-[11px] font-semibold px-3 py-1 rounded-lg text-white disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
+                {busy === "remontar" ? "enviando…" : "🔁 remontar (grátis)"}
+              </button>
             </div>
-            <button onClick={remontar} disabled={creating}
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
-              {creating ? "enviando…" : "🔁 remontar vídeo (grátis)"}
-            </button>
-            <p className="text-white/35 text-[11px]">
-              Precisa do worker rodando: <code className="bg-black/40 px-1 rounded">npm run worker:video</code>
-            </p>
           </div>
         )}
+        {msg && <p className="text-red-400 text-xs">{msg}</p>}
       </div>
     )
   }
 
+  /* ── etapa 2: storyboard em construção/aprovação ── */
+  if (job && job.status === "storyboard") {
+    return (
+      <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 space-y-3">
+        <p className="text-white/80 text-xs font-semibold">
+          🎞️ Storyboard — {imagens.length} de {cenasDoJob.length} imagens
+          {faltamCenas === 0 && <span className="text-emerald-300 font-normal"> · completo</span>}
+        </p>
+
+        <div className="space-y-2">
+          {cenasDoJob.map((c, i) => (
+            <div key={i} className="border border-white/10 rounded-lg p-2 flex gap-2">
+              <div className="w-16 h-24 shrink-0 rounded bg-white/5 overflow-hidden flex items-center justify-center">
+                {imagens[i]
+                  ? <img src={imagens[i]} alt="" className="w-full h-full object-cover" />
+                  : <span className="text-white/25 text-[10px] text-center">cena {i + 1}<br />sem imagem</span>}
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <span className="text-white/45 text-[11px]">Cena {i + 1}</span>
+                <textarea value={scenes[i]?.description ?? c.description} onChange={(e) => updateScene(i, "description", e.target.value)} rows={2}
+                  placeholder="Descrição visual"
+                  className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white" />
+                <input value={scenes[i]?.caption ?? c.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
+                  placeholder="Texto que aparece na tela"
+                  className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white" />
+                {imagens[i] && (
+                  <button onClick={() => chamar("PATCH", { acao: "refazer_cena", indice: i, description: scenes[i]?.description, caption: scenes[i]?.caption }, `refazer${i}`)}
+                    disabled={busy !== null}
+                    className="text-[11px] px-2 py-0.5 rounded border border-fuchsia-500/40 text-fuchsia-300 hover:bg-fuchsia-500/10 disabled:opacity-50">
+                    {busy === `refazer${i}` ? "gerando…" : "🔄 refazer imagem"}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {faltamCenas > 0 && (
+          <button onClick={gerarCenasRestantes} disabled={busy !== null}
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
+            {busy === "cenas" ? `gerando… (${imagens.length}/${cenasDoJob.length})` : `🖼️ gerar as ${faltamCenas} imagens que faltam`}
+          </button>
+        )}
+
+        {faltamCenas === 0 && (
+          <div className="border-t border-white/10 pt-3 space-y-2">
+            <p className="text-white/70 text-xs font-semibold">🎧 Áudio</p>
+            {temAudio ? (
+              <p className="text-emerald-300 text-[11px]">
+                pronto: {job.narration_url ? "narração" : ""}{job.narration_url && job.song_url ? " + " : ""}{job.song_url ? "trilha" : ""}
+              </p>
+            ) : esperandoMusica ? (
+              <p className="text-white/60 text-[11px] flex items-center gap-2">
+                <span className="w-3 h-3 border-2 border-fuchsia-400 border-t-transparent rounded-full animate-spin" />
+                música sendo gerada — a tela avisa quando ficar pronta
+              </p>
+            ) : (
+              <button onClick={() => chamar("PATCH", { acao: "audio" }, "audio")} disabled={busy !== null}
+                className="text-xs px-3 py-1.5 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+                {busy === "audio" ? "preparando…" : "🎧 preparar o áudio"}
+              </button>
+            )}
+
+            <button onClick={() => chamar("PATCH", { acao: "compilar" }, "compilar")}
+              disabled={busy !== null || !temAudio}
+              className="block text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
+              {busy === "compilar" ? "enviando…" : "🎬 compilar MP4"}
+            </button>
+            <p className="text-white/35 text-[11px]">
+              A compilação roda no worker: <code className="bg-black/40 px-1 rounded">npm run worker:video</code>
+            </p>
+          </div>
+        )}
+        {msg && <p className="text-red-400 text-xs">{msg}</p>}
+      </div>
+    )
+  }
+
+  /* ── etapa 1: roteiro ── */
   return (
     <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
-        <button onClick={roteirizar} disabled={roteirizando || creating}
+        <button onClick={roteirizar} disabled={roteirizando || busy !== null}
           className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, #7c3aed, #d946ef)" }}>
           {roteirizando ? "Roteirizando…" : "✨ Gerar roteiro com IA"}
         </button>
-        <span className="text-white/40 text-[11px]">preenche cenas e música — você ajusta antes de gerar</span>
+        <span className="text-white/40 text-[11px]">escreve as cenas — nenhuma imagem é gerada ainda</span>
       </div>
 
       {roteiro && (
         <div className="rounded-lg border border-fuchsia-500/25 bg-fuchsia-500/5 p-2.5 space-y-1">
           <p className="text-[11px] text-white/70">
-            <span className="text-fuchsia-300">Emoção-alvo:</span> {roteiro.emocao} ·{" "}
+            <span className="text-fuchsia-300">Emoção:</span> {roteiro.emocao} ·{" "}
             <span className="text-fuchsia-300">Persona:</span> {roteiro.persona}
           </p>
           <p className="text-[11px] text-white/60 italic">"{roteiro.historia}"</p>
         </div>
       )}
-
       {parecer && <ParecerBox parecer={parecer} />}
 
       <div className="rounded-lg border border-white/10 bg-black/20 p-2.5 space-y-2">
         <p className="text-white/60 text-[11px]">🎧 Trilha do vídeo</p>
-
         <label className="text-[11px] text-white/70 flex items-start gap-2">
           <input type="radio" checked={songSource === "suno"} onChange={() => setSongSource("suno")} className="mt-0.5" />
-          <span><strong className="text-white/85">Criar uma música nova</strong> — você descreve tema e estilo</span>
+          <span>Criar uma música nova</span>
         </label>
-
         <label className="text-[11px] text-white/70 flex items-start gap-2">
-          <input type="radio" checked={songSource === "pedido"} onChange={() => setSongSource("pedido")}
-            disabled={!trilhas.length} className="mt-0.5" />
-          <span>
-            <strong className="text-fuchsia-300">Usar uma música real já criada</strong> — trecho do refrão, escolhido
-            sozinho pelo ponto mais forte da faixa. Não gasta geração.
-            {!trilhas.length && <em className="text-white/40"> (nenhuma música com consentimento ainda)</em>}
-          </span>
+          <input type="radio" checked={songSource === "pedido"} onChange={() => setSongSource("pedido")} disabled={!trilhas.length} className="mt-0.5" />
+          <span>Usar uma música real já criada — trecho do refrão</span>
         </label>
         {songSource === "pedido" && trilhas.length > 0 && (
           <select value={songOrderId} onChange={(e) => setSongOrderId(e.target.value)}
-            className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white ml-5">
+            className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white">
             {trilhas.map((t) => <option key={t.orderId} value={t.orderId}>{t.label}</option>)}
           </select>
         )}
-
         <label className="text-[11px] text-white/70 flex items-start gap-2">
           <input type="radio" checked={songSource === "narracao"} onChange={() => setSongSource("narracao")} className="mt-0.5" />
-          <span><strong className="text-white/85">Narração</strong> — uma voz lê o texto que você escrever</span>
+          <span>Narração — uma voz lê o texto que você escrever</span>
         </label>
         {songSource === "narracao" && (
           <div className="ml-5 space-y-1.5">
             <textarea value={narracaoTexto} onChange={(e) => setNarracaoTexto(e.target.value)} rows={3}
-              placeholder="Texto que a voz vai narrar. Escreva como fala, não como texto escrito — frases curtas, sem jargão."
+              placeholder="Texto que a voz vai narrar — escreva como fala"
               className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
-            <select value={narracaoVoz} onChange={(e) => setNarracaoVoz(e.target.value)}
-              className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
-              {VOZES.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
-            </select>
-
             <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={ouvirPrevia} disabled={ouvindo || creating}
+              <select value={narracaoVoz} onChange={(e) => setNarracaoVoz(e.target.value)}
+                className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+                {VOZES.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+              </select>
+              <button onClick={ouvirPrevia} disabled={ouvindo}
                 className="text-[11px] px-2.5 py-1 rounded-lg border border-fuchsia-500/40 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50">
                 {ouvindo ? "gerando…" : "🔊 ouvir prévia"}
               </button>
               {previa && (
                 <>
-                  <audio src={previa.url} controls className="h-7" style={{ maxWidth: 220 }} />
+                  <audio src={previa.url} controls className="h-7" style={{ maxWidth: 200 }} />
                   {previa.segundos > 0 && (() => {
-                    const alvo = duracaoDoVideo(scenes.length)
-                    const sobra = alvo - previa.segundos
+                    const sobra = dur(scenes.length) - previa.segundos
                     return (
                       <span className={`text-[11px] ${sobra < 0 ? "text-red-300" : sobra < 1.5 ? "text-amber-300" : "text-emerald-300"}`}>
-                        {previa.segundos.toFixed(1)}s de narração · vídeo terá {alvo.toFixed(1)}s
-                        {sobra < 0
-                          ? ` — vai cortar ${Math.abs(sobra).toFixed(1)}s: encurte o texto ou adicione cena`
-                          : sobra < 1.5 ? " — no limite" : " — cabe"}
+                        {previa.segundos.toFixed(1)}s · vídeo {dur(scenes.length).toFixed(1)}s
+                        {sobra < 0 ? " — vai cortar" : sobra < 1.5 ? " — no limite" : " — cabe"}
                       </span>
                     )
                   })()}
                 </>
               )}
             </div>
-
-            <div className="pt-1">
-              <p className="text-white/50 text-[11px] mb-1">Música de fundo sob a voz</p>
-              <select value={narracaoFundo} onChange={(e) => setNarracaoFundo(e.target.value as typeof narracaoFundo)}
-                className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
-                <option value="nenhum">Sem música — só a voz</option>
-                <option value="pedido" disabled={!trilhas.length}>Uma música já criada</option>
-                <option value="suno">Uma música nova (descreva abaixo)</option>
-              </select>
-              {narracaoFundo === "pedido" && trilhas.length > 0 && (
-                <select value={songOrderId} onChange={(e) => setSongOrderId(e.target.value)}
-                  className="w-full mt-1.5 bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white">
-                  {trilhas.map((t) => <option key={t.orderId} value={t.orderId}>{t.label}</option>)}
-                </select>
-              )}
-              <p className="text-white/35 text-[11px] mt-1">
-                A música abaixa sozinha enquanto a voz fala e volta a subir nos silêncios.
-              </p>
-            </div>
+            <select value={narracaoFundo} onChange={(e) => setNarracaoFundo(e.target.value as typeof narracaoFundo)}
+              className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+              <option value="nenhum">Sem música de fundo</option>
+              <option value="pedido" disabled={!trilhas.length}>Fundo: música já criada</option>
+              <option value="suno">Fundo: música nova</option>
+            </select>
           </div>
         )}
       </div>
 
       <div className={`grid grid-cols-2 gap-2 ${songSource === "suno" || (songSource === "narracao" && narracaoFundo === "suno") ? "" : "hidden"}`}>
-        <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)}
-          placeholder="Tema da música (ex.: chá revelação, expectativa de bebê)"
+        <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)} placeholder="Tema da música"
           className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
-        <input value={songStyle} onChange={(e) => setSongStyle(e.target.value)}
-          placeholder="Estilo/gênero"
+        <input value={songStyle} onChange={(e) => setSongStyle(e.target.value)} placeholder="Estilo/gênero"
           className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
       </div>
 
@@ -660,12 +671,11 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
               <button onClick={() => removeScene(i)} className="text-white/40 text-[11px] hover:text-red-400">remover</button>
             )}
           </div>
-          <textarea value={s.description} onChange={(e) => updateScene(i, "description", e.target.value)}
-            placeholder="Descrição visual da cena (ex.: casal grávido sorrindo, mão na barriga, luz dourada)"
-            rows={2}
+          <textarea value={s.description} onChange={(e) => updateScene(i, "description", e.target.value)} rows={2}
+            placeholder="Descrição visual da cena"
             className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
           <input value={s.caption} onChange={(e) => updateScene(i, "caption", e.target.value)}
-            placeholder="Legenda dessa cena (texto que aparece no vídeo)"
+            placeholder="Texto que aparece na tela"
             className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
         </div>
       ))}
@@ -676,16 +686,21 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
             + adicionar cena
           </button>
         )}
-        <button onClick={criar} disabled={creating}
+        <button onClick={criarStoryboard} disabled={busy !== null}
           className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50 ml-auto"
           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
-          {creating ? "Criando…" : "🎬 Gerar vídeo"}
+          {busy === "storyboard" ? "criando…" : "📋 criar storyboard"}
         </button>
       </div>
+      <p className="text-white/35 text-[11px]">
+        O storyboard gera as imagens cena por cena, mantendo os mesmos personagens. Só depois de você
+        aprovar é que o MP4 é compilado.
+      </p>
       {msg && <p className="text-red-400 text-xs">{msg}</p>}
     </div>
   )
 }
+
 
 type EligibleOrder = { id: string; nome: string; subcategory: string }
 
@@ -1101,6 +1116,11 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, onChange }: 
               </button>
             </div>
           </div>
+        ) : job && job.status === "storyboard" ? (
+          <button onClick={() => setShowVideoForm((v) => !v)}
+            className="text-[11px] px-2 py-1 rounded-lg border border-fuchsia-500/40 text-fuchsia-300 hover:bg-fuchsia-500/10 mt-3">
+            {showVideoForm ? "Fechar" : "🎞️ continuar o storyboard"}
+          </button>
         ) : job && !JOB_TERMINAL.has(job.status) ? (
           <VideoStatusBar job={job} onAbrir={() => setShowVideoForm((v) => !v)} />
         ) : (

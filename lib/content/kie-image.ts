@@ -15,6 +15,12 @@ export type ImageGenerateParams = {
   prompt: string
   aspectRatio?: "1:1" | "3:2" | "2:3" | "9:16" | "16:9"
   callBackUrl?: string
+  /**
+   * URLs públicas de imagens de referência. Usadas para manter os MESMOS
+   * personagens entre as cenas de um vídeo: a cena 1 é gerada primeiro e vira
+   * referência das seguintes.
+   */
+  imageUrls?: string[]
 }
 
 export type ImageTaskState = "waiting" | "queuing" | "generating" | "success" | "fail"
@@ -44,6 +50,12 @@ export async function generateImage(params: ImageGenerateParams): Promise<string
       input: {
         prompt: params.prompt,
         aspect_ratio: params.aspectRatio ?? "1:1",
+        // Imagens de referência: é o que mantém OS MESMOS personagens entre as
+        // cenas. Sem isto cada cena nasce isolada e pedir "mantenha os mesmos
+        // atores" no texto não tem efeito nenhum — a cena 2 não sabe o que a
+        // cena 1 gerou. A presença deste campo também alterna o modelo de
+        // texto→imagem para imagem→imagem.
+        ...(params.imageUrls?.length ? { image_urls: params.imageUrls } : {}),
       },
       callBackUrl: params.callBackUrl,
     }),
