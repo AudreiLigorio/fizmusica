@@ -8,6 +8,7 @@ import {
   avancarStoryboard,
   refazerCenaStoryboard,
   prepararAudio,
+  atualizarReceita,
   compilar,
   type ReceitaStoryboard,
 } from "@/lib/content/storyboard"
@@ -115,6 +116,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     if (body.acao === "refazer_cena") {
       const job = await refazerCenaStoryboard(supabase, await jobAtual(), Number(body.indice), body.description, body.caption)
+      return NextResponse.json({ ok: true, job })
+    }
+    // Salva ajustes de texto/áudio sem regerar o que já existe.
+    if (body.acao === "atualizar") {
+      const job = await atualizarReceita(supabase, await jobAtual(), body.receita ?? {})
       return NextResponse.json({ ok: true, job })
     }
     if (body.acao === "audio") {

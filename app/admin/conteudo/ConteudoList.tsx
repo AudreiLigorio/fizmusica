@@ -518,6 +518,95 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
     )
   }
 
+  // Painel de áudio — o mesmo na etapa 1 e no storyboard. Estava só na etapa 1
+  // e, quando o job nascia, sumia da tela: o dado continuava salvo, mas era
+  // idêntico a ter perdido.
+  const painelAudio = (dentroDoStoryboard: boolean) => (
+    <div className="rounded-lg border border-white/10 bg-black/20 p-2.5 space-y-2">
+      <p className="text-white/60 text-[11px]">🎧 Trilha do vídeo</p>
+
+      <label className="text-[11px] text-white/70 flex items-start gap-2">
+        <input type="radio" checked={songSource === "suno"} onChange={() => setSongSource("suno")} className="mt-0.5" />
+        <span>Criar uma música nova</span>
+      </label>
+      <label className="text-[11px] text-white/70 flex items-start gap-2">
+        <input type="radio" checked={songSource === "pedido"} onChange={() => setSongSource("pedido")} disabled={!trilhas.length} className="mt-0.5" />
+        <span>Usar uma música real já criada — trecho do refrão</span>
+      </label>
+      {songSource === "pedido" && trilhas.length > 0 && (
+        <select value={songOrderId} onChange={(e) => setSongOrderId(e.target.value)}
+          className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white">
+          {trilhas.map((t) => <option key={t.orderId} value={t.orderId}>{t.label}</option>)}
+        </select>
+      )}
+      <label className="text-[11px] text-white/70 flex items-start gap-2">
+        <input type="radio" checked={songSource === "narracao"} onChange={() => setSongSource("narracao")} className="mt-0.5" />
+        <span>Narração — uma voz lê o texto que você escrever</span>
+      </label>
+
+      {songSource === "narracao" && (
+        <div className="ml-5 space-y-1.5">
+          <textarea value={narracaoTexto} onChange={(e) => setNarracaoTexto(e.target.value)} rows={3}
+            placeholder="Texto que a voz vai narrar — escreva como fala"
+            className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <select value={narracaoVoz} onChange={(e) => setNarracaoVoz(e.target.value)}
+              className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+              {VOZES.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+            </select>
+            <button onClick={ouvirPrevia} disabled={ouvindo}
+              className="text-[11px] px-2.5 py-1 rounded-lg border border-fuchsia-500/40 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50">
+              {ouvindo ? "gerando…" : "🔊 ouvir prévia"}
+            </button>
+            {previa && (
+              <>
+                <audio src={previa.url} controls className="h-7" style={{ maxWidth: 200 }} />
+                {previa.segundos > 0 && (() => {
+                  const sobra = dur(cenasDoJob.length) - previa.segundos
+                  return (
+                    <span className={`text-[11px] ${sobra < 0 ? "text-red-300" : sobra < 1.5 ? "text-amber-300" : "text-emerald-300"}`}>
+                      {previa.segundos.toFixed(1)}s · vídeo {dur(cenasDoJob.length).toFixed(1)}s
+                      {sobra < 0 ? " — vai cortar" : sobra < 1.5 ? " — no limite" : " — cabe"}
+                    </span>
+                  )
+                })()}
+              </>
+            )}
+          </div>
+          <select value={narracaoFundo} onChange={(e) => setNarracaoFundo(e.target.value as typeof narracaoFundo)}
+            className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
+            <option value="nenhum">Sem música de fundo</option>
+            <option value="pedido" disabled={!trilhas.length}>Fundo: música já criada</option>
+            <option value="suno">Fundo: música nova</option>
+          </select>
+        </div>
+      )}
+
+      <div className={`grid grid-cols-2 gap-2 ${songSource === "suno" || (songSource === "narracao" && narracaoFundo === "suno") ? "" : "hidden"}`}>
+        <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)} placeholder="Tema da música"
+          className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+        <input value={songStyle} onChange={(e) => setSongStyle(e.target.value)} placeholder="Estilo/gênero"
+          className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
+      </div>
+
+      {dentroDoStoryboard && (
+        <div className="flex items-center gap-2 flex-wrap pt-1">
+          <button onClick={() => chamar("PATCH", { acao: "atualizar", receita: {
+              songSource, songOrderId, songTheme, songStyle, narracaoTexto, narracaoVoz, narracaoFundo,
+            } }, "salvar-audio")}
+            disabled={busy !== null}
+            className="text-[11px] px-2.5 py-1 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
+            {busy === "salvar-audio" ? "salvando…" : "salvar ajustes de áudio"}
+          </button>
+          <span className="text-white/35 text-[11px]">
+            {job?.narration_url && "voz pronta · "}
+            {job?.song_url ? "trilha pronta" : esperandoMusica ? "música sendo gerada…" : "trilha ainda não gerada"}
+          </span>
+        </div>
+      )}
+    </div>
+  )
+
   /* ── etapa 2: storyboard em construção/aprovação ── */
   if (job && job.status === "storyboard") {
     return (
@@ -568,9 +657,10 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
           </div>
         )}
 
+        {painelAudio(true)}
+
         {faltamCenas === 0 && (
           <div className="border-t border-white/10 pt-3 space-y-2">
-            <p className="text-white/70 text-xs font-semibold">🎧 Áudio</p>
             {temAudio ? (
               <p className="text-emerald-300 text-[11px]">
                 pronto: {job.narration_url ? "narração" : ""}{job.narration_url && job.song_url ? " + " : ""}{job.song_url ? "trilha" : ""}
@@ -581,10 +671,9 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
                 música sendo gerada — a tela avisa quando ficar pronta
               </p>
             ) : (
-              <button onClick={() => chamar("PATCH", { acao: "audio" }, "audio")} disabled={busy !== null}
-                className="text-xs px-3 py-1.5 rounded-lg border border-white/15 text-white/70 hover:bg-white/5 disabled:opacity-50">
-                {busy === "audio" ? "preparando…" : "🎧 preparar o áudio"}
-              </button>
+              <p className="text-white/50 text-[11px]">
+                o áudio é gerado junto com as imagens — se ainda não apareceu, aguarde o próximo ciclo
+              </p>
             )}
 
             <button onClick={() => chamar("PATCH", { acao: "compilar" }, "compilar")}
@@ -626,91 +715,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
       )}
       {parecer && <ParecerBox parecer={parecer} />}
 
-      <div className="rounded-lg border border-white/10 bg-black/20 p-2.5 space-y-2">
-        <p className="text-white/60 text-[11px]">🎧 Trilha do vídeo</p>
-        <label className="text-[11px] text-white/70 flex items-start gap-2">
-          <input type="radio" checked={songSource === "suno"} onChange={() => setSongSource("suno")} className="mt-0.5" />
-          <span>Criar uma música nova</span>
-        </label>
-        <label className="text-[11px] text-white/70 flex items-start gap-2">
-          <input type="radio" checked={songSource === "pedido"} onChange={() => setSongSource("pedido")} disabled={!trilhas.length} className="mt-0.5" />
-          <span>Usar uma música real já criada — trecho do refrão</span>
-        </label>
-        {songSource === "pedido" && trilhas.length > 0 && (
-          <select value={songOrderId} onChange={(e) => setSongOrderId(e.target.value)}
-            className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white">
-            {trilhas.map((t) => <option key={t.orderId} value={t.orderId}>{t.label}</option>)}
-          </select>
-        )}
-        <label className="text-[11px] text-white/70 flex items-start gap-2">
-          <input type="radio" checked={songSource === "narracao"} onChange={() => setSongSource("narracao")} className="mt-0.5" />
-          <span>Narração — uma voz lê o texto que você escrever</span>
-        </label>
-        {songSource === "narracao" && (
-          <div className="ml-5 space-y-1.5">
-            <textarea value={narracaoTexto} onChange={(e) => setNarracaoTexto(e.target.value)} rows={3}
-              placeholder="Texto que a voz vai narrar — escreva como fala"
-              className="w-full bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
-            <div className="flex items-center gap-2 flex-wrap">
-              <select value={narracaoVoz} onChange={(e) => setNarracaoVoz(e.target.value)}
-                className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
-                {VOZES.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
-              </select>
-              <button onClick={ouvirPrevia} disabled={ouvindo}
-                className="text-[11px] px-2.5 py-1 rounded-lg border border-fuchsia-500/40 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50">
-                {ouvindo ? "gerando…" : "🔊 ouvir prévia"}
-              </button>
-              {previa && (
-                <>
-                  <audio src={previa.url} controls className="h-7" style={{ maxWidth: 200 }} />
-                  {previa.segundos > 0 && (() => {
-                    const sobra = dur(scenes.length) - previa.segundos
-                    return (
-                      <span className={`text-[11px] ${sobra < 0 ? "text-red-300" : sobra < 1.5 ? "text-amber-300" : "text-emerald-300"}`}>
-                        {previa.segundos.toFixed(1)}s · vídeo {dur(scenes.length).toFixed(1)}s
-                        {sobra < 0 ? " — vai cortar" : sobra < 1.5 ? " — no limite" : " — cabe"}
-                      </span>
-                    )
-                  })()}
-                </>
-              )}
-            </div>
-            <select value={narracaoFundo} onChange={(e) => setNarracaoFundo(e.target.value as typeof narracaoFundo)}
-              className="bg-black/40 border border-white/15 rounded-lg px-2 py-1 text-[11px] text-white">
-              <option value="nenhum">Sem música de fundo</option>
-              <option value="pedido" disabled={!trilhas.length}>Fundo: música já criada</option>
-              <option value="suno">Fundo: música nova</option>
-            </select>
-
-            {narracaoFundo !== "nenhum" && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-white/50 text-[11px]">Na frente:</span>
-                {(["voz", "musica"] as const).map((m) => (
-                  <button key={m} onClick={() => setMixagem(m)}
-                    className={`text-[11px] px-2 py-0.5 rounded-lg border ${
-                      mixagem === m
-                        ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200"
-                        : "border-white/15 text-white/50 hover:bg-white/5"}`}>
-                    {m === "voz" ? "🎙️ a voz" : "🎵 a música"}
-                  </button>
-                ))}
-                <span className="text-white/35 text-[11px]">
-                  {mixagem === "voz"
-                    ? "música recua forte sob a fala (comercial narrado)"
-                    : "canção manda e a voz entra como detalhe"}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className={`grid grid-cols-2 gap-2 ${songSource === "suno" || (songSource === "narracao" && narracaoFundo === "suno") ? "" : "hidden"}`}>
-        <input value={songTheme} onChange={(e) => setSongTheme(e.target.value)} placeholder="Tema da música"
-          className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
-        <input value={songStyle} onChange={(e) => setSongStyle(e.target.value)} placeholder="Estilo/gênero"
-          className="bg-black/40 border border-white/15 rounded-lg px-2 py-1.5 text-xs text-white" />
-      </div>
+      {painelAudio(false)}
 
       {scenes.map((s, i) => (
         <div key={i} className="border border-white/10 rounded-lg p-2 space-y-1.5">

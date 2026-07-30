@@ -156,10 +156,17 @@ export async function avancarStoryboard(supabase: DB, jobId: string) {
     }
   }
 
+  // 3) Áudio em PARALELO com as imagens. Narração é barata e a música é a
+  // mais lenta (1 a 3 min) — esperar o storyboard terminar pra só então começar
+  // dobrava o tempo total sem economizar nada no caso normal, em que a peça vai
+  // ser usada de qualquer jeito.
+  const patchAudio = await avancarAudio(supabase, job)
+  if (Object.keys(patchAudio).length) mudou = true
+
   if (mudou) {
     await supabase
       .from("video_jobs")
-      .update({ scene_image_urls: urls, scene_image_task_ids: tasks, error: erro })
+      .update({ scene_image_urls: urls, scene_image_task_ids: tasks, error: erro, ...patchAudio })
       .eq("id", jobId)
   }
 
@@ -173,6 +180,67 @@ export async function avancarStoryboard(supabase: DB, jobId: string) {
     concluido: prontas === total,
     erro,
   }
+}
+
+/**
+ * Cuida do áudio dentro do mesmo motor: gera a narração se ainda não existe,
+ * dispara a música se ainda não foi pedida, e recolhe a música quando fica
+ * pronta. Idempotente — o que já existe nunca é regerado nem cobrado de novo.
+ */
+async function avancarAudio(supabase: DB, job: Record<string, any>): Promise<Record<string, unknown>> {
+  const receita = job.recipe as ReceitaStoryboard
+  const patch: Record<string, unknown> = {}
+
+  try {
+    // Narração: barata e rápida, feita na hora.
+    if (receita.songSource === "narracao" && receita.narracaoTexto?.trim() && !job.narration_url) {
+      const wav = await gerarNarracao(receita.narracaoTexto, (receita.narracaoVoz ?? "Kore") as VozId)
+      const path = `video-jobs/${job.id}/narracao-${Date.now()}.wav`
+      const { error } = await supabase.storage.from(BUCKET).upload(path, wav, { contentType: "audio/wav", upsert: true })
+      if (error) throw new Error(error.message)
+      patch.narration_url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+    }
+
+    const querMusica =
+      receita.songSource === "suno" ||
+      receita.songSource === "pedido" ||
+      (receita.songSource === "narracao" && receita.narracaoFundo && receita.narracaoFundo !== "nenhum")
+
+    if (querMusica && !job.song_url) {
+      const doPedido =
+        receita.songSource === "pedido" || (receita.songSource === "narracao" && receita.narracaoFundo === "pedido")
+
+      if (doPedido) {
+        const { data: music } = await supabase
+          .from("generated_music").select("mp3Url").eq("orderId", receita.songOrderId ?? "").maybeSingle()
+        if (music?.mp3Url) patch.song_url = music.mp3Url
+      } else if (!job.song_task_id) {
+        // Ainda não pedida: dispara agora, em paralelo com as imagens.
+        const { title, lyrics } = await generateSongLyrics(receita.songTheme ?? "", receita.songStyle ?? "")
+        patch.song_task_id = await generateMusic({
+          prompt: lyrics, style: receita.songStyle ?? "", title,
+          vocalGender: "f", model: "V5",
+          callBackUrl: "https://fizmusica.com.br/api/suno/callback-not-used-polling-instead",
+        })
+      } else {
+        // Já pedida: vê se ficou pronta.
+        const detalhes: any = await getMusicDetails(job.song_task_id)
+        const track = detalhes?.data?.response?.sunoData?.[0]
+        if (detalhes?.data?.status === "SUCCESS" && track?.audioUrl) {
+          const bytes = Buffer.from(await (await fetch(track.audioUrl)).arrayBuffer())
+          const path = `video-jobs/${job.id}/song-${Date.now()}.mp3`
+          const { error } = await supabase.storage.from(BUCKET).upload(path, bytes, { contentType: "audio/mpeg", upsert: true })
+          if (error) throw new Error(error.message)
+          patch.song_url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+          patch.song_task_id = null
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[storyboard] áudio:", e instanceof Error ? e.message : e)
+  }
+
+  return patch
 }
 
 /**
@@ -284,6 +352,33 @@ export async function prepararAudio(supabase: DB, jobId: string) {
     .single()
 
   return { job: data, aguardando: patch.song_task_id ? "musica" : null }
+}
+
+/**
+ * Atualiza a receita (textos de cena, narração, estilo da trilha) sem tocar no
+ * que já foi gerado. Mudar o texto da narração invalida só a narração; mudar o
+ * estilo da música invalida só a música — o resto continua de pé.
+ */
+export async function atualizarReceita(supabase: DB, jobId: string, patch: Partial<ReceitaStoryboard>) {
+  const { data: job } = await supabase.from("video_jobs").select("*").eq("id", jobId).maybeSingle()
+  if (!job) throw new Error("Storyboard não encontrado.")
+
+  const receita = { ...(job.recipe as ReceitaStoryboard), ...patch }
+  const update: Record<string, unknown> = { recipe: receita }
+
+  const anterior = job.recipe as ReceitaStoryboard
+  if (patch.narracaoTexto !== undefined && patch.narracaoTexto !== anterior.narracaoTexto) update.narration_url = null
+  if (patch.narracaoVoz !== undefined && patch.narracaoVoz !== anterior.narracaoVoz) update.narration_url = null
+  if (
+    (patch.songStyle !== undefined && patch.songStyle !== anterior.songStyle) ||
+    (patch.songTheme !== undefined && patch.songTheme !== anterior.songTheme)
+  ) {
+    update.song_url = null
+    update.song_task_id = null
+  }
+
+  const { data } = await supabase.from("video_jobs").update(update).eq("id", jobId).select("*").single()
+  return data
 }
 
 /** Etapa 3: libera pro worker montar o MP4. */
