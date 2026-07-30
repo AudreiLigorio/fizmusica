@@ -101,8 +101,9 @@ async function processJob(supabase: ReturnType<typeof createServerClient>, job: 
     if (job.narration_url && job.song_url) {
       // Voz + música: a música entra no refrão e abaixa sozinha sob a voz.
       const musicStart = await detectClimaxStart(path.join(tmp, "song.mp3"), totalDur)
-      await muxNarrationOverMusic(withTextPath, path.join(tmp, "narracao.wav"), path.join(tmp, "song.mp3"), musicStart, totalDur, finalPath)
-      console.log(`[worker] narração + música (fundo a partir de ${musicStart.toFixed(1)}s)`)
+      const destaque = (recipe.mixagem as "voz" | "musica") ?? "voz"
+      await muxNarrationOverMusic(withTextPath, path.join(tmp, "narracao.wav"), path.join(tmp, "song.mp3"), musicStart, totalDur, finalPath, destaque)
+      console.log(`[worker] narração + música (destaque: ${destaque}, fundo a partir de ${musicStart.toFixed(1)}s)`)
     } else if (job.narration_url) {
       // Só voz: começa do zero — a primeira palavra é o começo da frase.
       await muxAudio(withTextPath, path.join(tmp, "narracao.wav"), 0, totalDur, finalPath)
@@ -164,7 +165,7 @@ async function tick(supabase: ReturnType<typeof createServerClient>) {
 // INICIAR: um worker aberto antes de uma mudança segue rodando o código
 // antigo, indiferente ao que está no disco — e isso já custou um vídeo sem
 // narração e ingredientes apagados. Imprimir isso torna o problema visível.
-const CAPACIDADES = ["narracao", "ducking", "preserva-ingredientes", "musica-do-pedido"]
+const CAPACIDADES = ["narracao", "ducking", "mixagem-invertida", "preserva-ingredientes", "musica-do-pedido", "storyboard"]
 
 async function main() {
   console.log("[worker] iniciado — verificando video_jobs a cada", POLL_MS / 1000, "segundos. Ctrl+C pra parar.")

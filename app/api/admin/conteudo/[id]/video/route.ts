@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
   const body = await req.json().catch(() => ({}))
-  const { scenes, songTheme, songStyle, platform, songSource, songOrderId, narracaoTexto, narracaoVoz, narracaoFundo } = body ?? {}
+  const { scenes, songTheme, songStyle, platform, songSource, songOrderId, narracaoTexto, narracaoVoz, narracaoFundo, mixagem } = body ?? {}
 
   if (!Array.isArray(scenes) || scenes.length < 3 || scenes.length > 6) {
     return NextResponse.json({ error: "Informe de 3 a 6 cenas." }, { status: 400 })
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     narracaoTexto: narracaoTexto || undefined,
     narracaoVoz: narracaoVoz || undefined,
     narracaoFundo: ["nenhum", "pedido", "suno"].includes(narracaoFundo) ? narracaoFundo : "nenhum",
+    mixagem: mixagem === "musica" ? "musica" : "voz",
   }
 
   const supabase = createServerClient()

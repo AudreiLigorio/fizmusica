@@ -98,8 +98,17 @@ export async function muxNarrationOverMusic(
   musicStart: number,
   duration: number,
   outPath: string,
+  destaque: "voz" | "musica" = "voz",
 ) {
   const fadeOutStart = Math.max(0, duration - 1.5)
+
+  // Quem fica na frente muda dois parâmetros, não a técnica: o volume base da
+  // música e a força com que ela recua sob a voz.
+  //   voz    → música baixa (0.45) e recuo forte (ratio 12): comercial narrado
+  //   musica → música alta (0.95) e recuo leve (ratio 3): a voz vira um detalhe
+  //            dentro da canção, sem sumir
+  const volumeMusica = destaque === "voz" ? 0.45 : 0.95
+  const ratio = destaque === "voz" ? 12 : 3
   await ffmpeg([
     "-ss", String(musicStart), "-t", String(duration), "-i", musicPath,
     "-i", narrationPath,
@@ -107,9 +116,9 @@ export async function muxNarrationOverMusic(
     "-filter_complex",
     // A música entra baixa (0.45) já de saída: é fundo, não protagonista.
     // apad garante que a voz "dure" o vídeo inteiro pro amix não cortar antes.
-    "[0:a]volume=0.45[bg];" +
+    `[0:a]volume=${volumeMusica}[bg];` +
     "[1:a]apad,atrim=0:" + duration + ",asetpts=PTS-STARTPTS[voz];" +
-    "[bg][voz]sidechaincompress=threshold=0.03:ratio=12:attack=5:release=300[bgduck];" +
+    `[bg][voz]sidechaincompress=threshold=0.03:ratio=${ratio}:attack=5:release=300[bgduck];` +
     "[bgduck][voz]amix=inputs=2:duration=first:dropout_transition=0,volume=2," +
     `afade=t=in:d=0.6,afade=t=out:st=${fadeOutStart}:d=1.5[aout]`,
     "-map", "2:v", "-map", "[aout]",

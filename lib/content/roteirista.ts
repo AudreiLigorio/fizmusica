@@ -2,6 +2,7 @@ import { generateLyrics } from "@/lib/composer/gemini"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { loadMarca } from "@/lib/content/marca"
 import { carregarLicoes } from "@/lib/content/licoes"
+import { tabelaDeEstilos } from "@/lib/content/trilhas"
 import { createServerClient } from "@/lib/supabase"
 
 // Roteirista — o agente que decide O QUE contar antes de qualquer imagem ou
@@ -114,6 +115,7 @@ function criacaoSystemPrompt(formato: RoteiroFormato, licoes: string): string {
 
   return (
     base +
+    tabelaDeEstilos() + "\n\n" +
     "Formato do JSON (vídeo de 3 a 6 cenas — cada cena vira uma imagem fotorrealista com uma legenda " +
     "sobreposta, na ordem em que aparecem; a última cena é o desfecho emocional, sincronizado com o " +
     "clímax da música):\n" +
@@ -131,7 +133,7 @@ function criacaoSystemPrompt(formato: RoteiroFormato, licoes: string): string {
     }
   ],
   "songTheme": "<tema da música que embala o vídeo, em uma frase>",
-  "songStyle": "<estilo musical: ex. 'balada acústica emotiva, voz feminina suave'>"
+  "songStyle": "<estilo musical — copie o da tabela de estilos que corresponde à ocasião desta peça>"
 }`
   )
 }

@@ -287,6 +287,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
   const [narracaoTexto, setNarracaoTexto] = useState("")
   const [narracaoVoz, setNarracaoVoz] = useState("Kore")
   const [narracaoFundo, setNarracaoFundo] = useState<"nenhum" | "pedido" | "suno">("nenhum")
+  const [mixagem, setMixagem] = useState<"voz" | "musica">("voz")
   const [previa, setPrevia] = useState<{ url: string; segundos: number } | null>(null)
   const [ouvindo, setOuvindo] = useState(false)
 
@@ -314,6 +315,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
           if (r.narracaoTexto) setNarracaoTexto(r.narracaoTexto)
           if (r.narracaoVoz) setNarracaoVoz(r.narracaoVoz)
           if (r.narracaoFundo) setNarracaoFundo(r.narracaoFundo)
+          if (r.mixagem) setMixagem(r.mixagem)
         }
       })
       .catch(() => {})
@@ -411,6 +413,7 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
       narracaoTexto: songSource === "narracao" ? narracaoTexto : undefined,
       narracaoVoz: songSource === "narracao" ? narracaoVoz : undefined,
       narracaoFundo: songSource === "narracao" ? narracaoFundo : undefined,
+      mixagem,
     }, "storyboard")
   }
 
@@ -652,6 +655,26 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
               <option value="pedido" disabled={!trilhas.length}>Fundo: música já criada</option>
               <option value="suno">Fundo: música nova</option>
             </select>
+
+            {narracaoFundo !== "nenhum" && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-white/50 text-[11px]">Na frente:</span>
+                {(["voz", "musica"] as const).map((m) => (
+                  <button key={m} onClick={() => setMixagem(m)}
+                    className={`text-[11px] px-2 py-0.5 rounded-lg border ${
+                      mixagem === m
+                        ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200"
+                        : "border-white/15 text-white/50 hover:bg-white/5"}`}>
+                    {m === "voz" ? "🎙️ a voz" : "🎵 a música"}
+                  </button>
+                ))}
+                <span className="text-white/35 text-[11px]">
+                  {mixagem === "voz"
+                    ? "música recua forte sob a fala (comercial narrado)"
+                    : "canção manda e a voz entra como detalhe"}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

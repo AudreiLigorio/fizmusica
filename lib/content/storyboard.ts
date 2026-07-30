@@ -35,6 +35,8 @@ export type ReceitaStoryboard = {
   narracaoTexto?: string
   narracaoVoz?: string
   narracaoFundo?: "nenhum" | "pedido" | "suno"
+  /** Quem fica na frente na mixagem: a voz (padrão) ou a música. */
+  mixagem?: "voz" | "musica"
 }
 
 function aspecto(platform?: string): "9:16" | "16:9" {
