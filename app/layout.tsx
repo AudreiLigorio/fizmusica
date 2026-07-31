@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import AuthHashHandler from "./components/AuthHashHandler";
-import ChunkReloadGuard from "./components/ChunkReloadGuard";
+import ChunkReloadGuard from "./components/ChunkReloadGuard"
+import Tracker from "@/app/components/Tracker";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-display",
@@ -34,6 +35,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col antialiased">
         <AuthHashHandler />
+        <Tracker />
         <ChunkReloadGuard />
         {children}
       </body>

@@ -55,6 +55,8 @@ type SessionData = {
   orderId?: string
 }
 
+import { track } from "@/lib/track"
+
 const SESSION_KEY = "fizmusica_session_id"
 
 function maskWhatsapp(value: string): string {
@@ -118,6 +120,13 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   }, [orderId])
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
+
+  // Passo alcançado: é o que revela onde a jornada trava. O wizard já salva a
+  // sessão dele (wizard_sessions), mas aquilo é retomada de pedido — isto aqui
+  // é o funil, e precisa existir mesmo pra quem abandona antes de digitar nada.
+  useEffect(() => {
+    track("wizard_passo", `passo-${step}`)
+  }, [step])
 
   // Leva o olhar do usuário até a mensagem de erro assim que ela aparece —
   // sem isso, numa etapa longa o aviso pode renderizar fora da tela.

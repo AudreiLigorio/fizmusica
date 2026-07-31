@@ -2,6 +2,7 @@
 export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
+import { track } from "@/lib/track"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "../components/Header"
@@ -50,6 +51,7 @@ function SucessoContent() {
 
       // 3. Limpa sessão do wizard — pagamento confirmado, pedido encerrado
       if (d.order?.paymentStatus === "PAID") {
+        track("pago")
         localStorage.removeItem("fizmusica_session_id")
       }
     }

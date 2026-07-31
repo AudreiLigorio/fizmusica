@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useRef, useState, useEffect, useCallback } from "react"
+import { track } from "@/lib/track"
 import { useRouter } from "next/navigation"
 import FizMusicaCarousel from "./components/FizMusicaCarousel"
 import Header from "./components/Header"
@@ -233,7 +234,7 @@ export default function Home() {
 
             <div className="animate-fade-up delay-400 flex flex-wrap gap-3 mb-9">
               <button
-                onClick={() => router.push("/criar")}
+                onClick={() => { track("cta_criar", "home"); router.push("/criar") }}
                 className="text-white px-8 py-4 rounded-2xl transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
                 style={{
                   ...bodyFont,
@@ -687,7 +688,7 @@ export default function Home() {
             </p>
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
-                onClick={() => router.push("/criar")}
+                onClick={() => { track("cta_criar", "home"); router.push("/criar") }}
                 className="text-white px-8 py-3.5 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_6px_28px_rgba(240,25,107,0.4)]"
                 style={{
                   ...bodyFont,

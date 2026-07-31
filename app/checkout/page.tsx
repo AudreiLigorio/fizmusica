@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { track } from "@/lib/track"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "@/app/components/Header"
@@ -143,6 +144,9 @@ function CheckoutContent() {
 
   // O erro renderiza acima do Brick — sem isso, se o cliente já estava rolado
   // pra baixo preenchendo o cartão, a mensagem passa despercebida.
+  // Chegou na tela de pagamento — penúltimo degrau do funil.
+  useEffect(() => { track("checkout") }, [])
+
   useEffect(() => {
     if (status === "error") errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
   }, [status])

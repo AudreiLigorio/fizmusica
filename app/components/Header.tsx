@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { track } from "@/lib/track"
 import { useRouter } from "next/navigation"
 
 export default function Header({ showButton = true, progress }: { showButton?: boolean; progress?: number }) {
@@ -49,7 +50,7 @@ export default function Header({ showButton = true, progress }: { showButton?: b
 
           {showButton && (
             <button
-              onClick={() => router.push("/criar")}
+              onClick={() => { track("cta_criar", "header"); router.push("/criar") }}
               className="text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_4px_16px_rgba(240,25,107,0.3)]"
               style={{
                 background: "#f0196b",

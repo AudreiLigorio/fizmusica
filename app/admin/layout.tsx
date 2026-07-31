@@ -15,6 +15,7 @@ const NAV = [
   { href: "/admin/musicas",   label: "Catálogo",   icon: "🎼" },
   { href: "/admin/conteudo",  label: "Conteúdo",   icon: "🎬" },
   { href: "/admin/cupons",    label: "Cupons",     icon: "🎟️" },
+  { href: "/admin/comportamento", label: "Comportamento", icon: "📈" },
   { href: "/admin/logs",      label: "Logs",       icon: "⚠️" },
 ]
 
