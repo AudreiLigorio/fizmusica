@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
-const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "checkout", "pago"])
+const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "checkout", "pago", "ping"])
 
 // Coletor de eventos do site. Público por natureza (o navegador do visitante
 // chama), então: lista fechada de eventos, tamanho limitado e NADA de dado

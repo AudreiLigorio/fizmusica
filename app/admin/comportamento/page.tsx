@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase"
+import AgoraBox from "./AgoraBox"
 
 export const dynamic = "force-dynamic"
 
@@ -66,6 +67,8 @@ export default async function ComportamentoPage() {
         Últimos 30 dias. Contagem por pessoa (sessão anônima), não por clique — e sem IP, sem
         identificação: serve pra saber onde a jornada trava, não quem é quem.
       </p>
+
+      <AgoraBox />
 
       <div className="rounded-2xl border border-white/10 bg-black/40 p-6 mb-6">
         <h2 className="text-white/80 text-sm font-semibold mb-4">Funil</h2>

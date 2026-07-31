@@ -76,3 +76,28 @@ export function track(evento: string, detalhe?: string) {
     /* telemetria nunca atrapalha o site */
   }
 }
+
+/**
+ * Sinal de presença: um batimento por minuto enquanto a aba estiver VISÍVEL.
+ *
+ * Sem isto, "quem está online" seria mentira — o rastreador só dispara quando a
+ * pessoa navega ou clica, então alguém lendo a mesma página por dez minutos
+ * sumiria da lista no primeiro segundo. A checagem de visibilidade evita contar
+ * aba esquecida aberta em segundo plano como gente olhando o site.
+ */
+export function iniciarPresenca(): () => void {
+  let timer: ReturnType<typeof setInterval> | null = null
+
+  const bater = () => {
+    if (document.visibilityState === "visible") track("ping")
+  }
+
+  bater()
+  timer = setInterval(bater, 60_000)
+  document.addEventListener("visibilitychange", bater)
+
+  return () => {
+    if (timer) clearInterval(timer)
+    document.removeEventListener("visibilitychange", bater)
+  }
+}
