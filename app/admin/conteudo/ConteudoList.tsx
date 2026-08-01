@@ -305,6 +305,9 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
   const [mixagem, setMixagem] = useState<"voz" | "musica">("voz")
   const [previa, setPrevia] = useState<{ url: string; segundos: number } | null>(null)
   const [ouvindo, setOuvindo] = useState(false)
+  // Imagem que existe no registro mas não no storage: sem isto o storyboard
+  // anunciava "completo" e não abria nada.
+  const [quebradas, setQuebradas] = useState<number[]>([])
 
   const imagens: string[] = (job as unknown as { scene_image_urls?: string[] })?.scene_image_urls ?? []
   const cenasDoJob: VideoScene[] = job?.recipe?.scenes ?? scenes
@@ -1021,8 +1024,14 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
         body: JSON.stringify({ action, rejectionReason: reason }),
       })
       const d = await res.json().catch(() => ({ error: "resposta inválida do servidor" }))
-      if (d.ok) onChange()
-      else setMsg(`❌ ${d.error ?? "falhou"}`)
+      if (d.ok) {
+        if (d.adaptacoes?.length) {
+          const redes = d.adaptacoes.map((a: { platform: string }) => a.platform).join(" e ")
+          const comVideo = d.adaptacoes.filter((a: { videoReaproveitado: boolean }) => a.videoReaproveitado).length
+          setMsg(`✅ versões criadas para ${redes}${comVideo ? ` · vídeo reaproveitado em ${comVideo}` : ""}`)
+          setTimeout(onChange, 2500)
+        } else onChange()
+      } else setMsg(`❌ ${d.error ?? "falhou"}`)
     } catch {
       // Sem isto, uma queda de rede deixava o botão girando pra sempre e o
       // admin sem saber se publicou ou não.
@@ -1159,7 +1168,7 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
             <button onClick={() => acao("aprovar")} disabled={busy !== null}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}>
-              {busy === "aprovar" ? "…" : "✅ Aprovar"}
+              {busy === "aprovar" ? "aprovando e adaptando…" : "✅ Aprovar"}
             </button>
             <button onClick={() => setRejeitando(true)} disabled={busy !== null}
               className="text-xs px-3 py-1.5 rounded-lg border border-white/15 text-white/60 hover:bg-white/5 disabled:opacity-50">

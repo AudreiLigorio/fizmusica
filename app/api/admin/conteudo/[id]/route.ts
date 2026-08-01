@@ -6,6 +6,7 @@ import { publishDraft } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
 import { purgeDraftMedia } from "@/lib/content/media"
 import { registrarLicao } from "@/lib/content/licoes"
+import { adaptarPara, adaptarParaAsQueFaltam } from "@/lib/content/adaptar"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300 // publicação de Reels espera o processamento do vídeo (polling)
@@ -94,61 +95,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Mesma história, outra rede. Cria uma peça NOVA (a rede de destino tem
   // formato, ritmo e CTA próprios) ligada à original por derivado_de — é essa
   // ligação que mostra depois "esta história já foi publicada onde".
+  // Mesma história, outra rede. Cria uma peça NOVA (formato, ritmo e CTA são
+  // próprios de cada rede) ligada à original, herdando o vídeo se existir.
   if (action === "adaptar") {
     if (!["instagram", "tiktok", "youtube"].includes(platform)) {
       return NextResponse.json({ error: "Rede de destino inválida." }, { status: 400 })
     }
-    const { data: origem } = await supabase
-      .from("content_drafts")
-      .select("id, platform, source_type, sourceOrderId, topic, derivado_de")
-      .eq("id", id)
-      .maybeSingle()
-    if (!origem) return NextResponse.json({ error: "Peça de origem não encontrada." }, { status: 404 })
-    if (origem.platform === platform) {
-      return NextResponse.json({ error: "A peça já é dessa rede." }, { status: 400 })
-    }
-
-    // A raiz da família é sempre a peça original, não a adaptação — assim uma
-    // adaptação de adaptação não cria corrente.
-    const raiz = origem.derivado_de ?? origem.id
-
     try {
-      const nova = origem.source_type === "pedido"
-        ? await createDraft(supabase, { platform, sourceType: "pedido", sourceOrderId: origem.sourceOrderId, derivadoDe: raiz })
-        : await createDraft(supabase, { platform, sourceType: "generico", topic: origem.topic ?? "", derivadoDe: raiz })
-
-      // Reaproveita o vídeo da peça de origem: as imagens de cena, a narração e
-      // a trilha são o caro da produção, e a história é a mesma. O que muda por
-      // rede é a marca queimada no rodapé (@handle/CTA) e, no YouTube, o
-      // formato — e isso se resolve remontando, que é grátis.
-      let videoReaproveitado = false
-      const { data: jobOrigem } = await supabase
-        .from("video_jobs")
-        .select("recipe, scene_image_urls, narration_url, song_url")
-        .eq("contentDraftId", origem.id)
-        .not("scene_image_urls", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      const temIngredientes =
-        (jobOrigem?.scene_image_urls?.length ?? 0) > 0 && (jobOrigem?.song_url || jobOrigem?.narration_url)
-
-      if (temIngredientes) {
-        const receita = { ...(jobOrigem!.recipe as Record<string, unknown>), platform }
-        await supabase.from("video_jobs").insert({
-          contentDraftId: nova.id,
-          status: "storyboard", // entra no editor: você confere e manda compilar
-          recipe: receita,
-          scene_image_urls: jobOrigem!.scene_image_urls,
-          scene_image_task_ids: [],
-          narration_url: jobOrigem!.narration_url,
-          song_url: jobOrigem!.song_url,
-        })
-        videoReaproveitado = true
-      }
-
-      return NextResponse.json({ ok: true, draft: nova, videoReaproveitado })
+      const r = await adaptarPara(supabase, id, platform)
+      return NextResponse.json({ ok: true, ...r })
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao adaptar." }, { status: 500 })
     }
@@ -171,7 +126,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     await logContentEvent(supabase, id, "aprovado", feedback ? `ressalva: ${feedback}` : undefined, "admin")
-    return NextResponse.json({ ok: true, status: "aprovado", licao })
+
+    // História aprovada serve nas três redes. Cria as versões que faltam,
+    // herdando o vídeo quando ele existe (remontar com a marca da outra rede é
+    // de graça). Pula rede que já tem versão, então aprovar de novo não duplica.
+    const adaptacoes = await adaptarParaAsQueFaltam(supabase, id)
+    if (adaptacoes.length) {
+      await logContentEvent(
+        supabase, id, "aprovado",
+        `versões criadas: ${adaptacoes.map((a) => a.platform).join(", ")}`, "system",
+      )
+    }
+
+    return NextResponse.json({ ok: true, status: "aprovado", licao, adaptacoes })
   }
 
   // Exclusão definitiva a pedido do admin — mesmo efeito da rejeição, mas
