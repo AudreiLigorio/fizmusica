@@ -815,12 +815,6 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
 
 type EligibleOrder = { id: string; nome: string; subcategory: string }
 
-const PLATFORMS = [
-  { value: "instagram", label: "Instagram" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "youtube", label: "YouTube" },
-]
-
 // Card de um rascunho — sincroniza a geração de imagem a cada 8s enquanto ela
 // não tem image_url nem image_error (mesmo padrão de polling do SunoPanel).
 // Link rastreado do rascunho: é o que vai pra bio (Instagram/TikTok) ou pra
@@ -1675,7 +1669,9 @@ export default function ConteudoList({
   pagina: number
   totalPaginas: number
 }) {
-  const [platform, setPlatform] = useState("instagram")
+  // A rede de origem é sempre o Instagram: é a que publica automático, e as
+  // outras duas nascem da aprovação.
+  const platform = "instagram"
   const [sourceType, setSourceType] = useState<"generico" | "pedido">("generico")
   const [topic, setTopic] = useState("")
   const [sourceOrderId, setSourceOrderId] = useState(eligibleOrders[0]?.id ?? "")
@@ -1711,11 +1707,10 @@ export default function ConteudoList({
         <p className="text-fuchsia-200 font-semibold text-sm mb-3">✨ Gerar novo rascunho</p>
 
         <div className="flex flex-wrap gap-3 mb-3">
-          <select value={platform} onChange={(e) => setPlatform(e.target.value)}
-            className="bg-black/40 border border-white/15 rounded-lg px-3 py-2 text-sm text-white">
-            {PLATFORMS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-          </select>
-
+          {/* Sem seletor de rede: a peça nasce no Instagram (a única com
+              publicação automática) e, ao aprovar, as versões de TikTok e
+              YouTube são criadas sozinhas. Perguntar a rede aqui virou uma
+              pergunta sem consequência. */}
           <select value={sourceType} onChange={(e) => setSourceType(e.target.value as "generico" | "pedido")}
             className="bg-black/40 border border-white/15 rounded-lg px-3 py-2 text-sm text-white">
             <option value="generico">Tema livre</option>
@@ -1742,6 +1737,10 @@ export default function ConteudoList({
           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
           {gerando ? "Gerando…" : "Gerar rascunho"}
         </button>
+        <p className="text-white/35 text-[11px] mt-2">
+          A peça nasce no Instagram. Ao aprovar, as versões de TikTok e YouTube são criadas
+          automaticamente, com texto próprio de cada rede e reaproveitando o vídeo.
+        </p>
         {msg && <p className="text-red-400 text-xs mt-2">{msg}</p>}
       </div>
 
