@@ -133,9 +133,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       if (!jobIrmao?.scene_image_urls?.length || (!jobIrmao.song_url && !jobIrmao.narration_url)) {
         return NextResponse.json(
-          { error: "A peça-irmã não tem ingredientes disponíveis (podem ter sido descartados na publicação)." },
+          { error: "A peça-irmã não tem ingredientes disponíveis." },
           { status: 400 },
         )
+      }
+
+      // Conferir a LISTA de URLs não basta: elas continuam gravadas no job
+      // depois de o arquivo ser apagado, e herdar ponteiro quebrado produz um
+      // storyboard que parece completo e não abre imagem nenhuma.
+      const urlsIrma = [...jobIrmao.scene_image_urls, jobIrmao.narration_url, jobIrmao.song_url].filter(Boolean) as string[]
+      for (const url of urlsIrma) {
+        const r = await fetch(url, { method: "HEAD" }).catch(() => null)
+        if (!r?.ok) {
+          return NextResponse.json(
+            {
+              error:
+                "Os arquivos da peça-irmã já foram descartados — isso acontecia quando uma rede era publicada. " +
+                "Crie o storyboard do zero para esta peça.",
+            },
+            { status: 400 },
+          )
+        }
       }
 
       await supabase.from("video_jobs").delete().eq("contentDraftId", atual.id)

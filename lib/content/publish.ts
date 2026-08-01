@@ -78,12 +78,30 @@ export async function publishDraft(supabase: DB, draftId: string) {
       throw new Error("Rascunho sem imagem nem vídeo para publicar.")
     }
 
-    // Publicou: acabou a iteração. Agora sim os ingredientes viram peso morto
-    // (o conteúdo deles está dentro do MP4 que foi ao ar). Falhar aqui não
-    // pode invalidar uma publicação bem-sucedida.
+    // Descarte de ingredientes só quando a HISTÓRIA inteira terminou.
+    //
+    // Publicar no Instagram não pode destruir o material da versão do TikTok:
+    // as peças-irmãs reaproveitam as mesmas cenas, voz e trilha, e remontar com
+    // a marca da outra rede é de graça. A regra anterior ("publicou, apagou")
+    // valia quando cada peça era ilha — com adaptação entre redes, ela apagava
+    // o insumo de quem ainda nem foi ao ar.
     try {
-      const { data: jobs } = await supabase.from("video_jobs").select("id").eq("contentDraftId", draftId)
-      for (const j of jobs ?? []) await purgeVideoIngredients(supabase, j.id)
+      const { data: eu } = await supabase
+        .from("content_drafts").select("id, derivado_de").eq("id", draftId).maybeSingle()
+      const raiz = eu?.derivado_de ?? draftId
+
+      const { data: familia } = await supabase
+        .from("content_drafts")
+        .select("id, published_at")
+        .or(`id.eq.${raiz},derivado_de.eq.${raiz}`)
+
+      const faltaAlguem = (familia ?? []).some((p) => p.id !== draftId && !p.published_at)
+
+      if (!faltaAlguem) {
+        const ids = (familia ?? []).map((p) => p.id)
+        const { data: jobs } = await supabase.from("video_jobs").select("id").in("contentDraftId", ids)
+        for (const j of jobs ?? []) await purgeVideoIngredients(supabase, j.id)
+      }
     } catch (e) {
       console.error("[publish] ingredientes não descartados:", e instanceof Error ? e.message : e)
     }

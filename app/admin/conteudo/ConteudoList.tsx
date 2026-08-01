@@ -645,15 +645,37 @@ function VideoForm({ draft, trilhas, onDone }: { draft: Draft; trilhas: Trilha[]
       <div className="mt-3 rounded-lg border border-white/10 bg-black/20 p-3 space-y-3">
         <p className="text-white/80 text-xs font-semibold">
           🎞️ Storyboard — {imagens.length} de {cenasDoJob.length} imagens
-          {faltamCenas === 0 && <span className="text-emerald-300 font-normal"> · completo</span>}
+          {faltamCenas === 0 && quebradas.length === 0 && <span className="text-emerald-300 font-normal"> · completo</span>}
         </p>
+
+        {quebradas.length > 0 && (
+          <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-2.5">
+            <p className="text-red-300 text-[11px]">
+              {quebradas.length} imagem(ns) não existe(m) mais no storage — o registro aponta pra
+              arquivo apagado. Refaça as cenas marcadas, ou descarte e comece do zero.
+            </p>
+            <button onClick={async () => {
+                if (!confirm("Descartar este storyboard e começar do zero?")) return
+                setBusy("descartar")
+                try {
+                  const d = await fetch(`/api/admin/conteudo/${draftId}/video`, { method: "DELETE" }).then((r) => r.json())
+                  if (d.ok) { setJob(null); setQuebradas([]); onDone() } else setMsg(`❌ ${d.error}`)
+                } catch { setMsg("❌ Falha ao descartar.") } finally { setBusy(null) }
+              }}
+              disabled={busy !== null}
+              className="text-[11px] mt-1.5 px-2 py-0.5 rounded border border-white/15 text-white/60 hover:bg-white/5 disabled:opacity-50">
+              {busy === "descartar" ? "descartando…" : "✖️ descartar e começar do zero"}
+            </button>
+          </div>
+        )}
 
         <div className="space-y-2">
           {cenasDoJob.map((c, i) => (
             <div key={i} className="border border-white/10 rounded-lg p-2 flex gap-2">
               <div className="w-16 h-24 shrink-0 rounded bg-white/5 overflow-hidden flex items-center justify-center">
                 {imagens[i]
-                  ? <img src={imagens[i]} alt="" className="w-full h-full object-cover" />
+                  ? <img src={imagens[i]} alt="" className="w-full h-full object-cover"
+                      onError={() => setQuebradas((q) => (q.includes(i) ? q : [...q, i]))} />
                   : <span className="text-white/25 text-[10px] text-center">cena {i + 1}<br />sem imagem</span>}
               </div>
               <div className="flex-1 space-y-1.5">
