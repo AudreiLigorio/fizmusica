@@ -116,7 +116,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const nova = origem.source_type === "pedido"
         ? await createDraft(supabase, { platform, sourceType: "pedido", sourceOrderId: origem.sourceOrderId, derivadoDe: raiz })
         : await createDraft(supabase, { platform, sourceType: "generico", topic: origem.topic ?? "", derivadoDe: raiz })
-      return NextResponse.json({ ok: true, draft: nova })
+
+      // Reaproveita o vídeo da peça de origem: as imagens de cena, a narração e
+      // a trilha são o caro da produção, e a história é a mesma. O que muda por
+      // rede é a marca queimada no rodapé (@handle/CTA) e, no YouTube, o
+      // formato — e isso se resolve remontando, que é grátis.
+      let videoReaproveitado = false
+      const { data: jobOrigem } = await supabase
+        .from("video_jobs")
+        .select("recipe, scene_image_urls, narration_url, song_url")
+        .eq("contentDraftId", origem.id)
+        .not("scene_image_urls", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      const temIngredientes =
+        (jobOrigem?.scene_image_urls?.length ?? 0) > 0 && (jobOrigem?.song_url || jobOrigem?.narration_url)
+
+      if (temIngredientes) {
+        const receita = { ...(jobOrigem!.recipe as Record<string, unknown>), platform }
+        await supabase.from("video_jobs").insert({
+          contentDraftId: nova.id,
+          status: "storyboard", // entra no editor: você confere e manda compilar
+          recipe: receita,
+          scene_image_urls: jobOrigem!.scene_image_urls,
+          scene_image_task_ids: [],
+          narration_url: jobOrigem!.narration_url,
+          song_url: jobOrigem!.song_url,
+        })
+        videoReaproveitado = true
+      }
+
+      return NextResponse.json({ ok: true, draft: nova, videoReaproveitado })
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao adaptar." }, { status: 500 })
     }

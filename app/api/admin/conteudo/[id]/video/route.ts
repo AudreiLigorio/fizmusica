@@ -108,6 +108,50 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   try {
+    // Puxa os ingredientes da peça-irmã (mesma história, outra rede). O que
+    // muda entre redes é a marca queimada no rodapé e o formato — remontar
+    // resolve isso de graça, e as imagens/voz/trilha não são geradas de novo.
+    if (body.acao === "herdar") {
+      const { data: atual } = await supabase
+        .from("content_drafts").select("id, platform, derivado_de").eq("id", id).maybeSingle()
+      if (!atual) return NextResponse.json({ error: "Peça não encontrada." }, { status: 404 })
+
+      const raiz = atual.derivado_de ?? atual.id
+      const { data: familia } = await supabase
+        .from("content_drafts").select("id").or(`id.eq.${raiz},derivado_de.eq.${raiz}`)
+      const irmas = (familia ?? []).map((f) => f.id).filter((x) => x !== atual.id)
+      if (!irmas.length) return NextResponse.json({ error: "Não há peça-irmã com vídeo." }, { status: 404 })
+
+      const { data: jobIrmao } = await supabase
+        .from("video_jobs")
+        .select("recipe, scene_image_urls, narration_url, song_url")
+        .in("contentDraftId", irmas)
+        .not("scene_image_urls", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (!jobIrmao?.scene_image_urls?.length || (!jobIrmao.song_url && !jobIrmao.narration_url)) {
+        return NextResponse.json(
+          { error: "A peça-irmã não tem ingredientes disponíveis (podem ter sido descartados na publicação)." },
+          { status: 400 },
+        )
+      }
+
+      await supabase.from("video_jobs").delete().eq("contentDraftId", atual.id)
+      const { data: novo } = await supabase.from("video_jobs").insert({
+        contentDraftId: atual.id,
+        status: "storyboard",
+        recipe: { ...(jobIrmao.recipe as Record<string, unknown>), platform: atual.platform },
+        scene_image_urls: jobIrmao.scene_image_urls,
+        scene_image_task_ids: [],
+        narration_url: jobIrmao.narration_url,
+        song_url: jobIrmao.song_url,
+      }).select("*").single()
+
+      return NextResponse.json({ ok: true, job: novo })
+    }
+
     // ── etapas do storyboard (antes de existir MP4) ──
     // Um "tique" do storyboard: recolhe o que ficou pronto e dispara a próxima.
     // A tela chama em intervalos; o estado mora no banco, então F5 não perde nada.

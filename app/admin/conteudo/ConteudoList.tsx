@@ -50,7 +50,7 @@ type Metrica = { reach: number | null; likes: number | null; saved: number | nul
 type Lead = { id: string; username: string | null; texto: string; criado_em: string | null; respondido: boolean }
 type Seguidores = { dia: string; followers_count: number | null }
 
-type PecaDaFamilia = { platform: string; status: string; publicado: boolean; permalink: string | null; publicadoEm: string | null }
+type PecaDaFamilia = { id?: string; platform: string; status: string; publicado: boolean; permalink: string | null; publicadoEm: string | null }
 
 const REDES = [
   { id: "instagram", nome: "Instagram" },
@@ -83,10 +83,20 @@ function StatusPorRede({
           )
         }
         if (peca) {
+          // Etiqueta da peça-irmã leva ATÉ ela. Antes era um rótulo inerte:
+          // clicar não fazia nada, e parecia defeito.
+          if (ehAtual) {
+            return (
+              <span key={rede.id} className="text-[11px] px-2 py-0.5 rounded-full border border-white/25 text-white/70">
+                ◉ {rede.nome} — {peca.status} (esta)
+              </span>
+            )
+          }
           return (
-            <span key={rede.id} className="text-[11px] px-2 py-0.5 rounded-full border border-white/15 text-white/50">
-              {ehAtual ? "◉" : "○"} {rede.nome} — {peca.status}
-            </span>
+            <a key={rede.id} href={`/admin/conteudo?destaque=${peca.id ?? ""}#peca-${peca.id ?? ""}`}
+              className="text-[11px] px-2 py-0.5 rounded-full border border-white/15 text-white/60 hover:bg-white/5 hover:text-white/90">
+              ○ {rede.nome} — {peca.status} ↓
+            </a>
           )
         }
         return (
@@ -820,7 +830,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
 }
 
 function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; familia: PecaDaFamilia[]; metrica?: Metrica; onChange: () => void }) {
-  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | "excluir" | null>(null)
+  const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | "excluir" | "herdar" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
   const [ressalva, setRessalva] = useState(false)
@@ -1003,7 +1013,7 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
   const canPublish = draft.status === "aprovado" && draft.platform === "instagram" && !draft.published_at
 
   return (
-    <div className={`bg-black/30 border rounded-lg p-4 flex gap-4 ${
+    <div id={`peca-${draft.id}`} className={`scroll-mt-24 bg-black/30 border rounded-lg p-4 flex gap-4 ${
       origem ? (origem.consent ? "border-amber-400/40" : "border-red-500/60") : "border-white/10"}`}>
       <div className="w-28 h-28 shrink-0 rounded-lg bg-white/5 overflow-hidden flex items-center justify-center">
         {draft.image_url
@@ -1191,6 +1201,27 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
                 {showVideoForm ? "fechar ajustes" : "🔧 ajustar cenas / trilha"}
               </button>
             </div>
+          </div>
+        ) : !job && familia.length > 1 ? (
+          <div className="mt-3 flex items-center gap-2 flex-wrap">
+            <button onClick={async () => {
+                setBusy("herdar"); setMsg("")
+                try {
+                  const d = await fetch(`/api/admin/conteudo/${draft.id}/video`, {
+                    method: "PATCH", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ acao: "herdar" }),
+                  }).then((r) => r.json())
+                  if (d.ok) { setShowVideoForm(true); onChange() } else setMsg(`❌ ${d.error}`)
+                } catch { setMsg("❌ Falha ao reaproveitar.") } finally { setBusy(null) }
+              }}
+              disabled={busy !== null}
+              className="text-[11px] px-2 py-1 rounded-lg border border-fuchsia-500/40 text-fuchsia-300 hover:bg-fuchsia-500/10 disabled:opacity-50">
+              {busy === "herdar" ? "puxando…" : "♻️ reaproveitar o vídeo da outra rede"}
+            </button>
+            <button onClick={() => setShowVideoForm((v) => !v)}
+              className="text-[11px] px-2 py-1 rounded-lg border border-white/15 text-white/60 hover:bg-white/5">
+              {showVideoForm ? "Fechar" : "🎬 Criar vídeo do zero"}
+            </button>
           </div>
         ) : job && job.status === "storyboard" ? (
           <button onClick={() => setShowVideoForm((v) => !v)}
