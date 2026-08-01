@@ -9,6 +9,67 @@ type DB = ReturnType<typeof createServerClient>
 
 const BUCKET = "content-media"
 
+
+// Descarte de ingredientes só quando a HISTÓRIA inteira terminou.
+//
+// Publicar no Instagram não pode destruir o material da versão do TikTok: as
+// peças-irmãs reaproveitam as mesmas cenas, voz e trilha, e remontar com a
+// marca da outra rede é de graça. A regra anterior ("publicou, apagou") valia
+// quando cada peça era ilha — com adaptação entre redes, ela apagava o insumo
+// de quem ainda nem foi ao ar.
+async function descartarIngredientesSeFamiliaCompleta(supabase: DB, draftId: string) {
+  try {
+    const { data: eu } = await supabase
+      .from("content_drafts").select("id, derivado_de").eq("id", draftId).maybeSingle()
+    const raiz = eu?.derivado_de ?? draftId
+
+    const { data: familia } = await supabase
+      .from("content_drafts")
+      .select("id, published_at")
+      .or(`id.eq.${raiz},derivado_de.eq.${raiz}`)
+
+    const faltaAlguem = (familia ?? []).some((p) => p.id !== draftId && !p.published_at)
+    if (faltaAlguem) return
+
+    const ids = (familia ?? []).map((p) => p.id)
+    const { data: jobs } = await supabase.from("video_jobs").select("id").in("contentDraftId", ids)
+    for (const j of jobs ?? []) await purgeVideoIngredients(supabase, j.id)
+  } catch (e) {
+    console.error("[publish] ingredientes não descartados:", e instanceof Error ? e.message : e)
+  }
+}
+
+/**
+ * Registra publicação feita À MÃO (TikTok e YouTube, que ainda não têm API de
+ * postagem aqui). Sem isso a peça ficaria eternamente "aprovada": o painel
+ * mentiria sobre onde a história já está, as métricas não teriam âncora e os
+ * ingredientes de vídeo nunca seriam descartados — porque o descarte espera a
+ * família inteira ir ao ar.
+ */
+export async function marcarComoPublicado(supabase: DB, draftId: string, permalink?: string) {
+  const { data: draft } = await supabase
+    .from("content_drafts").select("id, platform, status, published_at").eq("id", draftId).maybeSingle()
+  if (!draft) throw new Error("Rascunho não encontrado.")
+  if (draft.published_at) throw new Error("Este rascunho já está marcado como publicado.")
+  if (draft.status !== "aprovado") throw new Error("Só peça aprovada pode ser marcada como publicada.")
+  if (draft.platform === "instagram") {
+    throw new Error("O Instagram publica pelo botão — marcar à mão esconderia uma falha real.")
+  }
+
+  await supabase
+    .from("content_drafts")
+    .update({
+      published_at: new Date().toISOString(),
+      published_permalink: permalink?.trim() || null,
+      publish_error: null,
+    })
+    .eq("id", draftId)
+  await logContentEvent(supabase, draftId, "publicado", `${draft.platform} publicado manualmente`, "admin")
+
+  await descartarIngredientesSeFamiliaCompleta(supabase, draftId)
+  return { permalink: permalink?.trim() || null }
+}
+
 // Publica um rascunho já APROVADO na rede correspondente. Hoje só Instagram
 // tem integração real (Meta aprovada + token de 60 dias); TikTok/YouTube ainda
 // dependem de aprovação da plataforma — por isso o switch explícito.
@@ -78,33 +139,7 @@ export async function publishDraft(supabase: DB, draftId: string) {
       throw new Error("Rascunho sem imagem nem vídeo para publicar.")
     }
 
-    // Descarte de ingredientes só quando a HISTÓRIA inteira terminou.
-    //
-    // Publicar no Instagram não pode destruir o material da versão do TikTok:
-    // as peças-irmãs reaproveitam as mesmas cenas, voz e trilha, e remontar com
-    // a marca da outra rede é de graça. A regra anterior ("publicou, apagou")
-    // valia quando cada peça era ilha — com adaptação entre redes, ela apagava
-    // o insumo de quem ainda nem foi ao ar.
-    try {
-      const { data: eu } = await supabase
-        .from("content_drafts").select("id, derivado_de").eq("id", draftId).maybeSingle()
-      const raiz = eu?.derivado_de ?? draftId
-
-      const { data: familia } = await supabase
-        .from("content_drafts")
-        .select("id, published_at")
-        .or(`id.eq.${raiz},derivado_de.eq.${raiz}`)
-
-      const faltaAlguem = (familia ?? []).some((p) => p.id !== draftId && !p.published_at)
-
-      if (!faltaAlguem) {
-        const ids = (familia ?? []).map((p) => p.id)
-        const { data: jobs } = await supabase.from("video_jobs").select("id").in("contentDraftId", ids)
-        for (const j of jobs ?? []) await purgeVideoIngredients(supabase, j.id)
-      }
-    } catch (e) {
-      console.error("[publish] ingredientes não descartados:", e instanceof Error ? e.message : e)
-    }
+    await descartarIngredientesSeFamiliaCompleta(supabase, draftId)
 
     await supabase
       .from("content_drafts")

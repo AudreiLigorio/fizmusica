@@ -50,7 +50,24 @@ type Metrica = { reach: number | null; likes: number | null; saved: number | nul
 type Lead = { id: string; username: string | null; texto: string; criado_em: string | null; respondido: boolean }
 type Seguidores = { dia: string; followers_count: number | null }
 
-type PecaDaFamilia = { id?: string; platform: string; status: string; publicado: boolean; permalink: string | null; publicadoEm: string | null }
+type PecaDaFamilia = {
+  id?: string
+  platform: string
+  status: string
+  publicado: boolean
+  permalink: string | null
+  publicadoEm: string | null
+  imageUrl?: string | null
+  videoUrl?: string | null
+  caption?: string | null
+  hashtags?: string | null
+}
+
+// Só o Instagram publica sozinho. O TikTok tem apenas o Login Kit aprovado
+// (postar exige a Content Posting API, que é outro pedido) e o YouTube nem
+// OAuth tem. Nessas duas, "publicar" é entregar o arquivo e a legenda prontos —
+// a tela precisa dizer isso, e não fingir um botão que só daria erro.
+const PUBLICA_SOZINHO = new Set(["instagram"])
 
 const REDES = [
   { id: "instagram", nome: "Instagram" },
@@ -61,15 +78,38 @@ const REDES = [
 // Onde esta história está em cada rede. Responde de bate-pronto a pergunta que
 // se faz olhando o painel: "já publiquei isso onde?".
 function StatusPorRede({
-  familia, atual, onAdaptar, adaptando,
+  familia, atual, onAdaptar, adaptando, onPublicar, onMarcar, publicando,
 }: {
   familia: PecaDaFamilia[]
   atual: string
   onAdaptar: (rede: string) => void
   adaptando: string | null
+  onPublicar: (peca: PecaDaFamilia) => Promise<void>
+  onMarcar: (peca: PecaDaFamilia) => void
+  publicando: string | null
 }) {
+  const [copiado, setCopiado] = useState<string | null>(null)
+  const [msgCopia, setMsgCopia] = useState<string | null>(null)
+
+  async function copiarLegenda(p: PecaDaFamilia) {
+    const texto = [p.caption?.trim(), p.hashtags?.trim()].filter(Boolean).join("\n\n")
+    try {
+      await navigator.clipboard.writeText(texto)
+      setCopiado(p.platform)
+      setTimeout(() => setCopiado(null), 2000)
+    } catch {
+      // Sem permissão de clipboard: o texto continua visível no card.
+      setMsgCopia(texto)
+    }
+  }
+
+  const pendentes = familia.filter((p) => !p.publicado && p.status === "aprovado")
+  const automaticas = pendentes.filter((p) => PUBLICA_SOZINHO.has(p.platform))
+  const manuais = pendentes.filter((p) => !PUBLICA_SOZINHO.has(p.platform))
+
   return (
-    <div className="mt-3 flex items-center gap-2 flex-wrap">
+    <div className="mt-3 space-y-2">
+    <div className="flex items-center gap-2 flex-wrap">
       {REDES.map((rede) => {
         const peca = familia.find((p) => p.platform === rede.id)
         const ehAtual = rede.id === atual
@@ -106,6 +146,73 @@ function StatusPorRede({
           </button>
         )
       })}
+    </div>
+
+    {/* Publicação por rede. Some quando não há nada aprovado esperando — e
+        aparece no card de qualquer irmã, porque a decisão de publicar é da
+        história inteira, não de uma peça só. */}
+    {pendentes.length > 0 && (
+      <div className="flex items-center gap-2 flex-wrap border-t border-white/5 pt-2">
+        {pendentes.map((p) => {
+          const nome = REDES.find((r) => r.id === p.platform)?.nome ?? p.platform
+          if (PUBLICA_SOZINHO.has(p.platform)) {
+            return (
+              <button key={p.platform} onClick={() => onPublicar(p)} disabled={publicando !== null}
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-lg text-white disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
+                {publicando === p.platform ? "publicando…" : `📤 Publicar no ${nome}`}
+              </button>
+            )
+          }
+          // Rede sem API de publicação: o botão entrega o que falta pra postar
+          // à mão — o arquivo e o texto —, em vez de prometer o que não faz.
+          const arquivo = p.videoUrl || p.imageUrl
+          return (
+            <span key={p.platform} className="inline-flex items-center gap-1 rounded-lg border border-white/10 px-1.5 py-0.5">
+              <span className="text-[11px] text-white/50">{nome}:</span>
+              {arquivo && (
+                <a href={arquivo} download target="_blank" rel="noreferrer"
+                  className="text-[11px] px-1.5 py-0.5 rounded text-white/70 hover:bg-white/10">
+                  ⬇️ arquivo
+                </a>
+              )}
+              <button onClick={() => copiarLegenda(p)}
+                className="text-[11px] px-1.5 py-0.5 rounded text-white/70 hover:bg-white/10">
+                {copiado === p.platform ? "legenda copiada ✓" : "📋 legenda"}
+              </button>
+              <button onClick={() => onMarcar(p)} disabled={publicando !== null}
+                className="text-[11px] px-1.5 py-0.5 rounded text-emerald-300/80 hover:bg-emerald-500/10 disabled:opacity-50">
+                {publicando === p.platform ? "salvando…" : "✔️ já postei"}
+              </button>
+            </span>
+          )
+        })}
+
+        {pendentes.length > 1 && automaticas.length > 0 && (
+          <button
+            onClick={async () => { for (const p of automaticas) await onPublicar(p) }}
+            disabled={publicando !== null}
+            className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-fuchsia-500/50 text-fuchsia-200 hover:bg-fuchsia-500/10 disabled:opacity-50">
+            🚀 Publicar em todas{manuais.length > 0 ? " que dá" : ""}
+          </button>
+        )}
+      </div>
+    )}
+
+    {manuais.length > 0 && (
+      <p className="text-white/35 text-[11px]">
+        {manuais.map((p) => REDES.find((r) => r.id === p.platform)?.nome ?? p.platform).join(" e ")}{" "}
+        {manuais.length > 1 ? "ainda não publicam sozinhos" : "ainda não publica sozinho"} — baixe o
+        arquivo, copie a legenda, poste à mão e clique em “já postei” (leva segundos).
+        {manuais.some((p) => p.platform === "tiktok") && " O TikTok depende da Content Posting API."}
+        {manuais.some((p) => p.platform === "youtube") && " O YouTube depende do OAuth do Google."}
+      </p>
+    )}
+
+    {msgCopia && (
+      <textarea readOnly value={msgCopia} onFocus={(e) => e.currentTarget.select()}
+        className="w-full h-20 text-[11px] bg-black/40 border border-white/10 rounded p-2 text-white/70" />
+    )}
     </div>
   )
 }
@@ -922,6 +1029,50 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
   }
 
   const [adaptando, setAdaptando] = useState<string | null>(null)
+  const [publicando, setPublicando] = useState<string | null>(null)
+
+  // Publica a peça da rede escolhida. Pode ser esta ou uma irmã — por isso a
+  // chamada vai pro id DELA, não pro deste card.
+  async function publicarPeca(peca: PecaDaFamilia) {
+    if (!peca.id) return
+    setPublicando(peca.platform); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${peca.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "publicar" }),
+      }).then((r) => r.json())
+      if (d.ok) onChange()
+      else setMsg(`❌ ${REDES.find((r) => r.id === peca.platform)?.nome ?? peca.platform}: ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao publicar.")
+    } finally {
+      setPublicando(null)
+    }
+  }
+
+  // Registro de postagem feita à mão (TikTok/YouTube). Sem isso a peça ficaria
+  // "aprovada" pra sempre e os ingredientes de vídeo nunca seriam descartados.
+  async function marcarPublicada(peca: PecaDaFamilia) {
+    if (!peca.id) return
+    const nome = REDES.find((r) => r.id === peca.platform)?.nome ?? peca.platform
+    const link = prompt(`Você já postou esta peça no ${nome}?\n\nCole o link do post (opcional — dá pra deixar em branco):`)
+    if (link === null) return
+    setPublicando(peca.platform); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${peca.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "marcar_publicado", permalink: link }),
+      }).then((r) => r.json())
+      if (d.ok) onChange()
+      else setMsg(`❌ ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao registrar.")
+    } finally {
+      setPublicando(null)
+    }
+  }
 
   // Mesma história, outra rede: cria uma peça nova, adaptada às regras da rede
   // de destino (o roteirista mantém emoção, persona e história; muda ritmo,
@@ -1194,7 +1345,8 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
         {msg && <p className="text-red-400 text-xs mt-2">{msg}</p>}
 
         {draft.status !== "gerando" && draft.status !== "falhou" && (
-          <StatusPorRede familia={familia} atual={draft.platform} onAdaptar={adaptar} adaptando={adaptando} />
+          <StatusPorRede familia={familia} atual={draft.platform} onAdaptar={adaptar} adaptando={adaptando}
+            onPublicar={publicarPeca} onMarcar={marcarPublicada} publicando={publicando} />
         )}
 
         {draft.published_at ? null : canPublish ? (

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { syncImageTask, runGeneration, createDraft } from "@/lib/content/generate"
-import { publishDraft } from "@/lib/content/publish"
+import { publishDraft, marcarComoPublicado } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
 import { purgeDraftMedia } from "@/lib/content/media"
 import { registrarLicao } from "@/lib/content/licoes"
@@ -47,11 +47,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 // Ações do admin sobre um rascunho.
-// body: { action: "sincronizar" | "editar" | "regerar" | "aprovar" | "rejeitar" | "publicar" | "apagar_midia" | "excluir" | "adaptar", rejectionReason?, caption?, hashtags?, platform? }
+// body: { action: "sincronizar" | "editar" | "regerar" | "aprovar" | "rejeitar" | "publicar" | "marcar_publicado" | "apagar_midia" | "excluir" | "adaptar", rejectionReason?, caption?, hashtags?, platform? }
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
-  const { action, rejectionReason, caption, hashtags, platform, feedback } = await req.json().catch(() => ({}))
+  const { action, rejectionReason, caption, hashtags, platform, feedback, permalink } = await req.json().catch(() => ({}))
   const supabase = createServerClient()
 
   if (action === "sincronizar") {
@@ -183,6 +183,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (erro) return NextResponse.json({ error: erro }, { status: 500 })
     await logContentEvent(supabase, id, "rascunho_criado", `mídia apagada manualmente (${arquivos} arquivo(s))`, "admin")
     return NextResponse.json({ ok: true, midiaApagada: arquivos })
+  }
+
+  // TikTok e YouTube são postados à mão hoje; isto registra o que já foi ao ar.
+  if (action === "marcar_publicado") {
+    try {
+      const r = await marcarComoPublicado(supabase, id, typeof permalink === "string" ? permalink : undefined)
+      return NextResponse.json({ ok: true, ...r })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao marcar." }, { status: 500 })
+    }
   }
 
   if (action === "publicar") {
