@@ -3,6 +3,7 @@ import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { syncImageTask, runGeneration, createDraft } from "@/lib/content/generate"
 import { publishDraft, marcarComoPublicado } from "@/lib/content/publish"
+import { queryCreatorInfo, getUserInfo, podePublicar as tiktokPodePublicar } from "@/lib/content/publishers/tiktok"
 import { logContentEvent } from "@/lib/content/events"
 import { purgeDraftMedia } from "@/lib/content/media"
 import { registrarLicao } from "@/lib/content/licoes"
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
   const { id } = await params
-  const { action, rejectionReason, caption, hashtags, platform, feedback, permalink } = await req.json().catch(() => ({}))
+  const { action, rejectionReason, caption, hashtags, platform, feedback, permalink, opcoesTiktok } = await req.json().catch(() => ({}))
   const supabase = createServerClient()
 
   if (action === "sincronizar") {
@@ -195,9 +196,47 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
+  // Dados do criador pra montar a tela de publicação do TikTok. A doc exige
+  // consultar isto ANTES de postar — é daqui que saem as privacidades que a
+  // conta aceita e quais interações ela já tem bloqueadas.
+  if (action === "tiktok_creator_info") {
+    const permissao = await tiktokPodePublicar()
+    if (permissao.ok) {
+      try {
+        return NextResponse.json({ ok: true, creator: await queryCreatorInfo() })
+      } catch (e) {
+        return NextResponse.json({ error: e instanceof Error ? e.message : "Erro no TikTok." }, { status: 500 })
+      }
+    }
+    // Sem o escopo de publicação ainda: em vez de uma tela vazia, mostramos a
+    // conta REAL (que o Login Kit já permite ler) e marcamos como prévia. As
+    // privacidades e o limite de duração vêm só do creator_info — não são
+    // inventados aqui, e a tela não deixa publicar nesse estado.
+    try {
+      const u = await getUserInfo()
+      return NextResponse.json({
+        ok: true,
+        previa: true,
+        motivo: permissao.motivo,
+        creator: {
+          creator_username: u.username ?? "",
+          creator_nickname: u.display_name,
+          creator_avatar_url: u.avatar_url,
+          privacy_level_options: [],
+          max_video_post_duration_sec: 0,
+          comment_disabled: false,
+          duet_disabled: false,
+          stitch_disabled: false,
+        },
+      })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : permissao.motivo }, { status: 400 })
+    }
+  }
+
   if (action === "publicar") {
     try {
-      const result = await publishDraft(supabase, id)
+      const result = await publishDraft(supabase, id, opcoesTiktok)
       return NextResponse.json({ ok: true, ...result })
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao publicar." }, { status: 500 })

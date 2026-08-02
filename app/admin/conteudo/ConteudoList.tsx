@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import type { TiktokConnectionStatus } from "@/lib/content/publishers/tiktok-auth"
+import PublicarTiktokModal from "./PublicarTiktokModal"
 import { parseDbDate } from "@/lib/date"
 
 // Data curta pro painel. Passa pelo parseDbDate porque coluna sem timezone
@@ -83,7 +84,7 @@ const REDES = [
 // Onde esta história está em cada rede. Responde de bate-pronto a pergunta que
 // se faz olhando o painel: "já publiquei isso onde?".
 function StatusPorRede({
-  familia, atual, onAdaptar, adaptando, onPublicar, onMarcar, publicando, tiktokOk,
+  familia, atual, onAdaptar, adaptando, onPublicar, onMarcar, onPreverTiktok, publicando, tiktokOk,
 }: {
   familia: PecaDaFamilia[]
   atual: string
@@ -91,6 +92,7 @@ function StatusPorRede({
   adaptando: string | null
   onPublicar: (peca: PecaDaFamilia) => Promise<void>
   onMarcar: (peca: PecaDaFamilia) => void
+  onPreverTiktok: (peca: PecaDaFamilia) => void
   publicando: string | null
   tiktokOk: boolean
 }) {
@@ -186,6 +188,15 @@ function StatusPorRede({
                 className="text-[11px] px-1.5 py-0.5 rounded text-white/70 hover:bg-white/10">
                 {copiado === p.platform ? "legenda copiada ✓" : "📋 legenda"}
               </button>
+              {p.platform === "tiktok" && p.videoUrl && (
+                // Enquanto o escopo não sai, a tela de publicação ainda pode
+                // ser aberta em modo prévia — é ela que o App Review pede pra
+                // ver no vídeo demo.
+                <button onClick={() => onPreverTiktok(p)}
+                  className="text-[11px] px-1.5 py-0.5 rounded text-white/70 hover:bg-white/10">
+                  👁️ tela de publicação
+                </button>
+              )}
               <button onClick={() => onMarcar(p)} disabled={publicando !== null}
                 className="text-[11px] px-1.5 py-0.5 rounded text-emerald-300/80 hover:bg-emerald-500/10 disabled:opacity-50">
                 {publicando === p.platform ? "salvando…" : "✔️ já postei"}
@@ -1040,10 +1051,16 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
   const [adaptando, setAdaptando] = useState<string | null>(null)
   const [publicando, setPublicando] = useState<string | null>(null)
 
+  // Peça de TikTok aberta na tela de publicação (privacidade, interações e
+  // divulgação comercial). É passo obrigatório das diretrizes da plataforma —
+  // publicar direto no clique reprovaria no App Review.
+  const [tiktokAberto, setTiktokAberto] = useState<PecaDaFamilia | null>(null)
+
   // Publica a peça da rede escolhida. Pode ser esta ou uma irmã — por isso a
   // chamada vai pro id DELA, não pro deste card.
   async function publicarPeca(peca: PecaDaFamilia) {
     if (!peca.id) return
+    if (peca.platform === "tiktok") { setTiktokAberto(peca); return }
     setPublicando(peca.platform); setMsg("")
     try {
       const d = await fetch(`/api/admin/conteudo/${peca.id}`, {
@@ -1357,9 +1374,20 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
         )}
         {msg && <p className="text-red-400 text-xs mt-2">{msg}</p>}
 
+        {tiktokAberto?.id && tiktokAberto.videoUrl && (
+          <PublicarTiktokModal
+            draftId={tiktokAberto.id}
+            videoUrl={tiktokAberto.videoUrl}
+            captionInicial={[tiktokAberto.caption?.trim(), tiktokAberto.hashtags?.trim()].filter(Boolean).join("\n\n")}
+            onFechar={() => setTiktokAberto(null)}
+            onPublicado={(nota) => { setTiktokAberto(null); if (nota) setMsg(`✅ Publicado — ${nota}`); onChange() }}
+          />
+        )}
+
         {draft.status !== "gerando" && draft.status !== "falhou" && (
           <StatusPorRede familia={familia} atual={draft.platform} onAdaptar={adaptar} adaptando={adaptando}
-            onPublicar={publicarPeca} onMarcar={marcarPublicada} publicando={publicando} tiktokOk={tiktokOk} />
+            onPublicar={publicarPeca} onMarcar={marcarPublicada} onPreverTiktok={setTiktokAberto}
+            publicando={publicando} tiktokOk={tiktokOk} />
         )}
 
         {draft.published_at ? null : canPublish ? (

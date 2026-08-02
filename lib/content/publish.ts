@@ -4,7 +4,7 @@ import { logContentEvent } from "@/lib/content/events"
 import { garantirMidiaPropria } from "@/lib/content/guardas"
 import { purgeVideoIngredients } from "@/lib/content/media"
 import { publishImage, publishReel, pngUrlToJpegBytes } from "@/lib/content/publishers/instagram"
-import { publishVideoTikTok, podePublicar as tiktokPodePublicar } from "@/lib/content/publishers/tiktok"
+import { publishVideoTikTok, type OpcoesPost } from "@/lib/content/publishers/tiktok"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -74,7 +74,7 @@ export async function marcarComoPublicado(supabase: DB, draftId: string, permali
 // Publica um rascunho já APROVADO na rede correspondente. Hoje só Instagram
 // tem integração real (Meta aprovada + token de 60 dias); TikTok/YouTube ainda
 // dependem de aprovação da plataforma — por isso o switch explícito.
-export async function publishDraft(supabase: DB, draftId: string) {
+export async function publishDraft(supabase: DB, draftId: string, opcoesTiktok?: OpcoesPost) {
   const { data: draft } = await supabase
     .from("content_drafts")
     .select("id, platform, status, caption, hashtags, image_url, video_url, published_at, sourceOrderId")
@@ -127,7 +127,13 @@ export async function publishDraft(supabase: DB, draftId: string) {
     let result: { mediaId: string; permalink: string | null; nota?: string }
 
     if (draft.platform === "tiktok") {
-      const r = await publishVideoTikTok({ videoUrl: draft.video_url!, caption })
+      // As escolhas vêm da tela de publicação (privacidade, interações,
+      // divulgação comercial e título editável). São obrigatórias: as
+      // diretrizes de UX do TikTok proíbem publicar com padrão implícito.
+      if (!opcoesTiktok?.privacyLevel) {
+        throw new Error("Faltou escolher a privacidade do post no TikTok.")
+      }
+      const r = await publishVideoTikTok({ videoUrl: draft.video_url!, opcoes: opcoesTiktok })
       result = {
         mediaId: r.publishId,
         permalink: r.permalink,

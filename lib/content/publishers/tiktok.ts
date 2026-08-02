@@ -22,21 +22,32 @@ import { getValidAccessToken, getConnectionStatus } from "./tiktok-auth"
 
 const API = "https://open.tiktokapis.com/v2"
 
-// Ordem de preferência: queremos o post mais público que a conta permitir.
-const PRIVACIDADE_PREFERIDA = [
-  "PUBLIC_TO_EVERYONE",
-  "FOLLOWER_OF_CREATOR",
-  "MUTUAL_FOLLOW_FRIENDS",
-  "SELF_ONLY",
-]
-
 const TITULO_MAX = 2200 // runas UTF-16, limite da API
 
-type CreatorInfo = {
+export type CreatorInfo = {
   creator_username: string
+  creator_nickname: string
+  creator_avatar_url: string
   privacy_level_options: string[]
   max_video_post_duration_sec: number
   comment_disabled: boolean
+  duet_disabled: boolean
+  stitch_disabled: boolean
+}
+
+/**
+ * Escolhas do post. Não têm padrão de propósito: as diretrizes de UX do TikTok
+ * exigem que a privacidade seja selecionada à mão (sem default) e que comentar,
+ * duetar e costurar comecem DESMARCADOS. Quem decide é a tela, não este módulo.
+ */
+export type OpcoesPost = {
+  privacyLevel: string
+  allowComment: boolean
+  allowDuet: boolean
+  allowStitch: boolean
+  brandOrganic: boolean   // "Your Brand" — conteúdo promocional da própria marca
+  brandedContent: boolean // "Branded Content" — parceria paga
+  title: string
 }
 
 async function chamar<T>(caminho: string, token: string, body: unknown): Promise<T> {
@@ -78,6 +89,28 @@ export async function queryCreatorInfo(): Promise<CreatorInfo> {
   return chamar<CreatorInfo>("/post/publish/creator_info/query/", token, {})
 }
 
+/**
+ * Identidade da conta pelo Login Kit (`user.info.basic`, que já temos).
+ *
+ * Serve pra tela de publicação mostrar de qual conta o vídeo sairia mesmo antes
+ * da Content Posting API ser aprovada — em vez de inventar um nome, mostramos o
+ * real e deixamos claro que o resto ainda não carrega.
+ */
+export async function getUserInfo(): Promise<{ display_name: string; username?: string; avatar_url: string }> {
+  const token = await getValidAccessToken()
+  // `username` exige o escopo user.info.profile, que não pedimos — com
+  // user.info.basic vêm só nome de exibição e avatar. Pedir campo a mais faz a
+  // chamada inteira falhar com scope_not_authorized.
+  const url = "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,avatar_url"
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  const json = (await res.json()) as {
+    data?: { user: { display_name: string; username?: string; avatar_url: string } }
+    error?: { code: string; message: string }
+  }
+  if (json.error && json.error.code !== "ok") throw new Error(`TikTok (${json.error.code}): ${json.error.message}`)
+  return json.data!.user
+}
+
 type StatusPost = {
   status: string
   fail_reason?: string
@@ -99,11 +132,11 @@ export type ResultadoTiktok = {
  */
 export async function publishVideoTikTok({
   videoUrl,
-  caption,
+  opcoes,
   isAigc = true,
 }: {
   videoUrl: string
-  caption: string
+  opcoes: OpcoesPost
   isAigc?: boolean
 }): Promise<ResultadoTiktok> {
   const permissao = await podePublicar()
@@ -115,8 +148,21 @@ export async function publishVideoTikTok({
   //    de privacidades válidas pra esta conta (uma conta privada não aceita
   //    PUBLIC_TO_EVERYONE, e mandar assim é erro).
   const creator = await queryCreatorInfo()
-  const privacidade =
-    PRIVACIDADE_PREFERIDA.find((p) => creator.privacy_level_options?.includes(p)) ?? "SELF_ONLY"
+
+  // A privacidade veio da tela, mas a lista válida é a que o TikTok acabou de
+  // devolver: conta que virou privada no meio do caminho não aceita mais
+  // PUBLIC_TO_EVERYONE, e mandar assim é erro na cara do usuário.
+  if (!creator.privacy_level_options?.includes(opcoes.privacyLevel)) {
+    throw new Error(
+      `Esta conta não aceita a privacidade "${opcoes.privacyLevel}". ` +
+      `Opções atuais: ${(creator.privacy_level_options ?? []).join(", ")}.`,
+    )
+  }
+  // Parceria paga não pode ser privada — regra da própria plataforma.
+  if (opcoes.brandedContent && opcoes.privacyLevel === "SELF_ONLY") {
+    throw new Error("Conteúdo de parceria paga não pode ser publicado como privado (SELF_ONLY).")
+  }
+  const privacidade = opcoes.privacyLevel
 
   // 2. Baixa o MP4 do nosso bucket. Não dá pra mandar a URL (PULL_FROM_URL só
   //    aceita domínio verificado no portal, e o arquivo mora no supabase.co).
@@ -136,11 +182,15 @@ export async function publishVideoTikTok({
     token,
     {
       post_info: {
-        title: caption.slice(0, TITULO_MAX),
+        title: opcoes.title.slice(0, TITULO_MAX),
         privacy_level: privacidade,
-        disable_comment: false,
-        disable_duet: false,
-        disable_stitch: false,
+        // A API fala em "disable"; a tela fala em "permitir". A inversão mora
+        // aqui pra ninguém marcar "permitir comentário" e desligar comentário.
+        disable_comment: !opcoes.allowComment,
+        disable_duet: !opcoes.allowDuet,
+        disable_stitch: !opcoes.allowStitch,
+        brand_organic_toggle: opcoes.brandOrganic,
+        brand_content_toggle: opcoes.brandedContent,
         // Cenas geradas por IA e voz sintética: declarar é exigência da
         // plataforma e a verdade sobre como a peça foi feita.
         is_aigc: isAigc,

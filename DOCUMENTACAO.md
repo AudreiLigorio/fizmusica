@@ -394,6 +394,8 @@ O fluxo implementado em `lib/content/publishers/tiktok.ts` segue a ordem obrigat
 
 Pedir `video.publish` antes da aprovação faz o TikTok recusar a tela de autorização **inteira** — quebraria até o login que hoje funciona. Por isso o escopo é ligado por `TIKTOK_PUBLISH_SCOPE=1`, não por padrão.
 
+**Tela de publicação do TikTok** (`app/admin/conteudo/PublicarTiktokModal.tsx`): não é capricho de UX — as diretrizes de compartilhamento são parte do App Review e exigem, antes de qualquer post, mostrar de qual conta o vídeo sai, deixar a privacidade ser **escolhida à mão (sem padrão)**, oferecer comentário/dueto/costura **desmarcados**, respeitar o que a conta já bloqueou, coletar a declaração de conteúdo comercial (com os rótulos "Promotional content"/"Paid partnership") e exibir o consentimento ("Music Usage Confirmation", mais "Branded Content Policy" quando for parceria paga). Título pré-preenchido que não dá pra editar é **proibido** — por isso a legenda gerada pela IA vem editável. Parceria paga não pode ser privada. Enquanto o escopo não sai, a tela abre em **modo prévia** (conta real via `user.info.basic`, publicar desativado) — é ela que o vídeo demo do review mostra.
+
 **Onde a API não publica, a tela entrega o material** (`⬇️ arquivo`, `📋 legenda`) e o botão `✔️ já postei` registra o que foi ao ar. Esse registro não é cosmético: o descarte dos ingredientes de vídeo (cenas, narração, trilha) só roda quando a **família inteira** foi publicada — sem ele, o storage cresceria para sempre e o painel mentiria sobre onde a história está.
 
 ---
