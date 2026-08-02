@@ -4,6 +4,7 @@ import { logContentEvent } from "@/lib/content/events"
 import { garantirMidiaPropria } from "@/lib/content/guardas"
 import { purgeVideoIngredients } from "@/lib/content/media"
 import { publishImage, publishReel, pngUrlToJpegBytes } from "@/lib/content/publishers/instagram"
+import { publishVideoTikTok, podePublicar as tiktokPodePublicar } from "@/lib/content/publishers/tiktok"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -84,10 +85,18 @@ export async function publishDraft(supabase: DB, draftId: string) {
   if (draft.status !== "aprovado") throw new Error("Só é possível publicar um rascunho aprovado.")
   if (draft.published_at) throw new Error("Este rascunho já foi publicado.")
 
-  if (draft.platform !== "instagram") {
+  if (draft.platform === "tiktok" && !draft.video_url) {
+    // Foto no TikTok só entra por PULL_FROM_URL, que exige domínio verificado
+    // no portal — o arquivo mora no supabase.co. Peça sem vídeo vai à mão.
+    throw new Error(
+      "No TikTok a publicação automática só funciona com vídeo (foto exige domínio verificado). " +
+      "Gere o vídeo desta peça ou poste a imagem à mão."
+    )
+  }
+  if (draft.platform !== "instagram" && draft.platform !== "tiktok") {
     throw new Error(
       `Publicação automática ainda não disponível para ${draft.platform}. ` +
-      `Só o Instagram tem integração ativa por enquanto.`
+      `Instagram e TikTok têm integração ativa; o YouTube depende do OAuth do Google.`
     )
   }
 
@@ -115,9 +124,19 @@ export async function publishDraft(supabase: DB, draftId: string) {
   const caption = [draft.caption?.trim(), draft.hashtags?.trim()].filter(Boolean).join("\n\n")
 
   try {
-    let result: { mediaId: string; permalink: string | null }
+    let result: { mediaId: string; permalink: string | null; nota?: string }
 
-    if (draft.video_url) {
+    if (draft.platform === "tiktok") {
+      const r = await publishVideoTikTok({ videoUrl: draft.video_url!, caption })
+      result = {
+        mediaId: r.publishId,
+        permalink: r.permalink,
+        nota:
+          r.status === "PUBLISH_COMPLETE"
+            ? `privacidade ${r.privacidade}`
+            : `ainda em processamento no TikTok (${r.status}) — o post aparece sozinho quando a moderação terminar`,
+      }
+    } else if (draft.video_url) {
       // Vídeo vira Reels — a URL do MP4 no bucket já é pública.
       result = await publishReel({ videoUrl: draft.video_url, caption })
     } else if (draft.image_url) {
@@ -150,9 +169,12 @@ export async function publishDraft(supabase: DB, draftId: string) {
         publish_error: null,
       })
       .eq("id", draftId)
-    await logContentEvent(supabase, draftId, "publicado", `instagram media ${result.mediaId}`, "admin")
+    await logContentEvent(
+      supabase, draftId, "publicado",
+      `${draft.platform} ${result.mediaId}${result.nota ? ` — ${result.nota}` : ""}`, "admin",
+    )
 
-    return { mediaId: result.mediaId, permalink: result.permalink }
+    return { mediaId: result.mediaId, permalink: result.permalink, nota: result.nota ?? null }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Falha ao publicar."
     await supabase.from("content_drafts").update({ publish_error: msg }).eq("id", draftId)

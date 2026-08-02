@@ -1,5 +1,5 @@
-// Login Kit do TikTok (OAuth 2.0) — só a autenticação, não publicação (isso é
-// a Content Posting API, aprovação separada e ainda pendente). Diferente do
+// OAuth 2.0 do TikTok — Login Kit (autenticação) e, quando a Content Posting
+// API estiver aprovada, também o escopo de publicação. Diferente do
 // Instagram (token de 60 dias colado manualmente no env), o access token do
 // TikTok dura só 24h: guardamos em `tiktok_auth` (linha única, id=1) e
 // renovamos via refresh_token (válido ~365 dias) antes de cada uso.
@@ -26,15 +26,21 @@ function clientSecret() {
   return v
 }
 
-// Escopo mínimo pra aprovar o Login Kit e gravar o vídeo demo. `video.publish`
-// fica pra quando a Content Posting API for solicitada separadamente.
-const SCOPE = "user.info.basic"
+// Pedir um escopo que o app ainda não tem aprovado faz o TikTok recusar a tela
+// de autorização inteira — ou seja, ligar `video.publish` cedo demais quebra
+// até o login que hoje funciona. Por isso ele entra só quando a Content
+// Posting API for aprovada e TIKTOK_PUBLISH_SCOPE=1 for ligado no ambiente.
+function scopes(): string {
+  const base = ["user.info.basic"]
+  if (process.env.TIKTOK_PUBLISH_SCOPE === "1") base.push("video.publish")
+  return base.join(",")
+}
 
 export function buildAuthorizeUrl(redirectUri: string, state: string): string {
   const url = new URL(AUTHORIZE_URL)
   url.searchParams.set("client_key", clientKey())
   url.searchParams.set("response_type", "code")
-  url.searchParams.set("scope", SCOPE)
+  url.searchParams.set("scope", scopes())
   url.searchParams.set("redirect_uri", redirectUri)
   url.searchParams.set("state", state)
   return url.toString()

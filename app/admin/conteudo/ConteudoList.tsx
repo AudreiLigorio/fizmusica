@@ -63,11 +63,16 @@ type PecaDaFamilia = {
   hashtags?: string | null
 }
 
-// Só o Instagram publica sozinho. O TikTok tem apenas o Login Kit aprovado
-// (postar exige a Content Posting API, que é outro pedido) e o YouTube nem
-// OAuth tem. Nessas duas, "publicar" é entregar o arquivo e a legenda prontos —
-// a tela precisa dizer isso, e não fingir um botão que só daria erro.
-const PUBLICA_SOZINHO = new Set(["instagram"])
+// Quem publica sozinho depende do estado real da integração, não de uma lista
+// fixa: o Instagram sempre; o TikTok só quando a conta está conectada COM o
+// escopo video.publish e a peça tem vídeo (foto lá exige domínio verificado);
+// o YouTube nunca ainda. Onde não dá, "publicar" é entregar arquivo e legenda
+// prontos — a tela diz isso em vez de fingir um botão que só daria erro.
+function publicaSozinho(p: PecaDaFamilia, tiktokOk: boolean): boolean {
+  if (p.platform === "instagram") return true
+  if (p.platform === "tiktok") return tiktokOk && !!p.videoUrl
+  return false
+}
 
 const REDES = [
   { id: "instagram", nome: "Instagram" },
@@ -78,7 +83,7 @@ const REDES = [
 // Onde esta história está em cada rede. Responde de bate-pronto a pergunta que
 // se faz olhando o painel: "já publiquei isso onde?".
 function StatusPorRede({
-  familia, atual, onAdaptar, adaptando, onPublicar, onMarcar, publicando,
+  familia, atual, onAdaptar, adaptando, onPublicar, onMarcar, publicando, tiktokOk,
 }: {
   familia: PecaDaFamilia[]
   atual: string
@@ -87,6 +92,7 @@ function StatusPorRede({
   onPublicar: (peca: PecaDaFamilia) => Promise<void>
   onMarcar: (peca: PecaDaFamilia) => void
   publicando: string | null
+  tiktokOk: boolean
 }) {
   const [copiado, setCopiado] = useState<string | null>(null)
   const [msgCopia, setMsgCopia] = useState<string | null>(null)
@@ -104,8 +110,8 @@ function StatusPorRede({
   }
 
   const pendentes = familia.filter((p) => !p.publicado && p.status === "aprovado")
-  const automaticas = pendentes.filter((p) => PUBLICA_SOZINHO.has(p.platform))
-  const manuais = pendentes.filter((p) => !PUBLICA_SOZINHO.has(p.platform))
+  const automaticas = pendentes.filter((p) => publicaSozinho(p, tiktokOk))
+  const manuais = pendentes.filter((p) => !publicaSozinho(p, tiktokOk))
 
   return (
     <div className="mt-3 space-y-2">
@@ -155,7 +161,7 @@ function StatusPorRede({
       <div className="flex items-center gap-2 flex-wrap border-t border-white/5 pt-2">
         {pendentes.map((p) => {
           const nome = REDES.find((r) => r.id === p.platform)?.nome ?? p.platform
-          if (PUBLICA_SOZINHO.has(p.platform)) {
+          if (publicaSozinho(p, tiktokOk)) {
             return (
               <button key={p.platform} onClick={() => onPublicar(p)} disabled={publicando !== null}
                 className="text-[11px] font-semibold px-2.5 py-1 rounded-lg text-white disabled:opacity-50"
@@ -204,7 +210,10 @@ function StatusPorRede({
         {manuais.map((p) => REDES.find((r) => r.id === p.platform)?.nome ?? p.platform).join(" e ")}{" "}
         {manuais.length > 1 ? "ainda não publicam sozinhos" : "ainda não publica sozinho"} — baixe o
         arquivo, copie a legenda, poste à mão e clique em “já postei” (leva segundos).
-        {manuais.some((p) => p.platform === "tiktok") && " O TikTok depende da Content Posting API."}
+        {manuais.some((p) => p.platform === "tiktok") &&
+          (tiktokOk
+            ? " No TikTok a API só publica vídeo — foto exige domínio verificado."
+            : " O TikTok depende da Content Posting API (escopo video.publish).")}
         {manuais.some((p) => p.platform === "youtube") && " O YouTube depende do OAuth do Google."}
       </p>
     )}
@@ -955,7 +964,7 @@ function LinkRastreado({ slug, cliques }: { slug: string; cliques: number }) {
   )
 }
 
-function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; familia: PecaDaFamilia[]; metrica?: Metrica; onChange: () => void }) {
+function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tiktokOk, onChange }: { draft: Draft; cliques: number; origem?: OrigemReal; job?: JobResumo; trilhas: Trilha[]; familia: PecaDaFamilia[]; metrica?: Metrica; tiktokOk: boolean; onChange: () => void }) {
   const [busy, setBusy] = useState<"aprovar" | "rejeitar" | "sincronizar" | "publicar" | "regerar" | "apagar_midia" | "editar" | "excluir" | "herdar" | null>(null)
   const [msg, setMsg] = useState("")
   const [rejeitando, setRejeitando] = useState(false)
@@ -1042,8 +1051,12 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "publicar" }),
       }).then((r) => r.json())
-      if (d.ok) onChange()
-      else setMsg(`❌ ${REDES.find((r) => r.id === peca.platform)?.nome ?? peca.platform}: ${d.error}`)
+      if (d.ok) {
+        // O TikTok pode devolver "publicado, mas ainda em moderação": sem essa
+        // nota o card diria publicado e o post não estaria lá ainda.
+        if (d.nota) setMsg(`✅ Publicado — ${d.nota}`)
+        onChange()
+      } else setMsg(`❌ ${REDES.find((r) => r.id === peca.platform)?.nome ?? peca.platform}: ${d.error}`)
     } catch {
       setMsg("❌ Falha ao publicar.")
     } finally {
@@ -1346,7 +1359,7 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, onC
 
         {draft.status !== "gerando" && draft.status !== "falhou" && (
           <StatusPorRede familia={familia} atual={draft.platform} onAdaptar={adaptar} adaptando={adaptando}
-            onPublicar={publicarPeca} onMarcar={marcarPublicada} publicando={publicando} />
+            onPublicar={publicarPeca} onMarcar={marcarPublicada} publicando={publicando} tiktokOk={tiktokOk} />
         )}
 
         {draft.published_at ? null : canPublish ? (
@@ -1761,8 +1774,10 @@ function LeadsBox({ leads, seguidores }: { leads: Lead[]; seguidores: Seguidores
   )
 }
 
-// Login Kit do TikTok — só autenticação (user.info.basic), pra habilitar a
-// publicação de verdade é preciso uma segunda aprovação (Content Posting API).
+// TikTok em dois estágios: Login Kit (autenticação, já aprovado) e Content
+// Posting API (escopo video.publish, aprovação separada). A caixa mostra em
+// qual deles a conta está — sem isso, "conectado" dá a impressão de que
+// publicar já funciona.
 function TiktokConnectBox({ status }: { status: TiktokConnectionStatus }) {
   const params = useSearchParams()
   const result = params.get("tiktok")
@@ -1771,11 +1786,21 @@ function TiktokConnectBox({ status }: { status: TiktokConnectionStatus }) {
   return (
     <div className="mb-6 rounded-xl border border-white/10 bg-black/20 p-4 flex items-center justify-between flex-wrap gap-3">
       <div>
-        <p className="text-white/80 text-sm font-semibold">TikTok — Login Kit</p>
+        <p className="text-white/80 text-sm font-semibold">TikTok — Login Kit + publicação</p>
         {status.connected ? (
-          <p className="text-green-400 text-xs mt-0.5">
-            ✅ Conectado (open_id {status.openId.slice(0, 8)}…, escopo {status.scope})
-          </p>
+          <>
+            <p className="text-green-400 text-xs mt-0.5">
+              ✅ Conectado (open_id {status.openId.slice(0, 8)}…, escopo {status.scope})
+            </p>
+            {status.scope?.includes("video.publish") ? (
+              <p className="text-green-400/70 text-xs mt-0.5">📤 Publicação por API ativa — vale só para peças com vídeo.</p>
+            ) : (
+              <p className="text-amber-400/80 text-xs mt-0.5">
+                ⚠️ Só login. Para publicar por API: aprovar a Content Posting API no portal,
+                ligar TIKTOK_PUBLISH_SCOPE=1 e reconectar aqui.
+              </p>
+            )}
+          </>
         ) : (
           <p className="text-white/40 text-xs mt-0.5">Não conectado — necessário pro vídeo demo do App Review.</p>
         )}
@@ -1904,7 +1929,9 @@ export default function ConteudoList({
             <DraftCard key={d.id} draft={d} cliques={clicksByDraft[d.id] ?? 0}
               origem={d.sourceOrderId ? origens[d.sourceOrderId] : undefined}
               job={jobPorDraft[d.id]} trilhas={trilhas}
-              familia={familia[d.derivado_de ?? d.id] ?? []} metrica={metricaPorDraft[d.id]} onChange={reload} />
+              familia={familia[d.derivado_de ?? d.id] ?? []} metrica={metricaPorDraft[d.id]}
+              tiktokOk={tiktokStatus.connected && tiktokStatus.scope?.includes("video.publish")}
+              onChange={reload} />
           ))}
         </div>
       )}

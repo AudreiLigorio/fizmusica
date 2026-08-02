@@ -373,6 +373,31 @@ Mesmo e-mail → automático. E-mail diferente e pedido recente (<24h, não vinc
 - **Teaser Premium** (planejado, não codado): vídeo vertical 9:16 pra Reels/TikTok como diferencial do plano Premium — arquitetura decidida (template + JSON de cena normalizado, render via API de montagem tipo JSON2Video/Shotstack, ~R$1/render, emojis Google Noto), mas recomendação é validar por teste concierge (vender como add-on manual pra clientes reais e medir se postam) antes de construir o módulo.
 - Revisão jurídica final por advogado dos textos legais atualizados (IA na produção, licença, privacidade).
 
+## 21. Publicação nas redes (agentes de conteúdo)
+
+O painel `/admin/conteudo` gera a peça, aprova e publica. Ao aprovar, a mesma história vira **três peças** (Instagram, TikTok, YouTube), ligadas por `derivado_de` — cada uma com texto próprio da rede, reaproveitando o vídeo de graça.
+
+**O que publica sozinho, e por quê o resto não:**
+
+| Rede | Estado | O que falta |
+|---|---|---|
+| Instagram | ✅ API ativa (Graph API, token de 60 dias no env) | — |
+| TikTok | ⚠️ código pronto, aguardando aprovação | Content Posting API aprovada no portal → `TIKTOK_PUBLISH_SCOPE=1` → reconectar a conta |
+| YouTube | ❌ manual | OAuth do Google + YouTube Data API |
+
+**TikTok — dois estágios e duas travas.** O Login Kit (aprovado) só autentica; publicar exige a **Content Posting API**, aprovação separada. Duas limitações que não são contornáveis por código:
+
+1. Enquanto o app não passar pela **auditoria** do TikTok, tudo que ele publica fica em **modo privado**, mesmo pedindo `PUBLIC_TO_EVERYONE`. O escopo libera o envio; a auditoria é que libera o público.
+2. **Foto** só entra por `PULL_FROM_URL`, que exige verificar a posse do domínio no portal — o arquivo mora no `supabase.co`, domínio que não é nosso. Então **peça de TikTok sem vídeo continua indo à mão**.
+
+O fluxo implementado em `lib/content/publishers/tiktok.ts` segue a ordem obrigatória da doc: `creator_info/query` (é dele que sai a lista de privacidades válidas da conta) → `video/init` (FILE_UPLOAD, pedaço único; o mínimo por chunk é 5 MB e nossos vídeos cabem inteiros) → `PUT` no `upload_url` → `status/fetch` até sair de `PROCESSING_UPLOAD`. As cenas são geradas por IA e a voz é sintética, então o post vai com `is_aigc: true`.
+
+Pedir `video.publish` antes da aprovação faz o TikTok recusar a tela de autorização **inteira** — quebraria até o login que hoje funciona. Por isso o escopo é ligado por `TIKTOK_PUBLISH_SCOPE=1`, não por padrão.
+
+**Onde a API não publica, a tela entrega o material** (`⬇️ arquivo`, `📋 legenda`) e o botão `✔️ já postei` registra o que foi ao ar. Esse registro não é cosmético: o descarte dos ingredientes de vídeo (cenas, narração, trilha) só roda quando a **família inteira** foi publicada — sem ele, o storage cresceria para sempre e o painel mentiria sobre onde a história está.
+
+---
+
 ---
 
 *Documento reescrito a partir da memória consolidada do projeto (32 registros) + inspeção do código-fonte em 2026-07-08. Para detalhes de implementação, consulte os arquivos citados (`app/`, `lib/`, `prisma/migrations/`) — este documento descreve o "porquê" e as decisões; o código é sempre a fonte de verdade sobre o "como" atual.*
