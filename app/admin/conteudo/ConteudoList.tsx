@@ -84,7 +84,7 @@ const REDES = [
 // Onde esta história está em cada rede. Responde de bate-pronto a pergunta que
 // se faz olhando o painel: "já publiquei isso onde?".
 function StatusPorRede({
-  familia, atual, onAdaptar, adaptando, onPublicar, onMarcar, onPreverTiktok, publicando, tiktokOk,
+  familia, atual, onAdaptar, adaptando, onPublicar, onMarcar, onPreverTiktok, onEnviarApp, publicando, tiktokOk,
 }: {
   familia: PecaDaFamilia[]
   atual: string
@@ -93,6 +93,7 @@ function StatusPorRede({
   onPublicar: (peca: PecaDaFamilia) => Promise<void>
   onMarcar: (peca: PecaDaFamilia) => void
   onPreverTiktok: (peca: PecaDaFamilia) => void
+  onEnviarApp: (peca: PecaDaFamilia) => void
   publicando: string | null
   tiktokOk: boolean
 }) {
@@ -188,6 +189,12 @@ function StatusPorRede({
                 className="text-[11px] px-1.5 py-0.5 rounded text-white/70 hover:bg-white/10">
                 {copiado === p.platform ? "legenda copiada ✓" : "📋 legenda"}
               </button>
+              {p.platform === "tiktok" && p.videoUrl && (
+                <button onClick={() => onEnviarApp(p)} disabled={publicando !== null}
+                  className="text-[11px] px-1.5 py-0.5 rounded text-sky-300/90 hover:bg-sky-500/10 disabled:opacity-50">
+                  {publicando === p.platform ? "enviando…" : "📲 mandar pro app"}
+                </button>
+              )}
               {p.platform === "tiktok" && p.videoUrl && (
                 // Enquanto o escopo não sai, a tela de publicação ainda pode
                 // ser aberta em modo prévia — é ela que o App Review pede pra
@@ -1051,6 +1058,27 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
   const [adaptando, setAdaptando] = useState<string | null>(null)
   const [publicando, setPublicando] = useState<string | null>(null)
 
+  // Manda o MP4 pra caixa de entrada do app. Não marca como publicado: o post
+  // ainda não existe — ele nasce quando você termina no TikTok.
+  async function enviarProApp(peca: PecaDaFamilia) {
+    if (!peca.id) return
+    setPublicando(peca.platform); setMsg("")
+    try {
+      const d = await fetch(`/api/admin/conteudo/${peca.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "tiktok_enviar_app" }),
+      }).then((r) => r.json())
+      setMsg(d.ok
+        ? "📲 Vídeo enviado. Abra a notificação no app do TikTok, escreva a legenda e poste — depois clique em “já postei”."
+        : `❌ ${d.error}`)
+    } catch {
+      setMsg("❌ Falha ao enviar.")
+    } finally {
+      setPublicando(null)
+    }
+  }
+
   // Peça de TikTok aberta na tela de publicação (privacidade, interações e
   // divulgação comercial). É passo obrigatório das diretrizes da plataforma —
   // publicar direto no clique reprovaria no App Review.
@@ -1386,7 +1414,7 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
 
         {draft.status !== "gerando" && draft.status !== "falhou" && (
           <StatusPorRede familia={familia} atual={draft.platform} onAdaptar={adaptar} adaptando={adaptando}
-            onPublicar={publicarPeca} onMarcar={marcarPublicada} onPreverTiktok={setTiktokAberto}
+            onPublicar={publicarPeca} onMarcar={marcarPublicada} onPreverTiktok={setTiktokAberto} onEnviarApp={enviarProApp}
             publicando={publicando} tiktokOk={tiktokOk} />
         )}
 

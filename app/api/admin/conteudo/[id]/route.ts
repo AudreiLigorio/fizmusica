@@ -3,7 +3,10 @@ import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { syncImageTask, runGeneration, createDraft } from "@/lib/content/generate"
 import { publishDraft, marcarComoPublicado } from "@/lib/content/publish"
-import { queryCreatorInfo, getUserInfo, podePublicar as tiktokPodePublicar } from "@/lib/content/publishers/tiktok"
+import {
+  queryCreatorInfo, getUserInfo, enviarParaAppTikTok,
+  podePublicar as tiktokPodePublicar,
+} from "@/lib/content/publishers/tiktok"
 import { logContentEvent } from "@/lib/content/events"
 import { purgeDraftMedia } from "@/lib/content/media"
 import { registrarLicao } from "@/lib/content/licoes"
@@ -231,6 +234,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       })
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : permissao.motivo }, { status: 400 })
+    }
+  }
+
+  // Envia o vídeo pra caixa de entrada do app: você recebe a notificação no
+  // TikTok e termina o post lá. Não marca como publicado — quem publicou foi
+  // você, e é o botão "já postei" que registra isso.
+  if (action === "tiktok_enviar_app") {
+    const { data: d } = await supabase
+      .from("content_drafts").select("video_url, status, published_at").eq("id", id).maybeSingle()
+    if (!d?.video_url) return NextResponse.json({ error: "Esta peça não tem vídeo." }, { status: 400 })
+    if (d.status !== "aprovado" || d.published_at) {
+      return NextResponse.json({ error: "Só peça aprovada e ainda não publicada." }, { status: 400 })
+    }
+    try {
+      const r = await enviarParaAppTikTok(d.video_url)
+      await logContentEvent(supabase, id, "publicado", `enviado ao app do TikTok (${r.publishId})`, "admin")
+      return NextResponse.json({ ok: true, ...r })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : "Erro no TikTok." }, { status: 500 })
     }
   }
 

@@ -67,21 +67,30 @@ async function chamar<T>(caminho: string, token: string, body: unknown): Promise
   return json.data as T
 }
 
-/** A conta conectada tem escopo de publicação? Sem isso o botão é ilusão. */
-export async function podePublicar(): Promise<{ ok: boolean; motivo?: string }> {
+async function temEscopo(escopo: string): Promise<{ ok: boolean; motivo?: string }> {
   const status = await getConnectionStatus()
   if (!status.connected) {
     return { ok: false, motivo: "TikTok não está conectado — conecte pelo Login Kit no painel." }
   }
-  if (!status.scope?.includes("video.publish")) {
+  if (!status.scope?.includes(escopo)) {
     return {
       ok: false,
       motivo:
-        "A conta está conectada só para login (user.info.basic). Depois que a Content Posting API " +
-        "for aprovada, ligue TIKTOK_PUBLISH_SCOPE=1 e reconecte a conta para autorizar video.publish.",
+        `A conta conectada não autorizou ${escopo} (escopo atual: ${status.scope}). ` +
+        "Habilite o escopo no portal, ligue TIKTOK_PUBLISH_SCOPE=1 e reconecte a conta.",
     }
   }
   return { ok: true }
+}
+
+/** Publicação direta (Direct Post) — exige `video.publish` + auditoria. */
+export async function podePublicar() {
+  return temEscopo("video.publish")
+}
+
+/** Envio para a caixa de entrada do app — exige só `video.upload`. */
+export async function podeEnviarParaApp() {
+  return temEscopo("video.upload")
 }
 
 export async function queryCreatorInfo(): Promise<CreatorInfo> {
@@ -122,6 +131,69 @@ export type ResultadoTiktok = {
   permalink: string | null
   privacidade: string
   status: string
+}
+
+
+/** Baixa o MP4 do nosso bucket e o entrega ao TikTok em pedaço único. */
+async function baixarVideo(videoUrl: string): Promise<Buffer> {
+  const res = await fetch(videoUrl)
+  if (!res.ok) throw new Error("Não consegui baixar o vídeo do storage para enviar ao TikTok.")
+  const bytes = Buffer.from(await res.arrayBuffer())
+  if (!bytes.length) throw new Error("O vídeo está vazio.")
+  // Pedaço único: o mínimo por chunk é 5 MB e o máximo 64 MB. Vídeo nosso é bem
+  // menor que isso; se um dia passar de 64 MB, aí sim vale fatiar.
+  if (bytes.length > 64 * 1024 * 1024) {
+    throw new Error("Vídeo acima de 64 MB — o envio em pedaço único não serve; precisa fatiar em chunks.")
+  }
+  return bytes
+}
+
+async function enviarBytes(uploadUrl: string, bytes: Buffer) {
+  // O upload_url vale 1 hora.
+  const up = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "video/mp4",
+      "Content-Length": String(bytes.length),
+      "Content-Range": `bytes 0-${bytes.length - 1}/${bytes.length}`,
+    },
+    body: new Uint8Array(bytes),
+  })
+  if (!up.ok) throw new Error(`Falha ao enviar o vídeo ao TikTok (HTTP ${up.status}).`)
+}
+
+/**
+ * Manda o vídeo para a CAIXA DE ENTRADA do app (modo rascunho).
+ *
+ * Diferença que importa: aqui o app só entrega o arquivo — quem escreve a
+ * legenda, escolhe a privacidade e aperta postar é você, dentro do TikTok. Por
+ * isso não passa pelas exigências de UX do Direct Post e, principalmente, o
+ * post final é um post normal: a restrição de "cliente não auditado publica
+ * privado" vale para o que o APP publica, não para o que você publica no app.
+ *
+ * Limite da plataforma: 5 envios pendentes a cada 24h.
+ */
+export async function enviarParaAppTikTok(videoUrl: string): Promise<{ publishId: string }> {
+  const permissao = await podeEnviarParaApp()
+  if (!permissao.ok) throw new Error(permissao.motivo!)
+
+  const token = await getValidAccessToken()
+  const bytes = await baixarVideo(videoUrl)
+
+  const init = await chamar<{ publish_id: string; upload_url: string }>(
+    "/post/publish/inbox/video/init/",
+    token,
+    {
+      source_info: {
+        source: "FILE_UPLOAD",
+        video_size: bytes.length,
+        chunk_size: bytes.length,
+        total_chunk_count: 1,
+      },
+    },
+  )
+  await enviarBytes(init.upload_url, bytes)
+  return { publishId: init.publish_id }
 }
 
 /**
@@ -166,16 +238,7 @@ export async function publishVideoTikTok({
 
   // 2. Baixa o MP4 do nosso bucket. Não dá pra mandar a URL (PULL_FROM_URL só
   //    aceita domínio verificado no portal, e o arquivo mora no supabase.co).
-  const res = await fetch(videoUrl)
-  if (!res.ok) throw new Error("Não consegui baixar o vídeo do storage para enviar ao TikTok.")
-  const bytes = Buffer.from(await res.arrayBuffer())
-  if (!bytes.length) throw new Error("O vídeo está vazio.")
-
-  // Pedaço único: o mínimo por chunk é 5 MB e o máximo 64 MB. Vídeo nosso é bem
-  // menor que isso; se um dia passar de 64 MB, aí sim vale fatiar.
-  if (bytes.length > 64 * 1024 * 1024) {
-    throw new Error("Vídeo acima de 64 MB — o envio em pedaço único não serve; precisa fatiar em chunks.")
-  }
+  const bytes = await baixarVideo(videoUrl)
 
   const init = await chamar<{ publish_id: string; upload_url: string }>(
     "/post/publish/video/init/",
@@ -204,19 +267,8 @@ export async function publishVideoTikTok({
     },
   )
 
-  // 3. Os bytes. O upload_url vale 1 hora.
-  const up = await fetch(init.upload_url, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "video/mp4",
-      "Content-Length": String(bytes.length),
-      "Content-Range": `bytes 0-${bytes.length - 1}/${bytes.length}`,
-    },
-    body: new Uint8Array(bytes),
-  })
-  if (!up.ok) {
-    throw new Error(`Falha ao enviar o vídeo ao TikTok (HTTP ${up.status}).`)
-  }
+  // 3. Os bytes.
+  await enviarBytes(init.upload_url, bytes)
 
   // 4. Espera o processamento. A moderação costuma levar menos de um minuto,
   //    mas pode demorar horas — então não travamos aqui: se ainda estiver
