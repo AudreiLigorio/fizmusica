@@ -44,7 +44,9 @@ export default async function ProducaoPreview({ params }: { params: Promise<{ or
       <PublicMusicPlayer
         music={{
           musicName:   music?.musicName ?? null,
-          personName:  music?.personName ?? order.honoreeName ?? order.nome ?? null,
+          // Sem cair pro nome do comprador — senão a prévia mostra um nome que
+          // o player de verdade nunca vai ter (Música Livre não tem destinatário).
+          personName:  music?.personName ?? order.honoreeName ?? null,
           lyrics:      music?.lyrics ?? null,
           lyricsLrc:   music?.lyricsLrc ?? null,
           mp3Url:      music?.mp3Url ?? "",

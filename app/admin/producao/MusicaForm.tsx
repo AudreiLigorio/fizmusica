@@ -15,18 +15,16 @@ type MusicData = {
 export default function MusicaForm({
   orderId,
   honoreeName,
-  nome,
   lyricsDraft,
 }: {
   orderId: string
   honoreeName: string | null
-  nome: string
   lyricsDraft?: string | null
 }) {
   const [open, setOpen]             = useState(false)
   const [music, setMusic]           = useState<MusicData | null>(null)
   const [musicName, setMusicName]   = useState("")
-  const personName = honoreeName ?? nome
+  const personName = honoreeName
   const [lyrics, setLyrics]         = useState("")
   const [lyricsLrc, setLyricsLrc]   = useState("")
   const [mp3Url, setMp3Url]         = useState("")
@@ -117,7 +115,8 @@ export default function MusicaForm({
     if (d.music) {
       setMusic(d.music)
       setMusicName(d.music.musicName ?? "")
-      // personName vem do pedido (honoreeName ?? nome), não do banco
+      // personName vem do pedido (honoreeName do order, sem cair pro nome de
+      // quem comprou), não do banco
       setLyrics(d.music.lyrics || lyricsDraft || "")
       setLyricsLrc(d.music.lyricsLrc ?? "")
       setMp3Url(d.music.mp3Url ?? "")
@@ -392,7 +391,7 @@ export default function MusicaForm({
               <label className="text-xs text-gray-500 mb-1 block">Nome do homenageado</label>
               <div className="w-full bg-black/30 border border-pink-500/20 rounded-xl px-3 py-2 text-sm text-pink-300 flex items-center gap-2">
                 <span>🎵</span>
-                <span>{honoreeName ?? nome ?? "—"}</span>
+                <span>{honoreeName ?? "— (sem destinatário — Música Livre)"}</span>
               </div>
               <p className="text-[10px] text-gray-600 mt-1 pl-1">Informado pelo cliente no wizard</p>
             </div>

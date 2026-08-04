@@ -76,7 +76,11 @@ export async function ingestSunoResult(
   // Título/homenageado automáticos — só preenche se ainda não houver (respeita edição manual).
   const { data: gmPrev } = await supabase
     .from("generated_music").select("musicName, personName").eq("orderId", order.id).maybeSingle()
-  const personName = gmPrev?.personName || order.honoreeName || order.nome || null
+  // Sem cair pro nome do próprio comprador: pedido sem homenageado (Música
+  // Livre) não tem destinatário nenhum, e esse campo é o que aparece
+  // publicamente no player como "uma música especial para...". Cair pro nome
+  // de quem comprou exporia um dado que a pessoa escolheu não divulgar.
+  const personName = gmPrev?.personName || order.honoreeName || null
   let musicName = gmPrev?.musicName || null
   if (!musicName && order.lyricsDraft) {
     musicName = (await generateMusicTitle(order.lyricsDraft)) || (order.honoreeName ?? null)

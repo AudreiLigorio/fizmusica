@@ -357,7 +357,7 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
                 <SunoPanel orderId={order.id} status={order.sunoStatus ?? null} tracks={order.sunoTracks ?? null} error={order.sunoError ?? null} />
 
                 {/* Form de produção */}
-                <MusicaForm orderId={order.id} honoreeName={order.honoreeName ?? null} nome={order.nome} lyricsDraft={order.lyricsDraft ?? null} />
+                <MusicaForm orderId={order.id} honoreeName={order.honoreeName ?? null} lyricsDraft={order.lyricsDraft ?? null} />
                 </div>
                 )}
               </div>

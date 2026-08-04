@@ -292,12 +292,14 @@ export default function PrepararPage() {
   }
 
   // Caso principal: pago, não aprovado → fluxo de preparo
-  const para = order.honoreeName ? `para ${order.honoreeName}` : ""
+  // Espaço embutido no próprio valor (não na JSX) — pra Música Livre, sem
+  // homenageado, não sobrar "a música " com espaço perdido antes do span vazio.
+  const para = order.honoreeName ? ` para ${order.honoreeName}` : ""
   return (
     <Shell>
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
-          Vamos preparar a música <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">{para}</span>
+          Vamos preparar a música<span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">{para}</span>
         </h1>
         <p className="text-white/50 text-sm mt-2">
           Aprove a letra e adicione as fotos. <strong className="text-white/70">Sua música só entra em produção depois que você aprovar a letra.</strong>
