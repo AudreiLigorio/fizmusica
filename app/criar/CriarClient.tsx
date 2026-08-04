@@ -373,7 +373,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     if (!leadNome.trim()) { setLeadError("Informe seu nome."); return }
     if (!leadEmail.trim() || !leadEmailOk) { setLeadError("E-mail inválido."); return }
     if (!leadWhatsappOk) { setLeadError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX."); return }
-    if (!leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
+    if (tipoMusica !== "livre" && !leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
 
     // Preenche os campos finais para não repetir digitação
     setNome(leadNome)
@@ -490,7 +490,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
         setError("Preencha todos os seus dados.")
         return
       }
-      if (!honoreeName.trim()) {
+      if (tipoMusica !== "livre" && !honoreeName.trim()) {
         setError("Informe para quem é essa música.")
         return
       }
@@ -625,6 +625,13 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
             body: JSON.stringify({ id: sessionId, step, data: updated }),
           })
         } catch {}
+      }
+
+      // "Só para mim" não tem fotos — pula o passo 6 e vai direto pro produto.
+      // O passo 6 continua existindo só pra quem escolheu "para alguém".
+      if (tipoMusica === "livre") {
+        router.push(`/produtos?orderId=${finalOrderId}`)
+        return
       }
 
       // Vai para step 6 (fotos) em vez de navegar direto
@@ -887,22 +894,25 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   )}
                 </div>
 
-                {/* Nome do homenageado — destaque especial */}
-                <div className="space-y-2 rounded-2xl p-4" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
-                  <label className="text-sm font-semibold pl-1 flex items-center gap-2" style={{ color: "#f0196b" }}>
-                    🎵 Para quem é essa música?
-                  </label>
-                  <p className="text-xs text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
-                  <div className="relative">
-                    <input
-                      value={leadHonoreeName}
-                      onChange={(e) => setLeadHonoreeName(e.target.value)}
-                      placeholder="Ex: Maria, Vovó Lúcia, Papai…"
-                      className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
-                      style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
-                    />
+                {/* Nome do homenageado — só existe pra quem tem destinatário. Quem
+                    respondeu "só para mim" já foi avisado que não teria isso. */}
+                {tipoMusica !== "livre" && (
+                  <div className="space-y-2 rounded-2xl p-4" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
+                    <label className="text-sm font-semibold pl-1 flex items-center gap-2" style={{ color: "#f0196b" }}>
+                      🎵 Para quem é essa música?
+                    </label>
+                    <p className="text-xs text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
+                    <div className="relative">
+                      <input
+                        value={leadHonoreeName}
+                        onChange={(e) => setLeadHonoreeName(e.target.value)}
+                        placeholder="Ex: Maria, Vovó Lúcia, Papai…"
+                        className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
+                        style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {leadError && (
@@ -966,10 +976,12 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             <div>
               <div className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
-                  Qual história você quer transformar em música?
+                  {tipoMusica === "livre" ? "Como você quer compor?" : "Qual história você quer transformar em música?"}
                 </h1>
                 <p className="text-white/55 text-sm">
-                  Você pode criar música para celebrar, homenagear, emocionar, surpreender, se declarar, compor ou só contar uma história para transformar em música.
+                  {tipoMusica === "livre"
+                    ? "Sem destinatário, sem ocasião obrigatória — é a sua música, do jeito que você quiser."
+                    : "Você pode criar música para celebrar, homenagear, emocionar, surpreender, se declarar, compor ou só contar uma história para transformar em música."}
                 </p>
               </div>
 
@@ -981,7 +993,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       <div className="h-2.5 w-56 bg-white/5 rounded" />
                     </div>
                   ))
-                ) : [...occasions].sort((a, b) => Number(b.label === "Composição Livre") - Number(a.label === "Composição Livre")).map((occasion) => (
+                ) : (tipoMusica === "livre"
+                    ? occasions.filter((o) => o.label === "Composição Livre")
+                    : [...occasions].sort((a, b) => Number(b.label === "Composição Livre") - Number(a.label === "Composição Livre"))
+                  ).map((occasion) => (
                   <div
                     key={occasion.id}
                     className={`border rounded-2xl overflow-hidden transition-all ${
@@ -1292,22 +1307,23 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 </div>
               </div>
 
-              {/* Nome do homenageado — destaque especial */}
-              <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
-                <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
-                  🎵 Para quem é essa música?
-                </label>
-                <p className="text-xs text-white/40 mb-3">Nome de quem vai receber a homenagem</p>
-                <div className="relative">
-                  <input
-                    value={honoreeName}
-                    onChange={(e) => setHonoreeName(e.target.value)}
-                    placeholder="Ex: Maria, Vovó Lúcia, Papai…"
-                    className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
-                    style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
-                  />
+              {tipoMusica !== "livre" && (
+                <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
+                  <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
+                    🎵 Para quem é essa música?
+                  </label>
+                  <p className="text-xs text-white/40 mb-3">Nome de quem vai receber a homenagem</p>
+                  <div className="relative">
+                    <input
+                      value={honoreeName}
+                      onChange={(e) => setHonoreeName(e.target.value)}
+                      placeholder="Ex: Maria, Vovó Lúcia, Papai…"
+                      className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
+                      style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-200 leading-relaxed">
                 🔒 Seus dados são privados e usados exclusivamente para entrega da sua música.
