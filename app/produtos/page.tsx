@@ -70,6 +70,10 @@ function ProdutosContent() {
 
   const [products, setProducts]     = useState<Product[]>([])
   const [loading, setLoading]       = useState(true)
+  // Pedido sem homenageado = veio do caminho "só para mim" no wizard, que já
+  // não coletou fotos nem nome de destinatário. Mostrar a Música Presente
+  // ali seria vender QR code e fotos que o pedido nunca teve como ter.
+  const [semDestinatario, setSemDestinatario] = useState(false)
   const [step, setStep]             = useState<1 | 2>(1)
   const [selected, setSelected]     = useState<Product | null>(null)
   const [delivery, setDelivery]     = useState<DeliveryOption | null>(null)
@@ -111,6 +115,18 @@ function ProdutosContent() {
       .then((d) => { if (d.coupon) setPromoCoupon(d.coupon) })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (!orderId) return
+    fetch(`/api/orders/${orderId}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d) setSemDestinatario(!d.honoreeName) })
+      .catch(() => {})
+  }, [orderId])
+
+  const produtosVisiveis = semDestinatario
+    ? products.filter((p) => p.name !== "Música Presente")
+    : products
 
   // O botão "Salvando…" é transitório: só vale durante o PATCH em andamento.
   // Ao voltar do checkout pelo botão do navegador, o Chrome restaura a página do
@@ -339,7 +355,7 @@ function ProdutosContent() {
             onScroll={handleCarouselScroll}
             className="flex md:grid md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-10 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-5 px-5 md:mx-0 md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
           >
-            {products.map((product) => {
+            {produtosVisiveis.map((product) => {
               const isSelected = selected?.id === product.id
               const icon = PRODUCT_ICONS[product.name] ?? "🎶"
 
@@ -427,9 +443,9 @@ function ProdutosContent() {
           </div>
 
           {/* Indicador de carrossel — só no mobile */}
-          {products.length > 1 && (
+          {produtosVisiveis.length > 1 && (
             <div className="md:hidden flex items-center justify-center gap-2 mb-8">
-              {products.map((_, i) => (
+              {produtosVisiveis.map((_, i) => (
                 <span key={i} className="rounded-full transition-all" style={{
                   width: i === activeProduct ? 18 : 7,
                   height: 7,
@@ -437,7 +453,7 @@ function ProdutosContent() {
                 }} />
               ))}
               <span className="text-white/40 text-xs ml-2">
-                {activeProduct + 1} / {products.length} · arraste →
+                {activeProduct + 1} / {produtosVisiveis.length} · arraste →
               </span>
             </div>
           )}
