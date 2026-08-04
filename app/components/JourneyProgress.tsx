@@ -10,7 +10,7 @@ const STEPS = [
 
 type JourneyStep = 1 | 2 | 3 | 4 | 5
 
-export default function JourneyProgress({ current }: { current: JourneyStep }) {
+export default function JourneyProgress({ current, semFotos }: { current: JourneyStep; semFotos?: boolean }) {
   return (
     <div className="flex items-start justify-center py-4 px-3">
       {STEPS.map((step, i) => {
@@ -18,7 +18,9 @@ export default function JourneyProgress({ current }: { current: JourneyStep }) {
         const active = step.n === current
         // Enquanto o cliente está na História (passo 1), destaca "Fotos" com um ícone
         // piscando — evidencia a possibilidade de incluir fotos antes que ele chegue lá.
-        const spotlightFotos = current === 1 && step.label === "Fotos"
+        // Não vale pra quem escolheu "só para mim": esse caminho nunca passa por
+        // fotos, e prometer o que não vai acontecer é pior que não destacar nada.
+        const spotlightFotos = current === 1 && step.label === "Fotos" && !semFotos
 
         return (
           <div key={step.n} className="flex items-start">

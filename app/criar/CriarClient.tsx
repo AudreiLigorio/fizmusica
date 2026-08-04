@@ -734,7 +734,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
         {/* ── Jornada completa (todas as páginas) ── */}
         <div className="shrink-0 border-b border-white/[0.06] px-4">
-          <JourneyProgress current={step <= 5 ? 1 : 2} />
+          <JourneyProgress current={step <= 5 ? 1 : 2} semFotos={tipoMusica === "livre"} />
         </div>
 
         {/* ── Mobile: barra de progresso + topo (só steps 1-5) ── */}
