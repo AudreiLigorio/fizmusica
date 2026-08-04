@@ -516,6 +516,12 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
 
   const prevStep = () => {
     setError("")
+    // Passo 0 é o primeiro — não existe passo -1 pra voltar dentro do wizard,
+    // então "Voltar" aqui sai pro início do site.
+    if (step === 0) {
+      router.push("/")
+      return
+    }
     if (step === 2 && questionStep > 0) {
       const prevQ = questionStep - 1
       setQuestionStep(prevQ)
@@ -745,7 +751,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
           </div>
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
-            {step > 0 && !showLeadCapture ? (
+            {step >= 0 && !showLeadCapture ? (
               <button onClick={prevStep} disabled={submitting}
                       className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
             ) : <div />}
@@ -1503,7 +1509,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               )}
 
               <div className="hidden lg:flex justify-between items-center mt-10">
-                {step > 0 ? (
+                {step >= 0 ? (
                   <button onClick={prevStep} disabled={submitting}
                           className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
                           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
