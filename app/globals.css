@@ -144,6 +144,21 @@
   }
 }
 
+/* Feedback de "limite atingido" ao misturar estilos — tremor no chip
+   clicado, sem esmaecer os outros (esmaecer 18 de 20 chips parece tela
+   quebrada). */
+@keyframes fm-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+.fm-chip-shake {
+  animation: fm-shake 0.22s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fm-chip-shake { animation: none; }
+}
+
 .fm-carousel-section {
   position: relative;
   width: 100%;
