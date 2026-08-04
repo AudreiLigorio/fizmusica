@@ -41,6 +41,7 @@ type WizardOccasion    = { id: string; label: string; emoji: string; slug: strin
 type SessionData = {
   step: number
   questionStep: number
+  tipoMusica: "" | "presente" | "livre"
   selectedContext: string
   selectedSubcategory: string
   answers: Record<string, string>
@@ -81,7 +82,11 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const searchParams = useSearchParams()
 
   const [occasions, setOccasions] = useState<WizardOccasion[]>(initialOccasions)
-  const [step, setStep] = useState(1)
+  // Passo 0: pergunta se há destinatário — decide o que faz sentido pedir depois
+  // (hoje os dois caminhos convergem pro mesmo passo 1; a resposta fica salva
+  // pronta pra quando o restante do fluxo passar a variar por ela).
+  const [step, setStep] = useState(0)
+  const [tipoMusica, setTipoMusica] = useState<"" | "presente" | "livre">("")
   const [termsAccepted, setTermsAccepted] = useState(false)
   const TERMS_VERSION = "2026-06"
   const [selectedContext, setSelectedContext] = useState("")
@@ -257,6 +262,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     return {
       step,
       questionStep,
+      tipoMusica,
       selectedContext,
       selectedSubcategory,
       answers,
@@ -308,6 +314,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   function resumeSessionData(data: Partial<SessionData>, step: number) {
     setStep(step)
     setQuestionStep(data.questionStep ?? 0)
+    setTipoMusica(data.tipoMusica ?? "")
     setSelectedContext(data.selectedContext ?? "")
     setSelectedSubcategory(data.selectedSubcategory ?? "")
     setAnswers(data.answers ?? {})
@@ -417,7 +424,16 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const internalQuestionProgress =
     step === 2 ? questionStep / Math.max(questions.length, 1) : 0
   const progress =
-    ((step - 1 + internalQuestionProgress) / totalSteps) * 100
+    step === 0 ? 0 : ((step - 1 + internalQuestionProgress) / totalSteps) * 100
+
+  // Escolha do passo 0 — avança direto pro passo 1, sem botão "Continuar"
+  // separado (mesmo padrão do passo 1, onde escolher a ocasião já avança).
+  function escolherTipoMusica(tipo: "presente" | "livre") {
+    setTipoMusica(tipo)
+    const nextSt = 1
+    setStep(nextSt)
+    saveSession(buildSessionData({ tipoMusica: tipo, step: nextSt }), nextSt)
+  }
 
   /* ================================================= */
   /* NEXT STEP                                         */
@@ -722,7 +738,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
           </div>
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
-            {step > 1 && !showLeadCapture ? (
+            {step > 0 && !showLeadCapture ? (
               <button onClick={prevStep} disabled={submitting}
                       className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
             ) : <div />}
@@ -908,6 +924,38 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   className="w-full py-3 rounded-2xl text-sm text-white/40 hover:text-white/60 transition-colors"
                 >
                   Pular por agora
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ===== STEP 0 — Presente ou pra você ===== */}
+          {!showLeadCapture && step === 0 && (
+            <div>
+              <div className="mb-8">
+                <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
+                  Essa música é para alguém, ou é para você?
+                </h1>
+                <p className="text-white/55 text-sm">
+                  Isso muda o que vem a seguir — cada caminho tem só o que faz sentido pra ele.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => escolherTipoMusica("presente")}
+                  className="w-full text-left rounded-2xl p-5 border transition-all border-pink-500/40 bg-pink-500/5 hover:border-pink-500"
+                >
+                  <h2 className="text-base font-semibold mb-1 text-pink-500">🎁 Para alguém especial</h2>
+                  <p className="text-xs text-white/55">Com fotos e QR code para impressão</p>
+                </button>
+
+                <button
+                  onClick={() => escolherTipoMusica("livre")}
+                  className="w-full text-left rounded-2xl p-5 border transition-all border-purple-500/40 bg-purple-500/5 hover:border-purple-500"
+                >
+                  <h2 className="text-base font-semibold mb-1 text-purple-400">🎵 Só para mim</h2>
+                  <p className="text-xs text-white/55">Só a música — sem fotos, sem QR code</p>
                 </button>
               </div>
             </div>
@@ -1439,14 +1487,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               )}
 
               <div className="hidden lg:flex justify-between items-center mt-10">
-                {step > 1 ? (
+                {step > 0 ? (
                   <button onClick={prevStep} disabled={submitting}
                           className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
                           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
                     ← Voltar
                   </button>
                 ) : <div />}
-                {step !== 1 && step < 5 && (
+                {step > 1 && step < 5 && (
                   <button onClick={nextStep}
                           className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white"
                           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
@@ -1470,7 +1518,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         </div>
 
         {/* Botão fixo no rodapé — mobile */}
-        {!showLeadCapture && step !== 1 && step !== 2 && step !== 6 && (
+        {!showLeadCapture && step !== 0 && step !== 1 && step !== 2 && step !== 6 && (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
             {step < 5 ? (
