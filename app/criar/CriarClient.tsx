@@ -69,25 +69,44 @@ function maskWhatsapp(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
-export default function CriarClient({ initialOccasions }: { initialOccasions: WizardOccasion[] }) {
+type CriarClientProps = {
+  initialOccasions: WizardOccasion[]
+  initialLivreDisponivel: boolean
+  initialPresenteDisponivel: boolean
+}
+
+export default function CriarClient({ initialOccasions, initialLivreDisponivel, initialPresenteDisponivel }: CriarClientProps) {
   return (
     <Suspense fallback={null}>
-      <CriarMusicaInner initialOccasions={initialOccasions} />
+      <CriarMusicaInner
+        initialOccasions={initialOccasions}
+        initialLivreDisponivel={initialLivreDisponivel}
+        initialPresenteDisponivel={initialPresenteDisponivel}
+      />
     </Suspense>
   )
 }
 
-function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasion[] }) {
+function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPresenteDisponivel }: CriarClientProps) {
 
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const [occasions, setOccasions] = useState<WizardOccasion[]>(initialOccasions)
+  // Se só um dos dois caminhos (presente x livre) tem produto ativo, não há
+  // escolha real a fazer no passo 0 — pula direto pro passo 1 já com o tipo
+  // certo. Calculado uma vez, no mount: os produtos ativos não mudam durante
+  // a sessão do wizard.
+  const [singlePathTipo] = useState<"" | "presente" | "livre">(() => {
+    if (initialLivreDisponivel && !initialPresenteDisponivel) return "livre"
+    if (initialPresenteDisponivel && !initialLivreDisponivel) return "presente"
+    return ""
+  })
   // Passo 0: pergunta se há destinatário — decide o que faz sentido pedir depois
   // (hoje os dois caminhos convergem pro mesmo passo 1; a resposta fica salva
   // pronta pra quando o restante do fluxo passar a variar por ela).
-  const [step, setStep] = useState(0)
-  const [tipoMusica, setTipoMusica] = useState<"" | "presente" | "livre">("")
+  const [step, setStep] = useState(singlePathTipo ? 1 : 0)
+  const [tipoMusica, setTipoMusica] = useState<"" | "presente" | "livre">(singlePathTipo)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const TERMS_VERSION = "2026-06"
   const [selectedContext, setSelectedContext] = useState("")
@@ -563,6 +582,13 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     // Passo 0 é o primeiro — não existe passo -1 pra voltar dentro do wizard,
     // então "Voltar" aqui sai pro início do site.
     if (step === 0) {
+      router.push("/")
+      return
+    }
+    // Quando o passo 0 foi pulado (só um caminho tinha produto ativo), não
+    // existe uma tela de escolha pra voltar — "Voltar" no passo 1 sai direto
+    // pro início do site, igual sairia do próprio passo 0.
+    if (step === 1 && singlePathTipo) {
       router.push("/")
       return
     }
@@ -1245,6 +1271,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     "🎉 Axé",       "🤘 Metal",   "🎤 Hip-Hop",
                     "⚡ Heavy Metal","🤠 Country", "🌿 Reggae",
                     "🇰🇷 K-Pop",    "🌎 Internacional",
+                    "🌹 R&B",       "🇧🇷 Samba",  "🙌 Gospel Soul",
                   ].map((item) => {
                     const atuais = musicalStyle ? musicalStyle.split(", ") : []
                     const ordem = atuais.indexOf(item)
