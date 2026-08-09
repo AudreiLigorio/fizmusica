@@ -33,7 +33,9 @@ export default function FotosPage() {
     const data = await res.json()
     setNome(data.nome ?? "")
     setPhotos(data.photos ?? [])
-    if (data.photoLimit) setMax(data.photoLimit)
+    // "!= null" e não truthy: photoLimit=0 (produto sem fotos) é um valor
+    // real, não "ainda não chegou" — truthy travava no DEFAULT_MAX.
+    if (data.photoLimit != null) setMax(data.photoLimit)
     setLoading(false)
   }
 

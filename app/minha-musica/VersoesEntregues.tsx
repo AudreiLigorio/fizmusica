@@ -18,6 +18,7 @@ export default function VersoesEntregues({
   slug,
   photoToken,
   photoCount,
+  hasFotos = true,
   canRevise,
   onQr,
   onNaoGostei,
@@ -29,6 +30,9 @@ export default function VersoesEntregues({
   slug: string | null
   photoToken?: string | null
   photoCount?: number
+  // Produto sem fotos (photo_limit=0, ex.: Música Livre) — não oferece a aba
+  // Fotos, que pra essa peça não existe.
+  hasFotos?: boolean
   canRevise?: boolean
   onQr: () => void
   onNaoGostei?: () => void
@@ -84,7 +88,7 @@ export default function VersoesEntregues({
 
   const steps: { key: StepKey; icon: string; label: string; done: boolean; nudge?: boolean }[] = [
     { key: "principal", icon: "⭐", label: "Principal", done: true },
-    { key: "fotos",     icon: "📸", label: "Fotos",     done: hasPhotos, nudge: !hasPhotos },
+    ...(hasFotos ? [{ key: "fotos" as const, icon: "📸", label: "Fotos", done: hasPhotos, nudge: !hasPhotos }] : []),
     { key: "surpresa",  icon: "🎁", label: "Surpresa",  done: false },
     { key: "player",    icon: "▶",  label: "Player",    done: false },
   ]
@@ -94,7 +98,7 @@ export default function VersoesEntregues({
   return (
     <div ref={rootRef} className="space-y-3">
       {/* Barra de passos — navegação "o que fazer agora" */}
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className={`grid gap-1.5 ${steps.length === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
         {steps.map((s) => {
           const isActive = active === s.key
           return (

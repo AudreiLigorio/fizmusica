@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("orders")
-    .select(`id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_token, is_revision, sharing_term_accepted_at, lyricsApproved, productId, sunoStatus, sunoTracks, publication_consent, shipping_name, shipping_cep, shipping_address, shipping_number, shipping_complement, shipping_neighborhood, shipping_city, shipping_state, shipping_phone, products(name, price), payments(amount, mpStatus, paidAt), order_photos(id), order_answers(question, answer, position)`)
+    .select(`id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_token, is_revision, sharing_term_accepted_at, lyricsApproved, productId, sunoStatus, sunoTracks, publication_consent, shipping_name, shipping_cep, shipping_address, shipping_number, shipping_complement, shipping_neighborhood, shipping_city, shipping_state, shipping_phone, products(name, price, photo_limit), payments(amount, mpStatus, paidAt), order_photos(id), order_answers(question, answer, position)`)
     .or(filter)
     .order("createdAt", { ascending: false })
 

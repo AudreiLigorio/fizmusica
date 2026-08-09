@@ -11,11 +11,15 @@ export default function PreparoFlow({
   orderId,
   photoToken,
   isRevision,
+  hasFotos = true,
   onApproved,
 }: {
   orderId: string
   photoToken?: string | null
   isRevision?: boolean
+  // Produto sem fotos (photo_limit=0, ex.: Música Livre) — pula o passo
+  // inteiro em vez de oferecer um álbum que a peça não usa.
+  hasFotos?: boolean
   onApproved?: () => void
 }) {
   const [letra, setLetra] = useState<{ lyrics: string; canApprove: boolean }>({ lyrics: "", canApprove: false })
@@ -34,7 +38,9 @@ export default function PreparoFlow({
     if (res.ok) onApproved?.()
   }
 
-  const activeStep = photosConfirmed ? 3 : showFotos ? 2 : 1
+  const activeStep = hasFotos
+    ? (photosConfirmed ? 3 : showFotos ? 2 : 1)
+    : (photosConfirmed ? 2 : 1)
 
   // Ao avançar de passo, traz o mini-stepper (e o novo conteúdo) pro topo da
   // tela — sem isso, o passo novo pode renderizar fora da área visível.
@@ -53,11 +59,11 @@ export default function PreparoFlow({
           <div className="min-w-0">
             <p className="text-fuchsia-200 font-semibold text-sm">Revisão — ajuste o que quiser</p>
             <p className="text-fuchsia-300/70 text-xs leading-relaxed">
-              Você pode trocar a <strong>letra</strong> ou as <strong>fotos</strong> e gerar uma nova versão.
+              Você pode trocar a <strong>letra</strong>{hasFotos ? <> ou as <strong>fotos</strong></> : null} e gerar uma nova versão.
               Se já estiver tudo certo, gere direto.
             </p>
             <button
-              onClick={() => { setShowFotos(true); setPhotosConfirmed(true) }}
+              onClick={() => { if (hasFotos) setShowFotos(true); setPhotosConfirmed(true) }}
               className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-200 hover:bg-fuchsia-500/25 transition-colors"
             >
               Está tudo certo — gerar nova versão →
@@ -66,15 +72,20 @@ export default function PreparoFlow({
         </div>
       )}
 
-      {/* Mini-stepper do preparo */}
+      {/* Mini-stepper do preparo — produto sem fotos (photo_limit=0) pula
+          direto de Letra pra Aprovar, sem oferecer um passo que não existe
+          pra essa peça. */}
       <div className="flex items-center gap-2 text-[11px] px-0.5">
-        {[{ n: 1, label: "Letra" }, { n: 2, label: "Fotos" }, { n: 3, label: "Aprovar" }].map((s, idx) => {
+        {(hasFotos
+          ? [{ n: 1, label: "Letra" }, { n: 2, label: "Fotos" }, { n: 3, label: "Aprovar" }]
+          : [{ n: 1, label: "Letra" }, { n: 2, label: "Aprovar" }]
+        ).map((s, idx, arr) => {
           const on = s.n <= activeStep
           return (
             <div key={s.n} className="flex items-center gap-2">
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${on ? "bg-fuchsia-500 text-white" : "bg-white/10 text-white/40"}`}>{s.n}</span>
               <span className={on ? "text-fuchsia-200" : "text-white/40"}>{s.label}</span>
-              {idx < 2 && <span className="w-4 h-px bg-white/15" />}
+              {idx < arr.length - 1 && <span className="w-4 h-px bg-white/15" />}
             </div>
           )
         })}
@@ -83,20 +94,20 @@ export default function PreparoFlow({
       {/* PASSO 1 — letra (gerar/editar/revisar) */}
       <LetraPanel orderId={orderId} flowMode onState={setLetra} />
 
-      {/* Avança para fotos */}
-      {!showFotos && (
+      {/* Avança para fotos (ou direto pra aprovar, se o produto não tem fotos) */}
+      {!showFotos && !photosConfirmed && (
         <button
-          onClick={() => setShowFotos(true)}
+          onClick={() => (hasFotos ? setShowFotos(true) : setPhotosConfirmed(true))}
           disabled={!letra.canApprove}
           className="w-full py-3 rounded-xl text-sm font-bold text-white disabled:opacity-40 transition-all"
           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
         >
-          Continuar para fotos →
+          {hasFotos ? "Continuar para fotos →" : "Continuar →"}
         </button>
       )}
 
       {/* PASSO 2 — fotos (editáveis até aprovar) */}
-      {showFotos && (
+      {hasFotos && showFotos && (
         <>
           {photoToken ? (
             <FotosPanel token={photoToken} />
@@ -132,12 +143,14 @@ export default function PreparoFlow({
             As fotos você ainda pode ajustar depois, inclusive com a música pronta.
           </p>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setPhotosConfirmed(false)}
-              className="px-3 py-2.5 rounded-xl text-xs font-medium text-white/60 border border-white/15 hover:bg-white/5 transition-colors"
-            >
-              ← Ajustar fotos
-            </button>
+            {hasFotos && (
+              <button
+                onClick={() => setPhotosConfirmed(false)}
+                className="px-3 py-2.5 rounded-xl text-xs font-medium text-white/60 border border-white/15 hover:bg-white/5 transition-colors"
+              >
+                ← Ajustar fotos
+              </button>
+            )}
             <button
               onClick={approveAndGenerate}
               disabled={approving || !letra.canApprove}

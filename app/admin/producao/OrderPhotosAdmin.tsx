@@ -16,7 +16,9 @@ export default function OrderPhotosAdmin({ orderId }: { orderId: string }) {
     const res = await fetch(`/api/admin/pedidos/${orderId}/fotos`)
     const data = await res.json()
     setPhotos(data.photos ?? [])
-    if (data.photoLimit) setMax(data.photoLimit)
+    // "!= null" e não truthy: photoLimit=0 é um valor real (produto sem
+    // fotos), não "ainda não chegou" — truthy travava no default 10.
+    if (data.photoLimit != null) setMax(data.photoLimit)
     setLoading(false)
   }
 

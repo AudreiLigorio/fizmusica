@@ -23,7 +23,10 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
     if (!res.ok) { setLoading(false); return }
     const data = await res.json()
     setPhotos(data.photos ?? [])
-    if (data.photoLimit) setMax(data.photoLimit)
+    // "!= null" e não truthy: produto sem fotos manda photoLimit=0, que é um
+    // valor real (não "ainda não chegou") — checagem truthy travava no
+    // DEFAULT_MAX e mostrava "1/10" pra um produto que não tem fotos.
+    if (data.photoLimit != null) setMax(data.photoLimit)
     setLoading(false)
   }
 

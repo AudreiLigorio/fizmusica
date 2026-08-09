@@ -19,7 +19,9 @@ export default function AdminPhotosManager({ orderId, initial }: { orderId: stri
       .then((r) => r.json())
       .then((d) => {
         if (Array.isArray(d.photos)) setPhotos(d.photos)
-        if (d.photoLimit) setMax(d.photoLimit)
+        // "!= null" e não truthy: photoLimit=0 é um valor real (produto sem
+        // fotos), não "ainda não chegou" — truthy travava no default 10.
+        if (d.photoLimit != null) setMax(d.photoLimit)
       })
       .catch(() => {})
   }, [apiBase])
