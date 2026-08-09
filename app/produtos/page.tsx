@@ -124,9 +124,12 @@ function ProdutosContent() {
       .catch(() => {})
   }, [orderId])
 
-  const produtosVisiveis = semDestinatario
-    ? products.filter((p) => p.name !== "Música Presente")
-    : products
+  // Nunca pode zerar a lista: se "Música Presente" for o único produto ativo,
+  // mostra ele mesmo sem destinatário — melhor vender algo com recursos que
+  // sobram do que mostrar a tela vazia (já aconteceu: só a Presente ativa +
+  // pedido sem destinatário = ninguém via produto nenhum).
+  const semPresente = products.filter((p) => p.name !== "Música Presente")
+  const produtosVisiveis = semDestinatario && semPresente.length > 0 ? semPresente : products
 
   // O botão "Salvando…" é transitório: só vale durante o PATCH em andamento.
   // Ao voltar do checkout pelo botão do navegador, o Chrome restaura a página do
