@@ -45,6 +45,7 @@ async function herdarIngredientes(supabase: DB, origemId: string, novaId: string
 }
 
 export type ResultadoAdaptacao = { platform: string; draftId: string; videoReaproveitado: boolean }
+export type FalhaAdaptacao = { platform: string; erro: string }
 
 /** Cria a versão de UMA rede a partir de uma peça existente. */
 export async function adaptarPara(supabase: DB, origemId: string, platform: string): Promise<ResultadoAdaptacao> {
@@ -69,17 +70,24 @@ export async function adaptarPara(supabase: DB, origemId: string, platform: stri
 }
 
 /**
- * Cria as versões que faltam para as outras redes.
+ * Cria as versões que faltam para as outras redes — e já aprova cada uma.
  *
  * Chamado na aprovação: história aprovada é história boa, e boa história serve
  * nas três. Pula rede que já tem versão — aprovar duas vezes não duplica peça.
  * Cada adaptação custa uma passada do roteirista e uma imagem de post; o vídeo,
  * quando existe, é herdado de graça.
+ *
+ * A versão adaptada nasce já aprovada (não em "rascunho"): a raiz já passou
+ * pela revisão humana, e a adaptação muda só texto/ritmo pra rede, não a
+ * história. Sem isso, aprovar a raiz não publicava nada sozinho — exigia
+ * caçar cada peça-irmã e clicar de novo, justo o passo que devia sumir.
  */
-export async function adaptarParaAsQueFaltam(supabase: DB, draftId: string): Promise<ResultadoAdaptacao[]> {
+export async function adaptarParaAsQueFaltam(
+  supabase: DB, draftId: string,
+): Promise<{ feitas: ResultadoAdaptacao[]; falhas: FalhaAdaptacao[] }> {
   const { data: peca } = await supabase
     .from("content_drafts").select("id, platform, derivado_de").eq("id", draftId).maybeSingle()
-  if (!peca) return []
+  if (!peca) return { feitas: [], falhas: [] }
 
   const raiz = peca.derivado_de ?? peca.id
   const { data: familia } = await supabase
@@ -89,16 +97,25 @@ export async function adaptarParaAsQueFaltam(supabase: DB, draftId: string): Pro
 
   const jaTem = new Set((familia ?? []).map((f) => f.platform))
   const feitas: ResultadoAdaptacao[] = []
+  const falhas: FalhaAdaptacao[] = []
 
   for (const rede of REDES) {
     if (jaTem.has(rede)) continue
     try {
-      feitas.push(await adaptarPara(supabase, draftId, rede))
+      const r = await adaptarPara(supabase, draftId, rede)
+      await supabase
+        .from("content_drafts")
+        .update({ status: "aprovado", reviewed_at: new Date().toISOString() })
+        .eq("id", r.draftId)
+      feitas.push(r)
     } catch (e) {
-      // Uma rede falhar não pode impedir as outras nem derrubar a aprovação.
-      console.error(`[adaptar] ${rede}:`, e instanceof Error ? e.message : e)
+      // Uma rede falhar não pode impedir as outras nem derrubar a aprovação —
+      // mas precisa aparecer pro admin, não só sumir no log do servidor.
+      const erro = e instanceof Error ? e.message : String(e)
+      console.error(`[adaptar] ${rede}:`, erro)
+      falhas.push({ platform: rede, erro })
     }
   }
 
-  return feitas
+  return { feitas, falhas }
 }

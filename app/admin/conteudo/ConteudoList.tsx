@@ -995,7 +995,10 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
   const [captionEdit, setCaptionEdit] = useState(draft.caption ?? "")
   const [hashtagsEdit, setHashtagsEdit] = useState(draft.hashtags ?? "")
   const gerando = draft.status === "gerando"
-  const pending = !draft.image_url && !draft.image_error && draft.status === "rascunho"
+  // Independe do status: uma peça aprovada (ou uma peça-irmã auto-aprovada) com
+  // imagem ainda em geração precisa continuar sendo sincronizada, senão a
+  // miniatura fica com o spinner preso pra sempre assim que sai de "rascunho".
+  const pending = !draft.image_url && !draft.image_error && !draft.media_purged_at && !gerando
 
   // Rascunho em geração: pergunta o estado a cada 5s até virar rascunho ou
   // falhar. É o que faz o card se resolver sozinho mesmo se o admin sair da
@@ -1192,6 +1195,44 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
     else setMsg(`❌ ${d.error}`)
   }
 
+  // Monta a mensagem da aprovação a partir do que o servidor já fez sozinho:
+  // publicou o Instagram (ou tentou e falhou) e criou+aprovou as versões que
+  // faltavam nas outras redes (ou falhou em alguma).
+  type RespostaAprovar = {
+    publicacao?: unknown
+    publicacaoErro?: string
+    adaptacoes?: { platform: string; videoReaproveitado: boolean }[]
+    falhasAdaptacao?: { platform: string; erro: string }[]
+  }
+  function mensagemAprovacao(d: RespostaAprovar): string {
+    const partes: string[] = []
+    if (d.publicacao) partes.push("✅ Instagram publicado")
+    else if (d.publicacaoErro) partes.push(`⚠️ Instagram: ${d.publicacaoErro}`)
+    if (d.adaptacoes?.length) {
+      const redes = d.adaptacoes.map((a) => a.platform).join(" e ")
+      const comVideo = d.adaptacoes.filter((a) => a.videoReaproveitado).length
+      partes.push(`versões criadas e aprovadas para ${redes}${comVideo ? ` (vídeo reaproveitado em ${comVideo})` : ""}`)
+    }
+    if (d.falhasAdaptacao?.length) {
+      partes.push(`❌ não deu pra adaptar — ${d.falhasAdaptacao.map((f) => `${f.platform}: ${f.erro}`).join("; ")}`)
+    }
+    return partes.join(" · ")
+  }
+
+  // TikTok exige, por regra da própria plataforma, uma tela de confirmação
+  // (conta + privacidade) antes de cada post — não dá pra publicar sozinho no
+  // clique de Aprovar. Se a peça aprovada já é TikTok e já tem vídeo pronto,
+  // abre essa tela na hora em vez de deixar o admin caçar o botão depois.
+  function abrirTiktokSeProntoAposAprovar() {
+    if (draft.platform === "tiktok" && draft.video_url && !draft.published_at) {
+      setTiktokAberto({
+        id: draft.id, platform: "tiktok", status: "aprovado", publicado: false,
+        permalink: null, publicadoEm: null, videoUrl: draft.video_url,
+        caption: draft.caption, hashtags: draft.hashtags,
+      })
+    }
+  }
+
   async function aprovarComRessalva() {
     setBusy("aprovar"); setMsg("")
     try {
@@ -1200,8 +1241,11 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "aprovar", feedback: ressalvaTexto }),
       }).then((r) => r.json())
-      if (d.ok) onChange()
-      else setMsg(`❌ ${d.error}`)
+      if (d.ok) {
+        const texto = mensagemAprovacao(d)
+        if (texto) { setMsg(texto); setTimeout(onChange, 2500) } else onChange()
+        abrirTiktokSeProntoAposAprovar()
+      } else setMsg(`❌ ${d.error}`)
     } catch {
       setMsg("❌ Falha ao aprovar.")
     } finally {
@@ -1228,12 +1272,13 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
       })
       const d = await res.json().catch(() => ({ error: "resposta inválida do servidor" }))
       if (d.ok) {
-        if (d.adaptacoes?.length) {
-          const redes = d.adaptacoes.map((a: { platform: string }) => a.platform).join(" e ")
-          const comVideo = d.adaptacoes.filter((a: { videoReaproveitado: boolean }) => a.videoReaproveitado).length
-          setMsg(`✅ versões criadas para ${redes}${comVideo ? ` · vídeo reaproveitado em ${comVideo}` : ""}`)
-          setTimeout(onChange, 2500)
-        } else onChange()
+        if (action === "aprovar") {
+          const texto = mensagemAprovacao(d)
+          if (texto) { setMsg(texto); setTimeout(onChange, 2500) } else onChange()
+          abrirTiktokSeProntoAposAprovar()
+        } else {
+          onChange()
+        }
       } else setMsg(`❌ ${d.error ?? "falhou"}`)
     } catch {
       // Sem isto, uma queda de rede deixava o botão girando pra sempre e o
@@ -1354,7 +1399,8 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
             <input value={ressalvaTexto} onChange={(e) => setRessalvaTexto(e.target.value)}
               placeholder="O que dava pra melhorar? Vira regra pros próximos"
               className="flex-1 bg-black/40 border border-amber-500/30 rounded-lg px-2 py-1.5 text-xs text-white" />
-            <button onClick={aprovarComRessalva} disabled={busy !== null || !ressalvaTexto.trim()}
+            <button onClick={aprovarComRessalva} disabled={busy !== null || !ressalvaTexto.trim() || pending}
+              title={pending ? "Aguardando a imagem terminar de gerar" : undefined}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}>
               {busy === "aprovar" ? "…" : "Aprovar e ensinar"}
@@ -1368,10 +1414,11 @@ function DraftCard({ draft, cliques, origem, job, trilhas, familia, metrica, tik
 
         {draft.status === "rascunho" && !rejeitando && !ressalva && (
           <div className="flex gap-2 items-center">
-            <button onClick={() => acao("aprovar")} disabled={busy !== null}
+            <button onClick={() => acao("aprovar")} disabled={busy !== null || pending}
+              title={pending ? "Aguardando a imagem terminar de gerar" : undefined}
               className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white disabled:opacity-50"
               style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}>
-              {busy === "aprovar" ? "aprovando e adaptando…" : "✅ Aprovar"}
+              {busy === "aprovar" ? "aprovando, publicando e adaptando…" : pending ? "aguardando imagem…" : "✅ Aprovar"}
             </button>
             <button onClick={() => setRejeitando(true)} disabled={busy !== null}
               className="text-xs px-3 py-1.5 rounded-lg border border-white/15 text-white/60 hover:bg-white/5 disabled:opacity-50">
@@ -1842,7 +1889,7 @@ function TiktokConnectBox({ status }: { status: TiktokConnectionStatus }) {
   return (
     <div className="mb-6 rounded-xl border border-white/10 bg-black/20 p-4 flex items-center justify-between flex-wrap gap-3">
       <div>
-        <p className="text-white/80 text-sm font-semibold">TikTok — Login Kit + publicação</p>
+        <p className="text-white/80 text-sm font-semibold">TikTok — status da conta (não é um botão de ação)</p>
         {status.connected ? (
           <>
             <p className="text-green-400 text-xs mt-0.5">

@@ -233,7 +233,7 @@ async function fillDraft(supabase: DB, draftId: string, input: CreateDraftInput)
 export async function syncImageTask(supabase: DB, draftId: string) {
   const { data: draft } = await supabase
     .from("content_drafts")
-    .select("id, image_task_id, image_url, image_error, hook_text, platform")
+    .select("id, image_task_id, image_url, image_error, hook_text, platform, status, published_at")
     .eq("id", draftId)
     .maybeSingle()
 

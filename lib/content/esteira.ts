@@ -1,10 +1,25 @@
 import type { createServerClient } from "@/lib/supabase"
-import { createDraft } from "@/lib/content/generate"
+import { createDraft, syncImageTask } from "@/lib/content/generate"
 import { getContentSettings, decidirPauta, type Briefing } from "@/lib/content/cmo"
 import { publishDraft } from "@/lib/content/publish"
 import { logContentEvent } from "@/lib/content/events"
 
 type DB = ReturnType<typeof createServerClient>
+
+// A geração de imagem na KIE.ai é assíncrona (30-90s) — createDraft só dispara
+// a tarefa e devolve. Sem esperar aqui, o modo automático aprovava e tentava
+// publicar uma peça sem imagem nenhuma: o publishDraft explodia com "Rascunho
+// sem imagem nem vídeo", e como o status já tinha virado "aprovado" antes da
+// chamada, a peça ficava presa assim pra sempre (spinner eterno no painel).
+async function esperarImagem(supabase: DB, draftId: string, timeoutMs = 150_000, intervalMs = 5_000) {
+  const inicio = Date.now()
+  while (Date.now() - inicio < timeoutMs) {
+    const draft = await syncImageTask(supabase, draftId)
+    if (draft.image_url || draft.image_error) return draft
+    await new Promise((r) => setTimeout(r, intervalMs))
+  }
+  return null
+}
 
 // Uma execução da esteira: CMO decide a pauta → roteirista escreve → imagem →
 // (no modo auto, se as travas deixarem) publica. Mora aqui, e não na rota do
@@ -88,6 +103,19 @@ export async function rodarEsteira(
     bloqueios.push("peça de história real exige aprovação humana")
   }
 
+  // Só vale esperar a imagem se nenhuma trava de conteúdo já tiver barrado —
+  // sem gastar até 2,5min de espera numa peça que nem ia publicar mesmo.
+  if (!bloqueios.length) {
+    const imagem = await esperarImagem(supabase, draft.id)
+    if (!imagem?.image_url) {
+      bloqueios.push(
+        imagem?.image_error
+          ? `imagem falhou: ${imagem.image_error}`
+          : "imagem não terminou de gerar a tempo — continua como rascunho pra revisão manual",
+      )
+    }
+  }
+
   if (bloqueios.length) {
     await logContentEvent(supabase, draft.id, "rascunho_criado", `publicação automática barrada: ${bloqueios.join("; ")}`, "system")
     return { ok: true, draftId: draft.id, briefing, publicado: false, bloqueios }
@@ -97,7 +125,17 @@ export async function rodarEsteira(
     .from("content_drafts")
     .update({ status: "aprovado", reviewed_at: new Date().toISOString() })
     .eq("id", draft.id)
-  await publishDraft(supabase, draft.id)
+
+  try {
+    await publishDraft(supabase, draft.id)
+  } catch (e) {
+    // O status já virou "aprovado" de propósito: a imagem existe, só a
+    // publicação falhou (rede fora do ar, etc). O card mostra o botão
+    // "📤 Publicar no Instagram" pra tentar de novo manualmente — não fica
+    // "aprovado" fantasma como no bug original, porque a mídia está lá.
+    const msg = e instanceof Error ? e.message : "falha ao publicar"
+    return { ok: true, draftId: draft.id, briefing, publicado: false, bloqueios: [msg] }
+  }
 
   return { ok: true, draftId: draft.id, briefing, publicado: true }
 }

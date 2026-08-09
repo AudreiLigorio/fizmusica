@@ -61,7 +61,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (action === "sincronizar") {
     try {
       const draft = await syncImageTask(supabase, id)
-      return NextResponse.json({ ok: true, draft })
+      // A imagem terminou de gerar depois que a peça já tinha sido aprovada
+      // (ex.: aprovação automática, ou o admin aprovou cedo demais) — publica
+      // sozinha assim que a mídia chega, sem esperar um clique manual de novo.
+      let publicacao: { mediaId: string; permalink: string | null } | null = null
+      if (draft.image_url && draft.status === "aprovado" && draft.platform === "instagram" && !draft.published_at) {
+        try {
+          publicacao = await publishDraft(supabase, id)
+        } catch {
+          // publishDraft já grava publish_error na linha; o botão manual
+          // "📤 Publicar no Instagram" segue disponível pra tentar de novo.
+        }
+      }
+      return NextResponse.json({ ok: true, draft, publicacao })
     } catch (e) {
       return NextResponse.json({ error: e instanceof Error ? e.message : "Erro ao sincronizar." }, { status: 500 })
     }
@@ -131,18 +143,38 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     await logContentEvent(supabase, id, "aprovado", feedback ? `ressalva: ${feedback}` : undefined, "admin")
 
-    // História aprovada serve nas três redes. Cria as versões que faltam,
-    // herdando o vídeo quando ele existe (remontar com a marca da outra rede é
-    // de graça). Pula rede que já tem versão, então aprovar de novo não duplica.
-    const adaptacoes = await adaptarParaAsQueFaltam(supabase, id)
+    // História aprovada serve nas três redes. Cria as versões que faltam, já
+    // aprovadas, herdando o vídeo quando ele existe (remontar com a marca da
+    // outra rede é de graça). Pula rede que já tem versão, então aprovar de
+    // novo não duplica.
+    const { feitas: adaptacoes, falhas: falhasAdaptacao } = await adaptarParaAsQueFaltam(supabase, id)
     if (adaptacoes.length) {
       await logContentEvent(
         supabase, id, "aprovado",
-        `versões criadas: ${adaptacoes.map((a) => a.platform).join(", ")}`, "system",
+        `versões criadas e aprovadas: ${adaptacoes.map((a) => a.platform).join(", ")}`, "system",
       )
     }
 
-    return NextResponse.json({ ok: true, status: "aprovado", licao, adaptacoes })
+    // Aprovar já publica sozinho: o Instagram não tem passo obrigatório da
+    // plataforma, então publica na hora sempre que a mídia já estiver pronta
+    // (se a imagem ainda estiver gerando, a ação "sincronizar" tenta de novo
+    // assim que ela chegar). O TikTok exige uma tela de confirmação da própria
+    // plataforma antes de cada post — isso o CLIENTE abre na hora, não o server.
+    let publicacao: { mediaId: string; permalink: string | null } | null = null
+    let publicacaoErro: string | null = null
+    const { data: pecaAtual } = await supabase
+      .from("content_drafts").select("platform, image_url, video_url").eq("id", id).maybeSingle()
+    if (pecaAtual?.platform === "instagram" && (pecaAtual.image_url || pecaAtual.video_url)) {
+      try {
+        publicacao = await publishDraft(supabase, id)
+      } catch (e) {
+        publicacaoErro = e instanceof Error ? e.message : "Falha ao publicar."
+      }
+    }
+
+    return NextResponse.json({
+      ok: true, status: "aprovado", licao, adaptacoes, falhasAdaptacao, publicacao, publicacaoErro,
+    })
   }
 
   // Exclusão definitiva a pedido do admin — mesmo efeito da rejeição, mas
