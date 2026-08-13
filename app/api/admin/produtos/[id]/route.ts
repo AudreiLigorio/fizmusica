@@ -1,7 +1,15 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { createServerClient } from "@/lib/supabase"
+import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { z } from "zod"
+
+// O proxy só cobre /admin/* — rota de API precisa conferir o cookie por conta
+// própria, senão qualquer um edita preço ou exclui plano do catálogo.
+async function requireAdmin(req: NextRequest) {
+  const token = req.cookies.get(COOKIE_NAME)?.value
+  return token ? verifyAdminToken(token) : false
+}
 
 const schema = z.object({
   name:        z.string().min(1).optional(),
@@ -15,9 +23,18 @@ const schema = z.object({
   width_cm:    z.number().int().positive().optional().nullable(),
   length_cm:   z.number().int().positive().optional().nullable(),
   photo_limit: z.number().int().min(0).optional(),
+  // Recursos do plano (migration 042). O identificador NÃO entra aqui: mudar
+  // depois quebraria o vínculo de todo pedido já vendido naquele plano.
+  feat_lyrics_sync: z.boolean().optional(),
+  feat_qrcode:      z.boolean().optional(),
+  feat_download:    z.boolean().optional(),
+  feat_revision:    z.boolean().optional(),
 })
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
+  }
   const { id } = await params
   const supabase = createServerClient()
 
@@ -73,7 +90,10 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   return NextResponse.json({ success: true })
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 401 })
+  }
   try {
     const { id } = await params
     const parsed = schema.safeParse(await req.json())
@@ -83,12 +103,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const supabase = createServerClient()
+    // updatedAt não tem default nem trigger no banco — quem carimba é a
+    // aplicação. Sem isto a coluna congela na data de criação do produto.
     const { error } = await supabase
       .from("products")
-      .update(parsed.data)
+      .update({ ...parsed.data, updatedAt: new Date().toISOString() })
       .eq("id", id)
 
-    if (error) throw error
+    // O erro do Supabase é um objeto simples, não um Error: no catch genérico
+    // ele viraria "Erro desconhecido" e esconderia a causa real.
+    if (error) {
+      return NextResponse.json({ error: error.message ?? "Erro ao salvar." }, { status: 500 })
+    }
 
     revalidatePath("/admin/produtos")
     return NextResponse.json({ success: true })

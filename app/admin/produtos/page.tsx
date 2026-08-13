@@ -20,7 +20,11 @@ export default async function AdminProdutos() {
   return (
     <div className="p-4 lg:p-8 max-w-4xl">
       <h1 className="text-2xl lg:text-3xl font-bold mb-1">Produtos</h1>
-      <p className="text-gray-500 text-sm mb-6 lg:mb-10">Gerencie os produtos disponíveis para compra</p>
+      <p className="text-gray-500 text-sm mb-6">Cada plano define os recursos que o cliente recebe.</p>
+
+      <div className="mb-6">
+        <ProductForm />
+      </div>
 
       <div className="space-y-4">
         {products.map((p) => (
@@ -43,10 +47,30 @@ export default async function AdminProdutos() {
                     </span>
                   )}
                 </div>
+                <p className="text-[11px] text-gray-600 font-mono mb-2">{p.id}</p>
                 <p className="text-gray-400 text-sm mb-3">{p.description}</p>
-                <p className="text-pink-400 font-bold text-xl">
+                <p className="text-pink-400 font-bold text-xl mb-3">
                   R$ {Number(p.price).toFixed(2).replace(".", ",")}
                 </p>
+                {/* Resumo dos recursos: mostra num relance o que este plano
+                    entrega, sem precisar abrir o formulário de cada um. */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { on: (p.photo_limit ?? 0) > 0, label: `📸 ${p.photo_limit} fotos`, off: "📸 sem fotos" },
+                    { on: p.feat_lyrics_sync !== false, label: "🎤 letra sincronizada", off: "🎤 letra sincronizada" },
+                    { on: p.feat_qrcode !== false,      label: "🎁 QR Code",            off: "🎁 QR Code" },
+                    { on: p.feat_download !== false,    label: "⬇️ download",           off: "⬇️ download" },
+                    { on: p.feat_revision !== false,    label: "✏️ revisão",            off: "✏️ revisão" },
+                  ].map((f, i) => (
+                    <span key={i} className={`text-[11px] px-2 py-0.5 rounded-full border ${
+                      f.on
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                        : "border-white/10 text-gray-600 line-through"
+                    }`}>
+                      {f.on ? f.label : f.off}
+                    </span>
+                  ))}
+                </div>
               </div>
               <ProductForm product={p} />
             </div>
