@@ -6,6 +6,7 @@ import { createOrderSchema } from "@/lib/validators/order"
 import { createServerClient } from "@/lib/supabase"
 import { extractClientIp, lookupState } from "@/lib/geoip"
 import { toE164 } from "@/lib/n8n/events"
+import { PLAN_FEATURE_COLUMNS, featuresFromProduct } from "@/lib/planFeatures"
 
 export async function GET(req: NextRequest) {
   // Identidade: prioriza o token de login (Bearer) — busca por e-mail OU userId
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("orders")
-    .select(`id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_token, is_revision, sharing_term_accepted_at, lyricsApproved, productId, sunoStatus, sunoTracks, publication_consent, shipping_name, shipping_cep, shipping_address, shipping_number, shipping_complement, shipping_neighborhood, shipping_city, shipping_state, shipping_phone, products(name, price), payments(amount, mpStatus, paidAt), order_photos(id), order_answers(question, answer, position)`)
+    .select(`id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_token, is_revision, sharing_term_accepted_at, lyricsApproved, productId, sunoStatus, sunoTracks, publication_consent, shipping_name, shipping_cep, shipping_address, shipping_number, shipping_complement, shipping_neighborhood, shipping_city, shipping_state, shipping_phone, products(name, price, ${PLAN_FEATURE_COLUMNS}), payments(amount, mpStatus, paidAt), order_photos(id), order_answers(question, answer, position)`)
     .or(filter)
     .order("createdAt", { ascending: false })
 
@@ -61,6 +62,9 @@ export async function GET(req: NextRequest) {
     // Supabase embute payments como ARRAY mesmo com orderId único — normaliza pra
     // objeto único (já inclui entrega+cupom, calculado em /api/payments/create).
     const paymentRow = Array.isArray(payments) ? (payments[0] ?? null) : (payments ?? null)
+    // Recursos já resolvidos aqui: a tela não precisa saber o nome das colunas
+    // nem repetir o "?? true" de cada uma pra decidir o que mostrar.
+    const produto = Array.isArray(rest.products) ? rest.products[0] : rest.products
     return {
       ...rest,
       musicStatus: sunoStatus ?? null,
@@ -68,6 +72,7 @@ export async function GET(req: NextRequest) {
       slug:       musicByOrder[o.id]?.slug ?? null,
       mp3Url:     musicByOrder[o.id]?.mp3Url ?? null,
       photoCount: Array.isArray(order_photos) ? order_photos.length : 0,
+      features:   featuresFromProduct(produto),
       answers,
       payments: paymentRow,
     }

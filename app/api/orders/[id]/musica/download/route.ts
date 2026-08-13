@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
+import { getPlanFeatures } from "@/lib/planFeatures"
 
 export const dynamic = "force-dynamic"
 
@@ -41,6 +42,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .eq("id", id)
     .maybeSingle()
   if (!order) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 })
+
+  // Plano sem download: esconder o botão não protege nada — esta URL é
+  // adivinhável a partir do id do pedido. A recusa precisa ser aqui.
+  const features = await getPlanFeatures(supabase, id)
+  if (!features.download) {
+    return NextResponse.json(
+      { error: "O download do MP3 não está incluído no plano contratado." },
+      { status: 403 },
+    )
+  }
 
   // mp3Url + nome vêm de generated_music (não há coluna mp3Url em orders).
   const { data: gm } = await supabase

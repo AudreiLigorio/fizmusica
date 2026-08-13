@@ -28,6 +28,19 @@ async function resolveOrder(token: string) {
   return { supabase, order: (order as any) ?? null }
 }
 
+// Plano sem fotos (photo_limit = 0) não permite adicionar, excluir NEM
+// reordenar. O POST já era barrado pela contagem contra o limite; excluir e
+// reordenar passavam batido — e num pedido desses a única imagem existente é
+// a capa gerada pela IA, que o cliente conseguiria apagar.
+async function bloqueiaSeSemFotos(supabase: ReturnType<typeof createServerClient>, orderId: string) {
+  const limite = await getPhotoLimit(supabase, orderId)
+  if (limite > 0) return null
+  return NextResponse.json(
+    { error: "O plano contratado não inclui fotos." },
+    { status: 403 },
+  )
+}
+
 // Garante que o bucket existe (executa na Vercel, que alcança o Supabase).
 async function ensureBucket(supabase: ReturnType<typeof createServerClient>) {
   const { data } = await supabase.storage.getBucket(BUCKET)
@@ -137,6 +150,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Params }) {
   const { token } = await params
   const { supabase, order } = await resolveOrder(token)
   if (!order) return NextResponse.json({ error: "Link inválido." }, { status: 404 })
+  const bloqueio = await bloqueiaSeSemFotos(supabase, order.id)
+  if (bloqueio) return bloqueio
 
   const body = await req.json().catch(() => ({}))
 
@@ -182,6 +197,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
   const { token } = await params
   const { supabase, order } = await resolveOrder(token)
   if (!order) return NextResponse.json({ error: "Link inválido." }, { status: 404 })
+  const bloqueio = await bloqueiaSeSemFotos(supabase, order.id)
+  if (bloqueio) return bloqueio
 
   const { photoId } = await req.json().catch(() => ({}))
   if (!photoId) return NextResponse.json({ error: "Foto não informada." }, { status: 400 })

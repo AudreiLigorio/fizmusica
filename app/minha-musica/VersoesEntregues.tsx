@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import FotosPanel from "./FotosPanel"
+import type { PlanFeatures } from "@/lib/planFeatures"
 
 type Track = { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }
 
@@ -18,6 +19,7 @@ export default function VersoesEntregues({
   slug,
   photoToken,
   photoCount,
+  features,
   canRevise,
   onQr,
   onNaoGostei,
@@ -29,6 +31,8 @@ export default function VersoesEntregues({
   slug: string | null
   photoToken?: string | null
   photoCount?: number
+  // Recursos do plano contratado: o que não estiver incluído não aparece.
+  features: PlanFeatures
   canRevise?: boolean
   onQr: () => void
   onNaoGostei?: () => void
@@ -82,10 +86,16 @@ export default function VersoesEntregues({
     }).catch(() => {})
   }
 
+  // A barra só oferece o que o plano entrega: aba de fotos some em plano sem
+  // fotos, e "Surpresa" (o QR pra colar no presente) some em plano sem QR.
   const steps: { key: StepKey; icon: string; label: string; done: boolean; nudge?: boolean }[] = [
     { key: "principal", icon: "⭐", label: "Principal", done: true },
-    { key: "fotos",     icon: "📸", label: "Fotos",     done: hasPhotos, nudge: !hasPhotos },
-    { key: "surpresa",  icon: "🎁", label: "Surpresa",  done: false },
+    ...(features.fotos > 0
+      ? [{ key: "fotos" as const, icon: "📸", label: "Fotos", done: hasPhotos, nudge: !hasPhotos }]
+      : []),
+    ...(features.qrcode
+      ? [{ key: "surpresa" as const, icon: "🎁", label: "Surpresa", done: false }]
+      : []),
     { key: "player",    icon: "▶",  label: "Player",    done: false },
   ]
 
@@ -94,7 +104,8 @@ export default function VersoesEntregues({
   return (
     <div ref={rootRef} className="space-y-3">
       {/* Barra de passos — navegação "o que fazer agora" */}
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className={`grid gap-1.5 ${
+        steps.length === 2 ? "grid-cols-2" : steps.length === 3 ? "grid-cols-3" : "grid-cols-4"}`}>
         {steps.map((s) => {
           const isActive = active === s.key
           return (
@@ -125,7 +136,7 @@ export default function VersoesEntregues({
       {/* ── PRINCIPAL ── só a versão escolhida; "ouvir a outra" revela pra trocar */}
       {active === "principal" && (
         <div className="space-y-3">
-          <p className="text-white/60 text-xs">Ouça as versões e escolha a <strong className="text-white/80">principal</strong> — é ela que vai no QR Code e no link. {canRevise ? "Se nenhuma te agradou, você pode pedir para refazer." : "Você pode trocar quando quiser."}</p>
+          <p className="text-white/60 text-xs">Ouça as versões e escolha a <strong className="text-white/80">principal</strong> — é ela que vai no QR Code e no link. {features.revisao && canRevise ? "Se nenhuma te agradou, você pode pedir para refazer." : "Você pode trocar quando quiser."}</p>
 
           <div className="rounded-xl border border-pink-500/40 bg-pink-500/[0.06] p-4">
             <div className="flex items-center justify-between mb-2">
@@ -161,7 +172,7 @@ export default function VersoesEntregues({
 
           {/* Saída de emergência: não gostou de nenhuma → pedir revisão. Discreto,
               separado, e só enquanto a revisão está disponível. */}
-          {canRevise && onNaoGostei && (
+          {features.revisao && canRevise && onNaoGostei && (
             <div className="border-t border-white/[0.08] pt-3 mt-1">
               <button onClick={onNaoGostei}
                 className="w-full text-center py-2.5 rounded-lg text-xs font-medium border border-white/12 text-white/45 hover:border-red-500/30 hover:text-red-400 transition-colors">
@@ -208,7 +219,9 @@ export default function VersoesEntregues({
       {/* ── PLAYER ── ouvir, baixar e compartilhar */}
       {active === "player" && (
         <div className="space-y-2">
-          <p className="text-white/55 text-xs text-center mb-1 leading-relaxed">Veja como ficou no player, com as suas fotos e a música exclusiva. Aqui você pode compartilhar o acesso a esse player exclusivo.</p>
+          <p className="text-white/55 text-xs text-center mb-1 leading-relaxed">
+            Veja como ficou no player{features.fotos > 0 ? ", com as suas fotos e a música exclusiva" : ", com a capa e a música exclusiva"}. Aqui você pode compartilhar o acesso a esse player exclusivo.
+          </p>
           {slug && (
             <a href={`/m/${slug}`}
               className="block text-center py-3 rounded-lg text-sm font-bold text-white transition-all hover:brightness-110"
@@ -216,8 +229,8 @@ export default function VersoesEntregues({
               ▶ Ouvir no player
             </a>
           )}
-          <div className="grid grid-cols-3 gap-2">
-            {principalUrl && (
+          <div className={`grid gap-2 ${features.download && principalUrl ? "grid-cols-3" : "grid-cols-2"}`}>
+            {principalUrl && features.download && (
               <a href={`/api/orders/${orderId}/musica/download`} download
                 className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
                 <span className="text-base leading-none">⬇</span> Baixar

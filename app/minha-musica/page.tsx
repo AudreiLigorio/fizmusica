@@ -15,6 +15,11 @@ import PublicacaoConsent from "./PublicacaoConsent"
 import EscolherVersao from "./EscolherVersao"
 import VersoesEntregues from "./VersoesEntregues"
 import { dbTime } from "@/lib/date"
+import type { PlanFeatures } from "@/lib/planFeatures"
+
+// Pedido antigo/sem produto vem sem `features` da API — libera tudo, mesma
+// regra do servidor: dado faltando não pode cancelar recurso já pago.
+const TUDO: PlanFeatures = { fotos: 10, letraSincronizada: true, qrcode: true, download: true, revisao: true }
 
 type Order = {
   id: string
@@ -33,6 +38,7 @@ type Order = {
   photo_token?: string | null
   slug?: string | null
   products?: { name: string; price: number } | null
+  features?: PlanFeatures
   payments?: { amount: number; mpStatus: string | null; paidAt?: string | null } | null
   revision?: { status: string } | null
   is_revision?: boolean
@@ -399,14 +405,22 @@ function MinhaMusicaContent() {
                     <div className="p-6">
                       <div className="flex items-start justify-between gap-3 mb-4">
                         <div>
-                          <div className="flex items-center gap-2 mb-0.5">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <p className="font-bold text-lg">{order.subcategory}</p>
                             {order.is_revision && (
                               <span className="text-[10px] px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
                             )}
+                            {/* Plano contratado em destaque: é ele que decide o
+                                que aparece daqui pra baixo (fotos, QR, download,
+                                revisão), então o cliente precisa vê-lo sem caçar. */}
+                            {order.products?.name && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full border border-pink-500/40 bg-pink-500/15 text-pink-200 font-semibold">
+                                {order.products.name}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-gray-400">
-                            {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
+                            #{order.id.slice(0, 8).toUpperCase()}
                           </p>
                         </div>
                         {order.payments?.amount && (
@@ -460,6 +474,7 @@ function MinhaMusicaContent() {
                           orderId={order.id}
                           photoToken={order.photo_token}
                           isRevision={order.is_revision}
+                          temFotos={(order.features ?? TUDO).fotos > 0}
                           onApproved={loadOrders}
                         />
                       )}
@@ -559,6 +574,7 @@ function MinhaMusicaContent() {
                           slug={order.slug ?? null}
                           photoToken={order.photo_token}
                           photoCount={order.photoCount}
+                          features={order.features ?? TUDO}
                           canRevise={!hasRevision && !order.is_revision}
                           onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
                           onNaoGostei={() => router.push(`/contestar/${order.id}`)}
@@ -577,7 +593,7 @@ function MinhaMusicaContent() {
                             >
                               ▶ Ouvir minha música
                             </a>
-                            {order.mp3Url && (
+                            {order.mp3Url && (order.features ?? TUDO).download && (
                               <a
                                 href={`/api/orders/${order.id}/musica/download`}
                                 download
@@ -586,7 +602,7 @@ function MinhaMusicaContent() {
                                 ⬇ Baixar MP3
                               </a>
                             )}
-                            {!hasRevision && (
+                            {!hasRevision && (order.features ?? TUDO).qrcode && (
                               <button
                                 onClick={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
                                 className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-[#B8963E]/40 text-[#B8963E] hover:bg-[#B8963E]/10 transition-colors"
@@ -598,7 +614,7 @@ function MinhaMusicaContent() {
                         )}
                         {/* Entrega legada (1 faixa): o "não gostei" fica aqui. No fluxo de
                             2 versões o botão vive dentro do passo Principal (VersoesEntregues). */}
-                        {delivered && termAccepted && !hasRevision && !order.is_revision && (order.tracks?.length ?? 0) <= 1 && (
+                        {delivered && termAccepted && !hasRevision && !order.is_revision && (order.features ?? TUDO).revisao && (order.tracks?.length ?? 0) <= 1 && (
                           <button
                             onClick={() => router.push(`/contestar/${order.id}`)}
                             className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"

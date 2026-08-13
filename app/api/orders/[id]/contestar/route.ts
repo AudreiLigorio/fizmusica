@@ -5,6 +5,7 @@ import { sendRevisionRequestedNotification } from "@/app/services/emailService"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { acceptRevision } from "@/lib/revision"
 import { logOrderEvent } from "@/lib/orderEvents"
+import { getPlanFeatures } from "@/lib/planFeatures"
 
 export const dynamic = "force-dynamic"
 
@@ -52,6 +53,17 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
   const ownsOrder = order.userId === user.id || order.email?.toLowerCase() === user.email?.toLowerCase()
   if (!ownsOrder) return NextResponse.json({ error: "Sem permissão." }, { status: 403 })
   if (order.status !== "DELIVERED") return NextResponse.json({ error: "Pedido não está entregue." }, { status: 400 })
+
+  // Revisão é recurso de plano: sem ela contratada, a solicitação não entra.
+  // Barrar aqui (e não só esconder o botão) evita que a revisão seja aceita e
+  // duplique o pedido — o que custaria uma geração de música de verdade.
+  const features = await getPlanFeatures(supabase, id)
+  if (!features.revisao) {
+    return NextResponse.json(
+      { error: "O plano contratado não inclui revisão da música." },
+      { status: 403 },
+    )
+  }
 
   // Verifica que não existe contestação anterior
   const { data: existing } = await supabase
