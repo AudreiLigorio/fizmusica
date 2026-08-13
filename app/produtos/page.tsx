@@ -346,13 +346,16 @@ function ProdutosContent() {
               const icon = PRODUCT_ICONS[product.name] ?? "🎶"
 
               return (
+                /* flex-col + mt-auto no "Selecionar": numa linha do grid os cards
+                   esticam até a altura do maior, e sem isso o conteúdo ficava no
+                   topo deixando um buraco embaixo dos planos mais curtos. */
                 <div
                   key={product.id}
                   role="button"
                   tabIndex={0}
                   onClick={() => handleSelectProduct(product)}
                   onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectProduct(product) } }}
-                  className={`snap-center shrink-0 w-[82%] sm:w-[55%] md:w-full relative text-left rounded-[32px] p-6 sm:p-8 border transition-all duration-200 cursor-pointer ${
+                  className={`snap-center shrink-0 w-[82%] sm:w-[55%] md:w-full relative flex flex-col text-left rounded-[32px] p-6 sm:p-8 border transition-all duration-200 cursor-pointer ${
                     isSelected
                       ? "border-pink-500 bg-pink-500/10 shadow-[0_0_40px_rgba(236,72,153,0.15)]"
                       : "border-white/10 bg-white/5 hover:border-pink-500/40"
@@ -380,9 +383,13 @@ function ProdutosContent() {
                     </div>
                   </>)}
 
-                  <div className="flex items-start justify-between mb-4 gap-4">
-                    <h3 className="text-2xl font-bold leading-tight">{product.name}</h3>
-                    <span className="text-2xl font-bold text-pink-400 whitespace-nowrap">
+                  {/* No card estreito do carrossel mobile, título e preço na
+                      mesma linha espremiam o nome a ponto de quebrá-lo no meio
+                      da palavra ("Retrospe/ctiva"). Empilha no mobile e só
+                      volta a dividir a linha quando há largura pra isso. */}
+                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-4 gap-1 sm:gap-3">
+                    <h3 className="text-2xl font-bold leading-tight min-w-0">{product.name}</h3>
+                    <span className="text-2xl font-bold text-pink-400 whitespace-nowrap shrink-0">
                       R$ {fmt(product.price)}
                     </span>
                   </div>
@@ -399,21 +406,35 @@ function ProdutosContent() {
                     const items = withPhotoCount.split("+").map((s) => s.trim()).filter(Boolean)
                     return items.length > 1 ? (
                       <ul className="space-y-2 mb-4" onClick={(e) => e.stopPropagation()}>
-                        {items.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-200">
-                            <svg className="w-4 h-4 mt-0.5 shrink-0 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span className="leading-snug">{item}</span>
-                          </li>
-                        ))}
+                        {items.map((item, i) => {
+                          // É o número que diferencia os planos na escada de
+                          // preço (0 → 15 → 25 → 30 fotos) — sem destaque, ficava
+                          // com o mesmo peso visual de "Capa exclusiva".
+                          const fotos = item.match(/(\d+\s*fotos?\s*sincronizadas?)/i)
+                          return (
+                            <li key={i} className={`flex items-start gap-2 text-sm ${fotos ? "text-white font-semibold" : "text-gray-200"}`}>
+                              <svg className={`w-4 h-4 mt-0.5 shrink-0 ${fotos ? "text-pink-400" : "text-green-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                              <span className="leading-snug">
+                                {fotos ? (
+                                  <>
+                                    {item.slice(0, fotos.index)}
+                                    <span className="text-pink-400">{fotos[0]}</span>
+                                    {item.slice((fotos.index ?? 0) + fotos[0].length)}
+                                  </>
+                                ) : item}
+                              </span>
+                            </li>
+                          )
+                        })}
                       </ul>
                     ) : (
                       <p className="text-gray-200 leading-relaxed mb-4">{withPhotoCount}</p>
                     )
                   })()}
 
-                  <div className={`mt-5 flex items-center gap-2 text-sm font-medium transition-all ${isSelected ? "text-pink-400" : "text-gray-300"}`}>
+                  <div className={`mt-auto pt-5 flex items-center gap-2 text-sm font-medium transition-all ${isSelected ? "text-pink-400" : "text-gray-300"}`}>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-pink-500 bg-pink-500" : "border-white/20"}`}>
                       {isSelected && (
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
