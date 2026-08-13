@@ -73,7 +73,7 @@ function SucessoContent() {
       <div className="relative z-10">
         <Header showButton={false} />
         <div className="border-b border-white/[0.06] px-4 pt-16">
-          <JourneyProgress current={5} />
+          <JourneyProgress current={4} />
         </div>
 
         <div className="flex items-center justify-center px-5 pt-10 pb-16 min-h-screen">

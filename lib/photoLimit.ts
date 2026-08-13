@@ -2,8 +2,9 @@ import type { createServerClient } from "@/lib/supabase"
 
 type DB = ReturnType<typeof createServerClient>
 
-// Limite padrão usado ANTES do cliente escolher o produto (no wizard, o passo Fotos
-// vem antes do passo Produto) e como fallback para pedidos sem productId.
+// Fallback para pedido sem productId. Desde que as fotos passaram a ser
+// enviadas só depois do pagamento, todo pedido que aceita foto já tem produto
+// escolhido — isto virou defesa contra dado inconsistente, não caminho normal.
 export const DEFAULT_PHOTO_LIMIT = 10
 
 // Resolve o limite de fotos de um pedido a partir do produto escolhido (products.photo_limit).

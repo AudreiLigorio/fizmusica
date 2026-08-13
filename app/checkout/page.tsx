@@ -333,7 +333,7 @@ function CheckoutContent() {
 
       {/* Jornada completa */}
       <div className="relative z-10 border-b border-white/[0.06] px-4">
-        <JourneyProgress current={4} />
+        <JourneyProgress current={3} />
       </div>
 
       {/* Barra superior mobile */}

@@ -238,7 +238,7 @@ function ProdutosContent() {
 
         {/* Jornada completa */}
         <div className="shrink-0 px-4 border-b border-white/[0.06]">
-          <JourneyProgress current={3} />
+          <JourneyProgress current={2} />
         </div>
 
         {/* Mobile: Voltar no topo */}

@@ -7,7 +7,6 @@ import Footer from "../components/Footer"
 import MicButton from "../components/MicButton"
 import JourneyProgress from "../components/JourneyProgress"
 import type { CreateOrderDTO } from "@/app/types/order"
-import { DEFAULT_PHOTO_LIMIT } from "@/lib/photoLimit"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 
 // Detecta erros de digitação comuns no domínio do e-mail e sugere correção
@@ -109,24 +108,6 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [submitting, setSubmitting] = useState(false)
   const [interimText, setInterimText] = useState("")
 
-  // Step 6 — fotos
-  type UploadedPhoto = { id: string; url: string }
-  const [photos, setPhotos]           = useState<UploadedPhoto[]>([])
-  const [uploadingPhoto, setUploadingPhoto] = useState(false)
-  const [photoError, setPhotoError]   = useState("")
-  const photoInputRef = useRef<HTMLInputElement>(null)
-
-  // Sincroniza as fotos já salvas assim que o orderId é conhecido (pedido recém
-  // criado ou retomado de uma sessão anterior). Sem isso, ao sair da etapa 6 e
-  // voltar (ex.: "Voltar" em /produtos), o estado local reinicia vazio mesmo com
-  // fotos já existindo no pedido — o cliente reenvia e cria duplicatas.
-  useEffect(() => {
-    if (!orderId) return
-    fetch(`/api/orders/${orderId}/fotos`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d?.photos) setPhotos(d.photos.map((p: { id: string; url: string }) => ({ id: p.id, url: p.url }))) })
-      .catch(() => {})
-  }, [orderId])
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
 
@@ -662,62 +643,14 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
         } catch {}
       }
 
-      // Vai para step 6 (fotos) em vez de navegar direto
-      setStep(6)
-      setSubmitting(false)
+      // Pedido criado: vai direto escolher o produto. As fotos entram depois do
+      // pagamento, na área do cliente — pedir foto antes de pagar alongava a
+      // contratação e deixava imagem de terceiro em pedido que nunca converteu.
+      router.push(`/produtos?orderId=${finalOrderId}`)
     } catch {
       setError("Falha de conexão. Verifique sua internet.")
       setSubmitting(false)
     }
-  }
-
-  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file || !orderId) return
-    if (photos.length >= DEFAULT_PHOTO_LIMIT) { setPhotoError(`Máximo de ${DEFAULT_PHOTO_LIMIT} fotos atingido.`); return }
-
-    setUploadingPhoto(true)
-    setPhotoError("")
-    const form = new FormData()
-    form.append("file", file)
-    try {
-      const res  = await fetch(`/api/orders/${orderId}/fotos`, { method: "POST", body: form })
-      const data = await res.json()
-      if (data.photo) setPhotos((p) => [...p, { id: data.photo.id, url: data.photo.url }])
-      else setPhotoError(data.error ?? "Erro ao enviar foto.")
-    } catch {
-      setPhotoError("Falha de conexão.")
-    } finally {
-      setUploadingPhoto(false)
-      if (photoInputRef.current) photoInputRef.current.value = ""
-    }
-  }
-
-  async function handlePhotoDelete(photoId: string) {
-    if (!orderId) return
-    setPhotos((p) => p.filter((x) => x.id !== photoId))
-    await fetch(`/api/orders/${orderId}/fotos`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ photoId }),
-    }).catch(() => {})
-  }
-
-  // Move uma foto uma posição pra frente/trás — mesma mecânica do painel de fotos
-  // da área do cliente (app/minha-musica/FotosPanel.tsx).
-  async function handlePhotoMove(photoId: string, dir: -1 | 1) {
-    if (!orderId) return
-    const i = photos.findIndex((p) => p.id === photoId)
-    const j = i + dir
-    if (i < 0 || j < 0 || j >= photos.length) return
-    const reordered = [...photos]
-    ;[reordered[i], reordered[j]] = [reordered[j], reordered[i]]
-    setPhotos(reordered)
-    await fetch(`/api/orders/${orderId}/fotos`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ reorder: reordered.map((p) => p.id) }),
-    }).catch(() => {})
   }
 
   /* ================================================= */
@@ -762,11 +695,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
         {/* ── Jornada completa (todas as páginas) ── */}
         <div className="shrink-0 border-b border-white/[0.06] px-4">
-          <JourneyProgress current={step <= 5 ? 1 : 2} />
+          <JourneyProgress current={1} />
         </div>
 
-        {/* ── Mobile: barra de progresso + topo (só steps 1-5) ── */}
-        {step <= 5 && (
+        {/* ── Mobile: barra de progresso + topo ── */}
         <div className="lg:hidden shrink-0">
           <div className="h-[2px] w-full" style={{ background: "rgba(255,255,255,0.05)" }}>
             <div className="h-full transition-all duration-500"
@@ -781,15 +713,6 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             <div />
           </div>
         </div>
-        )}
-
-        {/* ── Mobile: Voltar no topo — step 6 (fotos) ── */}
-        {step === 6 && (
-        <div className="lg:hidden shrink-0 px-5 pt-4 pb-2">
-          <button onClick={prevStep} disabled={submitting}
-                  className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
-        </div>
-        )}
 
         {/* ── Área de conteúdo ── */}
         <div ref={contentRef} className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
@@ -823,7 +746,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
             )}
 
-            <div className={step === 6 ? "" : "wizard-card"}>
+            <div className="wizard-card">
               <div className="py-2 lg:py-0">
 
           {/* ===== LEAD CAPTURE — aparece após 1ª pergunta ===== */}
@@ -1397,119 +1320,15 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             </div>
             </div>
 
-          {/* ===== STEP 6 — Fotos ===== */}
-          {step === 6 && (
-            <div className="px-5 py-6 pb-32 lg:pb-12 lg:max-w-xl lg:mx-auto">
-              <div className="mb-6 text-center">
-                <h1 className="text-2xl font-bold mb-2">Adicione fotos à sua música</h1>
-                <p className="text-white/50 text-sm max-w-sm mx-auto">
-                  As fotos aparecem no player enquanto a música toca. A quantidade que você pode adicionar varia de acordo com o produto escolhido.
-                </p>
-              </div>
-
-              {/* Grid de fotos */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                {photos.map((photo, i) => (
-                  <div key={photo.id} className="relative aspect-square rounded-2xl overflow-hidden border border-white/10">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photo.url} alt="" className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => handlePhotoDelete(photo.id)}
-                      className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center text-white text-xs hover:bg-red-500/80 transition-colors"
-                    >
-                      ✕
-                    </button>
-                    {photos.length > 1 && (
-                      <div className="absolute bottom-1.5 inset-x-1.5 flex justify-between">
-                        <button
-                          onClick={() => handlePhotoMove(photo.id, -1)}
-                          disabled={i === 0}
-                          className="w-6 h-6 rounded-full bg-black/70 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/70"
-                          title="Mover para trás"
-                        >‹</button>
-                        <button
-                          onClick={() => handlePhotoMove(photo.id, 1)}
-                          disabled={i === photos.length - 1}
-                          className="w-6 h-6 rounded-full bg-black/70 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/70"
-                          title="Mover para frente"
-                        >›</button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {photos.length < DEFAULT_PHOTO_LIMIT && (
-                  <label className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                    uploadingPhoto ? "border-pink-500/30 opacity-50 cursor-not-allowed" : "border-white/15 hover:border-pink-500/40"
-                  }`}>
-                    {uploadingPhoto ? (
-                      <span className="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <span className="text-2xl mb-1 text-white/30">+</span>
-                        <span className="text-[10px] text-white/30">Adicionar</span>
-                      </>
-                    )}
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handlePhotoUpload}
-                      disabled={uploadingPhoto}
-                      className="hidden"
-                    />
-                  </label>
-                )}
-              </div>
-
-              {photoError && (
-                <p className="text-sm text-red-400 bg-red-500/10 rounded-xl px-4 py-2 mb-4">{photoError}</p>
-              )}
-
-              {photos.length > 0 && (
-                <p className="text-xs text-white/30 text-center mb-6">
-                  {photos.length} de 5 foto{photos.length > 1 ? "s" : ""} adicionada{photos.length > 1 ? "s" : ""} ✓
-                </p>
-              )}
-
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => router.push(`/produtos?orderId=${orderId}`)}
-                  className="w-full py-4 rounded-2xl text-sm font-bold text-white"
-                  style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}
-                >
-                  {photos.length > 0 ? "Continuar com as fotos →" : "Continuar sem fotos →"}
-                </button>
-                {photos.length === 0 && (
-                  <button
-                    onClick={() => router.push(`/produtos?orderId=${orderId}`)}
-                    className="w-full py-3 rounded-2xl text-sm text-white/35 hover:text-white/60 transition-colors"
-                  >
-                    Pular por agora
-                  </button>
-                )}
-              </div>
-
-              {/* Voltar — desktop, no rodapé (mesmo padrão dos outros steps) */}
-              <div className="hidden lg:flex justify-start mt-10">
-                <button onClick={prevStep} disabled={submitting}
-                        className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
-                        style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
-                  ← Voltar
-                </button>
-              </div>
-            </div>
-          )}
-
             {/* Erro */}
-            {!showLeadCapture && step !== 6 && error && (
+            {!showLeadCapture && error && (
               <div ref={errorRef} className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
                 ⚠️ {error}
               </div>
             )}
 
             {/* Botões de navegação — desktop */}
-            {!showLeadCapture && step !== 6 && (
+            {!showLeadCapture && (
               <>
               {step === 5 && (
                 <label className="flex items-start gap-3 mt-8 cursor-pointer max-w-2xl">
@@ -1569,7 +1388,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         </div>
 
         {/* Botão fixo no rodapé — mobile */}
-        {!showLeadCapture && step !== 1 && step !== 2 && step !== 6 && (
+        {!showLeadCapture && step !== 1 && step !== 2 && (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
             {step < 5 ? (
