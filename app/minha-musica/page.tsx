@@ -32,7 +32,7 @@ type Order = {
   createdAt: string
   photo_token?: string | null
   slug?: string | null
-  products?: { name: string; price: number; photo_limit?: number | null } | null
+  products?: { name: string; price: number } | null
   payments?: { amount: number; mpStatus: string | null; paidAt?: string | null } | null
   revision?: { status: string } | null
   is_revision?: boolean
@@ -460,7 +460,6 @@ function MinhaMusicaContent() {
                           orderId={order.id}
                           photoToken={order.photo_token}
                           isRevision={order.is_revision}
-                          hasFotos={order.products?.photo_limit !== 0}
                           onApproved={loadOrders}
                         />
                       )}
@@ -560,7 +559,6 @@ function MinhaMusicaContent() {
                           slug={order.slug ?? null}
                           photoToken={order.photo_token}
                           photoCount={order.photoCount}
-                          hasFotos={order.products?.photo_limit !== 0}
                           canRevise={!hasRevision && !order.is_revision}
                           onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
                           onNaoGostei={() => router.push(`/contestar/${order.id}`)}

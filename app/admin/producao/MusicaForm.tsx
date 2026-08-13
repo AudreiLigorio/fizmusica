@@ -391,7 +391,7 @@ export default function MusicaForm({
               <label className="text-xs text-gray-500 mb-1 block">Nome do homenageado</label>
               <div className="w-full bg-black/30 border border-pink-500/20 rounded-xl px-3 py-2 text-sm text-pink-300 flex items-center gap-2">
                 <span>🎵</span>
-                <span>{honoreeName ?? "— (sem destinatário — Música Livre)"}</span>
+                <span>{honoreeName ?? "— (pedido antigo, sem destinatário)"}</span>
               </div>
               <p className="text-[10px] text-gray-600 mt-1 pl-1">Informado pelo cliente no wizard</p>
             </div>

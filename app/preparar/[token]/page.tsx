@@ -292,7 +292,7 @@ export default function PrepararPage() {
   }
 
   // Caso principal: pago, não aprovado → fluxo de preparo
-  // Espaço embutido no próprio valor (não na JSX) — pra Música Livre, sem
+  // Espaço embutido no próprio valor (não na JSX) — em pedido legado sem
   // homenageado, não sobrar "a música " com espaço perdido antes do span vazio.
   const para = order.honoreeName ? ` para ${order.honoreeName}` : ""
   return (

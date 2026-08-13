@@ -41,7 +41,6 @@ type WizardOccasion    = { id: string; label: string; emoji: string; slug: strin
 type SessionData = {
   step: number
   questionStep: number
-  tipoMusica: "" | "presente" | "livre"
   selectedContext: string
   selectedSubcategory: string
   answers: Record<string, string>
@@ -69,44 +68,21 @@ function maskWhatsapp(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
-type CriarClientProps = {
-  initialOccasions: WizardOccasion[]
-  initialLivreDisponivel: boolean
-  initialPresenteDisponivel: boolean
-}
-
-export default function CriarClient({ initialOccasions, initialLivreDisponivel, initialPresenteDisponivel }: CriarClientProps) {
+export default function CriarClient({ initialOccasions }: { initialOccasions: WizardOccasion[] }) {
   return (
     <Suspense fallback={null}>
-      <CriarMusicaInner
-        initialOccasions={initialOccasions}
-        initialLivreDisponivel={initialLivreDisponivel}
-        initialPresenteDisponivel={initialPresenteDisponivel}
-      />
+      <CriarMusicaInner initialOccasions={initialOccasions} />
     </Suspense>
   )
 }
 
-function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPresenteDisponivel }: CriarClientProps) {
+function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasion[] }) {
 
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const [occasions, setOccasions] = useState<WizardOccasion[]>(initialOccasions)
-  // Se só um dos dois caminhos (presente x livre) tem produto ativo, não há
-  // escolha real a fazer no passo 0 — pula direto pro passo 1 já com o tipo
-  // certo. Calculado uma vez, no mount: os produtos ativos não mudam durante
-  // a sessão do wizard.
-  const [singlePathTipo] = useState<"" | "presente" | "livre">(() => {
-    if (initialLivreDisponivel && !initialPresenteDisponivel) return "livre"
-    if (initialPresenteDisponivel && !initialLivreDisponivel) return "presente"
-    return ""
-  })
-  // Passo 0: pergunta se há destinatário — decide o que faz sentido pedir depois
-  // (hoje os dois caminhos convergem pro mesmo passo 1; a resposta fica salva
-  // pronta pra quando o restante do fluxo passar a variar por ela).
-  const [step, setStep] = useState(singlePathTipo ? 1 : 0)
-  const [tipoMusica, setTipoMusica] = useState<"" | "presente" | "livre">(singlePathTipo)
+  const [step, setStep] = useState(1)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const TERMS_VERSION = "2026-06"
   const [selectedContext, setSelectedContext] = useState("")
@@ -290,7 +266,6 @@ function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPre
     return {
       step,
       questionStep,
-      tipoMusica,
       selectedContext,
       selectedSubcategory,
       answers,
@@ -343,7 +318,6 @@ function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPre
   function resumeSessionData(data: Partial<SessionData>, step: number) {
     setStep(step)
     setQuestionStep(data.questionStep ?? 0)
-    setTipoMusica(data.tipoMusica ?? "")
     setSelectedContext(data.selectedContext ?? "")
     setSelectedSubcategory(data.selectedSubcategory ?? "")
     setAnswers(data.answers ?? {})
@@ -406,7 +380,7 @@ function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPre
     if (!leadNome.trim()) { setLeadError("Informe seu nome."); return }
     if (!leadEmail.trim() || !leadEmailOk) { setLeadError("E-mail inválido."); return }
     if (!leadWhatsappOk) { setLeadError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX."); return }
-    if (tipoMusica !== "livre" && !leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
+    if (!leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
 
     // Preenche os campos finais para não repetir digitação
     setNome(leadNome)
@@ -457,16 +431,7 @@ function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPre
   const internalQuestionProgress =
     step === 2 ? questionStep / Math.max(questions.length, 1) : 0
   const progress =
-    step === 0 ? 0 : ((step - 1 + internalQuestionProgress) / totalSteps) * 100
-
-  // Escolha do passo 0 — avança direto pro passo 1, sem botão "Continuar"
-  // separado (mesmo padrão do passo 1, onde escolher a ocasião já avança).
-  function escolherTipoMusica(tipo: "presente" | "livre") {
-    setTipoMusica(tipo)
-    const nextSt = 1
-    setStep(nextSt)
-    saveSession(buildSessionData({ tipoMusica: tipo, step: nextSt }), nextSt)
-  }
+    ((step - 1 + internalQuestionProgress) / totalSteps) * 100
 
   // musicalStyle continua sendo UMA string só (sem campo novo em lugar
   // nenhum do sistema) — "Rock" ou, misturando, "Rock, Reggae". O resumo, o
@@ -553,7 +518,7 @@ function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPre
         setError("Preencha todos os seus dados.")
         return
       }
-      if (tipoMusica !== "livre" && !honoreeName.trim()) {
+      if (!honoreeName.trim()) {
         setError("Informe para quem é essa música.")
         return
       }
@@ -579,16 +544,10 @@ function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPre
 
   const prevStep = () => {
     setError("")
-    // Passo 0 é o primeiro — não existe passo -1 pra voltar dentro do wizard,
-    // então "Voltar" aqui sai pro início do site.
-    if (step === 0) {
-      router.push("/")
-      return
-    }
-    // Quando o passo 0 foi pulado (só um caminho tinha produto ativo), não
-    // existe uma tela de escolha pra voltar — "Voltar" no passo 1 sai direto
-    // pro início do site, igual sairia do próprio passo 0.
-    if (step === 1 && singlePathTipo) {
+    // Passo 1 é o primeiro — não existe passo 0 pra voltar dentro do wizard,
+    // então "Voltar" aqui sai pro início do site (nenhuma tela do wizard fica
+    // sem saída).
+    if (step === 1) {
       router.push("/")
       return
     }
@@ -703,13 +662,6 @@ function CriarMusicaInner({ initialOccasions, initialLivreDisponivel, initialPre
         } catch {}
       }
 
-      // "Só para mim" não tem fotos — pula o passo 6 e vai direto pro produto.
-      // O passo 6 continua existindo só pra quem escolheu "para alguém".
-      if (tipoMusica === "livre") {
-        router.push(`/produtos?orderId=${finalOrderId}`)
-        return
-      }
-
       // Vai para step 6 (fotos) em vez de navegar direto
       setStep(6)
       setSubmitting(false)
@@ -810,7 +762,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
         {/* ── Jornada completa (todas as páginas) ── */}
         <div className="shrink-0 border-b border-white/[0.06] px-4">
-          <JourneyProgress current={step <= 5 ? 1 : 2} semFotos={tipoMusica === "livre"} />
+          <JourneyProgress current={step <= 5 ? 1 : 2} />
         </div>
 
         {/* ── Mobile: barra de progresso + topo (só steps 1-5) ── */}
@@ -821,7 +773,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
           </div>
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
-            {step >= 0 && !showLeadCapture ? (
+            {step >= 1 && !showLeadCapture ? (
               <button onClick={prevStep} disabled={submitting}
                       className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
             ) : <div />}
@@ -970,25 +922,22 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   )}
                 </div>
 
-                {/* Nome do homenageado — só existe pra quem tem destinatário. Quem
-                    respondeu "só para mim" já foi avisado que não teria isso. */}
-                {tipoMusica !== "livre" && (
-                  <div className="space-y-2 rounded-2xl p-4" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
-                    <label className="text-sm font-semibold pl-1 flex items-center gap-2" style={{ color: "#f0196b" }}>
-                      🎵 Para quem é essa música?
-                    </label>
-                    <p className="text-xs text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
-                    <div className="relative">
-                      <input
-                        value={leadHonoreeName}
-                        onChange={(e) => setLeadHonoreeName(e.target.value)}
-                        placeholder="Ex: Maria, Vovó Lúcia, Papai…"
-                        className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
-                        style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
-                      />
-                    </div>
+                {/* Nome do homenageado — destaque especial */}
+                <div className="space-y-2 rounded-2xl p-4" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
+                  <label className="text-sm font-semibold pl-1 flex items-center gap-2" style={{ color: "#f0196b" }}>
+                    🎵 Para quem é essa música?
+                  </label>
+                  <p className="text-xs text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
+                  <div className="relative">
+                    <input
+                      value={leadHonoreeName}
+                      onChange={(e) => setLeadHonoreeName(e.target.value)}
+                      placeholder="Ex: Maria, Vovó Lúcia, Papai…"
+                      className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
+                      style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
+                    />
                   </div>
-                )}
+                </div>
               </div>
 
               {leadError && (
@@ -1015,49 +964,15 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             </div>
           )}
 
-          {/* ===== STEP 0 — Presente ou pra você ===== */}
-          {!showLeadCapture && step === 0 && (
-            <div>
-              <div className="mb-8">
-                <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
-                  Essa música é para alguém, ou é para você?
-                </h1>
-                <p className="text-white/55 text-sm">
-                  Isso muda o que vem a seguir — cada caminho tem só o que faz sentido pra ele.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <button
-                  onClick={() => escolherTipoMusica("presente")}
-                  className="w-full text-left rounded-2xl p-5 border transition-all border-pink-500/40 bg-pink-500/5 hover:border-pink-500"
-                >
-                  <h2 className="text-base font-semibold mb-1 text-pink-500">🎁 Para alguém especial</h2>
-                  <p className="text-xs text-white/55">Com fotos e QR code para impressão</p>
-                </button>
-
-                <button
-                  onClick={() => escolherTipoMusica("livre")}
-                  className="w-full text-left rounded-2xl p-5 border transition-all border-purple-500/40 bg-purple-500/5 hover:border-purple-500"
-                >
-                  <h2 className="text-base font-semibold mb-1 text-purple-400">🎵 Só para mim</h2>
-                  <p className="text-xs text-white/55">Só a música — sem fotos, sem QR code</p>
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* ===== STEP 1 — Ocasião ===== */}
           {!showLeadCapture && step === 1 && (
             <div>
               <div className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
-                  {tipoMusica === "livre" ? "Como você quer compor?" : "Qual história você quer transformar em música?"}
+                  Qual história você quer transformar em música?
                 </h1>
                 <p className="text-white/55 text-sm">
-                  {tipoMusica === "livre"
-                    ? "Sem destinatário, sem ocasião obrigatória — é a sua música, do jeito que você quiser."
-                    : "Você pode criar música para celebrar, homenagear, emocionar, surpreender, se declarar, compor ou só contar uma história para transformar em música."}
+                  Você pode criar música para celebrar, homenagear, emocionar, surpreender, se declarar, compor ou só contar uma história para transformar em música.
                 </p>
               </div>
 
@@ -1069,10 +984,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       <div className="h-2.5 w-56 bg-white/5 rounded" />
                     </div>
                   ))
-                ) : (tipoMusica === "livre"
-                    ? occasions.filter((o) => o.label === "Composição Livre")
-                    : [...occasions].sort((a, b) => Number(b.label === "Composição Livre") - Number(a.label === "Composição Livre"))
-                  ).map((occasion) => (
+                ) : [...occasions].sort((a, b) => Number(b.label === "Composição Livre") - Number(a.label === "Composição Livre")).map((occasion) => (
                   <div
                     key={occasion.id}
                     className={`border rounded-2xl overflow-hidden transition-all ${
@@ -1431,23 +1343,22 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 </div>
               </div>
 
-              {tipoMusica !== "livre" && (
-                <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
-                  <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
-                    🎵 Para quem é essa música?
-                  </label>
-                  <p className="text-xs text-white/40 mb-3">Nome de quem vai receber a homenagem</p>
-                  <div className="relative">
-                    <input
-                      value={honoreeName}
-                      onChange={(e) => setHonoreeName(e.target.value)}
-                      placeholder="Ex: Maria, Vovó Lúcia, Papai…"
-                      className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
-                      style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
-                    />
-                  </div>
+              {/* Nome do homenageado — destaque especial */}
+              <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
+                <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
+                  🎵 Para quem é essa música?
+                </label>
+                <p className="text-xs text-white/40 mb-3">Nome de quem vai receber a homenagem</p>
+                <div className="relative">
+                  <input
+                    value={honoreeName}
+                    onChange={(e) => setHonoreeName(e.target.value)}
+                    placeholder="Ex: Maria, Vovó Lúcia, Papai…"
+                    className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
+                    style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
+                  />
                 </div>
-              )}
+              </div>
 
               <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-200 leading-relaxed">
                 🔒 Seus dados são privados e usados exclusivamente para entrega da sua música.
@@ -1627,7 +1538,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               )}
 
               <div className="hidden lg:flex justify-between items-center mt-10">
-                {step >= 0 ? (
+                {step >= 1 ? (
                   <button onClick={prevStep} disabled={submitting}
                           className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white disabled:opacity-40"
                           style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}>
@@ -1658,7 +1569,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         </div>
 
         {/* Botão fixo no rodapé — mobile */}
-        {!showLeadCapture && step !== 0 && step !== 1 && step !== 2 && step !== 6 && (
+        {!showLeadCapture && step !== 1 && step !== 2 && step !== 6 && (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
             {step < 5 ? (

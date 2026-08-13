@@ -70,10 +70,6 @@ function ProdutosContent() {
 
   const [products, setProducts]     = useState<Product[]>([])
   const [loading, setLoading]       = useState(true)
-  // Pedido sem homenageado = veio do caminho "só para mim" no wizard, que já
-  // não coletou fotos nem nome de destinatário. Mostrar a Música Presente
-  // ali seria vender QR code e fotos que o pedido nunca teve como ter.
-  const [semDestinatario, setSemDestinatario] = useState(false)
   const [step, setStep]             = useState<1 | 2>(1)
   const [selected, setSelected]     = useState<Product | null>(null)
   const [delivery, setDelivery]     = useState<DeliveryOption | null>(null)
@@ -116,20 +112,7 @@ function ProdutosContent() {
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
-    if (!orderId) return
-    fetch(`/api/orders/${orderId}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (d) setSemDestinatario(!d.honoreeName) })
-      .catch(() => {})
-  }, [orderId])
-
-  // Nunca pode zerar a lista: se "Música Presente" for o único produto ativo,
-  // mostra ele mesmo sem destinatário — melhor vender algo com recursos que
-  // sobram do que mostrar a tela vazia (já aconteceu: só a Presente ativa +
-  // pedido sem destinatário = ninguém via produto nenhum).
-  const semPresente = products.filter((p) => p.name !== "Música Presente")
-  const produtosVisiveis = semDestinatario && semPresente.length > 0 ? semPresente : products
+  const produtosVisiveis = products
 
   // O botão "Salvando…" é transitório: só vale durante o PATCH em andamento.
   // Ao voltar do checkout pelo botão do navegador, o Chrome restaura a página do
