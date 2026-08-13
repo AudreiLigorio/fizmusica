@@ -16,10 +16,14 @@ export default function MusicaForm({
   orderId,
   honoreeName,
   lyricsDraft,
+  mostrarQr = true,
 }: {
   orderId: string
   honoreeName: string | null
   lyricsDraft?: string | null
+  // Plano sem QR Code: some daqui também. Exibir no admin um QR que o cliente
+  // nunca vai ver induziria a operação a prometer o que o plano não entrega.
+  mostrarQr?: boolean
 }) {
   const [open, setOpen]             = useState(false)
   const [music, setMusic]           = useState<MusicData | null>(null)
@@ -598,9 +602,11 @@ export default function MusicaForm({
               >
                 {publicUrl}
               </a>
-              <div className="flex justify-center bg-white p-3 rounded-lg">
-                <QRCodeSVG value={publicUrl} size={120} />
-              </div>
+              {mostrarQr && (
+                <div className="flex justify-center bg-white p-3 rounded-lg">
+                  <QRCodeSVG value={publicUrl} size={120} />
+                </div>
+              )}
             </div>
           )}
         </div>

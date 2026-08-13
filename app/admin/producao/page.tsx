@@ -7,7 +7,7 @@ async function getQueue() {
   const supabase = createServerClient()
   const { data, error } = await supabase
     .from("orders")
-    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_effect, is_revision, parent_order_id, revision_note, lyricsApproved, lyricsDraft, sunoStatus, sunoTracks, sunoError, product_delivery_options(label, days), products(name), order_photos(id, url, is_cover, sort_order), payments(mpPaymentId, mpStatus)")
+    .select("id, nome, email, whatsapp, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_effect, is_revision, parent_order_id, revision_note, lyricsApproved, lyricsDraft, sunoStatus, sunoTracks, sunoError, product_delivery_options(label, days), products(name, feat_qrcode), order_photos(id, url, is_cover, sort_order), payments(mpPaymentId, mpStatus)")
     .eq("paymentStatus", "PAID")
     .eq("lyricsApproved", true)
     .neq("status", "ABANDONED")

@@ -2,6 +2,8 @@ import { createServerClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import PublicMusicPlayer from "@/app/m/[slug]/PublicMusicPlayer"
+import { getPlanFeatures } from "@/lib/planFeatures"
+import { lrcToPlainLyrics } from "@/lib/suno/lrc"
 
 export const dynamic = "force-dynamic"
 
@@ -33,6 +35,11 @@ export default async function ProducaoPreview({ params }: { params: Promise<{ or
   const photos = (photoRows ?? []).map((p) => p.url as string)
   const photoEffect = (order.photo_effect ?? "slide") as "slide" | "fade" | "cards" | "coverflow"
 
+  // A prévia serve pra conferir o que o CLIENTE vai ver — então respeita os
+  // mesmos recursos do plano. Sem isto, o admin aprovaria uma tela com letra
+  // sincronizada e QR que o plano contratado não entrega.
+  const features = await getPlanFeatures(supabase, orderId)
+
   return (
     <div className="min-h-screen bg-black text-white font-sans">
       {/* Barra de prévia (admin) */}
@@ -47,11 +54,13 @@ export default async function ProducaoPreview({ params }: { params: Promise<{ or
           // Sem cair pro nome do comprador — senão a prévia mostra um nome que
           // o player de verdade nunca vai ter (pedido legado pode não ter homenageado).
           personName:  music?.personName ?? order.honoreeName ?? null,
-          lyrics:      music?.lyrics ?? null,
-          lyricsLrc:   music?.lyricsLrc ?? null,
+          lyrics:      features.letraSincronizada
+            ? (music?.lyrics ?? null)
+            : (music?.lyrics?.trim() || (music?.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null)),
+          lyricsLrc:   features.letraSincronizada ? (music?.lyricsLrc ?? null) : null,
           mp3Url:      music?.mp3Url ?? "",
           imageUrl:    music?.imageUrl ?? null,
-          photos,
+          photos: features.fotos > 0 ? photos : [],
           photoEffect,
           order: {
             nome:         order.nome,
@@ -61,6 +70,7 @@ export default async function ProducaoPreview({ params }: { params: Promise<{ or
           },
         }}
         publicUrl=""
+        mostrarQr={features.qrcode}
       />
     </div>
   )

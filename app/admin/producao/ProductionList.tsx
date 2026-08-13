@@ -23,7 +23,7 @@ type Order = {
   photo_effect?: string | null
   lyricsApproved?: boolean
   lyricsDraft?: string | null
-  products?: { name: string } | null
+  products?: { name: string; feat_qrcode?: boolean | null } | null
   product_delivery_options?: { label: string; days: number } | null
   payments?: { mpPaymentId: string | null; mpStatus: string | null }[] | null
   revision?: { message: string; status: string; createdAt: string } | null
@@ -357,7 +357,7 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
                 <SunoPanel orderId={order.id} status={order.sunoStatus ?? null} tracks={order.sunoTracks ?? null} error={order.sunoError ?? null} />
 
                 {/* Form de produção */}
-                <MusicaForm orderId={order.id} honoreeName={order.honoreeName ?? null} lyricsDraft={order.lyricsDraft ?? null} />
+                <MusicaForm orderId={order.id} honoreeName={order.honoreeName ?? null} lyricsDraft={order.lyricsDraft ?? null} mostrarQr={order.products?.feat_qrcode !== false} />
                 </div>
                 )}
               </div>

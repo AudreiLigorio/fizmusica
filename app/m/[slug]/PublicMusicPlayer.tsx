@@ -74,9 +74,12 @@ function Equalizer({ playing, size = 22 }: { playing: boolean; size?: number }) 
 export default function PublicMusicPlayer({
   music,
   publicUrl,
+  mostrarQr = true,
 }: {
   music: MusicData
   publicUrl: string
+  // Plano sem QR Code: some o botão e, junto, a tela de impressão inteira.
+  mostrarQr?: boolean
 }) {
   const audioRef          = useRef<HTMLAudioElement>(null)
   const activeLineRef       = useRef<HTMLParagraphElement>(null)
@@ -279,6 +282,7 @@ export default function PublicMusicPlayer({
           <span className="text-[10px] text-white/40">whatsapp</span>
         </a>
 
+        {mostrarQr && (
         <button
           onClick={() => setShowQr(true)}
           title="Imprimir QR Code"
@@ -292,6 +296,7 @@ export default function PublicMusicPlayer({
           </span>
           <span className="text-[10px] text-white/40">qr code</span>
         </button>
+        )}
 
         <a
           href="/"
@@ -425,7 +430,7 @@ export default function PublicMusicPlayer({
       </div>
 
       {/* ===================== MODAL QR (impressão) ===================== */}
-      {showQr && (
+      {mostrarQr && showQr && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 print:p-0 print:bg-white print:inset-auto">
           <div className="flex flex-col items-center gap-4 w-full max-w-sm">
             <div

@@ -1,6 +1,8 @@
 import { createServerClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import PublicMusicPlayer from "./PublicMusicPlayer"
+import { getPlanFeatures } from "@/lib/planFeatures"
+import { lrcToPlainLyrics } from "@/lib/suno/lrc"
 
 export const dynamic = "force-dynamic"
 
@@ -68,6 +70,11 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
     .order("is_cover", { ascending: false })
     .order("sort_order", { ascending: true })
 
+  // Recursos do plano contratado. O player é a tela do PRESENTEADO, então o
+  // corte é feito aqui, no servidor: o que o plano não inclui simplesmente não
+  // é enviado ao navegador, em vez de ir junto e ficar escondido por CSS.
+  const features = await getPlanFeatures(supabase, music.orderId)
+
   const photos = (photoRows ?? []).map((p) => p.url as string)
   const photoEffect = (order?.photo_effect ?? "slide") as "slide" | "fade" | "cards" | "coverflow"
 
@@ -80,15 +87,24 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
         music={{
           musicName: music.musicName,
           personName: music.personName,
-          lyrics: music.lyrics,
-          lyricsLrc: music.lyricsLrc,
+          // Sem sincronização, a letra continua — só perde o acompanhamento.
+          // A maioria das músicas tem só o LRC preenchido (vem pronto do
+          // Suno), então aqui os tempos são retirados pra sobrar a letra.
+          lyrics: features.letraSincronizada
+            ? music.lyrics
+            : (music.lyrics?.trim() || (music.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null)),
+          // O LRC nem sai do servidor quando o plano não inclui sincronização.
+          lyricsLrc: features.letraSincronizada ? music.lyricsLrc : null,
           mp3Url: music.mp3Url,
           imageUrl: music.imageUrl,
-          photos,
+          // Plano sem fotos mostra só a capa — é o que o player faz com a
+          // lista vazia (cai no imageUrl).
+          photos: features.fotos > 0 ? photos : [],
           photoEffect,
           order: order ?? null,
         }}
         publicUrl={publicUrl}
+        mostrarQr={features.qrcode}
       />
     </div>
   )

@@ -45,3 +45,20 @@ export function alignedWordsToLrc(words: AlignedWord[]): string {
     .map((l) => `${stamp(l.start ?? 0)}${l.text.trim()}`)
     .join("\n")
 }
+
+/**
+ * Remove os timestamps do LRC, devolvendo só a letra.
+ *
+ * Serve ao plano SEM letra sincronizada: a regra é esconder a sincronização,
+ * não a letra. E é necessário na prática — a maioria das músicas publicadas
+ * tem `lyricsLrc` preenchido e `lyrics` vazio (o LRC vem pronto do Suno via
+ * alignedWords), então simplesmente não enviar o LRC deixaria o cliente sem
+ * letra nenhuma.
+ */
+export function lrcToPlainLyrics(lrc: string): string {
+  return lrc
+    .split("\n")
+    .map((l) => l.replace(/\[\d{2}:\d{2}(?:\.\d{2})?\]/g, "").trim())
+    .filter(Boolean)
+    .join("\n")
+}
