@@ -11,6 +11,10 @@ const PASSOS = [
   { evento: "pageview", rotulo: "Visitaram o site" },
   { evento: "cta_criar", rotulo: "Clicaram em criar música" },
   { evento: "wizard_passo", rotulo: "Entraram no wizard" },
+  // `detalhe` restringe a quem realmente VIU o refrão: o mesmo evento também é
+  // emitido quando a prévia falha ou bate no teto, e contar esses casos aqui
+  // inflaria o degrau com gente que não recebeu nada.
+  { evento: "previa_letra", detalhe: "revelada", rotulo: "Viram o refrão da música" },
   { evento: "checkout", rotulo: "Chegaram no pagamento" },
   { evento: "pago", rotulo: "Pagaram" },
 ]
@@ -29,8 +33,9 @@ export default async function ComportamentoPage() {
 
   // Funil por SESSÃO, não por evento: o que importa é quantas pessoas
   // chegaram até cada degrau, não quantas vezes o degrau foi pisado.
-  const sessoesPor = (evento: string) => new Set(todos.filter((e) => e.evento === evento).map((e) => e.sessao))
-  const funil = PASSOS.map((p) => ({ ...p, sessoes: sessoesPor(p.evento).size }))
+  const sessoesPor = (evento: string, detalhe?: string) =>
+    new Set(todos.filter((e) => e.evento === evento && (!detalhe || e.detalhe === detalhe)).map((e) => e.sessao))
+  const funil = PASSOS.map((p) => ({ ...p, sessoes: sessoesPor(p.evento, (p as { detalhe?: string }).detalhe).size }))
   const topo = funil[0].sessoes || 1
 
   // Onde o wizard trava: última etapa alcançada por sessão.

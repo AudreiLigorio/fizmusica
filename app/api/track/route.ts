@@ -3,7 +3,12 @@ import { createServerClient } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
-const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "checkout", "pago", "ping"])
+const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "previa_letra", "checkout", "pago", "ping"])
+
+// 204 não pode ter corpo: `NextResponse.json(..., { status: 204 })` lança. Como
+// isso acontecia dentro E fora do catch, a rota respondia 500 — o bloco que
+// existe pra telemetria nunca atrapalhar o site era justamente quem derrubava.
+const semConteudo = () => new Response(null, { status: 204 })
 
 // Coletor de eventos do site. Público por natureza (o navegador do visitante
 // chama), então: lista fechada de eventos, tamanho limitado e NADA de dado
@@ -13,7 +18,7 @@ export async function POST(req: NextRequest) {
   try {
     const b = await req.json().catch(() => ({}))
     if (!b?.sessao || !EVENTOS.has(b.evento)) {
-      return NextResponse.json({ ok: false }, { status: 204 })
+      return semConteudo()
     }
 
     const corta = (v: unknown, n: number) => (typeof v === "string" ? v.slice(0, n) : null)
@@ -33,6 +38,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   } catch {
     // Telemetria nunca pode atrapalhar o site do cliente.
-    return NextResponse.json({ ok: false }, { status: 204 })
+    return semConteudo()
   }
 }
