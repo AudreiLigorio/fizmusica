@@ -58,6 +58,24 @@ import { track } from "@/lib/track"
 
 const SESSION_KEY = "fizmusica_session_id"
 
+// A composição leva de 5 a 9 segundos (medido). As mensagens trocam a cada 3,5s
+// pra que a espera pareça trabalho acontecendo, não travamento.
+const PREVIA_MSGS = [
+  "Lendo a sua história…",
+  "Procurando as rimas…",
+  "Escrevendo o refrão…",
+]
+
+// Texto decorativo do trecho borrado. NUNCA a continuação real da letra: borrar
+// no navegador não protege nada — bastaria abrir o inspetor pra ler a música
+// inteira de graça. A letra completa não sai do servidor.
+const PREVIA_BORRADA = [
+  "Naquela tarde o tempo parou",
+  "e o que era comum virou canção",
+  "Guardei no peito o que ficou",
+  "cada detalhe, cada razão",
+]
+
 function maskWhatsapp(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11)
   if (digits.length === 0) return ""
@@ -98,6 +116,14 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [questionStep, setQuestionStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [interimText, setInterimText] = useState("")
+
+  // Prévia da letra no resumo. "calmo" cobre falha, timeout e teto com a MESMA
+  // tela: nos três casos não há refrão pra mostrar, e a diferença não interessa
+  // a quem está comprando. Nada aqui bloqueia o botão de finalizar.
+  const [previaStatus, setPreviaStatus] = useState<"inicial" | "gerando" | "revelado" | "calmo">("inicial")
+  const [refrao, setRefrao] = useState("")
+  const [dadosAbertos, setDadosAbertos] = useState(false)
+  const [previaMsg, setPreviaMsg] = useState(0)
 
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
@@ -404,6 +430,67 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
 
   function clicarEstilo(item: string) {
     setMusicalStyle(musicalStyle === item ? "" : item)
+  }
+
+  /* ================================================= */
+  /* PRÉVIA DA LETRA                                   */
+  /* ================================================= */
+
+  // Sair do resumo zera a prévia: a pessoa pode ter voltado justamente pra
+  // mudar a história, e aí o refrão que está na tela é de um texto que não
+  // existe mais. Se nada mudou, o servidor devolve o guardado na hora e sem
+  // gastar geração — voltar pra conferir sai de graça.
+  useEffect(() => {
+    if (step !== 5) {
+      setPreviaStatus("inicial")
+      setRefrao("")
+      setDadosAbertos(false)
+    }
+  }, [step])
+
+  useEffect(() => {
+    if (previaStatus !== "gerando") return
+    setPreviaMsg(0)
+    const t = setInterval(() => setPreviaMsg((i) => Math.min(i + 1, PREVIA_MSGS.length - 1)), 3500)
+    return () => clearInterval(t)
+  }, [previaStatus])
+
+  async function gerarPrevia() {
+    if (!sessionId) { setPreviaStatus("calmo"); setDadosAbertos(true); return }
+    setPreviaStatus("gerando")
+
+    // O servidor lê a história da sessão, e o save normal é debounced em 500ms.
+    // Sem forçar a gravação aqui, a prévia poderia ser gerada a partir do texto
+    // anterior à última edição.
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    try {
+      await fetch("/api/wizard-session", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: sessionId, step: 5, data: buildSessionData({ step: 5 }) }),
+      })
+    } catch {}
+
+    try {
+      const res = await fetch("/api/wizard/previa-letra", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (d?.status === "ok" && d?.refrao) {
+        setRefrao(d.refrao)
+        setPreviaStatus("revelado")
+        track("previa_letra", "revelada")
+        return
+      }
+      track("previa_letra", d?.status === "limite" ? "limite" : "erro")
+    } catch {
+      track("previa_letra", "erro")
+    }
+    // Sem refrão a conferência assume o papel principal, senão a tela fica vazia.
+    setPreviaStatus("calmo")
+    setDadosAbertos(true)
   }
 
   /* ================================================= */
@@ -1207,22 +1294,107 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <h1 className="text-xl font-bold tracking-tight">Confira o resumo antes de finalizar</h1>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {/* Mesmos cards de sempre, só menores e sem o brilho: o glow
+                  passa a ser exclusivo do card da letra, pra que os dois possam
+                  ser rosa sem disputar a atenção. */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
                 {[
                   { label: "Ocasião", value: selectedSubcategory },
                   { label: "Estilo",  value: musicalStyle },
                   { label: "Emoção",  value: emotion },
                   { label: "Voz",     value: voiceType },
                 ].map(({ label, value }) => (
-                  <div key={label} className="border border-pink-500/40 bg-pink-500/10 shadow-[0_0_24px_rgba(236,72,153,0.12)] rounded-2xl p-5">
-                    <p className="text-xs text-pink-400 font-medium mb-1 uppercase tracking-wider">{label}</p>
-                    <p className="font-semibold text-white">{value}</p>
+                  <div key={label} className="border border-pink-500/40 bg-pink-500/10 rounded-xl px-3 py-2.5">
+                    <p className="text-[10px] text-pink-400 font-medium mb-0.5 uppercase tracking-wider">{label}</p>
+                    <p className="text-xs font-semibold text-white leading-snug">{value}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-black/40 border border-white/10 rounded-[28px] p-8 whitespace-pre-wrap text-gray-300 leading-relaxed text-sm max-h-80 overflow-y-auto mb-6">
-                {resumo}
+              {/* ── Prévia da letra ── */}
+              {previaStatus === "inicial" && (
+                <button
+                  onClick={gerarPrevia}
+                  className="w-full rounded-2xl px-5 py-4 mb-5 text-left transition-all"
+                  style={{ background: "rgba(240,25,107,0.07)", border: "1px solid rgba(240,25,107,0.3)" }}
+                >
+                  <p className="text-sm font-semibold text-white">🎵 Ver o refrão da minha música</p>
+                  <p className="text-xs text-white/50 mt-0.5">
+                    A gente já compõe uma parte agora, com a história que você contou.
+                  </p>
+                </button>
+              )}
+
+              {previaStatus === "gerando" && (
+                <div className="rounded-2xl px-5 py-8 mb-5 text-center"
+                     style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.25)" }}>
+                  <p className="text-sm font-semibold text-white">Compondo sua música</p>
+                  <p className="text-xs text-white/50 mt-1 mb-5">{PREVIA_MSGS[previaMsg]}</p>
+                  <div className="flex flex-col items-center gap-2">
+                    {[80, 62, 73].map((w, i) => (
+                      <div key={i} className="h-[7px] rounded-full animate-pulse"
+                           style={{ width: `${w}%`, background: `rgba(255,255,255,${0.13 - i * 0.03})`, animationDelay: `${i * 0.15}s` }} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {previaStatus === "revelado" && (
+                <div className="mb-5">
+                  <p className="text-sm font-semibold text-white mb-0.5">O refrão da sua música</p>
+                  <p className="text-xs text-white/45 mb-3">Escrito agora, a partir da história que você contou.</p>
+
+                  <div className="relative overflow-hidden rounded-2xl px-5 pt-4"
+                       style={{ background: "rgba(240,25,107,0.07)", border: "1px solid rgba(240,25,107,0.3)", boxShadow: "0 0 24px rgba(236,72,153,0.12)" }}>
+                    <p className="text-[10px] text-pink-400 uppercase tracking-widest mb-3">refrão</p>
+                    <p className="text-[15px] text-white whitespace-pre-wrap" style={{ lineHeight: 1.85 }}>{refrao}</p>
+
+                    <div aria-hidden="true" className="select-none mt-4" style={{ filter: "blur(4px)", opacity: 0.5 }}>
+                      {PREVIA_BORRADA.map((l, i) => (
+                        <p key={i} className="text-sm text-white/75" style={{ lineHeight: 1.8 }}>{l}</p>
+                      ))}
+                      <div className="h-10" />
+                    </div>
+
+                    <div className="absolute left-0 right-0 bottom-0 h-32 flex items-end justify-center pb-3.5"
+                         style={{ background: "linear-gradient(to bottom, rgba(7,6,13,0), rgba(7,6,13,0.97) 62%)" }}>
+                      <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
+                           style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.16)" }}>
+                        <span className="text-[11px] text-white/75">🔒 os versos, a ponte e o refrão final</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-white/40 text-center mt-3 leading-relaxed">
+                    A música completa fica pronta depois da contratação — e você ainda pode pedir ajustes.
+                  </p>
+                </div>
+              )}
+
+              {previaStatus === "calmo" && (
+                <div className="flex items-start gap-2.5 rounded-2xl px-4 py-3.5 mb-5"
+                     style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <span className="text-sm">🎵</span>
+                  <p className="text-xs text-white/60 leading-relaxed">
+                    Sua música vai ser composta assim que você finalizar.
+                  </p>
+                </div>
+              )}
+
+              {/* ── Conferência: sempre disponível, em qualquer estado ── */}
+              <div className="border-t border-white/10 pt-3 mb-2">
+                <button
+                  onClick={() => setDadosAbertos(!dadosAbertos)}
+                  className="w-full flex items-center justify-between"
+                >
+                  <span className="text-xs text-white/60">👤 Seus dados e respostas</span>
+                  <span className="text-white/35 text-xs">{dadosAbertos ? "▲" : "▼"}</span>
+                </button>
+                {dadosAbertos && (
+                  <div className="mt-3 bg-black/40 border border-white/10 rounded-2xl p-5 whitespace-pre-wrap text-gray-300 leading-relaxed text-xs max-h-80 overflow-y-auto">
+                    {resumo}
+                  </div>
+                )}
               </div>
 
             </div>

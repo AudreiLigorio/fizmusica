@@ -43,9 +43,24 @@ export async function PUT(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
 
   const supabase = createServerClient()
+
+  // `previa` (rascunho da letra + contador de gerações) é estado do SERVIDOR: o
+  // cliente não conhece esse campo e manda o `data` inteiro a cada gravação, o
+  // que apagaria o contador e o rascunho a cada clique — na prática zerando o
+  // teto de gerações e permitindo prévia infinita. Preserva sempre o que já
+  // está gravado; a rota da prévia é a única que escreve ali.
+  const { data: atual } = await supabase
+    .from("wizard_sessions")
+    .select("data")
+    .eq("id", id)
+    .maybeSingle()
+
+  const previa = (atual?.data as Record<string, unknown> | null)?.previa
+  const merged = previa ? { ...(data ?? {}), previa } : data
+
   const { error } = await supabase
     .from("wizard_sessions")
-    .update({ step, data, updated_at: new Date().toISOString() })
+    .update({ step, data: merged, updated_at: new Date().toISOString() })
     .eq("id", id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
