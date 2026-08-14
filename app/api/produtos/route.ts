@@ -9,6 +9,7 @@ export async function GET() {
       .from("products")
       .select(`
         id, name, description, price, imageUrl, featured, category, photo_limit,
+        feat_lyrics_sync, feat_qrcode, feat_download, feat_revision,
         product_delivery_options (
           id, label, days, price_extra, sort_order, active
         ),

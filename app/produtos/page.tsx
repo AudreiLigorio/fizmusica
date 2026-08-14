@@ -7,7 +7,6 @@ import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
-import ProductGallery from "./ProductGallery"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 
 type DeliveryOption = {
@@ -29,8 +28,34 @@ type Product = {
   featured: boolean
   category?: string | null
   photo_limit?: number | null
+  feat_lyrics_sync?: boolean | null
+  feat_qrcode?: boolean | null
+  feat_revision?: boolean | null
   product_delivery_options: DeliveryOption[]
   product_images: ProductImage[]
+}
+
+// Fotos de exemplo já usadas na galeria pública do produto — mostradas no
+// "detalhes" dos planos que incluem fotos, pra ilustrar o recurso.
+const EXAMPLE_PHOTOS = [
+  "https://esjjcqwxcflppyqrixqt.supabase.co/storage/v1/object/public/product-images/prod-digital/photo_2_1782620463333.jpg",
+  "https://esjjcqwxcflppyqrixqt.supabase.co/storage/v1/object/public/product-images/prod-digital/photo_3_1782621244638.jpg",
+]
+
+// "Pra você" (uso pessoal) vs "Pra presentear" (retrospectiva com fotos) —
+// o recurso de fotos é o que separa as duas jornadas.
+function planGroup(p: Product): "voce" | "presentear" {
+  return (p.photo_limit ?? 0) > 0 ? "presentear" : "voce"
+}
+
+function planChips(p: Product): string[] {
+  const chips: string[] = []
+  if (p.feat_lyrics_sync) chips.push("letra sincronizada")
+  if ((p.photo_limit ?? 0) > 0) chips.push(`${p.photo_limit} fotos`)
+  if (p.feat_qrcode) chips.push("QR Code")
+  if (p.feat_revision) chips.push("ajustes inclusos")
+  if (p.category === "DIGITAL_PHYSICAL") chips.push("caixa física", "frete grátis")
+  return chips
 }
 
 const PRODUCT_ICONS: Record<string, React.ReactNode> = {
@@ -84,20 +109,20 @@ function ProdutosContent() {
   const [couponMsg, setCouponMsg]           = useState("")
   const [checkingCoupon, setCheckingCoupon] = useState(false)
 
-  // Carrossel de produtos (só no mobile) — rastreia o card centralizado p/ os dots.
-  const carouselRef = useRef<HTMLDivElement>(null)
-  const [activeProduct, setActiveProduct] = useState(0)
+  // "detalhes" expandido e foto ampliada por card — vários podem estar abertos.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [zoomSrc, setZoomSrc] = useState<Record<string, string | null>>({})
+
+  function toggleDetails(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
 
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(step, contentRef)
-
-  function handleCarouselScroll() {
-    const el = carouselRef.current
-    const first = el?.firstElementChild as HTMLElement | null
-    if (!el || !first) return
-    const step = first.offsetWidth + 16 // largura do card + gap-4
-    setActiveProduct(Math.round(el.scrollLeft / step))
-  }
 
   const isPhysical = selected?.category === "DIGITAL_PHYSICAL"
 
@@ -335,136 +360,167 @@ function ProdutosContent() {
             <div className="w-10 h-10 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : step === 1 ? (
-          <>
-          <div
-            ref={carouselRef}
-            onScroll={handleCarouselScroll}
-            className="flex md:grid md:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-10 overflow-x-auto md:overflow-visible snap-x snap-mandatory -mx-5 px-5 md:mx-0 md:px-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {produtosVisiveis.map((product) => {
-              const isSelected = selected?.id === product.id
-              const icon = PRODUCT_ICONS[product.name] ?? "🎶"
-
+          <div className="space-y-8 mb-4 md:mb-10">
+            {(["voce", "presentear"] as const).map((group) => {
+              const items = produtosVisiveis.filter((p) => planGroup(p) === group)
+              if (items.length === 0) return null
               return (
-                /* flex-col + mt-auto no "Selecionar": numa linha do grid os cards
-                   esticam até a altura do maior, e sem isso o conteúdo ficava no
-                   topo deixando um buraco embaixo dos planos mais curtos. */
-                <div
-                  key={product.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => handleSelectProduct(product)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectProduct(product) } }}
-                  className={`snap-center shrink-0 w-[82%] sm:w-[55%] md:w-full relative flex flex-col text-left rounded-[32px] p-6 sm:p-8 border transition-all duration-200 cursor-pointer ${
-                    isSelected
-                      ? "border-pink-500 bg-pink-500/10 shadow-[0_0_40px_rgba(236,72,153,0.15)]"
-                      : "border-white/10 bg-white/5 hover:border-pink-500/40"
-                  }`}
-                >
-                  {product.product_images?.length > 0 ? (
-                    <div className="relative mb-5" onClick={(e) => e.stopPropagation()}>
-                      {product.featured && (
-                        <div className="absolute top-3 right-3 z-10 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full pointer-events-none">
-                          MAIS POPULAR
-                        </div>
-                      )}
-                      <ProductGallery images={product.product_images} name={product.name} />
-                    </div>
-                  ) : (
-                  <>
-                  {product.featured && (
-                    <div className="absolute top-5 right-5 bg-pink-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                      MAIS POPULAR
-                    </div>
-                  )}
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6"
-                         style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
-                      {icon}
-                    </div>
-                  </>)}
-
-                  {/* No card estreito do carrossel mobile, título e preço na
-                      mesma linha espremiam o nome a ponto de quebrá-lo no meio
-                      da palavra ("Retrospe/ctiva"). Empilha no mobile e só
-                      volta a dividir a linha quando há largura pra isso. */}
-                  <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-4 gap-1 sm:gap-3">
-                    <h3 className="text-2xl font-bold leading-tight min-w-0">{product.name}</h3>
-                    <span className="text-2xl font-bold text-pink-400 whitespace-nowrap shrink-0">
-                      R$ {fmt(product.price)}
+                <div key={group}>
+                  <div className="flex items-center gap-2 mb-3">
+                    {group === "voce" ? (
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="rgba(244,114,182,0.7)" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="rgba(244,114,182,0.7)" strokeWidth="2">
+                        <rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8v13M3 12h18"/><path d="M12 8c-1.5 0-3-1-3-2.5A2 2 0 0 1 12 4a2 2 0 0 1 3 1.5C15 7 13.5 8 12 8z"/>
+                      </svg>
+                    )}
+                    <span className="text-xs font-semibold tracking-wider uppercase" style={{ color: "rgba(244,114,182,0.7)" }}>
+                      {group === "voce" ? "Pra você" : "Pra presentear"}
                     </span>
                   </div>
 
-                  {product.description && (() => {
-                    // {fotos} no texto vira o número real (products.photo_limit) — editar
-                    // o limite no admin já reflete aqui, sem precisar reescrever a descrição.
-                    const withPhotoCount = product.description.replace(
-                      /\{fotos\}/gi,
-                      String(product.photo_limit ?? "")
-                    )
-                    // Itens separados por "+" viram uma lista com ✓ (mais escaneável).
-                    // Sem "+", cai no parágrafo simples de antes.
-                    const items = withPhotoCount.split("+").map((s) => s.trim()).filter(Boolean)
-                    return items.length > 1 ? (
-                      <ul className="space-y-2 mb-4" onClick={(e) => e.stopPropagation()}>
-                        {items.map((item, i) => {
-                          // É o número que diferencia os planos na escada de
-                          // preço (0 → 15 → 25 → 30 fotos) — sem destaque, ficava
-                          // com o mesmo peso visual de "Capa exclusiva".
-                          const fotos = item.match(/(\d+\s*fotos?\s*sincronizadas?)/i)
-                          return (
-                            <li key={i} className={`flex items-start gap-2 text-sm ${fotos ? "text-white font-semibold" : "text-gray-200"}`}>
-                              <svg className={`w-4 h-4 mt-0.5 shrink-0 ${fotos ? "text-pink-400" : "text-green-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              </svg>
-                              <span className="leading-snug">
-                                {fotos ? (
-                                  <>
-                                    {item.slice(0, fotos.index)}
-                                    <span className="text-pink-400">{fotos[0]}</span>
-                                    {item.slice((fotos.index ?? 0) + fotos[0].length)}
-                                  </>
-                                ) : item}
-                              </span>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-200 leading-relaxed mb-4">{withPhotoCount}</p>
-                    )
-                  })()}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {items.map((product) => {
+                      const isSelected = selected?.id === product.id
+                      const isPhysicalPlan = product.category === "DIGITAL_PHYSICAL"
+                      const chips = planChips(product)
+                      const isExpanded = expandedIds.has(product.id)
+                      const zoomed = zoomSrc[product.id]
+                      const withPhotoCount = product.description
+                        ? product.description.replace(/\{fotos\}/gi, String(product.photo_limit ?? ""))
+                        : null
 
-                  <div className={`mt-auto pt-5 flex items-center gap-2 text-sm font-medium transition-all ${isSelected ? "text-pink-400" : "text-gray-300"}`}>
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-pink-500 bg-pink-500" : "border-white/20"}`}>
-                      {isSelected && (
-                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    {isSelected ? "Selecionado" : "Selecionar"}
+                      return (
+                        <div
+                          key={product.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleSelectProduct(product)}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelectProduct(product) } }}
+                          className={`relative text-left rounded-[18px] p-4 border transition-all duration-200 cursor-pointer ${
+                            product.featured || isPhysicalPlan ? "mt-3.5" : ""
+                          }`}
+                          style={{
+                            borderColor: isSelected ? "#f0196b" : "rgba(255,255,255,0.14)",
+                            background: isSelected ? "rgba(240,25,107,0.12)" : "rgba(255,255,255,0.07)",
+                            boxShadow: isSelected ? "0 0 28px rgba(240,25,107,0.18)" : "none",
+                          }}
+                        >
+                          {product.featured && (
+                            <div className="absolute -top-2.5 left-3.5 text-[10px] font-bold text-white px-2.5 py-1 rounded-full"
+                                 style={{ background: "#f0196b" }}>
+                              mais escolhido aqui
+                            </div>
+                          )}
+                          {isPhysicalPlan && (
+                            <div className="absolute -top-2.5 left-3.5 text-[10px] font-bold text-white px-2.5 py-1 rounded-full"
+                                 style={{ background: "#B8963E" }}>
+                              efeito uau garantido
+                            </div>
+                          )}
+
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-1.5">
+                            <h3 className="text-[15px] font-semibold leading-tight min-w-0">{product.name}</h3>
+                            <span className="text-[15px] font-semibold whitespace-nowrap shrink-0" style={{ color: "#f472b6" }}>
+                              R$ {fmt(product.price)}
+                            </span>
+                          </div>
+
+                          <p className="text-[11px] mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>
+                            música personalizada · capa exclusiva · 2ª versão grátis
+                          </p>
+
+                          {chips.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mb-2.5">
+                              {chips.map((chip) => (
+                                <span key={chip} className="text-[11px] font-medium" style={{ color: isPhysicalPlan ? "#B8963E" : "#f472b6" }}>
+                                  + {chip}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 text-xs" style={{ color: isSelected ? "#f472b6" : "rgba(255,255,255,0.6)" }}>
+                              <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
+                                   style={{ borderColor: isSelected ? "#f0196b" : "rgba(255,255,255,0.25)", background: isSelected ? "#f0196b" : "transparent" }}>
+                                {isSelected && (
+                                  <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              {isSelected ? "Selecionado" : "Selecionar"}
+                            </div>
+
+                            {withPhotoCount && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleDetails(product.id) }}
+                                aria-label="Ver detalhes e fotos"
+                                className="flex items-center gap-1 text-[11px]"
+                                style={{ color: "rgba(255,255,255,0.5)" }}
+                              >
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="9"/><path strokeLinecap="round" d="M12 16v-4M12 8h.01"/>
+                                </svg>
+                                detalhes
+                              </button>
+                            )}
+                          </div>
+
+                          {isExpanded && withPhotoCount && (
+                            <div className="mt-2.5 pt-2 border-t" style={{ borderColor: "rgba(255,255,255,0.12)" }} onClick={(e) => e.stopPropagation()}>
+                              <p className="text-[11px] leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                                {withPhotoCount}{(chips.length > 0) && " Toque numa foto pra ampliar."}
+                              </p>
+                              {chips.length > 0 && (
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {isPhysicalPlan && (
+                                    <>
+                                      <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+                                        <svg className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+                                      </div>
+                                      <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+                                        <svg className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 2h6M10 2v4l-3 4v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V10l-3-4V2"/></svg>
+                                      </div>
+                                    </>
+                                  )}
+                                  {(product.photo_limit ?? 0) > 0 && EXAMPLE_PHOTOS.map((src) => (
+                                    <img
+                                      key={src}
+                                      src={src}
+                                      alt="Exemplo de foto do cliente no player"
+                                      className="w-11 h-11 rounded-lg object-cover shrink-0 cursor-zoom-in"
+                                      onClick={(e) => { e.stopPropagation(); setZoomSrc((prev) => ({ ...prev, [product.id]: prev[product.id] === src ? null : src })) }}
+                                    />
+                                  ))}
+                                  {product.feat_qrcode && !isPhysicalPlan && (
+                                    <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+                                      <svg className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {zoomed && (
+                                <img
+                                  src={zoomed}
+                                  alt="Exemplo de foto do cliente no player, ampliada"
+                                  className="w-full rounded-lg mt-2 cursor-zoom-out"
+                                  onClick={(e) => { e.stopPropagation(); setZoomSrc((prev) => ({ ...prev, [product.id]: null })) }}
+                                />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )
             })}
           </div>
-
-          {/* Indicador de carrossel — só no mobile */}
-          {produtosVisiveis.length > 1 && (
-            <div className="md:hidden flex items-center justify-center gap-2 mb-8">
-              {produtosVisiveis.map((_, i) => (
-                <span key={i} className="rounded-full transition-all" style={{
-                  width: i === activeProduct ? 18 : 7,
-                  height: 7,
-                  background: i === activeProduct ? "#f0196b" : "rgba(255,255,255,0.18)",
-                }} />
-              ))}
-              <span className="text-white/40 text-xs ml-2">
-                {activeProduct + 1} / {produtosVisiveis.length} · arraste →
-              </span>
-            </div>
-          )}
-          </>
         ) : null}
 
         {/* ====== STEP 2 — PRAZO DE ENTREGA ====== */}
