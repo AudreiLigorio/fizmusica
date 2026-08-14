@@ -428,14 +428,14 @@ function ProdutosContent() {
                             </span>
                           </div>
 
-                          <p className="text-[11px] mb-1" style={{ color: "rgba(255,255,255,0.45)" }}>
+                          <p className="text-[11px] mb-1" style={{ color: "rgba(74,222,128,0.55)" }}>
                             música personalizada · capa exclusiva · 2ª versão grátis
                           </p>
 
                           {chips.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-2.5">
                               {chips.map((chip) => (
-                                <span key={chip} className="text-[11px] font-medium" style={{ color: isPhysicalPlan ? "#B8963E" : "#f472b6" }}>
+                                <span key={chip} className="text-[11px] font-medium" style={{ color: "#4ade80" }}>
                                   + {chip}
                                 </span>
                               ))}
