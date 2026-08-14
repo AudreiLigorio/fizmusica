@@ -44,7 +44,6 @@ type SessionData = {
   selectedSubcategory: string
   answers: Record<string, string>
   musicalStyle: string
-  misturarEstilos?: boolean
   voiceType: string
   emotion: string
   nome: string
@@ -88,14 +87,6 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [selectedSubcategory, setSelectedSubcategory] = useState("")
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [musicalStyle, setMusicalStyle] = useState("")
-  // "Misturar estilos" é um modo explícito, não inferido — decidimos assim
-  // depois de perceber que 2 chips marcados sem essa pergunta antes deixava
-  // ambíguo se a pessoa queria misturar ou só estava comparando opções.
-  const [misturarEstilos, setMisturarEstilos] = useState(false)
-  // Chip que levou um clique além do limite — dispara o tremor (feedback no
-  // gesto) sem esmaecer o resto da grade, que ficaria parecendo tela quebrada
-  // com 18 dos 20 estilos apagados de uma vez.
-  const [estiloBloqueado, setEstiloBloqueado] = useState<string | null>(null)
   const [voiceType, setVoiceType] = useState("")
   const [emotion, setEmotion] = useState("")
   const [nome, setNome] = useState("")
@@ -251,7 +242,6 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       selectedSubcategory,
       answers,
       musicalStyle,
-      misturarEstilos,
       voiceType,
       emotion,
       nome,
@@ -302,11 +292,9 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     setSelectedContext(data.selectedContext ?? "")
     setSelectedSubcategory(data.selectedSubcategory ?? "")
     setAnswers(data.answers ?? {})
-    setMusicalStyle(data.musicalStyle ?? "")
-    // Se a sessão salva já tem 2 estilos (separados por vírgula), a tela
-    // volta com o modo "misturar" ligado — senão o retomar mostraria os
-    // dois escolhidos, mas o botão diria "um estilo só".
-    setMisturarEstilos(data.misturarEstilos ?? (data.musicalStyle ?? "").includes(", "))
+    // Sessão antiga pode ter 2 estilos combinados (recurso removido) —
+    // mantém só o primeiro pra não ressuscitar a mistura.
+    setMusicalStyle((data.musicalStyle ?? "").split(", ")[0])
     setVoiceType(data.voiceType ?? "")
     setEmotion(data.emotion ?? "")
     setNome(data.nome ?? "")
@@ -414,34 +402,8 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const progress =
     ((step - 1 + internalQuestionProgress) / totalSteps) * 100
 
-  // musicalStyle continua sendo UMA string só (sem campo novo em lugar
-  // nenhum do sistema) — "Rock" ou, misturando, "Rock, Reggae". O resumo, o
-  // payload do pedido e o prompt pro Suno leem exatamente como sempre leram.
   function clicarEstilo(item: string) {
-    const atuais = musicalStyle ? musicalStyle.split(", ") : []
-    const idx = atuais.indexOf(item)
-    if (idx !== -1) {
-      setMusicalStyle(atuais.filter((_, i) => i !== idx).join(", "))
-      return
-    }
-    if (!misturarEstilos) {
-      setMusicalStyle(item) // um estilo só: escolher outro troca, não soma
-      return
-    }
-    if (atuais.length >= 2) {
-      setEstiloBloqueado(item)
-      setTimeout(() => setEstiloBloqueado(null), 220)
-      return
-    }
-    setMusicalStyle([...atuais, item].join(", "))
-  }
-
-  function alternarMisturarEstilos(mix: boolean) {
-    setMisturarEstilos(mix)
-    if (!mix) {
-      const atuais = musicalStyle ? musicalStyle.split(", ") : []
-      if (atuais.length > 1) setMusicalStyle(atuais[0]) // mantém só o 1º escolhido
-    }
+    setMusicalStyle(musicalStyle === item ? "" : item)
   }
 
   /* ================================================= */
@@ -1063,39 +1025,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="mb-4">
-                <div className="flex items-baseline justify-between mb-2">
-                  <h2 className="text-[0.65rem] font-semibold uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
-                  {misturarEstilos && (
-                    <span className="text-[11px] text-white/40 tabular-nums">
-                      {(musicalStyle ? musicalStyle.split(", ").length : 0)}/2 selecionados
-                    </span>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mb-3">
-                  <button
-                    onClick={() => alternarMisturarEstilos(false)}
-                    className={`text-left rounded-xl px-3 py-2.5 border transition-all text-sm ${
-                      !misturarEstilos
-                        ? "border-pink-500 bg-pink-500/10 text-white"
-                        : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
-                    }`}
-                  >
-                    <span className="block font-medium">🎯 Um estilo só</span>
-                    <span className="block text-[11px] text-white/40">Do jeito de sempre</span>
-                  </button>
-                  <button
-                    onClick={() => alternarMisturarEstilos(true)}
-                    className={`text-left rounded-xl px-3 py-2.5 border transition-all text-sm ${
-                      misturarEstilos
-                        ? "border-pink-500 bg-pink-500/10 text-white"
-                        : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
-                    }`}
-                  >
-                    <span className="block font-medium">🎨 Misturar dois estilos</span>
-                    <span className="block text-[11px] text-white/40">Os dois juntos, não um de cada</span>
-                  </button>
-                </div>
+                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
                   {[
@@ -1107,39 +1037,20 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     "⚡ Heavy Metal","🤠 Country", "🌿 Reggae",
                     "🇰🇷 K-Pop",    "🌎 Internacional",
                     "🌹 R&B",       "🇧🇷 Samba",  "🙌 Gospel Soul",
-                  ].map((item) => {
-                    const atuais = musicalStyle ? musicalStyle.split(", ") : []
-                    const ordem = atuais.indexOf(item)
-                    const escolhido = ordem !== -1
-                    return (
-                      <button
-                        key={item}
-                        onClick={() => clicarEstilo(item)}
-                        className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium overflow-hidden ${
-                          escolhido
-                            ? "border-pink-500 bg-pink-500/10 text-white"
-                            : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
-                        } ${estiloBloqueado === item ? "fm-chip-shake" : ""}`}
-                      >
-                        {escolhido && misturarEstilos && (
-                          <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold mr-1.5 align-middle"
-                                style={{ background: "#f0196b" }}>
-                            {ordem + 1}
-                          </span>
-                        )}
-                        {item}
-                      </button>
-                    )
-                  })}
+                  ].map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => clicarEstilo(item)}
+                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium overflow-hidden ${
+                        musicalStyle === item
+                          ? "border-pink-500 bg-pink-500/10 text-white"
+                          : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  ))}
                 </div>
-
-                {misturarEstilos && musicalStyle.includes(", ") && (
-                  <div className="mt-3 rounded-xl px-3.5 py-2.5 text-xs text-white/85 flex items-center gap-2"
-                       style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.12), rgba(217,70,239,0.12))", border: "1px solid rgba(240,25,107,0.25)" }}>
-                    <span>🎶</span>
-                    <span>Sua música vai misturar <b className="font-semibold">{musicalStyle}</b></span>
-                  </div>
-                )}
               </div>
 
               <div className="mb-4">
