@@ -7,6 +7,8 @@ export type OrderEventType =
   | "pagamento_confirmado"
   | "letra_aprovada"
   | "letra_reprocessada"
+  | "letra_previa_aproveitada"
+  | "letra_previa_descartada"
   | "foto_enviada"
   | "foto_removida"
   | "capa_definida"

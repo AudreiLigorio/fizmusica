@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest, NextResponse, after } from "next/server"
 import { createServerClient } from "@/lib/supabase"
+import { sincronizarPreviaNoPedido } from "@/lib/composer/aproveitarPrevia"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -82,6 +83,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }))
     const { error: ansErr } = await supabase.from("order_answers").insert(rows)
     if (ansErr) return NextResponse.json({ error: ansErr.message }, { status: 500 })
+  }
+
+  // Este é o caminho da EDIÇÃO ("Voltar" na tela de produtos). Se a história
+  // mudou, o rascunho vindo da prévia anterior virou letra de um texto que não
+  // existe mais — a sincronização troca pelo novo ou descarta.
+  if (typeof body.sessionId === "string" && body.sessionId) {
+    after(async () => { await sincronizarPreviaNoPedido(id, body.sessionId) })
   }
 
   return NextResponse.json({ success: true })

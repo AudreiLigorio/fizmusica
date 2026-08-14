@@ -27,6 +27,9 @@ export interface CreateOrderDTO {
   // Homenageado
   honoreeName?: string
 
+  // Sessão do wizard — só pra reaproveitar a letra da prévia como rascunho.
+  sessionId?: string
+
   // Consentimento (prova LGPD)
   termsAccepted?: boolean
   termsVersion?: string

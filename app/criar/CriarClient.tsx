@@ -645,6 +645,9 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       voiceType,
       emotion,
       honoreeName: honoreeName.trim() || undefined,
+      // Serve só pra reaproveitar a letra da prévia como rascunho do pedido, e
+      // apenas se a assinatura do conteúdo ainda bater com o que foi contratado.
+      sessionId: sessionId ?? undefined,
       termsAccepted: true,
       termsVersion: TERMS_VERSION,
       honoreeConsent: !!honoreeName.trim(),

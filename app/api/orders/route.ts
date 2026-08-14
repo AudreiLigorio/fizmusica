@@ -7,6 +7,7 @@ import { createServerClient } from "@/lib/supabase"
 import { extractClientIp, lookupState } from "@/lib/geoip"
 import { toE164 } from "@/lib/n8n/events"
 import { PLAN_FEATURE_COLUMNS, featuresFromProduct } from "@/lib/planFeatures"
+import { sincronizarPreviaNoPedido } from "@/lib/composer/aproveitarPrevia"
 
 export async function GET(req: NextRequest) {
   // Identidade: prioriza o token de login (Bearer) — busca por e-mail OU userId
@@ -112,6 +113,11 @@ export async function POST(req: NextRequest) {
       createdAt: order.createdAt,
     }
     after(async () => {
+      // Antes dos e-mails: se a pessoa viu o refrão no wizard, aquela letra vira
+      // o rascunho do pedido. Roda aqui pra não atrasar a ida ao /produtos — só
+      // é necessária depois do pagamento, minutos à frente.
+      if (body.sessionId) await sincronizarPreviaNoPedido(order.id, body.sessionId)
+
       if (customerIp) {
         const geo = await lookupState(customerIp)
         if (geo.state) {

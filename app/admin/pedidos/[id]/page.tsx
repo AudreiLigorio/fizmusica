@@ -15,6 +15,8 @@ const EVENT_LABELS: Record<string, { icon: string; label: string }> = {
   pagamento_confirmado:       { icon: "💳", label: "Pagamento confirmado" },
   letra_aprovada:             { icon: "✍️", label: "Letra aprovada" },
   letra_reprocessada:         { icon: "🔁", label: "Letra reprocessada pela IA" },
+  letra_previa_aproveitada:   { icon: "🎁", label: "Letra da prévia reaproveitada" },
+  letra_previa_descartada:    { icon: "🧹", label: "Prévia descartada (história editada)" },
   foto_enviada:               { icon: "📸", label: "Foto enviada" },
   foto_removida:               { icon: "🗑️", label: "Foto removida" },
   capa_definida:               { icon: "⭐", label: "Capa definida" },

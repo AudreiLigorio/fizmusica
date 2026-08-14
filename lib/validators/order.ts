@@ -19,6 +19,9 @@ export const createOrderSchema = z.object({
   emotion:      z.string().min(1, "Emoção obrigatória"),
   answers:      z.array(answerSchema).min(1, "Respostas obrigatórias"),
   honoreeName:  z.string().optional(),
+  // Sessão do wizard: usada só pra reaproveitar a letra da prévia como rascunho
+  // inicial do pedido, e apenas se a assinatura do conteúdo ainda bater.
+  sessionId:    z.string().optional(),
   // Consentimento (prova LGPD)
   termsAccepted:  z.boolean().optional(),
   termsVersion:   z.string().optional(),
