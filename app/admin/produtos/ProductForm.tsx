@@ -313,7 +313,7 @@ export default function ProductForm({ product }: { product?: Product }) {
       )}
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Descrição</label>
-        <p className="text-[11px] text-gray-600 mb-1.5">Separe os itens com <span className="text-pink-400 font-mono">+</span> para virarem uma lista com ✓ na loja. Use <span className="text-pink-400 font-mono">{"{fotos}"}</span> para inserir o limite de fotos deste produto — atualiza sozinho, sem editar o texto. Ex.: <span className="text-gray-500">Música exclusiva + {"{fotos}"} fotos + Player 50 dias</span></p>
+        <p className="text-[11px] text-gray-600 mb-1.5">Aparece como texto corrido dentro de "detalhes" na loja — os chips do card vêm dos checkboxes de recursos acima, não deste texto. Use <span className="text-pink-400 font-mono">{"{fotos}"}</span> para inserir o limite de fotos deste produto — atualiza sozinho, sem editar o texto. Ex.: <span className="text-gray-500">Música exclusiva + {"{fotos}"} fotos + Player 50 dias</span></p>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
