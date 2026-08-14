@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
     leads_purged:       purge.leadsPurged,
     music_purged:       purge.musicPurged ?? 0,
     paid_photos_purged: purge.paidPhotosPurged ?? 0,
+    sessions_purged:    purge.sessionsPurged ?? 0,
     recovery_sent:      sent,
     errors:             purge.errors.length ? purge.errors.join(" | ") : null,
   })

@@ -23,7 +23,7 @@ export default function OperacaoPage() {
   const [settings, setSettings] = useState<Settings | null>(null)
   const [logs, setLogs]         = useState<Log[]>([])
   const [totals, setTotals]     = useState({ photos: 0, leads: 0, paidPhotos: 0 })
-  const [pending, setPending]   = useState({ photos: 0, leads: 0 })
+  const [pending, setPending]   = useState<{ photos: number; leads: number; sessions?: number }>({ photos: 0, leads: 0, sessions: 0 })
   const [musics, setMusics]     = useState<Music[]>([])
   const [loading, setLoading]   = useState(true)
   const [saving, setSaving]     = useState(false)
@@ -183,12 +183,13 @@ export default function OperacaoPage() {
       </div>
 
       {/* Cards de totais */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mb-8">
         <StatCard label="Fotos expurgadas (30 dias)" value={totals.photos} color="text-pink-400" />
         <StatCard label="Cadastros expurgados (30 dias)" value={totals.leads} color="text-fuchsia-400" />
         <StatCard label="Fotos de pedidos pagos removidas (30 dias)" value={totals.paidPhotos} color="text-purple-400" />
         <StatCard label="Fotos aguardando expurgo" value={pending.photos} color="text-yellow-400" />
         <StatCard label="Cadastros aguardando expurgo" value={pending.leads} color="text-orange-400" />
+        <StatCard label="Sessões do wizard aguardando expurgo" value={pending.sessions ?? 0} color="text-amber-400" />
       </div>
 
       <div className="flex items-center gap-3 mb-8">

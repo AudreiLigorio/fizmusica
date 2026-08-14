@@ -17,6 +17,7 @@ export async function runPurge(supabase: ReturnType<typeof createServerClient>) 
   let photosPurged = 0
   let leadsPurged  = 0
   let paidPhotosPurged = 0
+  let sessionsPurged = 0
 
   let musicPurged = 0 // conta LINKS DESATIVADOS (não apaga mais o MP3 — ver migration 023)
 
@@ -28,7 +29,7 @@ export async function runPurge(supabase: ReturnType<typeof createServerClient>) 
     .maybeSingle()
 
   if (!settings) {
-    return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, errors, skipped: true }
+    return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, sessionsPurged, errors, skipped: true }
   }
 
   // Desativação do LINK PÚBLICO após o prazo (opcional, desligado por padrão).
@@ -77,7 +78,7 @@ export async function runPurge(supabase: ReturnType<typeof createServerClient>) 
   }
 
   if (!settings.enabled) {
-    return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, errors, skipped: true }
+    return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, sessionsPurged, errors, skipped: true }
   }
 
   const photosCutoff = new Date(Date.now() - settings.photos_days * 24 * 60 * 60 * 1000).toISOString()
@@ -182,5 +183,42 @@ export async function runPurge(supabase: ReturnType<typeof createServerClient>) 
     errors.push(`lead: ${e?.message ?? e}`)
   }
 
-  return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, errors }
+  try {
+    // 3) Expurgo das SESSÕES DO WIZARD, no mesmo corte do lead.
+    //
+    // Sem isto o expurgo do cadastro era teatro: o pedido não pago sumia aos 30
+    // dias enquanto a MESMA história — com nome, e-mail e WhatsApp — continuava
+    // viva em `wizard_sessions`, que só era apagada quando alguém clicava em
+    // "começar do zero". A prévia da letra agravou, porque a sessão passou a
+    // guardar também a música gerada.
+    //
+    // Apaga inclusive sessão de quem comprou: passado o prazo ela é cópia
+    // redundante: o pedido tem as respostas, e a letra da prévia já virou
+    // rascunho do pedido na criação.
+    const { data: velhas } = await supabase
+      .from("wizard_sessions")
+      .select("id")
+      .lt("updated_at", leadCutoff)
+      .limit(500)
+
+    const alvos = (velhas ?? []).map((s) => s.id)
+    if (alvos.length > 0) {
+      const { error: delErr } = await supabase.from("wizard_sessions").delete().in("id", alvos)
+      if (delErr) errors.push(`wizard_sessions delete: ${delErr.message}`)
+      else sessionsPurged = alvos.length
+    }
+  } catch (e: any) {
+    errors.push(`sessões: ${e?.message ?? e}`)
+  }
+
+  try {
+    // 4) Contador diário de prévias por IP: descartável depois de alguns dias,
+    // e é a única tabela do sistema com derivado de IP.
+    const limiteContador = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)
+    await supabase.from("preview_rate_limit").delete().lt("day", limiteContador)
+  } catch (e: any) {
+    errors.push(`contador de prévia: ${e?.message ?? e}`)
+  }
+
+  return { photosPurged, leadsPurged, musicPurged, paidPhotosPurged, sessionsPurged, errors }
 }

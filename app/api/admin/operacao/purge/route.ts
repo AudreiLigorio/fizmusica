@@ -27,7 +27,10 @@ export async function GET() {
 
   const { data: logs } = await supabase
     .from("purge_log")
-    .select("ran_at, photos_purged, leads_purged, paid_photos_purged, recovery_sent, errors")
+    // `*` de propósito: nomear as colunas faz o select inteiro falhar quando uma
+    // delas ainda não existe (migration não aplicada), e aí o relatório de
+    // expurgo some da tela inteiro em vez de só faltar um número.
+    .select("*")
     .order("ran_at", { ascending: false })
     .limit(30)
 
@@ -75,6 +78,15 @@ export async function GET() {
     .neq("is_revision", true)
     .lt("createdAt", leadCutoff)
 
+  // Sessões do wizard vencidas: mesmo corte do lead. Guardam nome, e-mail e a
+  // história inteira (e agora a letra da prévia), então precisam aparecer no
+  // painel como passivo — durante meses elas sobreviveram ao pedido que o
+  // expurgo apagava, o que tornava o expurgo do cadastro incompleto.
+  const { count: pendingSessions } = await supabase
+    .from("wizard_sessions")
+    .select("id", { count: "exact", head: true })
+    .lt("updated_at", leadCutoff)
+
   // Músicas publicadas (URLs geradas para clientes)
   const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br").replace(/\/$/, "")
   const musicEnabled = settings?.music_enabled ?? false
@@ -108,7 +120,7 @@ export async function GET() {
     settings: { ...(settings ?? { photos_days: 7, lead_days: 60, enabled: true, music_enabled: false, music_days: 365 }), suno_mode: sunoMode, revision_auto_accept: revisionAutoAccept },
     logs: logs ?? [],
     totals,
-    pending: { photos: pendingPhotos ?? 0, leads: pendingLeads ?? 0 },
+    pending: { photos: pendingPhotos ?? 0, leads: pendingLeads ?? 0, sessions: pendingSessions ?? 0 },
     musics,
   })
 }
@@ -160,6 +172,7 @@ export async function POST(req: NextRequest) {
       leads_purged:       purge.leadsPurged,
       music_purged:       purge.musicPurged ?? 0,
       paid_photos_purged: purge.paidPhotosPurged ?? 0,
+      sessions_purged:    purge.sessionsPurged ?? 0,
       recovery_sent:      0,
       errors:             purge.errors.length ? purge.errors.join(" | ") : null,
     })
