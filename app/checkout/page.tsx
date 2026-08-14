@@ -237,8 +237,8 @@ function CheckoutContent() {
       customization: {
         paymentMethods: {
           creditCard: "all",
-          bankTransfer: "all",  // Pix
-          ticket: "all",        // Boleto
+          bankTransfer: "all",   // Pix
+          ticket: [],             // Boleto — removido (fluxo com problema)
           mercadoPago: ["wallet_purchase"],
           maxInstallments: 5,
         },
