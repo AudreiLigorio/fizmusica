@@ -3,10 +3,10 @@
 // Fotos não aparecem aqui de propósito: elas entram DEPOIS do pagamento, na
 // área do cliente. A barra mostra só o que o cliente percorre até comprar.
 const STEPS = [
-  { n: 1, label: "História"  },
-  { n: 2, label: "Produto"   },
-  { n: 3, label: "Pagamento" },
-  { n: 4, label: "Pronto"    },
+  { n: 1, label: "Ocasião"     },
+  { n: 2, label: "Experiência" },
+  { n: 3, label: "Finalização" },
+  { n: 4, label: "Aproveite"   },
 ] as const
 
 type JourneyStep = 1 | 2 | 3 | 4
