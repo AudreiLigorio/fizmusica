@@ -61,9 +61,9 @@ const SESSION_KEY = "fizmusica_session_id"
 // A composição leva de 5 a 9 segundos (medido). As mensagens trocam a cada 3,5s
 // pra que a espera pareça trabalho acontecendo, não travamento.
 const PREVIA_MSGS = [
-  "Lendo a sua história…",
-  "Procurando as rimas…",
-  "Escrevendo o refrão…",
+  "Estamos produzindo o seu refrão…",
+  "Está ficando lindo…",
+  "Pensa comigo…",
 ]
 
 // Texto decorativo do trecho borrado. NUNCA a continuação real da letra: borrar
@@ -148,6 +148,9 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   // Marca que o cliente já começou a preencher nesta visita — impede o banner de
   // retomada de aparecer no MEIO do fluxo se o fetch de sessão resolver atrasado.
   const startedRef = useRef(false)
+  // Guarda contra o efeito rodando duas vezes (StrictMode) disparar a mesma
+  // geração duas vezes ao entrar no passo 5. Zera junto com previaStatus.
+  const previaAutoRef = useRef(false)
 
   // Lead capture (após 3ª pergunta respondida)
   const [showLeadCapture, setShowLeadCapture] = useState(false)
@@ -445,8 +448,23 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       setPreviaStatus("inicial")
       setRefrao("")
       setDadosAbertos(false)
+      previaAutoRef.current = false
     }
   }, [step])
+
+  // Geração automática: a pessoa não precisa mais clicar "Ver o refrão" — a
+  // composição começa sozinha ao chegar no resumo. Substituiu o botão que
+  // existia aqui (decisão original: só por clique explícito, pra funcionar
+  // como consentimento implícito e micro-compromisso). Câmbio combinado com o
+  // Audrei em 2026-08-17: builda expectativa pra quem só ia rolar a tela sem
+  // interagir, ao custo de gerar pra todo mundo que chega aqui, mesmo quem
+  // abandona antes de finalizar.
+  useEffect(() => {
+    if (step === 5 && previaStatus === "inicial" && !previaAutoRef.current) {
+      previaAutoRef.current = true
+      gerarPrevia()
+    }
+  }, [step, previaStatus])
 
   useEffect(() => {
     if (previaStatus !== "gerando") return
@@ -1314,19 +1332,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 ))}
               </div>
 
-              {/* ── Prévia da letra ── */}
-              {previaStatus === "inicial" && (
-                <button
-                  onClick={gerarPrevia}
-                  className="w-full rounded-2xl px-5 py-4 mb-5 text-left transition-all"
-                  style={{ background: "rgba(240,25,107,0.07)", border: "1px solid rgba(240,25,107,0.3)" }}
-                >
-                  <p className="text-sm font-semibold text-white">🎵 Ver o refrão da minha música</p>
-                  <p className="text-xs text-white/50 mt-0.5">
-                    A gente já compõe uma parte agora, com a história que você contou.
-                  </p>
-                </button>
-              )}
+              {/* ── Prévia da letra ──
+                  "inicial" não renderiza nada: dura só o instante entre o
+                  mount do passo 5 e o efeito que dispara gerarPrevia(),
+                  passando pra "gerando" sozinho. */}
 
               {previaStatus === "gerando" && (
                 <div className="rounded-2xl px-5 py-8 mb-5 text-center"
