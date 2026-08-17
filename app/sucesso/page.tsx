@@ -107,7 +107,7 @@ function SucessoContent() {
                   </h1>
                   <p className="text-gray-300 leading-relaxed mt-3">
                     {isPaid
-                      ? "Pagamento confirmado! Falta só um passo seu para começarmos a produzir."
+                      ? "Sua música está garantida. Agora é hora de personalizar."
                       : isPending
                       ? "Seu pagamento está sendo processado. Assim que confirmar, começamos."
                       : "Seu pedido foi recebido e já vamos preparar sua música personalizada."}
@@ -116,55 +116,69 @@ function SucessoContent() {
 
                 {/* ⭐ DESTAQUE: ENTRAR NA ÁREA (acompanhar + fotos) */}
                 {isPaid && (
-                  <button
-                    onClick={() => router.push(order?.photo_token ? `/preparar/${order.photo_token}` : `/minha-musica?orderId=${orderId ?? ""}`)}
-                    className="group block w-full text-left rounded-3xl p-7 mb-4 relative overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.99]"
-                    style={{
-                      background: "linear-gradient(135deg, #f0196b 0%, #d946ef 55%, #a855f7 100%)",
-                      boxShadow: "0 16px 50px rgba(217,70,239,0.35)",
-                    }}
-                  >
-                    <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
-                    <div className="relative">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0">✍️</span>
-                        <span className="text-[11px] font-bold uppercase tracking-widest text-white/80">Falta 1 passo</span>
+                  <>
+                    <button
+                      onClick={() => router.push(order?.photo_token ? `/preparar/${order.photo_token}` : `/minha-musica?orderId=${orderId ?? ""}`)}
+                      className="group block w-full text-left rounded-3xl p-7 mb-3 relative overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.99]"
+                      style={{
+                        background: "linear-gradient(135deg, #f0196b 0%, #d946ef 55%, #a855f7 100%)",
+                        boxShadow: "0 16px 50px rgba(217,70,239,0.35)",
+                      }}
+                    >
+                      <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+                      <div className="relative">
+                        <span className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center text-2xl shrink-0 mb-3">✨</span>
+                        <h2 className="text-2xl font-bold leading-tight mb-1">Personalize sua música</h2>
+                        <p className="text-white/85 text-sm leading-relaxed mb-5">
+                          Entre na sua área para aprovar a letra, cadastrar fotos e acessar o player.
+                        </p>
+                        <span className="inline-flex items-center gap-2 bg-white text-pink-600 font-bold text-sm px-6 py-3 rounded-2xl shadow-lg group-hover:gap-3 transition-all">
+                          Entrar na minha área
+                          <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                        </span>
+                        <p className="text-white/70 text-xs leading-relaxed mt-3">
+                          As funcionalidades disponíveis variam de acordo com o plano contratado.
+                        </p>
                       </div>
-                      <h2 className="text-2xl font-bold leading-tight mb-1">Aprove sua letra para começarmos</h2>
-                      <p className="text-white/85 text-sm leading-relaxed mb-5">
-                        Sua música <strong>só entra em produção depois que você aprovar a letra</strong> na sua área (entra com Google ou e-mail, <strong>sem senha</strong>). Lá você também adiciona <strong>fotos</strong> ao player.
-                      </p>
-                      <span className="inline-flex items-center gap-2 bg-white text-pink-600 font-bold text-sm px-6 py-3 rounded-2xl shadow-lg group-hover:gap-3 transition-all">
-                        ✍️ Aprovar minha letra agora
-                        <span className="transition-transform group-hover:translate-x-0.5">→</span>
-                      </span>
-                    </div>
-                  </button>
+                    </button>
+
+                    <p className="text-yellow-200 text-sm leading-relaxed mb-3 bg-yellow-500/10 border border-yellow-500/25 rounded-xl px-4 py-3">
+                      ⚠️ <strong>Atenção:</strong> seu projeto só é iniciado depois que você agir dentro da área — aprovar a letra, aceitar os termos, aprovar versões, entre outros.
+                    </p>
+
+                    <p className="text-gray-400 text-xs leading-relaxed mb-4">
+                      ✨ Nessa área você também tem à disposição coleções, lembretes e muito mais.
+                    </p>
+                  </>
                 )}
 
-
-                {/* E-MAIL DE ACESSO + dica de vínculo (evita "não recebi o link") */}
-                {isPaid && order?.email && (
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 mb-4">
-                    <p className="text-sm text-white/80">
-                      📧 Enviamos o link de acesso para <strong className="text-white">{order.email}</strong>.
-                    </p>
-                    <p className="text-xs text-white/45 leading-relaxed mt-1">
-                      O login é sem senha (Google ou e-mail). Se você entrar com um e-mail diferente,
-                      é só usar <strong className="text-white/70">“Vincular pedido”</strong> na sua área para conectar tudo.
-                    </p>
+                {/* PRODUTO + VALOR + PEDIDO — recibo compacto, uma linha só (pago) */}
+                {isPaid && order?.products && (
+                  <div className="rounded-2xl p-4 mb-4 flex items-center justify-between border border-pink-500/20"
+                       style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.12), rgba(168,85,247,0.10))" }}>
+                    <div>
+                      <p className="text-xs text-pink-300 font-medium uppercase tracking-wider">{order.products.name}</p>
+                      {orderId && (
+                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">Pedido #{orderId.slice(0, 8).toUpperCase()}</p>
+                      )}
+                    </div>
+                    {order.payments?.amount != null && (
+                      <p className="text-xl font-bold bg-gradient-to-r from-pink-400 to-fuchsia-400 bg-clip-text text-transparent">
+                        R$ {Number(order.payments.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {/* PRODUTO + VALOR */}
-                {order?.products && (
+                {/* PRODUTO + VALOR — pendente/recebido, layout original */}
+                {!isPaid && order?.products && (
                   <div className="rounded-2xl p-5 mb-4 flex items-center justify-between border border-pink-500/20"
                        style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.12), rgba(168,85,247,0.10))" }}>
                     <div>
                       <p className="text-xs text-pink-300 font-medium mb-1 uppercase tracking-wider">Produto selecionado</p>
                       <p className="text-lg font-bold">{order.products.name}</p>
                     </div>
-                    {order.payments?.amount && (
+                    {order.payments?.amount != null && (
                       <p className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-fuchsia-400 bg-clip-text text-transparent">
                         R$ {Number(order.payments.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </p>
@@ -172,35 +186,40 @@ function SucessoContent() {
                   </div>
                 )}
 
-                {/* NÚMERO DO PEDIDO — logo abaixo do produto */}
-                {orderId && (
+                {/* NÚMERO DO PEDIDO — logo abaixo do produto (pendente/recebido) */}
+                {!isPaid && orderId && (
                   <div className="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-center text-xs text-gray-400 mb-4 font-mono">
                     Pedido <span className="text-pink-300">#{orderId.slice(0, 8).toUpperCase()}</span>
                   </div>
                 )}
 
-                {/* PRÓXIMOS PASSOS */}
-                <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 mb-4">
-                  <h2 className="text-base font-bold mb-3">Próximos passos ❤️</h2>
-                  <p className="text-gray-300 text-sm leading-relaxed">
-                    {isPaid
-                      ? <>Na sua área você vai <strong className="text-white">aprovar a letra</strong>, <strong className="text-white">adicionar fotos</strong> e liberar a produção. Assim que aprovar, geramos a música e avisamos por <strong className="text-white">e-mail</strong> quando ficar pronta.</>
-                      : isPending
-                      ? "Seu pagamento está em análise. Assim que confirmado, você poderá aprovar a letra e liberar a produção na sua área."
-                      : "Recebemos seu pedido. Assim que o pagamento for confirmado, você poderá aprovar a letra e liberar a produção na sua área."}
-                  </p>
-                  {isPaid && (
-                    <p className="text-yellow-200 text-sm leading-relaxed mt-3 bg-yellow-500/10 border border-yellow-500/25 rounded-xl px-4 py-3">
-                      ⚠️ <strong>Importante:</strong> sua música <strong>não começa sozinha</strong>. Ela só entra em produção depois que você aprovar a letra na sua área — leva só um minutinho.
+                {/* PRÓXIMOS PASSOS — pendente/recebido; pago já viu tudo acima, sem duplicar */}
+                {!isPaid && (
+                  <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-6 mb-4">
+                    <h2 className="text-base font-bold mb-3">Próximos passos ❤️</h2>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      {isPending
+                        ? "Seu pagamento está em análise. Assim que confirmado, você poderá aprovar a letra e liberar a produção na sua área."
+                        : "Recebemos seu pedido. Assim que o pagamento for confirmado, você poderá aprovar a letra e liberar a produção na sua área."}
                     </p>
-                  )}
-                  <p className="text-gray-300 text-sm leading-relaxed mt-3">
-                    Qualquer dúvida, fale com a gente no{" "}
-                    <a href="https://wa.me/5511996645678" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">WhatsApp</a>{" "}
-                    ou por{" "}
-                    <a href="mailto:contato@fizmusica.com.br" className="text-pink-400 underline">e-mail</a>.
+                    <p className="text-gray-300 text-sm leading-relaxed mt-3">
+                      Qualquer dúvida, fale com a gente no{" "}
+                      <a href="https://wa.me/5511996645678" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">WhatsApp</a>{" "}
+                      ou por{" "}
+                      <a href="mailto:contato@fizmusica.com.br" className="text-pink-400 underline">e-mail</a>.
+                    </p>
+                  </div>
+                )}
+
+                {/* Contato compacto (pago) */}
+                {isPaid && (
+                  <p className="text-gray-500 text-xs text-center mb-2">
+                    Dúvida?{" "}
+                    <a href="https://wa.me/5511996645678" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">WhatsApp</a>
+                    {" "}·{" "}
+                    <a href="mailto:contato@fizmusica.com.br" className="text-pink-400 underline">e-mail</a>
                   </p>
-                </div>
+                )}
 
                 {/* LINKS — acompanhar pedido (só quando ainda não pago) */}
                 {orderId && !isPaid && (
