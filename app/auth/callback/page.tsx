@@ -16,10 +16,12 @@ export default function AuthCallback() {
       const type = url.searchParams.get("type") as
         | "email" | "magiclink" | "recovery" | "signup" | "invite" | "email_change" | null
 
-      // "Salvar meu acesso" iniciado na página de token: volta pra lá depois do
-      // login (a própria página completa o vínculo). localStorage funciona aqui
-      // porque o OAuth do Google retorna no mesmo navegador.
-      const vincularToken = localStorage.getItem("fm_vincular_token")
+      // "Salvar meu acesso" (ou o login rápido pós-pagamento) volta pra
+      // /preparar/[token] depois do login, que completa o vínculo do pedido à
+      // conta. Dois jeitos de carregar esse token até aqui: ?vincular= na URL
+      // (sobrevive a abrir o e-mail em outro aparelho) ou localStorage (o
+      // OAuth do Google sempre retorna no mesmo navegador que iniciou).
+      const vincularToken = url.searchParams.get("vincular") || localStorage.getItem("fm_vincular_token")
       const destino = vincularToken ? `/preparar/${vincularToken}` : "/minha-musica"
 
       // Fluxo token_hash (link mágico): valida no navegador → grava sessão
