@@ -64,19 +64,37 @@ type Order = {
 
 type StepState = "done" | "current" | "todo"
 
-// Jornada do cliente pós-pagamento: as 2 primeiras são AÇÕES dele, as 2 últimas são espera.
+// Jornada do cliente pós-pagamento. Cada passo é um ESTADO REAL do pedido —
+// se não dá pra derivar de uma flag, não vira passo.
+//
+// "Versão" (escolher entre as 2 faixas do Suno) existe porque é ação pendente
+// do cliente: antes ela não aparecia e o stepper seguia marcando "Produção",
+// que já tinha terminado. "Fotos" saiu porque travam na aprovação da letra
+// (ver o card de produção abaixo) — destacar um passo que não dá mais pra
+// executar confunde em vez de guiar. Elas seguem editáveis depois da entrega,
+// na aba Fotos de VersoesEntregues.
 const JOURNEY = [
-  { key: "letra", label: "Aprovar letra", icon: "✍️" },
-  { key: "fotos", label: "Fotos",         icon: "📸" },
-  { key: "prod",  label: "Produção",      icon: "🎵" },
-  { key: "pronta",label: "Pronta",        icon: "✅" },
+  { key: "pago",    label: "Pagamento", icon: "💳" },
+  { key: "letra",   label: "Letra",     icon: "✍️" },
+  { key: "prod",    label: "Produção",  icon: "🎵" },
+  { key: "versao",  label: "Versão",    icon: "🎚️" },
+  { key: "entrega", label: "Entrega",   icon: "✅" },
 ]
 
-// Índice da etapa ATUAL (foco). Fotos é opcional/paralela: não trava o avanço.
+// Versões liberadas e ainda sem escolha (sem slug). Mesma regra usada no card;
+// vive aqui pra que o stepper e o conteúdo nunca discordem sobre o estado.
+function escolhaPendenteDe(order: Order): boolean {
+  return order.paymentStatus === "PAID"
+    && order.musicStatus === "RELEASED"
+    && !order.slug
+    && (order.tracks?.length ?? 0) > 0
+}
+
+// Índice da etapa ATUAL (foco).
 function currentStepIndex(order: Order): number {
-  if (order.status === "DELIVERED") return 3                 // Pronta
-  if (!order.lyricsApproved) return 0                         // Aprovar letra (bloqueante)
-  if ((order.photoCount ?? 0) === 0) return 1                 // Convite p/ fotos
+  if (order.status === "DELIVERED") return 4                  // Entrega
+  if (escolhaPendenteDe(order)) return 3                      // Versão (ação do cliente)
+  if (!order.lyricsApproved) return 1                         // Letra (bloqueante)
   return 2                                                    // Em produção / espera
 }
 
@@ -90,13 +108,14 @@ function paidPriority(order: Order): number {
 function journeyStepState(order: Order, index: number): StepState {
   const delivered = order.status === "DELIVERED"
   const approved  = !!order.lyricsApproved
-  const hasPhotos = (order.photoCount ?? 0) > 0
+  const escolha   = escolhaPendenteDe(order)
   // done por marco
   const done = [
-    approved,                                  // 0 letra
-    approved && hasPhotos,                      // 1 fotos (só "done" se realmente adicionou)
-    delivered,                                  // 2 produção (done quando entregue)
-    delivered,                                  // 3 pronta
+    true,                                       // 0 pagamento (o stepper só aparece em pedido pago)
+    approved,                                   // 1 letra
+    escolha || delivered,                       // 2 produção (as versões já saíram do Suno)
+    delivered,                                  // 3 versão (escolhida — ou entrega legada de 1 faixa)
+    delivered,                                  // 4 entrega
   ]
   if (done[index]) return "done"
   if (index === currentStepIndex(order)) return "current"
@@ -430,7 +449,7 @@ function MinhaMusicaContent() {
                         )}
                       </div>
 
-                      {/* JORNADA — stepper de 4 passos (ações do cliente + espera).
+                      {/* JORNADA — stepper de 5 passos (ações do cliente + espera).
                           Some quando a música já está pronta: lá a própria VersoesEntregues
                           mostra a jornada "o que fazer agora" (Principal → Fotos → Player → Surpresa). */}
                       {paid && !musicaPronta && (
