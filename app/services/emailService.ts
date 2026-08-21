@@ -637,6 +637,55 @@ function buildFeedbackRequestEmail(data: FeedbackRequestEmailData): string {
 }
 
 // ============================================================
+// E-mail de lembrete de data especial (fase 2 de "Datas especiais")
+// ============================================================
+
+interface SpecialDateReminderEmailData {
+  email:         string
+  contaNome?:    string | null
+  nome:          string
+  ocasiaoEmoji:  string
+  ocasiaoLabel:  string
+  diasFaltando:  number
+}
+
+export async function sendSpecialDateReminderEmail(data: SpecialDateReminderEmailData): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: `Faltam ${data.diasFaltando} dias para ${data.ocasiaoLabel.toLowerCase()} de ${data.nome} ${data.ocasiaoEmoji}`,
+      html: buildSpecialDateReminderEmail(data),
+    })
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      console.error("[email] Lembrete de data especial erro:", msg)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Lembrete de data especial enviado para ${data.email}`)
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
+function buildSpecialDateReminderEmail(data: SpecialDateReminderEmailData): string {
+  const saudacao = data.contaNome ? `Olá, ${strong(data.contaNome.split(" ")[0])}! ${data.ocasiaoEmoji}` : `Olá! ${data.ocasiaoEmoji}`
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+  return emailShell({
+    emoji: data.ocasiaoEmoji,
+    title: `Faltam ${data.diasFaltando} dias!`,
+    subtitle: `${data.ocasiaoLabel} de ${data.nome} está chegando`,
+    body:
+      para(saudacao) +
+      para(`Você marcou aqui na sua área que ${strong(`${data.ocasiaoLabel.toLowerCase()} de ${data.nome}`)} é em ${strong(`${data.diasFaltando} dias`)} — que tal transformar essa data numa música personalizada?`) +
+      para("Uma canção feita especialmente pra essa ocasião costuma emocionar muito mais do que qualquer presente comum."),
+    button: { text: "🎵 Criar uma música para essa data", url: `${siteUrl}/criar` },
+    note: { text: `Não quer mais receber esse aviso? Você pode apagar essa data na sua área a qualquer momento.` },
+  })
+}
+
+// ============================================================
 // E-mail em massa (admin envia para base de clientes)
 // ============================================================
 

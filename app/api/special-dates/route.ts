@@ -43,7 +43,17 @@ export async function POST(req: NextRequest) {
   const supabase = createServerClient()
   const { data: row, error } = await supabase
     .from("special_dates")
-    .insert({ user_id: user.id, nome: cleanNome, ocasiao_emoji: ocasiaoEmoji, ocasiao_label: ocasiaoLabel, data })
+    .insert({
+      user_id: user.id,
+      nome: cleanNome,
+      ocasiao_emoji: ocasiaoEmoji,
+      ocasiao_label: ocasiaoLabel,
+      data,
+      // Gravado aqui pra o cron de lembrete (fase 2) não precisar resolver a
+      // conta de novo a cada linha — mesmo padrão de orders.email.
+      email: user.email,
+      conta_nome: (user.user_metadata?.full_name as string | undefined) ?? (user.user_metadata?.name as string | undefined) ?? null,
+    })
     .select("id, nome, ocasiao_emoji, ocasiao_label, data")
     .single()
 

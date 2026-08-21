@@ -29,6 +29,7 @@ function fmtDiaMes(iso: string): string {
 export default function DatasEspeciais() {
   const [dates, setDates] = useState<SpecialDate[] | null>(null)
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [nome, setNome] = useState("")
   const [ocasiao, setOcasiao] = useState("")
   const [data, setData] = useState("")
@@ -45,19 +46,33 @@ export default function DatasEspeciais() {
 
   useEffect(() => { load() }, [])
 
+  function limparForm() {
+    setShowForm(false); setEditingId(null)
+    setNome(""); setOcasiao(""); setData("")
+  }
+
+  function editar(d: SpecialDate) {
+    setEditingId(d.id)
+    setNome(d.nome)
+    setOcasiao(`${d.ocasiao_emoji}|${d.ocasiao_label}`)
+    setData(d.data)
+    setShowForm(true)
+  }
+
   async function salvar() {
     if (!nome.trim() || !ocasiao || !data) return
     const [emoji, label] = ocasiao.split("|")
     setSaving(true)
     const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch("/api/special-dates", {
-      method: "POST",
+    const url = editingId ? `/api/special-dates/${editingId}` : "/api/special-dates"
+    const res = await fetch(url, {
+      method: editingId ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
       body: JSON.stringify({ nome: nome.trim(), ocasiaoEmoji: emoji, ocasiaoLabel: label, data }),
     })
     setSaving(false)
     if (res.ok) {
-      setNome(""); setOcasiao(""); setData("")
+      limparForm()
       await load()
     }
   }
@@ -69,6 +84,7 @@ export default function DatasEspeciais() {
       headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
     })
     setDates((prev) => prev?.filter((d) => d.id !== id) ?? null)
+    if (editingId === id) limparForm()
   }
 
   if (dates === null) return null
@@ -95,6 +111,7 @@ export default function DatasEspeciais() {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-xs text-white/60 font-mono">{fmtDiaMes(d.data)}</span>
+                <button onClick={() => editar(d)} className="text-white/30 hover:text-fuchsia-300 text-xs transition-colors" aria-label="Editar">✏️</button>
                 <button onClick={() => remover(d.id)} className="text-white/30 hover:text-red-400 text-xs transition-colors" aria-label="Remover">✕</button>
               </div>
             </div>
@@ -139,7 +156,13 @@ export default function DatasEspeciais() {
             className="px-4 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-40 transition-all"
             style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
           >
-            {saving ? "Salvando…" : "Salvar"}
+            {saving ? "Salvando…" : editingId ? "Salvar edição" : "Salvar"}
+          </button>
+          <button
+            onClick={limparForm}
+            className="px-3 py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white transition-colors"
+          >
+            Cancelar
           </button>
         </div>
       )}
