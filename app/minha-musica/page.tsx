@@ -17,6 +17,7 @@ import VersoesEntregues from "./VersoesEntregues"
 import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
+import RedeFizMusica from "./RedeFizMusica"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -381,6 +382,9 @@ function MinhaMusicaContent() {
 
           {/* Minhas músicas & playlists — auto-populado dos pedidos entregues */}
           <MinhasMusicas tracks={libraryTracks} />
+
+          {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
+          <RedeFizMusica />
 
           {/* ── PEDIDOS ── */}
           {orders.length === 0 ? (
