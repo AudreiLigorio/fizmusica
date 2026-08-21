@@ -16,6 +16,7 @@ import EscolherVersao from "./EscolherVersao"
 import VersoesEntregues from "./VersoesEntregues"
 import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
+import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -140,6 +141,9 @@ function MinhaMusicaContent() {
   const [termChecked, setTermChecked] = useState<Record<string, boolean>>({})
   const [acceptingTerm, setAcceptingTerm] = useState<string | null>(null)
   const [gaveUpProd, setGaveUpProd] = useState(false)
+  // Pedido entregue (sem ação pendente) vira linha compacta por padrão —
+  // senão a tela cresce sem fim conforme o cliente acumula pedidos.
+  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({})
 
   async function acceptDeliveryTerm(orderId: string) {
     setAcceptingTerm(orderId)
@@ -298,6 +302,15 @@ function MinhaMusicaContent() {
     .filter((o) => o.paymentStatus !== "PAID")
     .sort((a, b) => dbTime(b.createdAt) - dbTime(a.createdAt))
 
+  // "Minhas músicas" não é dado novo — é derivado dos mesmos pedidos entregues
+  // que já alimentam a lista acima, só que reempacotado como prateleira.
+  const libraryTracks: LibraryTrack[] = paidOrders
+    .filter((o) => o.status === "DELIVERED" && o.slug)
+    .map((o) => {
+      const principal = o.tracks?.find((t) => t.audioUrl === o.mp3Url) ?? o.tracks?.[0]
+      return { id: o.id, title: principal?.title ?? o.subcategory, slug: o.slug as string, imageUrl: principal?.imageUrl ?? null }
+    })
+
   return (
     <div className="relative min-h-screen text-white font-sans overflow-hidden" style={{ background: "#07060d" }}>
       {/* Fundo gradiente da marca */}
@@ -366,6 +379,9 @@ function MinhaMusicaContent() {
           {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
           <ReferirAmigos />
 
+          {/* Minhas músicas & playlists — auto-populado dos pedidos entregues */}
+          <MinhasMusicas tracks={libraryTracks} />
+
           {/* ── PEDIDOS ── */}
           {orders.length === 0 ? (
             <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl mb-6">
@@ -408,6 +424,11 @@ function MinhaMusicaContent() {
                 const termAccepted     = !!order.sharing_term_accepted_at
                 // Música pronta com as 2 versões: experiência própria de "o que fazer agora".
                 const musicaPronta     = delivered && !!order.slug && termAccepted && (order.tracks?.length ?? 0) > 1
+                // Colapsa por padrão quando entregue E sem ação pendente (termo já aceito
+                // ou nem gerou slug ainda) — o portão do termo continua sempre visível.
+                const needsTermGate = delivered && !!order.slug && !termAccepted
+                const isCollapsible = delivered && !needsTermGate
+                const isExpanded = !!expandedOrders[order.id]
 
                 return (
                   <div key={order.id} className={`relative overflow-hidden rounded-2xl border transition-all ${
@@ -430,6 +451,21 @@ function MinhaMusicaContent() {
                     )}
 
                     <div className="p-6">
+                      {isCollapsible && !isExpanded ? (
+                        <button
+                          onClick={() => setExpandedOrders((p) => ({ ...p, [order.id]: true }))}
+                          className="w-full flex items-center gap-3 text-left"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center text-lg shrink-0">🎁</div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm truncate">{order.subcategory}</p>
+                            <p className="text-xs text-white/40 truncate">{order.products?.name}</p>
+                          </div>
+                          <span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full shrink-0">✓ Entregue</span>
+                          <span className="text-white/30 text-xs shrink-0">▾</span>
+                        </button>
+                      ) : (
+                      <>
                       <div className="flex items-start justify-between gap-3 mb-4">
                         <div>
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -667,6 +703,17 @@ function MinhaMusicaContent() {
                           {openDetails[order.id] ? "Ocultar detalhes ▲" : "Ver detalhes do pedido ▾"}
                         </button>
                       </div>
+
+                      {isCollapsible && (
+                        <button
+                          onClick={() => setExpandedOrders((p) => ({ ...p, [order.id]: false }))}
+                          className="w-full text-center text-white/30 hover:text-white/60 text-xs py-1.5 mt-1 transition-colors"
+                        >
+                          ▲ Recolher
+                        </button>
+                      )}
+                      </>
+                      )}
                     </div>
                   </div>
                 )
