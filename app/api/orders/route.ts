@@ -99,6 +99,15 @@ export async function POST(req: NextRequest) {
     // Salva no banco
     const order = await createOrder(body, customerIp)
 
+    // Atribuição de indicação: se o visitante passou por /i/[code] nos últimos
+    // 30 dias, o cookie carrega o código até aqui. Conversão é derivada depois
+    // (referral_code + paymentStatus=PAID), não precisa tocar no fluxo de
+    // pagamento — ver prisma/migrations/047_referral.sql.
+    const referralCode = req.cookies.get("fm_ref")?.value
+    if (referralCode) {
+      await createServerClient().from("orders").update({ referral_code: referralCode.toUpperCase() }).eq("id", order.id)
+    }
+
     // Dispara e-mails e n8n APÓS a resposta (after garante execução mesmo após response)
     const emailData = {
       orderId: order.id,

@@ -15,6 +15,7 @@ import PublicacaoConsent from "./PublicacaoConsent"
 import EscolherVersao from "./EscolherVersao"
 import VersoesEntregues from "./VersoesEntregues"
 import DatasEspeciais from "./DatasEspeciais"
+import ReferirAmigos from "./ReferirAmigos"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -361,6 +362,9 @@ function MinhaMusicaContent() {
 
           {/* Datas especiais — ligada à conta, não ao pedido */}
           <DatasEspeciais />
+
+          {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
+          <ReferirAmigos />
 
           {/* ── PEDIDOS ── */}
           {orders.length === 0 ? (
