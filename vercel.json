@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/recovery",
-      "schedule": "0 10 * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/feedback-emails",
@@ -18,7 +18,7 @@
     },
     {
       "path": "/api/cron/special-dates",
-      "schedule": "0 12 * * *"
+      "schedule": "0 15 * * *"
     }
   ]
 }
