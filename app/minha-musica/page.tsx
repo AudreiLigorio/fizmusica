@@ -14,6 +14,7 @@ import AjudaCliente from "./AjudaCliente"
 import PublicacaoConsent from "./PublicacaoConsent"
 import EscolherVersao from "./EscolherVersao"
 import VersoesEntregues from "./VersoesEntregues"
+import DatasEspeciais from "./DatasEspeciais"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -357,6 +358,9 @@ function MinhaMusicaContent() {
               ❌ Link de vinculação inválido ou expirado.
             </div>
           )}
+
+          {/* Datas especiais — ligada à conta, não ao pedido */}
+          <DatasEspeciais />
 
           {/* ── PEDIDOS ── */}
           {orders.length === 0 ? (
