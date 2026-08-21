@@ -454,9 +454,10 @@ function MinhaMusicaContent() {
                       </div>
 
                       {/* JORNADA — stepper de 5 passos (ações do cliente + espera).
-                          Some quando a música já está pronta: lá a própria VersoesEntregues
-                          mostra a jornada "o que fazer agora" (Principal → Fotos → Player → Surpresa). */}
-                      {paid && !musicaPronta && (
+                          Continua visível mesmo entregue (tudo verde) — abaixo dela,
+                          VersoesEntregues mostra a navegação "o que fazer agora"
+                          (Principal → Fotos → Player → Surpresa), que é outra coisa. */}
+                      {paid && (
                         <div className="flex items-start mb-5">
                           {JOURNEY.map((s, i) => {
                             const st = journeyStepState(order, i)
