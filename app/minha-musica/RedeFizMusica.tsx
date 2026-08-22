@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { usePlayer } from "./PlayerContext"
 
 type CatalogItem = {
   orderId: string
@@ -10,6 +11,9 @@ type CatalogItem = {
   occasion: string
   musicalStyle: string | null
   imageUrl: string
+  audioUrl: string
+  lyrics: string | null
+  lyricsLrc: string | null
   favorited: boolean
 }
 
@@ -20,6 +24,7 @@ type CatalogItem = {
 export default function RedeFizMusica() {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [ocasiaoAberta, setOcasiaoAberta] = useState<string | null>(null)
+  const { track: nowPlaying, playing, playTrack } = usePlayer()
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -86,27 +91,32 @@ export default function RedeFizMusica() {
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-        {visiveis.map((it) => (
-          <div key={it.orderId} className="shrink-0 w-32">
-            <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-white/10">
-              <a href={`/m/${it.slug}`} target="_blank" rel="noopener" className="block w-full h-full">
-                <div
-                  className="w-full h-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${it.imageUrl})` }}
-                />
-              </a>
-              <button
-                onClick={() => favoritar(it.orderId)}
-                aria-label={it.favorited ? "Remover dos favoritos" : "Favoritar"}
-                className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-sm transition-transform hover:scale-110"
-              >
-                {it.favorited ? "❤️" : "🤍"}
-              </button>
+        {visiveis.map((it) => {
+          const isPlaying = nowPlaying?.id === it.orderId && playing
+          return (
+            <div key={it.orderId} className="shrink-0 w-32">
+              <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc })}
+                  className="block w-full h-full"
+                >
+                  <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${it.imageUrl})` }} />
+                  {isPlaying && <div className="absolute inset-0 bg-black/35 flex items-center justify-center text-2xl">❚❚</div>}
+                </button>
+                <button
+                  onClick={() => favoritar(it.orderId)}
+                  aria-label={it.favorited ? "Remover dos favoritos" : "Favoritar"}
+                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-sm transition-transform hover:scale-110"
+                >
+                  {it.favorited ? "❤️" : "🤍"}
+                </button>
+              </div>
+              <p className={`text-xs font-medium mt-1.5 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
+              <p className="text-[11px] text-white/40 truncate">{it.occasion}</p>
             </div>
-            <p className="text-xs font-medium mt-1.5 truncate">{it.title}</p>
-            <p className="text-[11px] text-white/40 truncate">{it.occasion}</p>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

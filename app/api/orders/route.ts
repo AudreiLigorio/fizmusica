@@ -8,6 +8,7 @@ import { extractClientIp, lookupState } from "@/lib/geoip"
 import { toE164 } from "@/lib/n8n/events"
 import { PLAN_FEATURE_COLUMNS, featuresFromProduct } from "@/lib/planFeatures"
 import { sincronizarPreviaNoPedido } from "@/lib/composer/aproveitarPrevia"
+import { lrcToPlainLyrics } from "@/lib/suno/lrc"
 
 export async function GET(req: NextRequest) {
   // Identidade: prioriza o token de login (Bearer) — busca por e-mail OU userId
@@ -38,13 +39,13 @@ export async function GET(req: NextRequest) {
 
   // Anexa slug + mp3 da música (quando publicada) para os botões Ouvir/Baixar
   const ids = (data ?? []).map((o) => o.id)
-  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null }> = {}
+  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null }> = {}
   if (ids.length) {
     const { data: gm } = await supabase
       .from("generated_music")
-      .select("orderId, slug, mp3Url")
+      .select("orderId, slug, mp3Url, lyrics, lyricsLrc")
       .in("orderId", ids)
-    for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null }
+    for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null, lyrics: g.lyrics ?? null, lyricsLrc: g.lyricsLrc ?? null }
   }
 
   const orders = (data ?? []).map((o) => {
@@ -66,14 +67,24 @@ export async function GET(req: NextRequest) {
     // Recursos já resolvidos aqui: a tela não precisa saber o nome das colunas
     // nem repetir o "?? true" de cada uma pra decidir o que mostrar.
     const produto = Array.isArray(rest.products) ? rest.products[0] : rest.products
+    const features = featuresFromProduct(produto)
+    const music = musicByOrder[o.id]
+    // Mesma trava do player público (app/m/[slug]/page.tsx): sem o recurso no
+    // plano, a letra continua (só perde o acompanhamento sincronizado).
+    const lyrics = features.letraSincronizada
+      ? music?.lyrics ?? null
+      : (music?.lyrics?.trim() || (music?.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null))
+    const lyricsLrc = features.letraSincronizada ? music?.lyricsLrc ?? null : null
     return {
       ...rest,
       musicStatus: sunoStatus ?? null,
       tracks:      sunoTracks ?? null,
-      slug:       musicByOrder[o.id]?.slug ?? null,
-      mp3Url:     musicByOrder[o.id]?.mp3Url ?? null,
+      slug:       music?.slug ?? null,
+      mp3Url:     music?.mp3Url ?? null,
+      lyrics,
+      lyricsLrc,
       photoCount: Array.isArray(order_photos) ? order_photos.length : 0,
-      features:   featuresFromProduct(produto),
+      features,
       answers,
       payments: paymentRow,
     }

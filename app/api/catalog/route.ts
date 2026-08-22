@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
+import { PLAN_FEATURE_COLUMNS, featuresFromProduct } from "@/lib/planFeatures"
+import { lrcToPlainLyrics } from "@/lib/suno/lrc"
 
 export const dynamic = "force-dynamic"
 
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient()
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("id, context, subcategory, musicalStyle, sunoTracks, createdAt")
+    .select(`id, context, subcategory, musicalStyle, sunoTracks, createdAt, products(${PLAN_FEATURE_COLUMNS})`)
     .eq("publication_consent", true)
     .eq("status", "DELIVERED")
 
@@ -38,10 +40,10 @@ export async function GET(req: NextRequest) {
 
   const ids = (orders ?? []).map((o) => o.id)
   const { data: gm } = ids.length
-    ? await supabase.from("generated_music").select("orderId, slug, mp3Url").in("orderId", ids)
+    ? await supabase.from("generated_music").select("orderId, slug, mp3Url, lyrics, lyricsLrc").in("orderId", ids)
     : { data: [] }
-  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null }> = {}
-  for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null }
+  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null }> = {}
+  for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null, lyrics: g.lyrics ?? null, lyricsLrc: g.lyricsLrc ?? null }
 
   const { data: favs } = await supabase
     .from("catalog_favorites")
@@ -55,7 +57,15 @@ export async function GET(req: NextRequest) {
       const music = musicByOrder[o.id]
       const tracks = (o.sunoTracks as Track[] | null) ?? []
       const principal = tracks.find((t) => t.audioUrl === music?.mp3Url) ?? tracks[0]
-      if (!music?.slug || !principal?.imageUrl) return null // sem capa do Suno, não entra
+      if (!music?.slug || !principal?.imageUrl || !principal?.audioUrl) return null // sem capa/áudio do Suno, não entra
+      const produto = Array.isArray(o.products) ? o.products[0] : o.products
+      const features = featuresFromProduct(produto)
+      // Mesma trava do player público — sincronizado só se o plano DAQUELE
+      // pedido (de quem publicou) incluía o recurso, não do plano de quem ouve.
+      const lyrics = features.letraSincronizada
+        ? music.lyrics ?? null
+        : (music.lyrics?.trim() || (music.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null))
+      const lyricsLrc = features.letraSincronizada ? music.lyricsLrc ?? null : null
       return {
         orderId: o.id,
         slug: music.slug,
@@ -63,6 +73,9 @@ export async function GET(req: NextRequest) {
         occasion: o.subcategory,
         musicalStyle: o.musicalStyle ?? null,
         imageUrl: principal.imageUrl,
+        audioUrl: principal.audioUrl,
+        lyrics,
+        lyricsLrc,
         favorited: favoriteSet.has(o.id),
         createdAt: o.createdAt as string,
       }

@@ -2,8 +2,18 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { usePlayer } from "./PlayerContext"
 
-export type LibraryTrack = { id: string; title: string; slug: string; imageUrl: string | null }
+export type LibraryTrack = {
+  id: string
+  title: string
+  occasion: string
+  slug: string
+  imageUrl: string | null
+  audioUrl: string | null
+  lyrics: string | null
+  lyricsLrc: string | null
+}
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
 
 // Sem foto de capa própria pra cada música (o design não pediu upload de capa
@@ -30,6 +40,7 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<string | null>(null)
+  const { track: nowPlaying, playing, playTrack } = usePlayer()
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -67,29 +78,33 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
       <p className="text-xs text-white/50 mb-3">Arraste uma música para começar uma coleção.</p>
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-        {tracks.map((t) => (
-          <a
-            key={t.id}
-            href={`/m/${t.slug}`}
-            target="_blank"
-            rel="noopener"
-            draggable
-            onDragStart={() => setDragId(t.id)}
-            onDragEnd={() => setDragId(null)}
-            className="shrink-0 w-28 group"
-          >
-            <div
-              className="w-28 h-28 rounded-xl flex items-center justify-center text-2xl border border-white/10 cursor-grab active:cursor-grabbing bg-cover bg-center"
-              style={{
-                background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradientFor(t.id),
-                opacity: dragId === t.id ? 0.4 : 1,
-              }}
+        {tracks.map((t) => {
+          const isPlaying = nowPlaying?.id === t.id && playing
+          return (
+            <button
+              key={t.id}
+              type="button"
+              disabled={!t.audioUrl}
+              onClick={() => t.audioUrl && playTrack({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc })}
+              draggable
+              onDragStart={() => setDragId(t.id)}
+              onDragEnd={() => setDragId(null)}
+              className="shrink-0 w-28 group text-left disabled:cursor-default"
             >
-              {!t.imageUrl && "▶"}
-            </div>
-            <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">{t.title}</p>
-          </a>
-        ))}
+              <div
+                className="relative w-28 h-28 rounded-xl flex items-center justify-center text-2xl border border-white/10 cursor-grab active:cursor-grabbing bg-cover bg-center"
+                style={{
+                  background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradientFor(t.id),
+                  opacity: dragId === t.id ? 0.4 : 1,
+                }}
+              >
+                {!t.imageUrl && "▶"}
+                {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
+              </div>
+              <p className={`text-xs font-medium mt-1.5 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
+            </button>
+          )
+        })}
 
         {playlists?.map((pl) => (
           <div

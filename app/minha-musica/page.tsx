@@ -18,6 +18,8 @@ import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
 import RedeFizMusica from "./RedeFizMusica"
+import { PlayerProvider } from "./PlayerContext"
+import MiniPlayer from "./MiniPlayer"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -47,6 +49,8 @@ type Order = {
   revision?: { status: string } | null
   is_revision?: boolean
   mp3Url?: string | null
+  lyrics?: string | null
+  lyricsLrc?: string | null
   sharing_term_accepted_at?: string | null
   lyricsApproved?: boolean
   photoCount?: number
@@ -309,10 +313,20 @@ function MinhaMusicaContent() {
     .filter((o) => o.status === "DELIVERED" && o.slug)
     .map((o) => {
       const principal = o.tracks?.find((t) => t.audioUrl === o.mp3Url) ?? o.tracks?.[0]
-      return { id: o.id, title: principal?.title ?? o.subcategory, slug: o.slug as string, imageUrl: principal?.imageUrl ?? null }
+      return {
+        id: o.id,
+        title: principal?.title ?? o.subcategory,
+        occasion: o.subcategory,
+        slug: o.slug as string,
+        imageUrl: principal?.imageUrl ?? null,
+        audioUrl: principal?.audioUrl ?? null,
+        lyrics: o.lyrics ?? null,
+        lyricsLrc: o.lyricsLrc ?? null,
+      }
     })
 
   return (
+    <PlayerProvider>
     <div className="relative min-h-screen text-white font-sans overflow-hidden" style={{ background: "#07060d" }}>
       {/* Fundo gradiente da marca */}
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -821,6 +835,8 @@ function MinhaMusicaContent() {
         <Footer />
       </div>
     </div>
+    <MiniPlayer />
+    </PlayerProvider>
   )
 }
 
