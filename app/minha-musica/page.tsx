@@ -650,19 +650,8 @@ function MinhaMusicaContent() {
             </div>
           )}
 
-          {/* Datas especiais — ligada à conta, não ao pedido */}
-          <DatasEspeciais />
-
-          {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
-          <ReferirAmigos />
-
-          {/* Minhas músicas & playlists — auto-populado dos pedidos entregues */}
-          <MinhasMusicas tracks={libraryTracks} />
-
-          {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
-          <RedeFizMusica />
-
-          {/* ── PEDIDOS — sem abas: topo = precisa de você agora, carrossel = resto ── */}
+          {/* ── PEDIDOS — sempre o primeiro bloco: quem precisa de ação agora
+              não pode ficar escondido atrás de datas/indicação/biblioteca ── */}
           {orders.length === 0 ? (
             <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl mb-6">
               <p className="text-4xl mb-3">🎵</p>
@@ -786,6 +775,18 @@ function MinhaMusicaContent() {
               </div>
             )
           })()}
+
+          {/* Datas especiais — ligada à conta, não ao pedido */}
+          <DatasEspeciais />
+
+          {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
+          <ReferirAmigos />
+
+          {/* Minhas músicas & playlists — auto-populado dos pedidos entregues */}
+          <MinhasMusicas tracks={libraryTracks} />
+
+          {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
+          <RedeFizMusica />
 
           {/* Criar nova música — em baixo */}
           <button
