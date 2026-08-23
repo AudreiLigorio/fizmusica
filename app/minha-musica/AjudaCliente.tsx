@@ -36,8 +36,8 @@ const ITENS: { q: string; a: string }[] = [
     a: "Ela só entra em produção depois que você aprova a letra. Se o pedido está parado em “Aprovar letra”, é porque falta esse passo — assim que aprovar, começamos e avisamos por e-mail quando ficar pronta.",
   },
   {
-    q: "O que são as abas “Pagos” e “Não pagos”?",
-    a: "Em “Pagos” ficam os pedidos que já podem ser produzidos (aprovar letra, acompanhar e baixar). Em “Não pagos” ficam os que ainda aguardam pagamento — é só finalizar o pagamento para liberar a criação.",
+    q: "Por que alguns pedidos aparecem grandes no topo e outros só como capinha?",
+    a: "No topo ficam só os pedidos que precisam de uma ação sua agora — finalizar pagamento, aprovar letra, escolher versão ou aceitar o termo de entrega. O resto (em produção ou já entregue) vira uma capinha no carrossel — clique nela pra ver os detalhes.",
   },
 ]
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { supabase } from "@/lib/supabase"
@@ -106,6 +106,23 @@ function currentStepIndex(order: Order): number {
   return 2                                                    // Em produção / espera
 }
 
+// Precisa da ação do cliente AGORA — vira card grande no topo, sem aba.
+// Não pago (ainda não abandonado), letra pendente, escolha de versão
+// pendente ou termo de entrega pendente. Tudo o mais (em produção,
+// entregue) vira capinha no carrossel. Abandonado não aparece em lugar
+// nenhum aqui — isso já é coberto pelo e-mail de recuperação.
+function precisaAcao(order: Order): boolean {
+  const paid = order.paymentStatus === "PAID"
+  if (!paid) return order.status !== "ABANDONED"
+  const delivered = order.status === "DELIVERED"
+  const approved  = !!order.lyricsApproved
+  const termAccepted = !!order.sharing_term_accepted_at
+  if (!delivered && !approved) return true
+  if (escolhaPendenteDe(order)) return true
+  if (delivered && order.slug && !termAccepted) return true
+  return false
+}
+
 // Prioridade de exibição dos pedidos pagos: ação pendente no topo.
 function paidPriority(order: Order): number {
   if (order.status === "DELIVERED") return 2          // entregue (mais embaixo)
@@ -141,14 +158,14 @@ function MinhaMusicaContent() {
 
   const [qrUrl, setQrUrl] = useState<string | null>(null)
   const [openDetails, setOpenDetails] = useState<Record<string, boolean>>({})
-  const [tab, setTab] = useState<"paid" | "unpaid">("paid")
-  const autoTab = useRef(false)
   const [termChecked, setTermChecked] = useState<Record<string, boolean>>({})
   const [acceptingTerm, setAcceptingTerm] = useState<string | null>(null)
   const [gaveUpProd, setGaveUpProd] = useState(false)
   // Pedido entregue (sem ação pendente) vira linha compacta por padrão —
   // senão a tela cresce sem fim conforme o cliente acumula pedidos.
-  const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({})
+  // Modal de detalhes — substitui o antigo colapsar/expandir inline: pedido
+  // sem ação pendente vira capinha no carrossel, detalhes abrem aqui.
+  const [openDetailOrderId, setOpenDetailOrderId] = useState<string | null>(null)
 
   async function acceptDeliveryTerm(orderId: string) {
     setAcceptingTerm(orderId)
@@ -240,14 +257,6 @@ function MinhaMusicaContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
-  // Se não houver pedido pago mas houver não pago, já abre na aba certa (uma vez).
-  useEffect(() => {
-    if (autoTab.current || loading || orders.length === 0) return
-    autoTab.current = true
-    const hasPaid = orders.some((o) => o.paymentStatus === "PAID")
-    const hasUnpaid = orders.some((o) => o.paymentStatus !== "PAID")
-    if (!hasPaid && hasUnpaid) setTab("unpaid")
-  }, [loading, orders])
 
   async function confirmLink() {
     setLinking(true)
@@ -299,17 +308,19 @@ function MinhaMusicaContent() {
 
   const firstName = (user.user_metadata?.full_name as string)?.split(" ")[0] || user.email?.split("@")[0]
 
-  // Pedidos pagos (protagonistas) ordenados por urgência; não pagos vão para o rodapé.
-  const paidOrders = orders
-    .filter((o) => o.paymentStatus === "PAID")
+  // Sem abas: topo = só quem precisa de ação agora (empilhado, sem "escolher
+  // um principal"); carrossel = todo o resto (em produção ou entregue).
+  // Abandonado não entra em nenhuma das duas — ver precisaAcao().
+  const heroOrders = orders
+    .filter((o) => precisaAcao(o))
     .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
-  const unpaidOrders = orders
-    .filter((o) => o.paymentStatus !== "PAID")
-    .sort((a, b) => dbTime(b.createdAt) - dbTime(a.createdAt))
+  const shelfOrders = orders
+    .filter((o) => o.paymentStatus === "PAID" && !precisaAcao(o))
+    .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
 
   // "Minhas músicas" não é dado novo — é derivado dos mesmos pedidos entregues
-  // que já alimentam a lista acima, só que reempacotado como prateleira.
-  const libraryTracks: LibraryTrack[] = paidOrders
+  // que já alimentam o carrossel, só que reempacotado como prateleira.
+  const libraryTracks: LibraryTrack[] = shelfOrders
     .filter((o) => o.status === "DELIVERED" && o.slug)
     .map((o) => {
       const principal = o.tracks?.find((t) => t.audioUrl === o.mp3Url) ?? o.tracks?.[0]
@@ -324,6 +335,256 @@ function MinhaMusicaContent() {
         lyricsLrc: o.lyricsLrc ?? null,
       }
     })
+
+  // Conteúdo completo de um pedido — usado tanto no card grande (hero, quando
+  // precisa de ação) quanto dentro do modal (aberto a partir do carrossel).
+  // Nunca duplicado: as duas chamadas vêm daqui.
+  function renderOrderDetail(order: Order) {
+    const paid       = order.paymentStatus === "PAID"
+    const delivered  = order.status === "DELIVERED"
+    const approved   = !!order.lyricsApproved
+    // Escolha pendente: versões liberadas e o cliente ainda não escolheu (sem slug).
+    const escolhaPendente = paid && order.musicStatus === "RELEASED" && !order.slug && (order.tracks?.length ?? 0) > 0
+    const inProdPhase = paid && approved && !delivered && !escolhaPendente
+    const hasRevision      = !!order.revision
+    const revisionPending  = order.revision?.status === "PENDING"
+    const termAccepted     = !!order.sharing_term_accepted_at
+    const musicaPronta     = delivered && !!order.slug && termAccepted && (order.tracks?.length ?? 0) > 1
+
+    return (
+      <>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <p className="font-bold text-lg">{order.subcategory}</p>
+              {order.is_revision && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
+              )}
+              {order.products?.name && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full border border-pink-500/40 bg-pink-500/15 text-pink-200 font-semibold">
+                  {order.products.name}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-400">#{order.id.slice(0, 8).toUpperCase()}</p>
+          </div>
+          {order.payments?.amount != null && (
+            <p className="text-pink-400 font-bold whitespace-nowrap text-sm">
+              R$ {Number(order.payments.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+            </p>
+          )}
+        </div>
+
+        {/* JORNADA — stepper de 5 passos (ações do cliente + espera). Continua
+            visível mesmo entregue (tudo verde) — abaixo dela, VersoesEntregues
+            mostra a navegação "o que fazer agora", que é outra coisa. */}
+        {paid && (
+          <div className="flex items-start mb-5">
+            {JOURNEY.map((s, i) => {
+              const st = journeyStepState(order, i)
+              return (
+                <div key={s.key} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex flex-col items-center w-12">
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all ${
+                      st === "done"    ? "bg-green-400 text-black font-bold" :
+                      st === "current" ? "bg-fuchsia-500 ring-4 ring-fuchsia-500/25 animate-pulse" :
+                                         "bg-white/10 text-white/30"
+                    }`}>
+                      {st === "done" ? "✓" : <span className="text-xs">{s.icon}</span>}
+                    </span>
+                    <span className={`text-[10px] mt-1.5 text-center leading-tight ${
+                      st === "done"    ? "text-green-400" :
+                      st === "current" ? "text-fuchsia-300 font-semibold" :
+                                         "text-gray-600"
+                    }`}>{s.label}</span>
+                  </div>
+                  {i < JOURNEY.length - 1 && (
+                    <span className={`h-0.5 flex-1 mx-1 mb-4 ${
+                      journeyStepState(order, i) === "done" ? "bg-green-400/50" : "bg-white/10"
+                    }`} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {!paid && (
+          <p className="text-yellow-400 text-sm mb-4">⏳ Aguardando confirmação do pagamento</p>
+        )}
+
+        {/* FLUXO GUIADO: Letra → Fotos → Aprovar & gerar */}
+        {paid && !delivered && !approved && (
+          <PreparoFlow
+            orderId={order.id}
+            photoToken={order.photo_token}
+            isRevision={order.is_revision}
+            temFotos={(order.features ?? TUDO).fotos > 0}
+            onApproved={loadOrders}
+          />
+        )}
+
+        {/* ESCOLHER VERSÃO — versões liberadas, cliente ainda não escolheu */}
+        {escolhaPendente && (
+          <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={loadOrders} />
+        )}
+
+        {/* EM PRODUÇÃO (sem ação): card pulsante. Fotos já foram travadas na aprovação. */}
+        {inProdPhase && (
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-3 bg-fuchsia-500/10 border border-fuchsia-500/20">
+            <span className="relative flex h-3 w-3 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-fuchsia-500" />
+            </span>
+            <div>
+              <p className="text-fuchsia-300 font-semibold text-sm">Sua música está sendo criada</p>
+              <p className="text-fuchsia-400/70 text-xs leading-relaxed">
+                Pode fechar a página — avisamos por e-mail assim que ficar pronta.
+                <strong className="text-fuchsia-200"> Você não precisa fazer nada.</strong>
+              </p>
+              <div className="mt-2 flex items-center gap-3 flex-wrap">
+                <span className="text-fuchsia-300/70 text-[11px]">
+                  {gaveUpProd
+                    ? "Está demorando um pouco mais que o normal — avisamos por e-mail. 💜"
+                    : "⏳ Esta tela atualiza sozinha quando ficar pronta."}
+                </span>
+                <button
+                  onClick={() => { setGaveUpProd(false); loadOrders() }}
+                  className="text-[11px] underline text-fuchsia-300 hover:text-fuchsia-200"
+                >
+                  Atualizar agora
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Badge de revisão */}
+        {hasRevision && revisionPending && (
+          <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-3 border border-orange-500/25 bg-orange-500/8">
+            <span className="text-orange-400 text-lg">✏️</span>
+            <div>
+              <p className="text-orange-300 font-semibold text-sm">Revisão em análise</p>
+              <p className="text-orange-400/60 text-xs">Nossa equipe vai entrar em contato em breve.</p>
+            </div>
+          </div>
+        )}
+        {hasRevision && !revisionPending && (
+          <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-3 border border-fuchsia-500/25 bg-fuchsia-500/8">
+            <span className="text-fuchsia-400 text-lg">✅</span>
+            <div>
+              <p className="text-fuchsia-300 font-semibold text-sm">Revisão aceita</p>
+              <p className="text-fuchsia-400/60 text-xs">Sua nova versão está sendo produzida — veja o pedido de revisão na lista.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Portão do Termo de Entrega Digital — antes de liberar o acesso */}
+        {delivered && order.slug && !termAccepted && (
+          <div className="rounded-xl border border-pink-500/25 bg-pink-500/[0.06] p-4 mb-2">
+            <p className="text-sm font-semibold text-white mb-1">🔒 Sua música está pronta!</p>
+            <p className="text-xs text-white/50 mb-3">
+              Antes de ouvir, baixar e compartilhar, confirme o termo abaixo.
+            </p>
+            <label className="flex items-start gap-2 cursor-pointer mb-3">
+              <input
+                type="checkbox"
+                checked={!!termChecked[order.id]}
+                onChange={(e) => setTermChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
+                className="w-4 h-4 mt-0.5 accent-pink-500 shrink-0"
+              />
+              <span className="text-xs text-white/60 leading-relaxed">
+                Li e aceito o{" "}
+                <a href="/legal/entrega-digital" className="text-pink-400 underline">Termo de Entrega Digital</a>
+                {" "}e entendo que o <strong className="text-white/80">compartilhamento da música é de minha responsabilidade</strong>.
+              </span>
+            </label>
+            <button
+              onClick={() => acceptDeliveryTerm(order.id)}
+              disabled={!termChecked[order.id] || acceptingTerm === order.id}
+              className="w-full py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+            >
+              {acceptingTerm === order.id ? "Liberando…" : "Aceitar e liberar minha música →"}
+            </button>
+          </div>
+        )}
+
+        {/* Música pronta com as 2 versões do Suno — ambas disponíveis */}
+        {musicaPronta && (
+          <VersoesEntregues
+            orderId={order.id}
+            tracks={order.tracks!}
+            principalUrl={order.mp3Url ?? null}
+            slug={order.slug ?? null}
+            photoToken={order.photo_token}
+            photoCount={order.photoCount}
+            features={order.features ?? TUDO}
+            canRevise={!hasRevision && !order.is_revision}
+            onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
+            onNaoGostei={() => router.push(`/contestar/${order.id}`)}
+            onChanged={loadOrders}
+          />
+        )}
+
+        {/* Ações — entrega legada (1 música, sem versões do Suno) */}
+        <div className="flex flex-wrap gap-2">
+          {delivered && order.slug && termAccepted && (order.tracks?.length ?? 0) <= 1 && (
+            <>
+              <a
+                href={`/m/${order.slug}`}
+                className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 6px 24px rgba(240,25,107,0.35)" }}
+              >
+                ▶ Ouvir minha música
+              </a>
+              {order.mp3Url && (order.features ?? TUDO).download && (
+                <a
+                  href={`/api/orders/${order.id}/musica/download`}
+                  download
+                  className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-white/15 text-white/80 hover:bg-white/5 transition-colors"
+                >
+                  ⬇ Baixar MP3
+                </a>
+              )}
+              {!hasRevision && (order.features ?? TUDO).qrcode && (
+                <button
+                  onClick={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
+                  className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-[#B8963E]/40 text-[#B8963E] hover:bg-[#B8963E]/10 transition-colors"
+                >
+                  📱 Imprimir QR e fazer a surpresa
+                </button>
+              )}
+            </>
+          )}
+          {delivered && termAccepted && !hasRevision && !order.is_revision && (order.features ?? TUDO).revisao && (order.tracks?.length ?? 0) <= 1 && (
+            <button
+              onClick={() => router.push(`/contestar/${order.id}`)}
+              className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"
+            >
+              Não gostei dessa versão →
+            </button>
+          )}
+        </div>
+
+        {/* Autorização opcional de divulgação — após a música entregue */}
+        {delivered && order.slug && termAccepted && (
+          <PublicacaoConsent orderId={order.id} initial={!!order.publication_consent} />
+        )}
+
+        {/* Detalhes do pedido — resumo do que foi preenchido */}
+        <div className="mt-4 pt-3 border-t border-white/5">
+          {openDetails[order.id] && <DetalhesPedido order={order} />}
+          <button
+            onClick={() => setOpenDetails((p) => ({ ...p, [order.id]: !p[order.id] }))}
+            className="w-full text-center text-white/40 hover:text-white/70 text-xs py-1.5 transition-colors"
+          >
+            {openDetails[order.id] ? "Ocultar detalhes ▲" : "Ver detalhes do pedido ▾"}
+          </button>
+        </div>
+      </>
+    )
+  }
 
   return (
     <PlayerProvider>
@@ -400,7 +661,7 @@ function MinhaMusicaContent() {
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
           <RedeFizMusica />
 
-          {/* ── PEDIDOS ── */}
+          {/* ── PEDIDOS — sem abas: topo = precisa de você agora, carrossel = resto ── */}
           {orders.length === 0 ? (
             <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl mb-6">
               <p className="text-4xl mb-3">🎵</p>
@@ -408,347 +669,10 @@ function MinhaMusicaContent() {
             </div>
           ) : (
             <div className="mb-6">
-              {/* Abas: pagos / não pagos */}
-              <div className="flex gap-2 mb-5">
-                <button onClick={() => setTab("paid")} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${tab === "paid" ? "bg-pink-500/15 border border-pink-500/40 text-pink-200" : "border border-white/10 text-white/50 hover:text-white/80 hover:bg-white/[0.04]"}`}>
-                  Pagos
-                  <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${tab === "paid" ? "bg-pink-500/30 text-pink-100" : "bg-white/10 text-white/50"}`}>{paidOrders.length}</span>
-                </button>
-                <button onClick={() => setTab("unpaid")} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${tab === "unpaid" ? "bg-yellow-500/15 border border-yellow-500/40 text-yellow-200" : "border border-white/10 text-white/50 hover:text-white/80 hover:bg-white/[0.04]"}`}>
-                  Não pagos
-                  <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${tab === "unpaid" ? "bg-yellow-500/30 text-yellow-100" : "bg-white/10 text-white/50"}`}>{unpaidOrders.length}</span>
-                </button>
-              </div>
-
-              {/* ABA PAGOS */}
-              {tab === "paid" && (
-                <div className="space-y-4">
-                  {paidOrders.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl">
-                      <p className="text-3xl mb-2">🎵</p>
-                      <p className="text-sm">Você ainda não tem nenhuma música paga.</p>
-                      {unpaidOrders.length > 0 && <p className="text-xs text-gray-500 mt-1">Veja seus pedidos não pagos na outra aba.</p>}
-                    </div>
-                  ) : paidOrders.map((order) => {
-                const paid       = order.paymentStatus === "PAID"
-                const delivered  = order.status === "DELIVERED"
-                const approved   = !!order.lyricsApproved
-                // Escolha pendente: versões liberadas e o cliente ainda não escolheu (sem slug).
-                // Tem prioridade — aparece mesmo se algo marcou o pedido como entregue.
-                const escolhaPendente = paid && order.musicStatus === "RELEASED" && !order.slug && (order.tracks?.length ?? 0) > 0
-                const inProdPhase = paid && approved && !delivered && !escolhaPendente   // na fila / sendo produzida
-                const hasRevision      = !!order.revision
-                const revisionPending  = order.revision?.status === "PENDING"
-                const termAccepted     = !!order.sharing_term_accepted_at
-                // Música pronta com as 2 versões: experiência própria de "o que fazer agora".
-                const musicaPronta     = delivered && !!order.slug && termAccepted && (order.tracks?.length ?? 0) > 1
-                // Colapsa por padrão quando entregue E sem ação pendente (termo já aceito
-                // ou nem gerou slug ainda) — o portão do termo continua sempre visível.
-                const needsTermGate = delivered && !!order.slug && !termAccepted
-                const isCollapsible = delivered && !needsTermGate
-                const isExpanded = !!expandedOrders[order.id]
-
-                return (
-                  <div key={order.id} className={`relative overflow-hidden rounded-2xl border transition-all ${
-                    delivered
-                      ? "border-green-500/30 bg-green-500/5"
-                      : inProdPhase
-                        ? "border-fuchsia-500/40 bg-fuchsia-500/5"
-                        : "border-white/10 bg-white/[0.04]"
-                  }`}>
-
-                    {/* Barra de brilho animada quando em produção */}
-                    {inProdPhase && (
-                      <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
-                        <div className="absolute top-0 left-[-100%] w-2/3 h-full opacity-20"
-                             style={{
-                               background: "linear-gradient(90deg, transparent, #d946ef, transparent)",
-                               animation: "shimmer 2.5s infinite",
-                             }} />
-                      </div>
-                    )}
-
-                    <div className="p-6">
-                      {isCollapsible && !isExpanded ? (
-                        <button
-                          onClick={() => setExpandedOrders((p) => ({ ...p, [order.id]: true }))}
-                          className="w-full flex items-center gap-3 text-left"
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center text-lg shrink-0">🎁</div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">{order.subcategory}</p>
-                            <p className="text-xs text-white/40 truncate">{order.products?.name}</p>
-                          </div>
-                          <span className="text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full shrink-0">✓ Entregue</span>
-                          <span className="text-white/30 text-xs shrink-0">▾</span>
-                        </button>
-                      ) : (
-                      <>
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <p className="font-bold text-lg">{order.subcategory}</p>
-                            {order.is_revision && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
-                            )}
-                            {/* Plano contratado em destaque: é ele que decide o
-                                que aparece daqui pra baixo (fotos, QR, download,
-                                revisão), então o cliente precisa vê-lo sem caçar. */}
-                            {order.products?.name && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full border border-pink-500/40 bg-pink-500/15 text-pink-200 font-semibold">
-                                {order.products.name}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-400">
-                            #{order.id.slice(0, 8).toUpperCase()}
-                          </p>
-                        </div>
-                        {order.payments?.amount && (
-                          <p className="text-pink-400 font-bold whitespace-nowrap text-sm">
-                            R$ {Number(order.payments.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* JORNADA — stepper de 5 passos (ações do cliente + espera).
-                          Continua visível mesmo entregue (tudo verde) — abaixo dela,
-                          VersoesEntregues mostra a navegação "o que fazer agora"
-                          (Principal → Fotos → Player → Surpresa), que é outra coisa. */}
-                      {paid && (
-                        <div className="flex items-start mb-5">
-                          {JOURNEY.map((s, i) => {
-                            const st = journeyStepState(order, i)
-                            return (
-                              <div key={s.key} className="flex items-center flex-1 last:flex-none">
-                                <div className="flex flex-col items-center w-12">
-                                  <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] transition-all ${
-                                    st === "done"    ? "bg-green-400 text-black font-bold" :
-                                    st === "current" ? "bg-fuchsia-500 ring-4 ring-fuchsia-500/25 animate-pulse" :
-                                                       "bg-white/10 text-white/30"
-                                  }`}>
-                                    {st === "done" ? "✓" : <span className="text-xs">{s.icon}</span>}
-                                  </span>
-                                  <span className={`text-[10px] mt-1.5 text-center leading-tight ${
-                                    st === "done"    ? "text-green-400" :
-                                    st === "current" ? "text-fuchsia-300 font-semibold" :
-                                                       "text-gray-600"
-                                  }`}>{s.label}</span>
-                                </div>
-                                {i < JOURNEY.length - 1 && (
-                                  <span className={`h-0.5 flex-1 mx-1 mb-4 ${
-                                    journeyStepState(order, i) === "done" ? "bg-green-400/50" : "bg-white/10"
-                                  }`} />
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-
-                      {!paid && (
-                        <p className="text-yellow-400 text-sm mb-4">⏳ Aguardando confirmação do pagamento</p>
-                      )}
-
-                      {/* FLUXO GUIADO: Letra → Fotos → Aprovar & gerar */}
-                      {paid && !delivered && !approved && (
-                        <PreparoFlow
-                          orderId={order.id}
-                          photoToken={order.photo_token}
-                          isRevision={order.is_revision}
-                          temFotos={(order.features ?? TUDO).fotos > 0}
-                          onApproved={loadOrders}
-                        />
-                      )}
-
-                      {/* ESCOLHER VERSÃO — versões liberadas, cliente ainda não escolheu */}
-                      {escolhaPendente && (
-                        <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={loadOrders} />
-                      )}
-
-                      {/* EM PRODUÇÃO (sem ação): card pulsante. Fotos já foram travadas na aprovação. */}
-                      {inProdPhase && (
-                        <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-3 bg-fuchsia-500/10 border border-fuchsia-500/20">
-                          <span className="relative flex h-3 w-3 shrink-0">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-fuchsia-400 opacity-75" />
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-fuchsia-500" />
-                          </span>
-                          <div>
-                            <p className="text-fuchsia-300 font-semibold text-sm">Sua música está sendo criada</p>
-                            <p className="text-fuchsia-400/70 text-xs leading-relaxed">
-                              Pode fechar a página — avisamos por e-mail assim que ficar pronta.
-                              <strong className="text-fuchsia-200"> Você não precisa fazer nada.</strong>
-                            </p>
-                            <div className="mt-2 flex items-center gap-3 flex-wrap">
-                              <span className="text-fuchsia-300/70 text-[11px]">
-                                {gaveUpProd
-                                  ? "Está demorando um pouco mais que o normal — avisamos por e-mail. 💜"
-                                  : "⏳ Esta tela atualiza sozinha quando ficar pronta."}
-                              </span>
-                              <button
-                                onClick={() => { setGaveUpProd(false); loadOrders() }}
-                                className="text-[11px] underline text-fuchsia-300 hover:text-fuchsia-200"
-                              >
-                                Atualizar agora
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Badge de revisão */}
-                      {hasRevision && revisionPending && (
-                        <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-3 border border-orange-500/25 bg-orange-500/8">
-                          <span className="text-orange-400 text-lg">✏️</span>
-                          <div>
-                            <p className="text-orange-300 font-semibold text-sm">Revisão em análise</p>
-                            <p className="text-orange-400/60 text-xs">Nossa equipe vai entrar em contato em breve.</p>
-                          </div>
-                        </div>
-                      )}
-                      {hasRevision && !revisionPending && (
-                        <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-3 border border-fuchsia-500/25 bg-fuchsia-500/8">
-                          <span className="text-fuchsia-400 text-lg">✅</span>
-                          <div>
-                            <p className="text-fuchsia-300 font-semibold text-sm">Revisão aceita</p>
-                            <p className="text-fuchsia-400/60 text-xs">Sua nova versão está sendo produzida — veja o pedido de revisão na lista.</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Portão do Termo de Entrega Digital — antes de liberar o acesso */}
-                      {delivered && order.slug && !termAccepted && (
-                        <div className="rounded-xl border border-pink-500/25 bg-pink-500/[0.06] p-4 mb-2">
-                          <p className="text-sm font-semibold text-white mb-1">🔒 Sua música está pronta!</p>
-                          <p className="text-xs text-white/50 mb-3">
-                            Antes de ouvir, baixar e compartilhar, confirme o termo abaixo.
-                          </p>
-                          <label className="flex items-start gap-2 cursor-pointer mb-3">
-                            <input
-                              type="checkbox"
-                              checked={!!termChecked[order.id]}
-                              onChange={(e) => setTermChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
-                              className="w-4 h-4 mt-0.5 accent-pink-500 shrink-0"
-                            />
-                            <span className="text-xs text-white/60 leading-relaxed">
-                              Li e aceito o{" "}
-                              <a href="/legal/entrega-digital" className="text-pink-400 underline">Termo de Entrega Digital</a>
-                              {" "}e entendo que o <strong className="text-white/80">compartilhamento da música é de minha responsabilidade</strong>.
-                            </span>
-                          </label>
-                          <button
-                            onClick={() => acceptDeliveryTerm(order.id)}
-                            disabled={!termChecked[order.id] || acceptingTerm === order.id}
-                            className="w-full py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
-                          >
-                            {acceptingTerm === order.id ? "Liberando…" : "Aceitar e liberar minha música →"}
-                          </button>
-                        </div>
-                      )}
-
-                      {/* Música pronta com as 2 versões do Suno — ambas disponíveis */}
-                      {musicaPronta && (
-                        <VersoesEntregues
-                          orderId={order.id}
-                          tracks={order.tracks!}
-                          principalUrl={order.mp3Url ?? null}
-                          slug={order.slug ?? null}
-                          photoToken={order.photo_token}
-                          photoCount={order.photoCount}
-                          features={order.features ?? TUDO}
-                          canRevise={!hasRevision && !order.is_revision}
-                          onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
-                          onNaoGostei={() => router.push(`/contestar/${order.id}`)}
-                          onChanged={loadOrders}
-                        />
-                      )}
-
-                      {/* Ações — entrega legada (1 música, sem versões do Suno) */}
-                      <div className="flex flex-wrap gap-2">
-                        {delivered && order.slug && termAccepted && (order.tracks?.length ?? 0) <= 1 && (
-                          <>
-                            <a
-                              href={`/m/${order.slug}`}
-                              className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110"
-                              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 6px 24px rgba(240,25,107,0.35)" }}
-                            >
-                              ▶ Ouvir minha música
-                            </a>
-                            {order.mp3Url && (order.features ?? TUDO).download && (
-                              <a
-                                href={`/api/orders/${order.id}/musica/download`}
-                                download
-                                className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-white/15 text-white/80 hover:bg-white/5 transition-colors"
-                              >
-                                ⬇ Baixar MP3
-                              </a>
-                            )}
-                            {!hasRevision && (order.features ?? TUDO).qrcode && (
-                              <button
-                                onClick={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
-                                className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-[#B8963E]/40 text-[#B8963E] hover:bg-[#B8963E]/10 transition-colors"
-                              >
-                                📱 Imprimir QR e fazer a surpresa
-                              </button>
-                            )}
-                          </>
-                        )}
-                        {/* Entrega legada (1 faixa): o "não gostei" fica aqui. No fluxo de
-                            2 versões o botão vive dentro do passo Principal (VersoesEntregues). */}
-                        {delivered && termAccepted && !hasRevision && !order.is_revision && (order.features ?? TUDO).revisao && (order.tracks?.length ?? 0) <= 1 && (
-                          <button
-                            onClick={() => router.push(`/contestar/${order.id}`)}
-                            className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"
-                          >
-                            Não gostei dessa versão →
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Autorização opcional de divulgação — após a música entregue */}
-                      {delivered && order.slug && termAccepted && (
-                        <PublicacaoConsent orderId={order.id} initial={!!order.publication_consent} />
-                      )}
-
-                      {/* Detalhes do pedido — resumo do que foi preenchido */}
-                      <div className="mt-4 pt-3 border-t border-white/5">
-                        {openDetails[order.id] && <DetalhesPedido order={order} />}
-                        <button
-                          onClick={() => setOpenDetails((p) => ({ ...p, [order.id]: !p[order.id] }))}
-                          className="w-full text-center text-white/40 hover:text-white/70 text-xs py-1.5 transition-colors"
-                        >
-                          {openDetails[order.id] ? "Ocultar detalhes ▲" : "Ver detalhes do pedido ▾"}
-                        </button>
-                      </div>
-
-                      {isCollapsible && (
-                        <button
-                          onClick={() => setExpandedOrders((p) => ({ ...p, [order.id]: false }))}
-                          className="w-full text-center text-white/30 hover:text-white/60 text-xs py-1.5 mt-1 transition-colors"
-                        >
-                          ▲ Recolher
-                        </button>
-                      )}
-                      </>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-                </div>
-              )}
-
-              {/* ABA NÃO PAGOS */}
-              {tab === "unpaid" && (
-                <div className="space-y-2">
-                  {unpaidOrders.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl">
-                      <p className="text-3xl mb-2">✅</p>
-                      <p className="text-sm">Nenhum pedido aguardando pagamento.</p>
-                    </div>
-                  ) : (
-                    unpaidOrders.map((order) => {
+              {heroOrders.length > 0 && (
+                <div className="space-y-4 mb-6">
+                  {heroOrders.map((order) => {
+                    if (order.paymentStatus !== "PAID") {
                       const hasProduct = !!order.productId && !!order.products?.price
                       const href = hasProduct
                         ? `/checkout?orderId=${order.id}&productId=${order.productId}&productName=${encodeURIComponent(order.products!.name)}&price=${order.products!.price}`
@@ -770,12 +694,71 @@ function MinhaMusicaContent() {
                           </a>
                         </div>
                       )
-                    })
-                  )}
+                    }
+                    return (
+                      <div key={order.id} className="rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
+                        <div className="p-6">{renderOrderDetail(order)}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {shelfOrders.length > 0 && (
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                  {shelfOrders.map((order) => {
+                    const delivered = order.status === "DELIVERED"
+                    const principal = order.tracks?.find((t) => t.audioUrl === order.mp3Url) ?? order.tracks?.[0]
+                    return (
+                      <button
+                        key={order.id}
+                        onClick={() => setOpenDetailOrderId(order.id)}
+                        className="shrink-0 w-28 text-left group"
+                      >
+                        <div
+                          className="relative w-28 h-28 rounded-xl border border-white/10 flex items-center justify-center text-2xl bg-cover bg-center"
+                          style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
+                        >
+                          {!principal?.imageUrl && "🎁"}
+                          <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${delivered ? "bg-green-500/90 text-green-950" : "bg-fuchsia-500/90 text-fuchsia-950"}`}>
+                            {delivered ? "✓ Entregue" : "🎵 Em produção"}
+                          </span>
+                        </div>
+                        <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">{order.subcategory}</p>
+                        <p className="text-[11px] text-white/40 truncate">{order.products?.name}</p>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
           )}
+
+          {/* Modal de detalhes — aberto a partir de uma capinha do carrossel */}
+          {openDetailOrderId && (() => {
+            const order = orders.find((o) => o.id === openDetailOrderId)
+            if (!order) return null
+            return (
+              <div
+                className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={() => setOpenDetailOrderId(null)}
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#15111f] p-6"
+                >
+                  <button
+                    onClick={() => setOpenDetailOrderId(null)}
+                    className="float-right text-white/40 hover:text-white text-lg leading-none -mt-1"
+                    aria-label="Fechar"
+                  >
+                    ✕
+                  </button>
+                  {renderOrderDetail(order)}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Criar nova música — em baixo */}
           <button
@@ -789,10 +772,6 @@ function MinhaMusicaContent() {
             </div>
             <span className="text-xl opacity-60">🎵</span>
           </button>
-
-          <style>{`
-            @keyframes shimmer { 0% { left: -100% } 100% { left: 200% } }
-          `}</style>
 
           {/* Ajuda — regras desta tela */}
           <AjudaCliente />
