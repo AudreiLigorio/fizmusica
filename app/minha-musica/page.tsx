@@ -310,12 +310,13 @@ function MinhaMusicaContent() {
 
   // Sem abas: topo = só quem precisa de ação agora (empilhado, sem "escolher
   // um principal"); carrossel = todo o resto (em produção ou entregue).
-  // Abandonado não entra em nenhuma das duas — ver precisaAcao().
+  // Abandonado não vira card grande (perderia o "escolher um principal" pra
+  // sempre), mas também não some da tela — entra discreto no carrossel.
   const heroOrders = orders
     .filter((o) => precisaAcao(o))
     .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
   const shelfOrders = orders
-    .filter((o) => o.paymentStatus === "PAID" && !precisaAcao(o))
+    .filter((o) => (o.paymentStatus === "PAID" && !precisaAcao(o)) || (o.paymentStatus !== "PAID" && o.status === "ABANDONED"))
     .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
 
   // "Minhas músicas" não é dado novo — é derivado dos mesmos pedidos entregues
@@ -708,20 +709,23 @@ function MinhaMusicaContent() {
                 <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
                   {shelfOrders.map((order) => {
                     const delivered = order.status === "DELIVERED"
+                    const abandonado = order.paymentStatus !== "PAID"
                     const principal = order.tracks?.find((t) => t.audioUrl === order.mp3Url) ?? order.tracks?.[0]
                     return (
                       <button
                         key={order.id}
                         onClick={() => setOpenDetailOrderId(order.id)}
-                        className="shrink-0 w-28 text-left group"
+                        className={`shrink-0 w-28 text-left group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}
                       >
                         <div
                           className="relative w-28 h-28 rounded-xl border border-white/10 flex items-center justify-center text-2xl bg-cover bg-center"
-                          style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
+                          style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : abandonado ? "linear-gradient(135deg,#3a3a3a,#1f1f1f)" : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
                         >
-                          {!principal?.imageUrl && "🎁"}
-                          <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${delivered ? "bg-green-500/90 text-green-950" : "bg-fuchsia-500/90 text-fuchsia-950"}`}>
-                            {delivered ? "✓ Entregue" : "🎵 Em produção"}
+                          {!principal?.imageUrl && (abandonado ? "💳" : "🎁")}
+                          <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            abandonado ? "bg-white/15 text-white/70" : delivered ? "bg-green-500/90 text-green-950" : "bg-fuchsia-500/90 text-fuchsia-950"
+                          }`}>
+                            {abandonado ? "💳 Pendente" : delivered ? "✓ Entregue" : "🎵 Em produção"}
                           </span>
                         </div>
                         <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">{order.subcategory}</p>
@@ -754,7 +758,30 @@ function MinhaMusicaContent() {
                   >
                     ✕
                   </button>
-                  {renderOrderDetail(order)}
+                  {order.paymentStatus !== "PAID" ? (
+                    <div>
+                      <p className="font-bold text-lg mb-1">{order.subcategory}</p>
+                      <p className="text-xs text-gray-400 mb-4">
+                        {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
+                      </p>
+                      <p className="text-sm text-white/60 mb-4">
+                        Esse pedido não foi finalizado. Se ainda quiser essa música, é só retomar o pagamento.
+                      </p>
+                      <a
+                        href={
+                          order.productId && order.products?.price
+                            ? `/checkout?orderId=${order.id}&productId=${order.productId}&productName=${encodeURIComponent(order.products.name)}&price=${order.products.price}`
+                            : `/produtos?orderId=${order.id}`
+                        }
+                        className="block text-center py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                        style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+                      >
+                        {order.productId && order.products?.price ? "Finalizar pagamento →" : "Escolher produto →"}
+                      </a>
+                    </div>
+                  ) : (
+                    renderOrderDetail(order)
+                  )}
                 </div>
               </div>
             )
