@@ -7,6 +7,7 @@ import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
 import MinhasPlaylists from "./MinhasPlaylists"
+import { useToast } from "./ToastContext"
 
 export type LibraryTrack = {
   id: string
@@ -52,6 +53,7 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
   const [creatingPlaylistOpen, setCreatingPlaylistOpen] = useState(false)
   const [pendingOrderId, setPendingOrderId] = useState<string | undefined>(undefined)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { showToast } = useToast()
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -89,6 +91,7 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
     const d = await res.json().catch(() => ({}))
     const lista = await carregar()
     onPlaylistsChanged?.()
+    showToast("Adicionado com sucesso ✓")
     // Só abre o modal quando há de fato mais de uma playlist pra diferenciar
     // — com uma só, a raia logo abaixo já mostra o resultado sozinha.
     if (d.playlist?.id && lista.length > 1) setOpenPlaylistId(d.playlist.id)
@@ -99,6 +102,7 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
     const lista = await carregar()
     onPlaylistsChanged?.()
+    showToast("Adicionado com sucesso ✓")
     if (lista.length > 1) setOpenPlaylistId(playlistId)
   }
 

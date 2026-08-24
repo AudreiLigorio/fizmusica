@@ -6,6 +6,7 @@ import { usePlayer } from "./PlayerContext"
 import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
+import { useToast } from "./ToastContext"
 
 type CatalogItem = {
   orderId: string
@@ -49,6 +50,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { showToast } = useToast()
 
   // Playlist é a mesma tabela/API de "Minhas Músicas" (guarda ids de pedido,
   // não importa se o pedido é seu ou de outra pessoa), só que com fetch
@@ -115,6 +117,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
     const d = await res.json().catch(() => ({}))
     const lista = await carregarPlaylists()
     onPlaylistsChanged?.()
+    showToast("Adicionado com sucesso ✓")
     // Só abre o modal quando há de fato mais de uma playlist pra diferenciar
     // — com uma só, a raia em "Minhas Músicas" já mostra o resultado sozinha.
     if (d.playlist?.id && lista.length > 1) setOpenPlaylistId(d.playlist.id)
@@ -125,6 +128,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
     const lista = await carregarPlaylists()
     onPlaylistsChanged?.()
+    showToast("Adicionado com sucesso ✓")
     if (lista.length > 1) setOpenPlaylistId(playlistId)
   }
 

@@ -19,6 +19,7 @@ import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
 import RedeFizMusica from "./RedeFizMusica"
 import { PlayerProvider } from "./PlayerContext"
+import { ToastProvider } from "./ToastContext"
 import MiniPlayer from "./MiniPlayer"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
@@ -595,6 +596,7 @@ function MinhaMusicaContent() {
 
   return (
     <PlayerProvider>
+    <ToastProvider>
     <div className="relative min-h-screen text-white font-sans overflow-hidden" style={{ background: "#07060d" }}>
       {/* Fundo gradiente da marca */}
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -898,6 +900,7 @@ function MinhaMusicaContent() {
       </div>
     </div>
     <MiniPlayer />
+    </ToastProvider>
     </PlayerProvider>
   )
 }

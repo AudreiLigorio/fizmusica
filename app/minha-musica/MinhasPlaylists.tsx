@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
+import { useToast } from "./ToastContext"
 
 type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string }
 type PlaylistFull = { id: string; nome: string; tracks: Track[] }
@@ -15,6 +16,7 @@ type PlaylistFull = { id: string; nome: string; tracks: Track[] }
 export default function MinhasPlaylists({ version, embedded }: { version: number; embedded?: boolean }) {
   const [playlists, setPlaylists] = useState<PlaylistFull[] | null>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { showToast } = useToast()
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -43,6 +45,7 @@ export default function MinhasPlaylists({ version, embedded }: { version: number
     setPlaylists((prev) => prev?.map((pl) => (pl.id === playlistId ? { ...pl, tracks: pl.tracks.filter((t) => t.orderId !== orderId) } : pl)) ?? null)
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ removeOrderId: orderId }) })
+    showToast("Excluído com sucesso ✓")
   }
 
   if (!playlists || playlists.length === 0) return null

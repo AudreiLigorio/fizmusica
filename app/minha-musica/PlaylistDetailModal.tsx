@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
+import { useToast } from "./ToastContext"
 
 type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string }
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
@@ -24,6 +25,7 @@ export default function PlaylistDetailModal({
   const [playlist, setPlaylist] = useState<Playlist | null>(null)
   const [tracks, setTracks] = useState<Track[] | null>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { showToast } = useToast()
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -51,6 +53,7 @@ export default function PlaylistDetailModal({
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ removeOrderId: orderId }) })
     onChanged?.()
+    showToast("Excluído com sucesso ✓")
   }
 
   async function excluirPlaylist() {
