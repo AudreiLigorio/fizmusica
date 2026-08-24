@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
+import CreatePlaylistModal from "./CreatePlaylistModal"
 
 export type LibraryTrack = {
   id: string
@@ -46,6 +47,10 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
   // Toque no "+" — o caminho que funciona em qualquer aparelho (arrastar é
   // só desktop; drag nativo HTML5 não existe em navegador mobile).
   const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
+  // Criação de playlist: orderId fica pendente enquanto o modal de nome está
+  // aberto — undefined quando a playlist nasce vazia (raia "Minha Playlist").
+  const [creatingPlaylistOpen, setCreatingPlaylistOpen] = useState(false)
+  const [pendingOrderId, setPendingOrderId] = useState<string | undefined>(undefined)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
 
   async function authHeaders() {
@@ -62,28 +67,37 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
 
   useEffect(() => { carregar() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function criarPlaylist(orderId: string) {
-    const nome = window.prompt("Nome da playlist:")
-    if (!nome?.trim()) return
+  function abrirCriarPlaylist(orderId?: string) {
+    setPendingOrderId(orderId)
+    setCreatingPlaylistOpen(true)
+  }
+
+  async function confirmarCriarPlaylist(nome: string) {
+    setCreatingPlaylistOpen(false)
     const headers = await authHeaders()
-    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome: nome.trim(), orderId }) })
+    const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    const d = await res.json().catch(() => ({}))
     await carregar()
+    // Leva o cliente direto pra playlist recém-criada — sem isso, o card
+    // novo entra no fim de uma lista que rola horizontal e passa despercebido.
+    if (d.playlist?.id) setOpenPlaylistId(d.playlist.id)
   }
 
   async function adicionar(playlistId: string, orderId: string) {
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
     await carregar()
+    setOpenPlaylistId(playlistId)
   }
 
   if (tracks.length === 0) return null
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
-      <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">🗂️ Minhas músicas &amp; playlists</h3>
+      <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">🗂️ Minhas Músicas</h3>
       <p className="text-xs text-white/50 mb-3">Toque no + de uma música para adicionar a uma playlist.</p>
 
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 mb-4">
         {tracks.map((t) => {
           const isPlaying = nowPlaying?.id === t.id && playing
           return (
@@ -120,7 +134,10 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
             </div>
           )
         })}
+      </div>
 
+      <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Minha Playlist</p>
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
         {playlists?.map((pl) => (
           <button
             key={pl.id}
@@ -146,13 +163,17 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
         ))}
 
         <div
+          role="button"
+          tabIndex={0}
+          onClick={() => abrirCriarPlaylist()}
+          onKeyDown={(e) => { if (e.key === "Enter") abrirCriarPlaylist() }}
           onDragOver={(e) => { e.preventDefault(); setOverZone("new") }}
           onDragLeave={() => setOverZone(null)}
-          onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) criarPlaylist(dragId) }}
-          className={`shrink-0 w-32 h-[104px] rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 text-center px-2 transition-colors ${overZone === "new" ? "border-fuchsia-500/60 bg-fuchsia-500/10 text-white" : "border-white/15 text-white/40"}`}
+          onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) abrirCriarPlaylist(dragId) }}
+          className={`shrink-0 w-32 h-[104px] rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 text-center px-2 cursor-pointer transition-colors ${overZone === "new" ? "border-fuchsia-500/60 bg-fuchsia-500/10 text-white" : "border-white/15 text-white/40 hover:text-white/70 hover:border-white/25"}`}
         >
           <span className="text-lg">➕</span>
-          <span className="text-[10px] leading-tight">Arraste aqui para criar uma playlist</span>
+          <span className="text-[10px] leading-tight">Nova playlist</span>
         </div>
       </div>
 
@@ -162,7 +183,12 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
         playlists={playlists}
         onClose={() => setAddingTrackId(null)}
         onAdd={(playlistId) => { if (addingTrackId) adicionar(playlistId, addingTrackId) }}
-        onCreateNew={() => { if (addingTrackId) criarPlaylist(addingTrackId) }}
+        onCreateNew={() => abrirCriarPlaylist(addingTrackId ?? undefined)}
+      />
+      <CreatePlaylistModal
+        open={creatingPlaylistOpen}
+        onClose={() => setCreatingPlaylistOpen(false)}
+        onCreate={confirmarCriarPlaylist}
       />
     </div>
   )

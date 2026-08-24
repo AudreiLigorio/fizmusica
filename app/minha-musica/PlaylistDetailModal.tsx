@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 
@@ -63,7 +64,7 @@ export default function PlaylistDetailModal({
 
   if (!playlistId) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -116,6 +117,7 @@ export default function PlaylistDetailModal({
           Excluir playlist
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

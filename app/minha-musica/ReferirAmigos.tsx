@@ -36,7 +36,7 @@ export default function ReferirAmigos() {
     // Regra do funil: compartilhamento não gera disco, só conta a etapa 1.
     await fetch("/api/referral/share", { method: "POST", headers }).catch(() => {})
     setSharing(false)
-    const msg = `Oi! Fiz uma música personalizada na Fiz Música e lembrei de você — dá uma olhada: ${link}`
+    const msg = `Oi! Fiz uma música personalizada pra alguém especial na Fiz Música e me emocionei com o resultado 🥹🎶 Dá pra criar uma pra quem você ama também, é rapidinho: ${link}`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener")
     await carregar()
   }

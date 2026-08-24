@@ -1,5 +1,7 @@
 "use client"
 
+import { createPortal } from "react-dom"
+
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
 
 // Arrastar-e-soltar não existe em navegador mobile (drag nativo HTML5 é só
@@ -20,7 +22,7 @@ export default function AddToPlaylistModal({
 }) {
   if (!open) return null
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -55,6 +57,7 @@ export default function AddToPlaylistModal({
           ➕ Nova playlist
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

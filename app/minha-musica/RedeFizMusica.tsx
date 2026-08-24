@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
+import CreatePlaylistModal from "./CreatePlaylistModal"
 
 type CatalogItem = {
   orderId: string
@@ -72,6 +73,10 @@ export default function RedeFizMusica() {
   const [overZone, setOverZone] = useState<string | null>(null)
   const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
   const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
+  // Criação de playlist: orderId fica pendente enquanto o modal de nome está
+  // aberto — undefined quando a playlist nasce vazia.
+  const [creatingPlaylistOpen, setCreatingPlaylistOpen] = useState(false)
+  const [pendingOrderId, setPendingOrderId] = useState<string | undefined>(undefined)
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -94,18 +99,27 @@ export default function RedeFizMusica() {
 
   useEffect(() => { carregar(); carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function criarPlaylist(orderId: string) {
-    const nome = window.prompt("Nome da playlist:")
-    if (!nome?.trim()) return
+  function abrirCriarPlaylist(orderId?: string) {
+    setPendingOrderId(orderId)
+    setCreatingPlaylistOpen(true)
+  }
+
+  async function confirmarCriarPlaylist(nome: string) {
+    setCreatingPlaylistOpen(false)
     const headers = await authHeaders()
-    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome: nome.trim(), orderId }) })
+    const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    const d = await res.json().catch(() => ({}))
     await carregarPlaylists()
+    // Leva o cliente direto pra playlist recém-criada — sem isso, o card
+    // novo entra no fim de uma lista que rola horizontal e passa despercebido.
+    if (d.playlist?.id) setOpenPlaylistId(d.playlist.id)
   }
 
   async function adicionarNaPlaylist(playlistId: string, orderId: string) {
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
     await carregarPlaylists()
+    setOpenPlaylistId(playlistId)
   }
 
   async function favoritar(orderId: string) {
@@ -212,10 +226,14 @@ export default function RedeFizMusica() {
             ))}
 
             <div
+              role="button"
+              tabIndex={0}
+              onClick={() => abrirCriarPlaylist()}
+              onKeyDown={(e) => { if (e.key === "Enter") abrirCriarPlaylist() }}
               onDragOver={(e) => { e.preventDefault(); setOverZone("new") }}
               onDragLeave={() => setOverZone(null)}
-              onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) criarPlaylist(dragId) }}
-              className={`shrink-0 w-32 h-[104px] rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 text-center px-2 transition-colors ${overZone === "new" ? "border-fuchsia-500/60 bg-fuchsia-500/10 text-white" : "border-white/15 text-white/40"}`}
+              onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) abrirCriarPlaylist(dragId) }}
+              className={`shrink-0 w-32 h-[104px] rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 text-center px-2 cursor-pointer transition-colors ${overZone === "new" ? "border-fuchsia-500/60 bg-fuchsia-500/10 text-white" : "border-white/15 text-white/40 hover:text-white/70 hover:border-white/25"}`}
             >
               <span className="text-lg">➕</span>
               <span className="text-[10px] leading-tight">Nova playlist</span>
@@ -268,6 +286,14 @@ export default function RedeFizMusica() {
                 >
                   {it.favorited ? "❤️" : "🤍"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setAddingTrackId(it.orderId)}
+                  aria-label="Adicionar à playlist"
+                  className="absolute top-1.5 right-9 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-sm font-bold transition-transform hover:scale-110"
+                >
+                  +
+                </button>
               </div>
               <p className={`text-xs font-medium mt-1.5 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
               <p className="text-[11px] text-white/40 truncate">{it.occasion}</p>
@@ -282,7 +308,12 @@ export default function RedeFizMusica() {
         playlists={playlists}
         onClose={() => setAddingTrackId(null)}
         onAdd={(playlistId) => { if (addingTrackId) adicionarNaPlaylist(playlistId, addingTrackId) }}
-        onCreateNew={() => { if (addingTrackId) criarPlaylist(addingTrackId) }}
+        onCreateNew={() => abrirCriarPlaylist(addingTrackId ?? undefined)}
+      />
+      <CreatePlaylistModal
+        open={creatingPlaylistOpen}
+        onClose={() => setCreatingPlaylistOpen(false)}
+        onCreate={confirmarCriarPlaylist}
       />
     </div>
   )
