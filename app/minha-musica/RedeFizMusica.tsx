@@ -59,7 +59,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
   )
 }
 
-export default function RedeFizMusica() {
+export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChanged?: () => void }) {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
@@ -118,6 +118,7 @@ export default function RedeFizMusica() {
     const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
     const d = await res.json().catch(() => ({}))
     await carregarPlaylists()
+    onPlaylistsChanged?.()
     // Leva o cliente direto pra playlist recém-criada — sem isso, o card
     // novo entra no fim de uma lista que rola horizontal e passa despercebido.
     if (d.playlist?.id) setOpenPlaylistId(d.playlist.id)
@@ -127,6 +128,7 @@ export default function RedeFizMusica() {
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
     await carregarPlaylists()
+    onPlaylistsChanged?.()
     setOpenPlaylistId(playlistId)
   }
 
@@ -310,7 +312,7 @@ export default function RedeFizMusica() {
         })}
       </div>
 
-      <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={carregarPlaylists} />
+      <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={() => { carregarPlaylists(); onPlaylistsChanged?.() }} />
       <AddToPlaylistModal
         open={!!addingTrackId}
         playlists={playlists}

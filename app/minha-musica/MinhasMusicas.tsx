@@ -39,7 +39,7 @@ function gradientFor(id: string): string {
 // "Minhas músicas" não guarda nada de novo — é derivado dos pedidos entregues
 // (prop `tracks`, montada em page.tsx a partir dos mesmos `orders` que a
 // lista de pedidos já usa). Só a playlist (agrupamento) tem tabela própria.
-export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
+export default function MinhasMusicas({ tracks, onPlaylistsChanged }: { tracks: LibraryTrack[]; onPlaylistsChanged?: () => void }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<string | null>(null)
@@ -86,6 +86,7 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
     const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
     const d = await res.json().catch(() => ({}))
     await carregar()
+    onPlaylistsChanged?.()
     // Leva o cliente direto pra playlist recém-criada — sem isso, o card
     // novo entra no fim de uma lista que rola horizontal e passa despercebido.
     if (d.playlist?.id) setOpenPlaylistId(d.playlist.id)
@@ -95,6 +96,7 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
     await carregar()
+    onPlaylistsChanged?.()
     setOpenPlaylistId(playlistId)
   }
 
@@ -185,7 +187,7 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
         </div>
       </div>
 
-      <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={carregar} />
+      <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={() => { carregar(); onPlaylistsChanged?.() }} />
       <AddToPlaylistModal
         open={!!addingTrackId}
         playlists={playlists}

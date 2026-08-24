@@ -18,6 +18,7 @@ import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
 import RedeFizMusica from "./RedeFizMusica"
+import MinhasPlaylists from "./MinhasPlaylists"
 import { PlayerProvider } from "./PlayerContext"
 import MiniPlayer from "./MiniPlayer"
 import { dbTime } from "@/lib/date"
@@ -185,6 +186,12 @@ function MinhaMusicaContent() {
   const [claimMsg, setClaimMsg]     = useState<{ ok: boolean; text: string } | null>(null)
   const [claiming, setClaiming]     = useState(false)
   const claimed = searchParams.get("reivindicado")
+
+  // "Minhas Músicas" e "Rede Fiz Música" guardam a lista de playlists cada
+  // uma na sua própria memória (design já existente) — esse contador avisa
+  // a raia de "Minhas Playlists" pra recarregar sempre que uma das duas
+  // criar/alterar uma playlist, sem precisar compartilhar estado de verdade.
+  const [playlistsVersion, setPlaylistsVersion] = useState(0)
 
   async function loadOrders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -829,10 +836,14 @@ function MinhaMusicaContent() {
           <ReferirAmigos />
 
           {/* Minhas músicas & playlists — auto-populado dos pedidos entregues */}
-          <MinhasMusicas tracks={libraryTracks} />
+          <MinhasMusicas tracks={libraryTracks} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+
+          {/* Uma raia por playlist, com as músicas já dentro — populada por
+              "Minha Playlist" acima ou pelo + na Rede Fiz Música abaixo. */}
+          <MinhasPlaylists version={playlistsVersion} />
 
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
-          <RedeFizMusica />
+          <RedeFizMusica onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
           {/* Criar nova música — CTA principal da tela, precisa se destacar
               de verdade, não só mais um card discreto. */}
