@@ -31,8 +31,17 @@ export default function MiniPlayer() {
         onEnded={close}
       />
 
-      {/* barra fixa — só dentro de /minha-musica */}
-      <div className="fixed left-0 right-0 bottom-0 z-40 bg-[#130e1c]/95 backdrop-blur-md border-t border-white/10 px-4 py-2.5">
+      {/* barra fixa — só dentro de /minha-musica. Cor sólida via style (não
+          a classe utilitária bg-[...]/opacidade) pra não depender de
+          backdrop-filter renderizar direito em todo navegador — sem o
+          filtro, a barra tem que continuar exatamente na cor do app,
+          nunca ficar clara/genérica. Sem botão de fechar: o player some
+          sozinho quando o cliente sai de /minha-musica; enquanto estiver
+          na tela, pausar já resolve. */}
+      <div
+        className="fixed left-0 right-0 bottom-0 z-40 border-t border-white/10 px-4 py-2.5"
+        style={{ background: "#130e1c", backdropFilter: "blur(14px)" }}
+      >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <button onClick={openFull} className="flex items-center gap-3 flex-1 min-w-0 text-left">
             <div
@@ -46,12 +55,12 @@ export default function MiniPlayer() {
           </button>
           <button
             onClick={toggle}
-            className="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center text-xs shrink-0"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 text-white"
+            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
             aria-label={playing ? "Pausar" : "Tocar"}
           >
             {playing ? "❚❚" : "▶"}
           </button>
-          <button onClick={close} className="text-white/30 hover:text-white/70 text-sm shrink-0" aria-label="Fechar player">✕</button>
         </div>
       </div>
 
