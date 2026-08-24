@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import PlaylistDetailModal from "./PlaylistDetailModal"
+import AddToPlaylistModal from "./AddToPlaylistModal"
 
 export type LibraryTrack = {
   id: string
@@ -42,6 +43,9 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
   const [dragId, setDragId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<string | null>(null)
   const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
+  // Toque no "+" — o caminho que funciona em qualquer aparelho (arrastar é
+  // só desktop; drag nativo HTML5 não existe em navegador mobile).
+  const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
 
   async function authHeaders() {
@@ -77,34 +81,43 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
       <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">🗂️ Minhas músicas &amp; playlists</h3>
-      <p className="text-xs text-white/50 mb-3">Arraste uma música para começar uma coleção.</p>
+      <p className="text-xs text-white/50 mb-3">Toque no + de uma música para adicionar a uma playlist.</p>
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
         {tracks.map((t) => {
           const isPlaying = nowPlaying?.id === t.id && playing
           return (
-            <button
-              key={t.id}
-              type="button"
-              disabled={!t.audioUrl}
-              onClick={() => t.audioUrl && playTrack({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc })}
-              draggable
-              onDragStart={() => setDragId(t.id)}
-              onDragEnd={() => setDragId(null)}
-              className="shrink-0 w-28 group text-left disabled:cursor-default"
-            >
+            <div key={t.id} className="shrink-0 w-28 group">
               <div
-                className="relative w-28 h-28 rounded-xl flex items-center justify-center text-2xl border border-white/10 cursor-grab active:cursor-grabbing bg-cover bg-center"
+                className="relative w-28 h-28 rounded-xl border border-white/10 cursor-grab active:cursor-grabbing bg-cover bg-center"
                 style={{
                   background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradientFor(t.id),
                   opacity: dragId === t.id ? 0.4 : 1,
                 }}
+                draggable
+                onDragStart={() => setDragId(t.id)}
+                onDragEnd={() => setDragId(null)}
               >
-                {!t.imageUrl && "▶"}
-                {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
+                <button
+                  type="button"
+                  disabled={!t.audioUrl}
+                  onClick={() => t.audioUrl && playTrack({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc })}
+                  className="absolute inset-0 flex items-center justify-center text-2xl disabled:cursor-default"
+                >
+                  {!t.imageUrl && "▶"}
+                  {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAddingTrackId(t.id)}
+                  aria-label="Adicionar à playlist"
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 transition-transform"
+                >
+                  +
+                </button>
               </div>
               <p className={`text-xs font-medium mt-1.5 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
-            </button>
+            </div>
           )
         })}
 
@@ -144,6 +157,13 @@ export default function MinhasMusicas({ tracks }: { tracks: LibraryTrack[] }) {
       </div>
 
       <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={carregar} />
+      <AddToPlaylistModal
+        open={!!addingTrackId}
+        playlists={playlists}
+        onClose={() => setAddingTrackId(null)}
+        onAdd={(playlistId) => { if (addingTrackId) adicionar(playlistId, addingTrackId) }}
+        onCreateNew={() => { if (addingTrackId) criarPlaylist(addingTrackId) }}
+      />
     </div>
   )
 }

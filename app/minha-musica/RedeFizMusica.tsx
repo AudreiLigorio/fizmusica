@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import PlaylistDetailModal from "./PlaylistDetailModal"
+import AddToPlaylistModal from "./AddToPlaylistModal"
 
 type CatalogItem = {
   orderId: string
@@ -70,6 +71,7 @@ export default function RedeFizMusica() {
   const [dragId, setDragId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<string | null>(null)
   const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
+  const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -155,28 +157,37 @@ export default function RedeFizMusica() {
 
       {favoritados.length > 0 && (
         <div className="mb-4 pb-4 border-b border-white/5">
-          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">❤️ Favoritas — arraste para uma playlist</p>
+          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">❤️ Favoritas — toque no + para adicionar a uma playlist</p>
           <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
             {favoritados.map((it) => {
               const isPlaying = nowPlaying?.id === it.orderId && playing
               return (
-                <button
-                  key={it.orderId}
-                  type="button"
-                  onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc })}
-                  draggable
-                  onDragStart={() => setDragId(it.orderId)}
-                  onDragEnd={() => setDragId(null)}
-                  className="shrink-0 w-28 group text-left"
-                >
+                <div key={it.orderId} className="shrink-0 w-28 group">
                   <div
                     className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center cursor-grab active:cursor-grabbing"
                     style={{ backgroundImage: `url(${it.imageUrl})`, opacity: dragId === it.orderId ? 0.4 : 1 }}
+                    draggable
+                    onDragStart={() => setDragId(it.orderId)}
+                    onDragEnd={() => setDragId(null)}
                   >
-                    {isPlaying && <div className="absolute inset-0 bg-black/35 flex items-center justify-center text-xl">❚❚</div>}
+                    <button
+                      type="button"
+                      onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc })}
+                      className="absolute inset-0 flex items-center justify-center text-2xl"
+                    >
+                      {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAddingTrackId(it.orderId)}
+                      aria-label="Adicionar à playlist"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 transition-transform"
+                    >
+                      +
+                    </button>
                   </div>
                   <p className={`text-xs font-medium mt-1.5 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{it.title}</p>
-                </button>
+                </div>
               )
             })}
 
@@ -266,6 +277,13 @@ export default function RedeFizMusica() {
       </div>
 
       <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={carregarPlaylists} />
+      <AddToPlaylistModal
+        open={!!addingTrackId}
+        playlists={playlists}
+        onClose={() => setAddingTrackId(null)}
+        onAdd={(playlistId) => { if (addingTrackId) adicionarNaPlaylist(playlistId, addingTrackId) }}
+        onCreateNew={() => { if (addingTrackId) criarPlaylist(addingTrackId) }}
+      />
     </div>
   )
 }
