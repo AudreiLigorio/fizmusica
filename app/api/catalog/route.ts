@@ -81,9 +81,21 @@ export async function GET(req: NextRequest) {
       }
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
-    // Favoritados sempre primeiro (pedido do Audrei: "se o cliente favoritar
-    // tem que manter como as primeiras"); dentro de cada grupo, mais recentes.
-    .sort((a, b) => Number(b.favorited) - Number(a.favorited) || +new Date(b.createdAt) - +new Date(a.createdAt))
 
-  return NextResponse.json({ items })
+  // Favoritados sempre primeiro (pedido do Audrei: "se o cliente favoritar
+  // tem que manter como as primeiras"). Dentro de cada grupo, embaralhado —
+  // por data sempre soterrava os pedidos antigos conforme o catálogo
+  // crescia; embaralhar dá sensação de descoberta de verdade a cada visita.
+  function embaralhar<T>(arr: T[]): T[] {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[a[i], a[j]] = [a[j], a[i]]
+    }
+    return a
+  }
+  const favoritados = embaralhar(items.filter((i) => i.favorited))
+  const resto        = embaralhar(items.filter((i) => !i.favorited))
+
+  return NextResponse.json({ items: [...favoritados, ...resto] })
 }
