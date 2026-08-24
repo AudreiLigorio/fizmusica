@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
+import PlaylistDetailModal from "./PlaylistDetailModal"
 
 type CatalogItem = {
   orderId: string
@@ -68,6 +69,7 @@ export default function RedeFizMusica() {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<string | null>(null)
+  const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -179,12 +181,14 @@ export default function RedeFizMusica() {
             })}
 
             {playlists?.map((pl) => (
-              <div
+              <button
                 key={pl.id}
+                type="button"
+                onClick={() => setOpenPlaylistId(pl.id)}
                 onDragOver={(e) => { e.preventDefault(); setOverZone(pl.id) }}
                 onDragLeave={() => setOverZone(null)}
                 onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) adicionarNaPlaylist(pl.id, dragId) }}
-                className={`shrink-0 w-32 rounded-xl border p-3 transition-colors ${overZone === pl.id ? "border-fuchsia-500/60 bg-fuchsia-500/10" : "border-white/10 bg-black/20"}`}
+                className={`shrink-0 w-32 text-left rounded-xl border p-3 transition-colors ${overZone === pl.id ? "border-fuchsia-500/60 bg-fuchsia-500/10" : "border-white/10 bg-black/20"}`}
               >
                 <div className="grid grid-cols-2 gap-0.5 w-12 h-12 rounded-lg overflow-hidden mb-2">
                   {Array.from({ length: 4 }).map((_, i) => (
@@ -193,7 +197,7 @@ export default function RedeFizMusica() {
                 </div>
                 <p className="text-xs font-medium truncate">{pl.nome}</p>
                 <p className="text-[11px] text-white/40">{pl.track_order_ids.length} música{pl.track_order_ids.length === 1 ? "" : "s"}</p>
-              </div>
+              </button>
             ))}
 
             <div
@@ -260,6 +264,8 @@ export default function RedeFizMusica() {
           )
         })}
       </div>
+
+      <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={carregarPlaylists} />
     </div>
   )
 }

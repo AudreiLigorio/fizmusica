@@ -14,14 +14,64 @@ async function getUserFromAuth(req: NextRequest) {
   return data.user
 }
 
-// Adiciona uma música (drag-and-drop numa playlist já existente) — idempotente,
-// não duplica se a faixa já estiver lá.
+// Detalhe da playlist — resolve os ids em faixas tocáveis (título, capa,
+// áudio). Título é sempre o derivado da ocasião, nunca o real do Suno:
+// a playlist pode ter música de outra conta (favoritada na Rede Fiz
+// Música), então a mesma regra de privacidade do catálogo vale aqui.
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getUserFromAuth(req)
+  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
+  const { id } = await params
+
+  const supabase = createServerClient()
+  const { data: pl, error: findErr } = await supabase
+    .from("playlists")
+    .select("id, nome, track_order_ids")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+  if (findErr || !pl) return NextResponse.json({ error: "Playlist não encontrada." }, { status: 404 })
+
+  const ids: string[] = pl.track_order_ids ?? []
+  if (ids.length === 0) return NextResponse.json({ playlist: pl, tracks: [] })
+
+  const { data: orders } = await supabase.from("orders").select("id, subcategory, sunoTracks").in("id", ids)
+  const { data: gm } = await supabase.from("generated_music").select("orderId, mp3Url").in("orderId", ids)
+  const mp3ByOrder: Record<string, string | null> = {}
+  for (const g of gm ?? []) mp3ByOrder[g.orderId as string] = g.mp3Url ?? null
+
+  type Track = { audioUrl: string; imageUrl: string | null }
+  const byId: Record<string, { subcategory: string; sunoTracks: Track[] | null }> = {}
+  for (const o of orders ?? []) byId[o.id] = { subcategory: o.subcategory, sunoTracks: (o.sunoTracks as Track[] | null) ?? null }
+
+  const tracks = ids
+    .map((orderId) => {
+      const o = byId[orderId]
+      if (!o) return null
+      const mp3Url = mp3ByOrder[orderId]
+      const principal = o.sunoTracks?.find((t) => t.audioUrl === mp3Url) ?? o.sunoTracks?.[0]
+      if (!principal?.audioUrl) return null
+      return {
+        orderId,
+        title: `Uma canção de ${o.subcategory}`,
+        occasion: o.subcategory,
+        imageUrl: principal.imageUrl,
+        audioUrl: principal.audioUrl,
+      }
+    })
+    .filter((t): t is NonNullable<typeof t> => t !== null)
+
+  return NextResponse.json({ playlist: pl, tracks })
+}
+
+// Adiciona ou remove uma música (drag-and-drop, ou botão de remover na tela
+// de detalhe) — idempotente, não duplica se a faixa já estiver lá.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getUserFromAuth(req)
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
   const { id } = await params
-  const { addOrderId } = await req.json().catch(() => ({}))
-  if (!addOrderId) return NextResponse.json({ error: "Faixa inválida." }, { status: 400 })
+  const { addOrderId, removeOrderId } = await req.json().catch(() => ({}))
+  if (!addOrderId && !removeOrderId) return NextResponse.json({ error: "Faixa inválida." }, { status: 400 })
 
   const supabase = createServerClient()
   const { data: pl, error: findErr } = await supabase
@@ -32,8 +82,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .single()
   if (findErr || !pl) return NextResponse.json({ error: "Playlist não encontrada." }, { status: 404 })
 
-  const ids: string[] = pl.track_order_ids ?? []
-  if (!ids.includes(addOrderId)) ids.push(addOrderId)
+  let ids: string[] = pl.track_order_ids ?? []
+  if (addOrderId && !ids.includes(addOrderId)) ids.push(addOrderId)
+  if (removeOrderId) ids = ids.filter((i) => i !== removeOrderId)
 
   const { data, error } = await supabase
     .from("playlists")
