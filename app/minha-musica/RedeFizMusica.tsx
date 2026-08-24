@@ -99,6 +99,14 @@ export default function RedeFizMusica() {
 
   useEffect(() => { carregar(); carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  function abrirAdicionar(orderId: string) {
+    setAddingTrackId(orderId)
+    // Recarrega antes de abrir — este cartão só busca playlists no mount,
+    // então uma playlist criada em "Minhas Músicas" (estado separado) não
+    // apareceria aqui sem isso.
+    carregarPlaylists()
+  }
+
   function abrirCriarPlaylist(orderId?: string) {
     setPendingOrderId(orderId)
     setCreatingPlaylistOpen(true)
@@ -193,7 +201,7 @@ export default function RedeFizMusica() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAddingTrackId(it.orderId)}
+                      onClick={() => abrirAdicionar(it.orderId)}
                       aria-label="Adicionar à playlist"
                       className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 transition-transform"
                     >
@@ -288,7 +296,7 @@ export default function RedeFizMusica() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAddingTrackId(it.orderId)}
+                  onClick={() => abrirAdicionar(it.orderId)}
                   aria-label="Adicionar à playlist"
                   className="absolute top-1.5 right-9 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-sm font-bold transition-transform hover:scale-110"
                 >

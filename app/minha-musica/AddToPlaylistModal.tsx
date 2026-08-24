@@ -23,7 +23,7 @@ export default function AddToPlaylistModal({
   if (!open) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#15111f] p-5"
