@@ -708,42 +708,68 @@ function MinhaMusicaContent() {
                 </div>
               )}
 
-              {shelfOrders.length > 0 && (
-                <>
-                  <div className="flex items-center gap-2.5 mt-4 mb-3">
-                    <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Entregues e pendentes</span>
-                    <span className="h-px flex-1 bg-white/10" />
-                  </div>
-                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-                    {shelfOrders.map((order) => {
-                    const delivered = order.status === "DELIVERED"
-                    const abandonado = order.paymentStatus !== "PAID"
-                    const principal = order.tracks?.find((t) => t.audioUrl === order.mp3Url) ?? order.tracks?.[0]
-                    return (
-                      <button
-                        key={order.id}
-                        onClick={() => setOpenDetailOrderId(order.id)}
-                        className={`shrink-0 w-28 text-left group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}
+              {(() => {
+                // Duas raias separadas — entregue/em produção em cima,
+                // pendente (abandonado) embaixo. Antes vinham misturados
+                // numa fileira só, difícil de escanear com o olho.
+                const producedShelf = shelfOrders.filter((o) => o.paymentStatus === "PAID")
+                const pendingShelf  = shelfOrders.filter((o) => o.paymentStatus !== "PAID")
+
+                function tile(order: Order) {
+                  const delivered = order.status === "DELIVERED"
+                  const abandonado = order.paymentStatus !== "PAID"
+                  const principal = order.tracks?.find((t) => t.audioUrl === order.mp3Url) ?? order.tracks?.[0]
+                  return (
+                    <button
+                      key={order.id}
+                      onClick={() => setOpenDetailOrderId(order.id)}
+                      className={`shrink-0 w-28 text-left group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}
+                    >
+                      <div
+                        className="relative w-28 h-28 rounded-xl border border-white/10 flex items-center justify-center text-2xl bg-cover bg-center"
+                        style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : abandonado ? "linear-gradient(135deg,#3a3a3a,#1f1f1f)" : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
                       >
-                        <div
-                          className="relative w-28 h-28 rounded-xl border border-white/10 flex items-center justify-center text-2xl bg-cover bg-center"
-                          style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : abandonado ? "linear-gradient(135deg,#3a3a3a,#1f1f1f)" : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
-                        >
-                          {!principal?.imageUrl && (abandonado ? "💳" : "🎁")}
-                          <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                            abandonado ? "bg-white/15 text-white/70" : delivered ? "bg-green-500/90 text-green-950" : "bg-fuchsia-500/90 text-fuchsia-950"
-                          }`}>
-                            {abandonado ? "💳 Pendente" : delivered ? "✓ Entregue" : "🎵 Em produção"}
-                          </span>
+                        {!principal?.imageUrl && (abandonado ? "💳" : "🎁")}
+                        <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                          abandonado ? "bg-white/15 text-white/70" : delivered ? "bg-green-500/90 text-green-950" : "bg-fuchsia-500/90 text-fuchsia-950"
+                        }`}>
+                          {abandonado ? "💳 Pendente" : delivered ? "✓ Entregue" : "🎵 Em produção"}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">{order.subcategory}</p>
+                      <p className="text-[11px] text-white/40 truncate">{order.products?.name}</p>
+                    </button>
+                  )
+                }
+
+                return (
+                  <>
+                    {producedShelf.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2.5 mt-4 mb-3">
+                          <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Entregues</span>
+                          <span className="h-px flex-1 bg-white/10" />
                         </div>
-                        <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">{order.subcategory}</p>
-                        <p className="text-[11px] text-white/40 truncate">{order.products?.name}</p>
-                      </button>
-                    )
-                    })}
-                  </div>
-                </>
-              )}
+                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                          {producedShelf.map(tile)}
+                        </div>
+                      </>
+                    )}
+
+                    {pendingShelf.length > 0 && (
+                      <>
+                        <div className="flex items-center gap-2.5 mt-4 mb-3">
+                          <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Pendentes</span>
+                          <span className="h-px flex-1 bg-white/10" />
+                        </div>
+                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                          {pendingShelf.map(tile)}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )
+              })()}
             </div>
           )}
 
