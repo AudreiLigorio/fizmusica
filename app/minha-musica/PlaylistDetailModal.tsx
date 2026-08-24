@@ -70,12 +70,9 @@ export default function PlaylistDetailModal({
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md max-h-[80vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#15111f] p-6"
       >
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="min-w-0">
-            <p className="font-bold text-lg truncate">{playlist?.nome ?? "Playlist"}</p>
-            <p className="text-xs text-white/40">{tracks?.length ?? 0} música{tracks?.length === 1 ? "" : "s"}</p>
-          </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white text-lg leading-none shrink-0" aria-label="Fechar">✕</button>
+        <div className="mb-4">
+          <p className="font-bold text-lg truncate">{playlist?.nome ?? "Playlist"}</p>
+          <p className="text-xs text-white/40">{tracks?.length ?? 0} música{tracks?.length === 1 ? "" : "s"}</p>
         </div>
 
         {tracks === null ? (
@@ -89,7 +86,7 @@ export default function PlaylistDetailModal({
               return (
                 <div key={t.orderId} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
                   <button
-                    onClick={() => playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null })}
+                    onClick={() => { playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null }); onClose() }}
                     className="relative w-11 h-11 rounded-lg overflow-hidden bg-cover bg-center shrink-0"
                     style={{ backgroundImage: t.imageUrl ? `url(${t.imageUrl})` : undefined, background: t.imageUrl ? undefined : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
                     aria-label={isPlaying ? "Pausar" : "Tocar"}

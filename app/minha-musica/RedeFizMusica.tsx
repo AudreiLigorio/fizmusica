@@ -78,7 +78,9 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
     const headers = await authHeaders()
     const res = await fetch("/api/playlists", { headers })
     const d = await res.json().catch(() => ({}))
-    setPlaylists(d.playlists ?? [])
+    const lista: Playlist[] = d.playlists ?? []
+    setPlaylists(lista)
+    return lista
   }
 
   useEffect(() => { carregar(); carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -111,19 +113,19 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
     const headers = await authHeaders()
     const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
     const d = await res.json().catch(() => ({}))
-    await carregarPlaylists()
+    const lista = await carregarPlaylists()
     onPlaylistsChanged?.()
-    // Leva o cliente direto pra playlist recém-criada — sem isso, o card
-    // novo entra no fim de uma lista que rola horizontal e passa despercebido.
-    if (d.playlist?.id) setOpenPlaylistId(d.playlist.id)
+    // Só abre o modal quando há de fato mais de uma playlist pra diferenciar
+    // — com uma só, a raia em "Minhas Músicas" já mostra o resultado sozinha.
+    if (d.playlist?.id && lista.length > 1) setOpenPlaylistId(d.playlist.id)
   }
 
   async function adicionarNaPlaylist(playlistId: string, orderId: string) {
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
-    await carregarPlaylists()
+    const lista = await carregarPlaylists()
     onPlaylistsChanged?.()
-    setOpenPlaylistId(playlistId)
+    if (lista.length > 1) setOpenPlaylistId(playlistId)
   }
 
   async function favoritar(orderId: string) {
