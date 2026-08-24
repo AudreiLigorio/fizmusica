@@ -651,16 +651,30 @@ function MinhaMusicaContent() {
           )}
 
           {/* ── PEDIDOS — sempre o primeiro bloco: quem precisa de ação agora
-              não pode ficar escondido atrás de datas/indicação/biblioteca ── */}
+              não pode ficar escondido atrás de datas/indicação/biblioteca.
+              Mesma moldura (borda + título) das outras seções da tela —
+              antes esse bloco era o único "solto", sem contexto nenhum. */}
           {orders.length === 0 ? (
             <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl mb-6">
               <p className="text-4xl mb-3">🎵</p>
               <p>Nenhum pedido encontrado para este e-mail.</p>
             </div>
           ) : (
-            <div className="mb-6">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
+              <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">📦 Meus pedidos</h3>
+              <p className="text-xs text-white/50 mb-3">O que precisa de você agora e o que já foi entregue.</p>
+
+              {heroOrders.length > 0 ? (
+                <p className="text-[10.5px] uppercase tracking-wide font-bold text-fuchsia-300 mb-2.5 flex items-center gap-1.5">🔥 Precisa de você</p>
+              ) : shelfOrders.length > 0 ? (
+                <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-green-500/8 border border-green-500/20 mb-1">
+                  <span className="text-lg">✅</span>
+                  <p className="text-xs font-semibold text-green-300">Tudo em dia — nada pendente no momento.</p>
+                </div>
+              ) : null}
+
               {heroOrders.length > 0 && (
-                <div className="space-y-4 mb-6">
+                <div className="space-y-4 mb-2">
                   {heroOrders.map((order) => {
                     if (order.paymentStatus !== "PAID") {
                       const hasProduct = !!order.productId && !!order.products?.price
@@ -695,8 +709,13 @@ function MinhaMusicaContent() {
               )}
 
               {shelfOrders.length > 0 && (
-                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-                  {shelfOrders.map((order) => {
+                <>
+                  <div className="flex items-center gap-2.5 mt-4 mb-3">
+                    <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Entregues e pendentes</span>
+                    <span className="h-px flex-1 bg-white/10" />
+                  </div>
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                    {shelfOrders.map((order) => {
                     const delivered = order.status === "DELIVERED"
                     const abandonado = order.paymentStatus !== "PAID"
                     const principal = order.tracks?.find((t) => t.audioUrl === order.mp3Url) ?? order.tracks?.[0]
@@ -721,8 +740,9 @@ function MinhaMusicaContent() {
                         <p className="text-[11px] text-white/40 truncate">{order.products?.name}</p>
                       </button>
                     )
-                  })}
-                </div>
+                    })}
+                  </div>
+                </>
               )}
             </div>
           )}
