@@ -42,14 +42,13 @@ function gradientFor(id: string): string {
 // lista de pedidos já usa). Só a playlist (agrupamento) tem tabela própria.
 export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsChanged }: { tracks: LibraryTrack[]; playlistsVersion: number; onPlaylistsChanged?: () => void }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
-  const [dragId, setDragId] = useState<string | null>(null)
-  const [overZone, setOverZone] = useState<string | null>(null)
   const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
   // Toque no "+" — o caminho que funciona em qualquer aparelho (arrastar é
   // só desktop; drag nativo HTML5 não existe em navegador mobile).
   const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
   // Criação de playlist: orderId fica pendente enquanto o modal de nome está
-  // aberto — undefined quando a playlist nasce vazia (raia "Minha Playlist").
+  // aberto — undefined quando a playlist nasce vazia (criada sem música,
+  // pelo "Nova playlist" dentro do modal de adicionar).
   const [creatingPlaylistOpen, setCreatingPlaylistOpen] = useState(false)
   const [pendingOrderId, setPendingOrderId] = useState<string | undefined>(undefined)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
@@ -114,14 +113,8 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
           return (
             <div key={t.id} className="shrink-0 w-28 group">
               <div
-                className="relative w-28 h-28 rounded-xl border border-white/10 cursor-grab active:cursor-grabbing bg-cover bg-center"
-                style={{
-                  background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradientFor(t.id),
-                  opacity: dragId === t.id ? 0.4 : 1,
-                }}
-                draggable
-                onDragStart={() => setDragId(t.id)}
-                onDragEnd={() => setDragId(null)}
+                className="relative w-28 h-28 rounded-xl border border-white/10 bg-cover bg-center"
+                style={{ background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradientFor(t.id) }}
               >
                 <button
                   type="button"
@@ -148,44 +141,15 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
       </div>
 
       <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Minha Playlist</p>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
-        {playlists?.map((pl) => (
-          <button
-            key={pl.id}
-            type="button"
-            onClick={() => setOpenPlaylistId(pl.id)}
-            onDragOver={(e) => { e.preventDefault(); setOverZone(pl.id) }}
-            onDragLeave={() => setOverZone(null)}
-            onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) adicionar(pl.id, dragId) }}
-            className={`shrink-0 w-32 text-left rounded-xl border p-3 transition-colors ${overZone === pl.id ? "border-fuchsia-500/60 bg-fuchsia-500/10" : "border-white/10 bg-black/20"}`}
-          >
-            <div className="grid grid-cols-2 gap-0.5 w-12 h-12 rounded-lg overflow-hidden mb-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white/10"
-                  style={pl.track_order_ids[i] ? { background: gradientFor(pl.track_order_ids[i]) } : undefined}
-                />
-              ))}
-            </div>
-            <p className="text-xs font-medium truncate">{pl.nome}</p>
-            <p className="text-[11px] text-white/40">{pl.track_order_ids.length} música{pl.track_order_ids.length === 1 ? "" : "s"}</p>
-          </button>
-        ))}
-
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={() => abrirCriarPlaylist()}
-          onKeyDown={(e) => { if (e.key === "Enter") abrirCriarPlaylist() }}
-          onDragOver={(e) => { e.preventDefault(); setOverZone("new") }}
-          onDragLeave={() => setOverZone(null)}
-          onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) abrirCriarPlaylist(dragId) }}
-          className={`shrink-0 w-32 h-[104px] rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 text-center px-2 cursor-pointer transition-colors ${overZone === "new" ? "border-fuchsia-500/60 bg-fuchsia-500/10 text-white" : "border-white/15 text-white/40 hover:text-white/70 hover:border-white/25"}`}
-        >
-          <span className="text-lg">➕</span>
-          <span className="text-[10px] leading-tight">Nova playlist</span>
-        </div>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => abrirCriarPlaylist()}
+        onKeyDown={(e) => { if (e.key === "Enter") abrirCriarPlaylist() }}
+        className="w-32 h-[104px] rounded-xl border border-dashed border-white/15 text-white/40 hover:text-white/70 hover:border-white/25 flex flex-col items-center justify-center gap-1 text-center px-2 cursor-pointer transition-colors"
+      >
+        <span className="text-lg">➕</span>
+        <span className="text-[10px] leading-tight">Nova playlist</span>
       </div>
 
       <MinhasPlaylists version={playlistsVersion} embedded />
