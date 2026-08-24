@@ -808,17 +808,18 @@ function MinhaMusicaContent() {
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
           <RedeFizMusica />
 
-          {/* Criar nova música — em baixo */}
+          {/* Criar nova música — CTA principal da tela, precisa se destacar
+              de verdade, não só mais um card discreto. */}
           <button
             onClick={() => router.push("/criar")}
-            className="w-full rounded-2xl p-5 mb-4 text-left flex items-center justify-between transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{ background: "rgba(240,25,107,0.08)", border: "1px solid rgba(240,25,107,0.2)" }}
+            className="w-full rounded-2xl p-5 mb-4 text-left flex items-center justify-between gap-4 transition-all hover:brightness-110 hover:scale-[1.01] active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 8px 28px -6px rgba(240,25,107,0.55)" }}
           >
             <div>
-              <p className="font-semibold text-base text-pink-300">+ Criar nova música</p>
-              <p className="text-white/40 text-xs mt-0.5">Para outra pessoa ou ocasião especial</p>
+              <p className="font-bold text-lg text-white">✨ Criar nova música</p>
+              <p className="text-white/80 text-xs mt-0.5">Para outra pessoa ou ocasião especial</p>
             </div>
-            <span className="text-xl opacity-60">🎵</span>
+            <span className="text-3xl shrink-0">🎵</span>
           </button>
 
           {/* Ajuda — regras desta tela */}
