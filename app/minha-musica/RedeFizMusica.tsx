@@ -25,6 +25,22 @@ type CatalogItem = {
 // combinar os dois deixou a interação confusa no rascunho).
 type Filtro = { tipo: "ocasiao" | "estilo"; valor: string } | null
 
+// Pill de filtro — extraída pra não repetir o gradiente/sombra do estado
+// ativo duas vezes (ocasião e estilo usam a mesma peça visual).
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all hover:scale-[1.04] active:scale-95 ${
+        active ? "border-transparent text-white shadow-[0_4px_16px_-2px_rgba(217,70,239,0.55)]" : "border-white/10 bg-white/[0.04] text-white/55 hover:text-white/85 hover:border-white/20"
+      }`}
+      style={active ? { background: "linear-gradient(135deg, #f0196b, #d946ef)" } : undefined}
+    >
+      {children}
+    </button>
+  )
+}
+
 export default function RedeFizMusica() {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>(null)
@@ -91,24 +107,11 @@ export default function RedeFizMusica() {
 
       <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por ocasião</p>
       <div className="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1">
-        <button
-          onClick={() => setFiltro(null)}
-          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-            filtro === null ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
-          }`}
-        >
-          Todas · {items.length}
-        </button>
+        <Pill active={filtro === null} onClick={() => setFiltro(null)}>Todas · {items.length}</Pill>
         {ocasioes.map(([ocasiao, lista]) => (
-          <button
-            key={ocasiao}
-            onClick={() => setFiltro({ tipo: "ocasiao", valor: ocasiao })}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              filtro?.tipo === "ocasiao" && filtro.valor === ocasiao ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
-            }`}
-          >
+          <Pill key={ocasiao} active={filtro?.tipo === "ocasiao" && filtro.valor === ocasiao} onClick={() => setFiltro({ tipo: "ocasiao", valor: ocasiao })}>
             {ocasiao} · {lista.length}
-          </button>
+          </Pill>
         ))}
       </div>
 
@@ -117,15 +120,9 @@ export default function RedeFizMusica() {
           <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por estilo</p>
           <div className="flex gap-2 overflow-x-auto pb-2 mb-1 -mx-1 px-1">
             {estilos.map(([estilo, lista]) => (
-              <button
-                key={estilo}
-                onClick={() => setFiltro({ tipo: "estilo", valor: estilo })}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                  filtro?.tipo === "estilo" && filtro.valor === estilo ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
-                }`}
-              >
+              <Pill key={estilo} active={filtro?.tipo === "estilo" && filtro.valor === estilo} onClick={() => setFiltro({ tipo: "estilo", valor: estilo })}>
                 {estilo} · {lista.length}
-              </button>
+              </Pill>
             ))}
           </div>
         </>
