@@ -21,9 +21,13 @@ type CatalogItem = {
 // Nunca mostra o nome do homenageado (dado de terceiro sem consentimento
 // próprio) nem fotos do cliente — só título real da música + ocasião +
 // capa gerada pelo Suno, tudo vindo direto do banco (nada fixo).
+// Só um filtro ativo por vez (ocasião OU estilo, nunca os dois juntos —
+// combinar os dois deixou a interação confusa no rascunho).
+type Filtro = { tipo: "ocasiao" | "estilo"; valor: string } | null
+
 export default function RedeFizMusica() {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
-  const [ocasiaoAberta, setOcasiaoAberta] = useState<string | null>(null)
+  const [filtro, setFiltro] = useState<Filtro>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
 
   async function authHeaders() {
@@ -61,18 +65,36 @@ export default function RedeFizMusica() {
     porOcasiao.set(it.occasion, lista)
   }
   const ocasioes = [...porOcasiao.entries()].sort((a, b) => b[1].length - a[1].length)
-  const visiveis = ocasiaoAberta ? porOcasiao.get(ocasiaoAberta) ?? [] : items
+
+  // Um pedido pode ter mais de um estilo marcado ("🎸 Rock, 🎵 Forró") — nesse
+  // caso ele entra em cada grupo separadamente.
+  const porEstilo = new Map<string, CatalogItem[]>()
+  for (const it of items) {
+    for (const estilo of (it.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
+      const lista = porEstilo.get(estilo) ?? []
+      lista.push(it)
+      porEstilo.set(estilo, lista)
+    }
+  }
+  const estilos = [...porEstilo.entries()].sort((a, b) => b[1].length - a[1].length)
+
+  const visiveis = !filtro
+    ? items
+    : filtro.tipo === "ocasiao"
+      ? porOcasiao.get(filtro.valor) ?? []
+      : porEstilo.get(filtro.valor) ?? []
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
       <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">🎧 Ouvir na Rede Fiz Música</h3>
       <p className="text-xs text-white/50 mb-3">Músicas de outros clientes que decidiram publicar.</p>
 
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-1 -mx-1 px-1">
+      <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por ocasião</p>
+      <div className="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1">
         <button
-          onClick={() => setOcasiaoAberta(null)}
+          onClick={() => setFiltro(null)}
           className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-            ocasiaoAberta === null ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
+            filtro === null ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
           }`}
         >
           Todas · {items.length}
@@ -80,15 +102,34 @@ export default function RedeFizMusica() {
         {ocasioes.map(([ocasiao, lista]) => (
           <button
             key={ocasiao}
-            onClick={() => setOcasiaoAberta(ocasiao)}
+            onClick={() => setFiltro({ tipo: "ocasiao", valor: ocasiao })}
             className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              ocasiaoAberta === ocasiao ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
+              filtro?.tipo === "ocasiao" && filtro.valor === ocasiao ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
             }`}
           >
             {ocasiao} · {lista.length}
           </button>
         ))}
       </div>
+
+      {estilos.length > 0 && (
+        <>
+          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por estilo</p>
+          <div className="flex gap-2 overflow-x-auto pb-2 mb-1 -mx-1 px-1">
+            {estilos.map(([estilo, lista]) => (
+              <button
+                key={estilo}
+                onClick={() => setFiltro({ tipo: "estilo", valor: estilo })}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                  filtro?.tipo === "estilo" && filtro.valor === estilo ? "border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200" : "border-white/10 text-white/50 hover:text-white/80"
+                }`}
+              >
+                {estilo} · {lista.length}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
         {visiveis.map((it) => {
