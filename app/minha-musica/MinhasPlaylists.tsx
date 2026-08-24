@@ -38,6 +38,13 @@ export default function MinhasPlaylists({ version }: { version: number }) {
 
   useEffect(() => { carregar() }, [version]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  async function remover(playlistId: string, orderId: string) {
+    // Otimista: some da raia na hora, sem esperar o servidor.
+    setPlaylists((prev) => prev?.map((pl) => (pl.id === playlistId ? { ...pl, tracks: pl.tracks.filter((t) => t.orderId !== orderId) } : pl)) ?? null)
+    const headers = await authHeaders()
+    await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers: { ...headers, "Content-Type": "application/json" }, body: JSON.stringify({ removeOrderId: orderId }) })
+  }
+
   if (!playlists || playlists.length === 0) return null
 
   return (
@@ -55,20 +62,32 @@ export default function MinhasPlaylists({ version }: { version: number }) {
               {pl.tracks.map((t) => {
                 const isPlaying = nowPlaying?.id === t.orderId && playing
                 return (
-                  <div key={t.orderId} className="shrink-0 w-28">
-                    <button
-                      type="button"
-                      onClick={() => playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null })}
-                      className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center block"
+                  <div key={t.orderId} className="shrink-0 w-28 group">
+                    <div
+                      className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center"
                       style={{
                         backgroundImage: t.imageUrl ? `url(${t.imageUrl})` : undefined,
                         background: t.imageUrl ? undefined : "linear-gradient(150deg,#3a1440,#7a1f5c)",
                       }}
-                      aria-label={isPlaying ? "Pausar" : "Tocar"}
                     >
-                      {isPlaying && <div className="absolute inset-0 bg-black/35 flex items-center justify-center text-xl">❚❚</div>}
-                    </button>
-                    <p className={`text-xs font-medium mt-1.5 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{t.title}</p>
+                      <button
+                        type="button"
+                        onClick={() => playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null })}
+                        className="absolute inset-0"
+                        aria-label={isPlaying ? "Pausar" : "Tocar"}
+                      >
+                        {isPlaying && <div className="absolute inset-0 bg-black/35 flex items-center justify-center text-xl">❚❚</div>}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remover(pl.id, t.orderId)}
+                        aria-label="Remover da playlist"
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 hover:bg-red-500/70 transition-all"
+                      >
+                        −
+                      </button>
+                    </div>
+                    <p className={`text-xs font-medium mt-1.5 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
                   </div>
                 )
               })}

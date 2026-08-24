@@ -99,12 +99,22 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
 
   useEffect(() => { carregar(); carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function abrirAdicionar(orderId: string) {
-    setAddingTrackId(orderId)
-    // Recarrega antes de abrir — este cartão só busca playlists no mount,
+  async function abrirAdicionar(orderId: string) {
+    // Recarrega antes de decidir — este cartão só busca playlists no mount,
     // então uma playlist criada em "Minhas Músicas" (estado separado) não
     // apareceria aqui sem isso.
-    carregarPlaylists()
+    const headers = await authHeaders()
+    const res = await fetch("/api/playlists", { headers })
+    const d = await res.json().catch(() => ({}))
+    const lista: Playlist[] = d.playlists ?? []
+    setPlaylists(lista)
+    // Só uma playlist existente? Adiciona direto, sem perguntar qual —
+    // o popup de escolher só faz sentido quando há de fato uma escolha.
+    if (lista.length === 1) {
+      adicionarNaPlaylist(lista[0].id, orderId)
+    } else {
+      setAddingTrackId(orderId)
+    }
   }
 
   function abrirCriarPlaylist(orderId?: string) {
