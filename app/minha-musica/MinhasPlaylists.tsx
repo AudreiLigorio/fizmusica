@@ -12,7 +12,7 @@ type PlaylistFull = { id: string; nome: string; tracks: Track[] }
 // qualquer faixa (Minhas Músicas ou Rede Fiz Música) e ver o resultado
 // direto aqui embaixo. `version` sobe toda vez que qualquer um dos dois
 // cartões cria/altera uma playlist, disparando o recarregamento.
-export default function MinhasPlaylists({ version }: { version: number }) {
+export default function MinhasPlaylists({ version, embedded }: { version: number; embedded?: boolean }) {
   const [playlists, setPlaylists] = useState<PlaylistFull[] | null>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
 
@@ -50,7 +50,10 @@ export default function MinhasPlaylists({ version }: { version: number }) {
   return (
     <>
       {playlists.map((pl) => (
-        <div key={pl.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
+        <div
+          key={pl.id}
+          className={embedded ? "mt-4 pt-4 border-t border-white/5" : "rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6"}
+        >
           <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">🎶 {pl.nome}</h3>
 
           {pl.tracks.length === 0 ? (
@@ -64,12 +67,20 @@ export default function MinhasPlaylists({ version }: { version: number }) {
                 return (
                   <div key={t.orderId} className="shrink-0 w-28 group">
                     <div
-                      className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center"
-                      style={{
-                        backgroundImage: t.imageUrl ? `url(${t.imageUrl})` : undefined,
-                        background: t.imageUrl ? undefined : "linear-gradient(150deg,#3a1440,#7a1f5c)",
-                      }}
+                      className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10"
+                      style={{ background: "linear-gradient(150deg,#3a1440,#7a1f5c)" }}
                     >
+                      {t.imageUrl && (
+                        // <img> em vez de background-image: se a capa falhar
+                        // ao carregar, some sozinha e deixa o gradiente atrás
+                        // aparecer — sem isso ficava preto sólido e ilegível.
+                        <img
+                          src={t.imageUrl}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover"
+                          onError={(e) => { e.currentTarget.style.display = "none" }}
+                        />
+                      )}
                       <button
                         type="button"
                         onClick={() => playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null })}

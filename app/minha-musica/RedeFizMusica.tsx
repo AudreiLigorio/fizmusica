@@ -29,20 +29,6 @@ type CatalogItem = {
 type Filtro = { tipo: "ocasiao" | "estilo"; valor: string } | null
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
 
-const GRADIENTS = [
-  "linear-gradient(150deg,#3a1440,#7a1f5c)",
-  "linear-gradient(150deg,#1c2f52,#3d1f66)",
-  "linear-gradient(150deg,#4a1330,#a3226b)",
-  "linear-gradient(150deg,#122b3a,#2c6b6f)",
-  "linear-gradient(150deg,#3a2312,#8a4a1f)",
-  "linear-gradient(150deg,#241541,#5c1f8a)",
-]
-function gradientFor(id: string): string {
-  let hash = 0
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length]
-}
-
 // Pill de filtro — extraída pra não repetir o gradiente/sombra do estado
 // ativo duas vezes (ocasião e estilo usam a mesma peça visual).
 function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -64,13 +50,11 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
   const [filtro, setFiltro] = useState<Filtro>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
 
-  // "❤️ Favoritas" — playlist é a mesma tabela/API de "Minhas músicas"
-  // (guarda ids de pedido, não importa se o pedido é seu ou de outra
-  // pessoa), só que com fetch próprio: os dois cartões vivem em componentes
-  // separados na tela, não vale a pena compartilhar estado por isso.
+  // Playlist é a mesma tabela/API de "Minhas Músicas" (guarda ids de pedido,
+  // não importa se o pedido é seu ou de outra pessoa), só que com fetch
+  // próprio: os dois cartões vivem em componentes separados na tela, não
+  // vale a pena compartilhar estado por isso.
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
-  const [dragId, setDragId] = useState<string | null>(null)
-  const [overZone, setOverZone] = useState<string | null>(null)
   const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
   const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
   // Criação de playlist: orderId fica pendente enquanto o modal de nome está
@@ -198,11 +182,8 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
               return (
                 <div key={it.orderId} className="shrink-0 w-28 group">
                   <div
-                    className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center cursor-grab active:cursor-grabbing"
-                    style={{ backgroundImage: `url(${it.imageUrl})`, opacity: dragId === it.orderId ? 0.4 : 1 }}
-                    draggable
-                    onDragStart={() => setDragId(it.orderId)}
-                    onDragEnd={() => setDragId(null)}
+                    className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center"
+                    style={{ backgroundImage: `url(${it.imageUrl})` }}
                   >
                     <button
                       type="button"
@@ -224,40 +205,6 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
                 </div>
               )
             })}
-
-            {playlists?.map((pl) => (
-              <button
-                key={pl.id}
-                type="button"
-                onClick={() => setOpenPlaylistId(pl.id)}
-                onDragOver={(e) => { e.preventDefault(); setOverZone(pl.id) }}
-                onDragLeave={() => setOverZone(null)}
-                onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) adicionarNaPlaylist(pl.id, dragId) }}
-                className={`shrink-0 w-32 text-left rounded-xl border p-3 transition-colors ${overZone === pl.id ? "border-fuchsia-500/60 bg-fuchsia-500/10" : "border-white/10 bg-black/20"}`}
-              >
-                <div className="grid grid-cols-2 gap-0.5 w-12 h-12 rounded-lg overflow-hidden mb-2">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="bg-white/10" style={pl.track_order_ids[i] ? { background: gradientFor(pl.track_order_ids[i]) } : undefined} />
-                  ))}
-                </div>
-                <p className="text-xs font-medium truncate">{pl.nome}</p>
-                <p className="text-[11px] text-white/40">{pl.track_order_ids.length} música{pl.track_order_ids.length === 1 ? "" : "s"}</p>
-              </button>
-            ))}
-
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => abrirCriarPlaylist()}
-              onKeyDown={(e) => { if (e.key === "Enter") abrirCriarPlaylist() }}
-              onDragOver={(e) => { e.preventDefault(); setOverZone("new") }}
-              onDragLeave={() => setOverZone(null)}
-              onDrop={(e) => { e.preventDefault(); setOverZone(null); if (dragId) abrirCriarPlaylist(dragId) }}
-              className={`shrink-0 w-32 h-[104px] rounded-xl border border-dashed flex flex-col items-center justify-center gap-1 text-center px-2 cursor-pointer transition-colors ${overZone === "new" ? "border-fuchsia-500/60 bg-fuchsia-500/10 text-white" : "border-white/15 text-white/40 hover:text-white/70 hover:border-white/25"}`}
-            >
-              <span className="text-lg">➕</span>
-              <span className="text-[10px] leading-tight">Nova playlist</span>
-            </div>
           </div>
         </div>
       )}

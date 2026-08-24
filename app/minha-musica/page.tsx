@@ -18,7 +18,6 @@ import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
 import RedeFizMusica from "./RedeFizMusica"
-import MinhasPlaylists from "./MinhasPlaylists"
 import { PlayerProvider } from "./PlayerContext"
 import MiniPlayer from "./MiniPlayer"
 import { dbTime } from "@/lib/date"
@@ -835,12 +834,10 @@ function MinhaMusicaContent() {
           {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
           <ReferirAmigos />
 
-          {/* Minhas músicas & playlists — auto-populado dos pedidos entregues */}
-          <MinhasMusicas tracks={libraryTracks} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
-
-          {/* Uma raia por playlist, com as músicas já dentro — populada por
-              "Minha Playlist" acima ou pelo + na Rede Fiz Música abaixo. */}
-          <MinhasPlaylists version={playlistsVersion} />
+          {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
+              As raias de playlist (uma por playlist, com as músicas já
+              dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
+          <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
           <RedeFizMusica onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />

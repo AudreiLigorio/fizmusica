@@ -6,6 +6,7 @@ import { usePlayer } from "./PlayerContext"
 import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
+import MinhasPlaylists from "./MinhasPlaylists"
 
 export type LibraryTrack = {
   id: string
@@ -39,7 +40,7 @@ function gradientFor(id: string): string {
 // "Minhas músicas" não guarda nada de novo — é derivado dos pedidos entregues
 // (prop `tracks`, montada em page.tsx a partir dos mesmos `orders` que a
 // lista de pedidos já usa). Só a playlist (agrupamento) tem tabela própria.
-export default function MinhasMusicas({ tracks, onPlaylistsChanged }: { tracks: LibraryTrack[]; onPlaylistsChanged?: () => void }) {
+export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsChanged }: { tracks: LibraryTrack[]; playlistsVersion: number; onPlaylistsChanged?: () => void }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
   const [dragId, setDragId] = useState<string | null>(null)
   const [overZone, setOverZone] = useState<string | null>(null)
@@ -186,6 +187,8 @@ export default function MinhasMusicas({ tracks, onPlaylistsChanged }: { tracks: 
           <span className="text-[10px] leading-tight">Nova playlist</span>
         </div>
       </div>
+
+      <MinhasPlaylists version={playlistsVersion} embedded />
 
       <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={() => { carregar(); onPlaylistsChanged?.() }} />
       <AddToPlaylistModal
