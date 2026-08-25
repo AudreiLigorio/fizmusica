@@ -7,6 +7,7 @@ import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
 import { useToast } from "./ToastContext"
+import InfoTooltip from "./InfoTooltip"
 
 type CatalogItem = {
   orderId: string
@@ -175,8 +176,12 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
       : porEstilo.get(filtro.valor) ?? []
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
-      <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">🎧 Ouvir na Rede Fiz Música</h3>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #9B7FE8" }}>
+      <div className="flex items-center gap-2.5 mb-1">
+        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(155,127,232,0.14)" }}>🎧</div>
+        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Ouvir na Rede Fiz Música</h3>
+        <InfoTooltip text="Descubra e ouça músicas que outros clientes decidiram publicar." />
+      </div>
       <p className="text-xs text-white/50 mb-3">Músicas de outros clientes que decidiram publicar.</p>
 
       {favoritados.length > 0 && (

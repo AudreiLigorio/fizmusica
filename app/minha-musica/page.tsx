@@ -21,6 +21,7 @@ import RedeFizMusica from "./RedeFizMusica"
 import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
 import MiniPlayer from "./MiniPlayer"
+import InfoTooltip from "./InfoTooltip"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -668,8 +669,12 @@ function MinhaMusicaContent() {
               <p>Nenhum pedido encontrado para este e-mail.</p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
-              <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">📦 Meus pedidos</h3>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #5B9BD5" }}>
+              <div className="flex items-center gap-2.5 mb-1">
+                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(91,155,213,0.14)" }}>📦</div>
+                <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Meus pedidos</h3>
+                <InfoTooltip text="Acompanhe o status de cada música que você encomendou." />
+              </div>
               <p className="text-xs text-white/50 mb-3">O que precisa de você agora e o que já foi entregue.</p>
 
               {heroOrders.length > 0 ? (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import InfoTooltip from "./InfoTooltip"
 
 type Funil = { code: string | null; shares: number; accesses: number; conversions: number }
 
@@ -48,8 +49,12 @@ export default function ReferirAmigos() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
-      <h3 className="text-sm font-semibold flex items-center gap-2 mb-1">💬 Indicar amigos</h3>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #4CAF7D" }}>
+      <div className="flex items-center gap-2.5 mb-1">
+        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(76,175,125,0.14)" }}>💬</div>
+        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Indicar amigos</h3>
+        <InfoTooltip text="Compartilhe seu link e acompanhe quem comprou pela sua indicação." />
+      </div>
       <p className="text-xs text-white/50 leading-relaxed mb-3">
         Seu link pessoal — quando um amigo compra pela sua indicação, você fica sabendo aqui.
       </p>

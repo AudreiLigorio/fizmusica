@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import InfoTooltip from "./InfoTooltip"
 
 // Catálogo próprio de ocasiões — não é o mesmo do wizard (que tem pedido de
 // casamento, luto, pets como contexto de evento único). Aqui é sempre uma
@@ -90,12 +91,14 @@ export default function DatasEspeciais() {
   if (dates === null) return null
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold flex items-center gap-2">📅 Datas especiais</h3>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #E8A33D" }}>
+      <div className="flex items-center gap-2.5 mb-3">
+        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(232,163,61,0.14)" }}>📅</div>
+        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Datas especiais</h3>
         {dates.length === 0 && (
-          <span className="text-[10px] font-bold uppercase tracking-wide bg-fuchsia-500 text-white px-2 py-0.5 rounded-full">Novo</span>
+          <span className="text-[10px] font-bold uppercase tracking-wide bg-fuchsia-500 text-white px-2 py-0.5 rounded-full shrink-0">Novo</span>
         )}
+        <InfoTooltip text="Cadastre aniversários e datas importantes pra nunca esquecer." />
       </div>
 
       {dates.length > 0 && (
