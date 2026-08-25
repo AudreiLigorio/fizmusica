@@ -28,7 +28,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {toast &&
         createPortal(
-          <div className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] px-4 py-2.5 rounded-full bg-white text-black text-sm font-semibold shadow-lg animate-fade-in pointer-events-none">
+          <div
+            className="fixed left-1/2 -translate-x-1/2 bottom-24 z-[60] px-5 py-2.5 rounded-full text-white text-sm font-semibold shadow-lg whitespace-nowrap animate-fade-in pointer-events-none"
+            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+          >
             {toast.message}
           </div>,
           document.body
