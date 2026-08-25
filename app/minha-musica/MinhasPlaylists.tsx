@@ -48,6 +48,14 @@ export default function MinhasPlaylists({ version, embedded }: { version: number
     showToast("Excluído com sucesso ✓")
   }
 
+  async function excluirPlaylist(playlistId: string, nome: string) {
+    if (!window.confirm(`Excluir a playlist "${nome}"? Isso não apaga as músicas, só a coleção.`)) return
+    setPlaylists((prev) => prev?.filter((pl) => pl.id !== playlistId) ?? null) // otimista
+    const headers = await authHeaders()
+    await fetch(`/api/playlists/${playlistId}`, { method: "DELETE", headers })
+    showToast("Excluído com sucesso ✓")
+  }
+
   if (!playlists || playlists.length === 0) return null
 
   return (
@@ -57,7 +65,17 @@ export default function MinhasPlaylists({ version, embedded }: { version: number
           key={pl.id}
           className={embedded ? "mt-4 pt-4 border-t border-white/5" : "rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6"}
         >
-          <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">🎶 {pl.nome}</h3>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h3 className="text-sm font-semibold flex items-center gap-2 min-w-0 truncate">🎶 {pl.nome}</h3>
+            <button
+              type="button"
+              onClick={() => excluirPlaylist(pl.id, pl.nome)}
+              aria-label="Excluir playlist"
+              className="shrink-0 text-white/30 hover:text-red-400 text-sm transition-colors"
+            >
+              🗑️
+            </button>
+          </div>
 
           {pl.tracks.length === 0 ? (
             <p className="text-xs text-white/40 leading-relaxed">
