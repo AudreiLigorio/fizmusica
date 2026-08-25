@@ -146,16 +146,16 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
         })}
       </div>
 
-      <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Minha Playlist</p>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => abrirCriarPlaylist()}
-        onKeyDown={(e) => { if (e.key === "Enter") abrirCriarPlaylist() }}
-        className="w-32 h-[104px] rounded-xl border border-dashed border-white/15 text-white/40 hover:text-white/70 hover:border-white/25 flex flex-col items-center justify-center gap-1 text-center px-2 cursor-pointer transition-colors"
-      >
-        <span className="text-lg">➕</span>
-        <span className="text-[10px] leading-tight">Nova playlist</span>
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-[10px] uppercase tracking-wide font-bold text-white/30">Minha Playlist</p>
+        <button
+          type="button"
+          onClick={() => abrirCriarPlaylist()}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-white/15 text-white/50 hover:text-white hover:border-fuchsia-500/40 text-[11px] font-medium transition-colors"
+        >
+          <span className="text-xs">➕</span>
+          Nova playlist
+        </button>
       </div>
 
       <MinhasPlaylists version={playlistsVersion} embedded />
