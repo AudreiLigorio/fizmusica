@@ -31,15 +31,22 @@ export default function ReferirAmigos() {
 
   const link = `https://fizmusica.com.br/i/${funil.code}`
 
-  async function compartilhar() {
-    setSharing(true)
-    const headers = await authHeaders()
-    // Regra do funil: compartilhamento não gera disco, só conta a etapa 1.
-    await fetch("/api/referral/share", { method: "POST", headers }).catch(() => {})
-    setSharing(false)
+  function compartilhar() {
+    // window.open tem que ser a primeira coisa a rodar, de forma síncrona —
+    // se vier depois de um await, o navegador mobile perde o "gesto do
+    // usuário" e a página atual navega direto pro WhatsApp em vez de abrir
+    // uma aba nova (era exatamente esse o bug: "perdeu a tela").
     const msg = `Oi! Fiz uma música personalizada pra alguém especial na Fiz Música e me emocionei com o resultado 🥹🎶 Dá pra criar uma pra quem você ama também, é rapidinho: ${link}`
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener")
-    await carregar()
+
+    setSharing(true)
+    ;(async () => {
+      const headers = await authHeaders()
+      // Regra do funil: compartilhamento não gera disco, só conta a etapa 1.
+      await fetch("/api/referral/share", { method: "POST", headers }).catch(() => {})
+      setSharing(false)
+      await carregar()
+    })()
   }
 
   async function copiarLink() {
@@ -49,9 +56,9 @@ export default function ReferirAmigos() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #4CAF7D" }}>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #d946ef" }}>
       <div className="flex items-center gap-2.5 mb-1">
-        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(76,175,125,0.14)" }}>💬</div>
+        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(217,70,239,0.14)" }}>💬</div>
         <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Indicar amigos</h3>
         <InfoTooltip text="Compartilhe seu link e acompanhe quem comprou pela sua indicação." />
       </div>

@@ -669,9 +669,9 @@ function MinhaMusicaContent() {
               <p>Nenhum pedido encontrado para este e-mail.</p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #5B9BD5" }}>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid rgba(255,255,255,0.25)" }}>
               <div className="flex items-center gap-2.5 mb-1">
-                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(91,155,213,0.14)" }}>📦</div>
+                <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>📦</div>
                 <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Meus pedidos</h3>
                 <InfoTooltip text="Acompanhe o status de cada música que você encomendou." />
               </div>
