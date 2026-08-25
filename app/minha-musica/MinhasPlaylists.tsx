@@ -82,7 +82,7 @@ export default function MinhasPlaylists({ version, embedded }: { version: number
               Clique no + de uma música na Rede Fiz Música e adicione músicas aqui.
             </p>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+            <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
               {pl.tracks.map((t) => {
                 const isPlaying = nowPlaying?.id === t.orderId && playing
                 return (

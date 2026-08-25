@@ -636,7 +636,9 @@ function MinhaMusicaContent() {
       <div className="relative z-10">
         <Header showButton={false} />
 
-        <section className="max-w-3xl mx-auto px-5 pt-24 pb-16">
+        {/* Mais largo no desktop: as raias agora quebram em linha em vez de
+            rolar na horizontal, então largura extra vira mais capa visível. */}
+        <section className="max-w-3xl lg:max-w-5xl mx-auto px-5 pt-24 pb-16">
           {/* Cabeçalho */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -763,7 +765,7 @@ function MinhaMusicaContent() {
                           <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Entregues</span>
                           <span className="h-px flex-1 bg-white/10" />
                         </div>
-                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
                           {producedShelf.map(tile)}
                         </div>
                       </>
@@ -775,7 +777,7 @@ function MinhaMusicaContent() {
                           <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Pendentes</span>
                           <span className="h-px flex-1 bg-white/10" />
                         </div>
-                        <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
                           {pendingShelf.map(tile)}
                         </div>
                       </>
@@ -835,11 +837,16 @@ function MinhaMusicaContent() {
             )
           })()}
 
-          {/* Datas especiais — ligada à conta, não ao pedido */}
-          <DatasEspeciais />
+          {/* Os dois cards compactos da tela — lado a lado no desktop pra não
+              empilhar tudo numa coluna só. Os de baixo (músicas, rede) seguem
+              full-width: precisam da largura pras raias de capas. */}
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+            {/* Datas especiais — ligada à conta, não ao pedido */}
+            <DatasEspeciais />
 
-          {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
-          <ReferirAmigos />
+            {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
+            <ReferirAmigos />
+          </div>
 
           {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
               As raias de playlist (uma por playlist, com as músicas já

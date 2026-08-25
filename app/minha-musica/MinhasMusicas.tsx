@@ -118,7 +118,7 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
       </div>
       <p className="text-xs text-white/50 mb-3">Toque no + de uma música para adicionar a uma playlist.</p>
 
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 mb-4">
+      <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1 mb-4">
         {tracks.map((t) => {
           const isPlaying = nowPlaying?.id === t.id && playing
           return (

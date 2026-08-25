@@ -187,7 +187,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
       {favoritados.length > 0 && (
         <div className="mb-4 pb-4 border-b border-white/5">
           <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">❤️ Favoritas — toque no + para adicionar a uma playlist</p>
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+          <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
             {favoritados.map((it) => {
               const isPlaying = nowPlaying?.id === it.orderId && playing
               return (
@@ -221,7 +221,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
       )}
 
       <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por ocasião</p>
-      <div className="flex gap-2 overflow-x-auto pb-2 mb-2 -mx-1 px-1">
+      <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-2 -mx-1 px-1">
         <Pill active={filtro === null} onClick={() => setFiltro(null)}>Todas · {items.length}</Pill>
         {ocasioes.map(([ocasiao, lista]) => (
           <Pill key={ocasiao} active={filtro?.tipo === "ocasiao" && filtro.valor === ocasiao} onClick={() => setFiltro({ tipo: "ocasiao", valor: ocasiao })}>
@@ -233,7 +233,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
       {estilos.length > 0 && (
         <>
           <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por estilo</p>
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-1 -mx-1 px-1">
+          <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-1 -mx-1 px-1">
             {estilos.map(([estilo, lista]) => (
               <Pill key={estilo} active={filtro?.tipo === "estilo" && filtro.valor === estilo} onClick={() => setFiltro({ tipo: "estilo", valor: estilo })}>
                 {estilo} · {lista.length}
@@ -243,7 +243,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
         </>
       )}
 
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+      <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
         {visiveis.map((it) => {
           const isPlaying = nowPlaying?.id === it.orderId && playing
           return (
