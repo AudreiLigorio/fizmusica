@@ -71,9 +71,9 @@ export default function MinhasPlaylists({ version, embedded }: { version: number
               type="button"
               onClick={() => excluirPlaylist(pl.id, pl.nome)}
               aria-label="Excluir playlist"
-              className="shrink-0 text-white/30 hover:text-red-400 text-sm transition-colors"
+              className="shrink-0 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold text-white/70 hover:scale-110 hover:bg-red-500/70 hover:text-white transition-all"
             >
-              🗑️
+              −
             </button>
           </div>
 
