@@ -7,6 +7,7 @@ import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
 import { useToast } from "./ToastContext"
 import InfoTooltip from "./InfoTooltip"
+import { combina } from "@/lib/busca"
 
 type CatalogItem = {
   orderId: string
@@ -46,7 +47,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
   )
 }
 
-export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChanged?: () => void }) {
+export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContagem }: { busca?: string; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void }) {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
@@ -139,11 +140,20 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
     await fetch("/api/catalog/favorite", { method: "POST", headers, body: JSON.stringify({ orderId }) }).catch(() => {})
   }
 
+  // Busca: mesmos campos da playlist, mais o estilo musical. Filtra antes dos
+  // agrupamentos, então os filtros de ocasião/estilo passam a contar só o que
+  // sobrou — se a busca deixou 3 músicas, as pílulas refletem essas 3.
+  const itensBusca = (items ?? []).filter((it) => combina(busca, [it.title, it.occasion, it.musicalStyle]))
+  useEffect(() => { onContagem?.(itensBusca.length) }, [itensBusca.length, onContagem])
+
   if (!items || items.length === 0) return null
+  // Busca sem resultado aqui: some o cartão inteiro. A contagem geral no campo
+  // de busca já explica o vazio.
+  if (busca.trim() && itensBusca.length === 0) return null
 
   // Agrupado por ocasião — o cliente navega por tema em vez de rolar tudo junto.
   const porOcasiao = new Map<string, CatalogItem[]>()
-  for (const it of items) {
+  for (const it of itensBusca) {
     const lista = porOcasiao.get(it.occasion) ?? []
     lista.push(it)
     porOcasiao.set(it.occasion, lista)
@@ -153,7 +163,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
   // Um pedido pode ter mais de um estilo marcado ("🎸 Rock, 🎵 Forró") — nesse
   // caso ele entra em cada grupo separadamente.
   const porEstilo = new Map<string, CatalogItem[]>()
-  for (const it of items) {
+  for (const it of itensBusca) {
     for (const estilo of (it.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
       const lista = porEstilo.get(estilo) ?? []
       lista.push(it)
@@ -162,10 +172,10 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
   }
   const estilos = [...porEstilo.entries()].sort((a, b) => b[1].length - a[1].length)
 
-  const favoritados = items.filter((it) => it.favorited)
+  const favoritados = itensBusca.filter((it) => it.favorited)
 
   const visiveis = !filtro
-    ? items
+    ? itensBusca
     : filtro.tipo === "ocasiao"
       ? porOcasiao.get(filtro.valor) ?? []
       : porEstilo.get(filtro.valor) ?? []
@@ -217,7 +227,7 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
 
       <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por ocasião</p>
       <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-2 -mx-1 px-1">
-        <Pill active={filtro === null} onClick={() => setFiltro(null)}>Todas · {items.length}</Pill>
+        <Pill active={filtro === null} onClick={() => setFiltro(null)}>Todas · {itensBusca.length}</Pill>
         {ocasioes.map(([ocasiao, lista]) => (
           <Pill key={ocasiao} active={filtro?.tipo === "ocasiao" && filtro.valor === ocasiao} onClick={() => setFiltro({ tipo: "ocasiao", valor: ocasiao })}>
             {ocasiao} · {lista.length}

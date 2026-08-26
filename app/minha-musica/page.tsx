@@ -24,6 +24,7 @@ import MiniPlayer from "./MiniPlayer"
 import InfoTooltip from "./InfoTooltip"
 import { TabBarMobile, TabsDesktop, type Aba } from "./AreaTabs"
 import FaixaAtalhos from "./FaixaAtalhos"
+import BuscaMusicas from "./BuscaMusicas"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -195,6 +196,13 @@ function MinhaMusicaContent() {
   // a raia de "Minhas Playlists" pra recarregar sempre que uma das duas
   // criar/alterar uma playlist, sem precisar compartilhar estado de verdade.
   const [playlistsVersion, setPlaylistsVersion] = useState(0)
+
+  // Busca da aba Músicas. As contagens vêm das próprias prateleiras (a Rede
+  // busca o catálogo por conta) — usar os setters direto como callback mantém
+  // a referência estável e evita laço de render.
+  const [busca, setBusca] = useState("")
+  const [nMinhas, setNMinhas] = useState(0)
+  const [nRede, setNRede] = useState(0)
 
   // Aba no endereço (?aba=musicas): sem isso, atualizar a página ou usar o
   // botão Voltar jogava o cliente de volta em Pedidos sem explicação.
@@ -858,13 +866,15 @@ function MinhaMusicaContent() {
 
           {/* ── ABA MÚSICAS ────────────────────────────────────────────── */}
           {aba === "musicas" && <>
+          <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() ? nMinhas + nRede : null} />
+
           {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
               As raias de playlist (uma por playlist, com as músicas já
               dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
-          <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+          <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} busca={busca} onContagem={setNMinhas} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
-          <RedeFizMusica onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+          <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
           <FaixaAtalhos onIr={() => irPara("carreira")} />
           </>}

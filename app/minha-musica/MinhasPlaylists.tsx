@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import { useToast } from "./ToastContext"
+import { combina } from "@/lib/busca"
 
 type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string }
 type PlaylistFull = { id: string; nome: string; tracks: Track[] }
@@ -13,7 +14,7 @@ type PlaylistFull = { id: string; nome: string; tracks: Track[] }
 // qualquer faixa (Minhas Músicas ou Rede Fiz Música) e ver o resultado
 // direto aqui embaixo. `version` sobe toda vez que qualquer um dos dois
 // cartões cria/altera uma playlist, disparando o recarregamento.
-export default function MinhasPlaylists({ version, embedded }: { version: number; embedded?: boolean }) {
+export default function MinhasPlaylists({ version, embedded, busca = "" }: { version: number; embedded?: boolean; busca?: string }) {
   const [playlists, setPlaylists] = useState<PlaylistFull[] | null>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
   const { showToast } = useToast()
@@ -58,9 +59,20 @@ export default function MinhasPlaylists({ version, embedded }: { version: number
 
   if (!playlists || playlists.length === 0) return null
 
+  // Durante a busca, cada raia mostra só o que combina e some se não sobrar
+  // nada — o nome da playlist também conta como campo, pra "favoritas" achar
+  // a playlist inteira.
+  const visiveis = !busca.trim()
+    ? playlists
+    : playlists
+        .map((pl) => (combina(busca, [pl.nome]) ? pl : { ...pl, tracks: pl.tracks.filter((t) => combina(busca, [t.title, t.occasion])) }))
+        .filter((pl) => pl.tracks.length > 0)
+
+  if (visiveis.length === 0) return null
+
   return (
     <>
-      {playlists.map((pl) => (
+      {visiveis.map((pl) => (
         <div
           key={pl.id}
           className={embedded ? "mt-4 pt-4 border-t border-white/5" : "rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6"}

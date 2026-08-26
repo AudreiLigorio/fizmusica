@@ -8,6 +8,7 @@ import CreatePlaylistModal from "./CreatePlaylistModal"
 import MinhasPlaylists from "./MinhasPlaylists"
 import { useToast } from "./ToastContext"
 import InfoTooltip from "./InfoTooltip"
+import { combina } from "@/lib/busca"
 
 export type LibraryTrack = {
   id: string
@@ -41,7 +42,7 @@ function gradientFor(id: string): string {
 // "Minhas músicas" não guarda nada de novo — é derivado dos pedidos entregues
 // (prop `tracks`, montada em page.tsx a partir dos mesmos `orders` que a
 // lista de pedidos já usa). Só a playlist (agrupamento) tem tabela própria.
-export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsChanged }: { tracks: LibraryTrack[]; playlistsVersion: number; onPlaylistsChanged?: () => void }) {
+export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, busca = "", onPlaylistsChanged, onContagem }: { tracks: LibraryTrack[]; playlistsVersion: number; busca?: string; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
   // Toque no "+" — o caminho que funciona em qualquer aparelho (arrastar é
   // só desktop; drag nativo HTML5 não existe em navegador mobile).
@@ -53,6 +54,11 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
   const [pendingOrderId, setPendingOrderId] = useState<string | undefined>(undefined)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
   const { showToast } = useToast()
+
+  // Campos da busca — lista pra crescer: quando existir apelido do autor,
+  // entra mais um item aqui e o resto continua igual.
+  const tracks = todasTracks.filter((t) => combina(busca, [t.title, t.occasion]))
+  useEffect(() => { onContagem?.(tracks.length) }, [tracks.length, onContagem])
 
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -102,6 +108,9 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
     showToast("Adicionado com sucesso ✓")
   }
 
+  // Some inteiro quando o cliente não tem música, e também quando a busca não
+  // achou nada aqui — a contagem geral já explica o vazio, e duas prateleiras
+  // vazias na tela ficariam confusas.
   if (tracks.length === 0) return null
 
   return (
@@ -159,7 +168,7 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
         </button>
       </div>
 
-      <MinhasPlaylists version={playlistsVersion} embedded />
+      <MinhasPlaylists version={playlistsVersion} embedded busca={busca} />
 
       <AddToPlaylistModal
         open={!!addingTrackId}
