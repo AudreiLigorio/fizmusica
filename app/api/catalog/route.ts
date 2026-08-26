@@ -19,12 +19,15 @@ async function getUserFromAuth(req: NextRequest) {
 // Catálogo público (dentro da área logada) — só pedido entregue, com
 // autorização de divulgação e com capa gerada pelo Suno. NUNCA lê
 // order_photos (fotos do cliente) — só sunoTracks, então não tem como
-// vazar foto real por engano aqui. Nome do homenageado também nunca sai
-// daqui, de propósito (é dado de terceiro que não deu consentimento) —
-// e por isso o "título" também não é o gerado pelo Suno: na prática o Suno
-// costuma titular a música com o próprio nome do homenageado ("Lucas",
-// "Deus", "Messias"...), então usar o title real vazaria o mesmo dado que
-// a gente está escondendo. O título público é sempre derivado da ocasião.
+// vazar foto real por engano aqui. Nome do homenageado nunca sai daqui, de
+// propósito (é dado de terceiro que não deu consentimento).
+//
+// Título: usa o real SÓ quando o cliente confirmou no passo de aprovar a
+// letra (musicNameConfirmed) — aí ou é sugestão sem nome próprio, ou foi ele
+// quem escreveu, sob o termo de publicação. Título não confirmado cai pro
+// derivado da ocasião: o `sunoTracks[].title` costuma ser o próprio nome do
+// homenageado ("Lucas", "Deus"), e mesmo o antigo musicName da IA já saiu com
+// nome tirado da letra ("A Doce Espera de Beatriz").
 export async function GET(req: NextRequest) {
   const user = await getUserFromAuth(req)
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
@@ -40,10 +43,17 @@ export async function GET(req: NextRequest) {
 
   const ids = (orders ?? []).map((o) => o.id)
   const { data: gm } = ids.length
-    ? await supabase.from("generated_music").select("orderId, slug, mp3Url, lyrics, lyricsLrc").in("orderId", ids)
+    ? await supabase.from("generated_music").select("orderId, slug, mp3Url, lyrics, lyricsLrc, musicName, musicNameConfirmed").in("orderId", ids)
     : { data: [] }
-  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null }> = {}
-  for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null, lyrics: g.lyrics ?? null, lyricsLrc: g.lyricsLrc ?? null }
+  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null; musicName: string | null; musicNameConfirmed: boolean }> = {}
+  for (const g of gm ?? []) musicByOrder[g.orderId as string] = {
+    slug: g.slug ?? null,
+    mp3Url: g.mp3Url ?? null,
+    lyrics: g.lyrics ?? null,
+    lyricsLrc: g.lyricsLrc ?? null,
+    musicName: g.musicName ?? null,
+    musicNameConfirmed: !!g.musicNameConfirmed,
+  }
 
   const { data: favs } = await supabase
     .from("catalog_favorites")
@@ -69,7 +79,9 @@ export async function GET(req: NextRequest) {
       return {
         orderId: o.id,
         slug: music.slug,
-        title: `Uma canção de ${o.subcategory}`,
+        title: music.musicNameConfirmed && music.musicName?.trim()
+          ? music.musicName.trim()
+          : `Uma canção de ${o.subcategory}`,
         occasion: o.subcategory,
         musicalStyle: o.musicalStyle ?? null,
         imageUrl: principal.imageUrl,

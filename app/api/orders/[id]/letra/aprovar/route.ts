@@ -51,8 +51,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // mp3Url/slug, que seguem nulos.
   const tituloFinal = String(musicName ?? "").trim().slice(0, 60)
   if (tituloFinal) {
+    // musicNameConfirmed libera o título pra aparecer publicamente no catálogo:
+    // ou é a sugestão sem nomes próprios que o cliente viu, ou é o texto que ele
+    // mesmo escreveu — coberto pelo termo de publicação. Título legado (que pode
+    // ter nome tirado da letra) fica com a flag falsa e segue escondido.
     const { error: gmErr } = await supabase.from("generated_music").upsert(
-      { orderId: id, musicName: tituloFinal, updatedAt: new Date().toISOString() },
+      { orderId: id, musicName: tituloFinal, musicNameConfirmed: true, updatedAt: new Date().toISOString() },
       { onConflict: "orderId" },
     )
     if (gmErr) console.error("[letra/aprovar] título não salvo", gmErr.message)
