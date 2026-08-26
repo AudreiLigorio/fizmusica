@@ -42,7 +42,7 @@ function gradientFor(id: string): string {
 // "Minhas músicas" não guarda nada de novo — é derivado dos pedidos entregues
 // (prop `tracks`, montada em page.tsx a partir dos mesmos `orders` que a
 // lista de pedidos já usa). Só a playlist (agrupamento) tem tabela própria.
-export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, busca = "", onPlaylistsChanged, onContagem }: { tracks: LibraryTrack[]; playlistsVersion: number; busca?: string; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void }) {
+export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, busca = "", meuApelido = null, onPlaylistsChanged, onContagem }: { tracks: LibraryTrack[]; playlistsVersion: number; busca?: string; meuApelido?: string | null; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
   // Toque no "+" — o caminho que funciona em qualquer aparelho (arrastar é
   // só desktop; drag nativo HTML5 não existe em navegador mobile).
@@ -134,7 +134,7 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
                 <button
                   type="button"
                   disabled={!t.audioUrl}
-                  onClick={() => t.audioUrl && playTrack({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc })}
+                  onClick={() => t.audioUrl && playTrack({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc, apelido: meuApelido })}
                   className="absolute inset-0 flex items-center justify-center text-2xl disabled:cursor-default"
                 >
                   {!t.imageUrl && "▶"}

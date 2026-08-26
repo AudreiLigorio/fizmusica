@@ -69,8 +69,11 @@ export default function MiniPlayer() {
           na tela, pausar já resolve. */}
       {/* No celular a barra de abas ocupa o rodapé, então o player sobe pra
           cima dela; no desktop as abas estão no topo e ele volta pro pé. */}
+      {/* text-white explícito: o player é irmão do wrapper da página, não filho
+          — sem isso o título (que não tem cor própria) herda o preto do body e
+          some no fundo escuro. Mesma armadilha dos modais em portal. */}
       <div
-        className="fixed left-0 right-0 bottom-[var(--fm-tabbar)] sm:bottom-0 z-40 border-t border-white/10 px-4 py-2.5"
+        className="fixed left-0 right-0 bottom-[var(--fm-tabbar)] sm:bottom-0 z-40 border-t border-white/10 px-4 py-2.5 text-white"
         style={{ background: "#130e1c", backdropFilter: "blur(14px)", ["--fm-tabbar" as string]: "calc(4.15rem + env(safe-area-inset-bottom))" }}
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
@@ -122,7 +125,7 @@ export default function MiniPlayer() {
 
       {/* player cheio */}
       {fullOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center px-6 pt-6 pb-8" style={{ background: "linear-gradient(180deg, #1f1830, #0b0812)" }}>
+        <div className="fixed inset-0 z-50 flex flex-col items-center px-6 pt-6 pb-8 text-white" style={{ background: "linear-gradient(180deg, #1f1830, #0b0812)" }}>
           <div className="w-full max-w-md flex items-center justify-between mb-8">
             <button onClick={closeFull} className="text-white/60 hover:text-white text-xl px-1" aria-label="Voltar">▾</button>
             <span className="text-[11px] uppercase tracking-wide text-white/40 font-bold">Tocando agora</span>

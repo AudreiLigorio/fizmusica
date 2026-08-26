@@ -55,6 +55,7 @@ type Order = {
   revision?: { status: string } | null
   is_revision?: boolean
   mp3Url?: string | null
+  musicName?: string | null
   lyrics?: string | null
   lyricsLrc?: string | null
   sharing_term_accepted_at?: string | null
@@ -201,6 +202,19 @@ function MinhaMusicaContent() {
   // Busca da aba Músicas. As contagens vêm das próprias prateleiras (a Rede
   // busca o catálogo por conta) — usar os setters direto como callback mantém
   // a referência estável e evita laço de render.
+  // Apelido do próprio cliente — nas músicas dele o apelido aparece sempre,
+  // sem depender do mostrar_apelido (aquele controla só o que OUTROS veem).
+  const [meuApelido, setMeuApelido] = useState<string | null>(null)
+  useEffect(() => {
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const d = await fetch("/api/perfil", { headers: { Authorization: `Bearer ${session.access_token}` } })
+        .then((r) => r.json()).catch(() => ({}))
+      setMeuApelido(d.apelido ?? null)
+    })()
+  }, [])
+
   const [busca, setBusca] = useState("")
   const [nMinhas, setNMinhas] = useState(0)
   const [nRede, setNRede] = useState(0)
@@ -357,7 +371,10 @@ function MinhaMusicaContent() {
       const principal = o.tracks?.find((t) => t.audioUrl === o.mp3Url) ?? o.tracks?.[0]
       return {
         id: o.id,
-        title: principal?.title ?? o.subcategory,
+        // Nome que o cliente escolheu ao aprovar a letra. O title do Suno é o
+        // último recurso: ele costuma ser o nome do homenageado ("Médicos",
+        // "Lucas"), que não é o nome da música.
+        title: o.musicName?.trim() || principal?.title || o.subcategory,
         occasion: o.subcategory,
         slug: o.slug as string,
         imageUrl: principal?.imageUrl ?? null,
@@ -872,7 +889,7 @@ function MinhaMusicaContent() {
           {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
               As raias de playlist (uma por playlist, com as músicas já
               dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
-          <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} busca={busca} onContagem={setNMinhas} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+          <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} busca={busca} meuApelido={meuApelido} onContagem={setNMinhas} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
           <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
