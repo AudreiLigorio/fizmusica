@@ -22,12 +22,14 @@ async function getUserFromAuth(req: NextRequest) {
 // vazar foto real por engano aqui. Nome do homenageado nunca sai daqui, de
 // propósito (é dado de terceiro que não deu consentimento).
 //
-// Título: usa o real SÓ quando o cliente confirmou no passo de aprovar a
-// letra (musicNameConfirmed) — aí ou é sugestão sem nome próprio, ou foi ele
-// quem escreveu, sob o termo de publicação. Título não confirmado cai pro
-// derivado da ocasião: o `sunoTracks[].title` costuma ser o próprio nome do
-// homenageado ("Lucas", "Deus"), e mesmo o antigo musicName da IA já saiu com
-// nome tirado da letra ("A Doce Espera de Beatriz").
+// Título: usa o real só quando `musicNameConfirmed` — a flag de "liberado pra
+// aparecer publicamente", que se ganha de duas formas: (1) o cliente confirmou
+// no passo de aprovar a letra, com sugestão que o prompt proíbe de ter nome
+// próprio; (2) auditamos e liberamos na mão (backfill de 2026-08-26, 55
+// pedidos legados). Sem a flag, cai pro derivado da ocasião — o
+// `sunoTracks[].title` costuma ser o nome do homenageado ("Lucas", "Deus") e
+// até o musicName antigo da IA já saiu com nome tirado da letra ("A Doce
+// Espera de Beatriz", corrigido no backfill).
 export async function GET(req: NextRequest) {
   const user = await getUserFromAuth(req)
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })

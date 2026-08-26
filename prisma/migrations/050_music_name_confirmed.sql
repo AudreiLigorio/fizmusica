@@ -21,4 +21,12 @@ alter table generated_music
   add column if not exists "musicNameConfirmed" boolean not null default false;
 
 comment on column generated_music."musicNameConfirmed" is
-  'true = título escolhido/confirmado pelo cliente ao aprovar a letra; só esses podem aparecer publicamente no catálogo.';
+  'true = título liberado para aparecer publicamente no catálogo. Ganha-se de duas formas: cliente confirmou no passo de aprovar a letra, ou auditoria manual (backfill 2026-08-26).';
+
+-- Backfill de 2026-08-26 (já executado, aqui só como registro do que foi feito):
+-- auditados os 68 pedidos do catálogo. 4 títulos regerados sem nome próprio
+-- ("A Doce Espera de Beatriz" -> "A Mais Doce Espera"; "O céu", "O sonho"),
+-- 51 liberados como estavam, e 2 pedidos de teste ("teste", com letra
+-- "Fade / Slide / Zoom") deixados de fora de propósito — precisam sair do
+-- catálogo, não de um título melhor. Os 11 sem título nenhum seguem no
+-- derivado da ocasião.
