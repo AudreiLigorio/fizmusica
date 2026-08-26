@@ -6,6 +6,7 @@ export type OrderEventType =
   | "pedido_criado"
   | "pagamento_confirmado"
   | "letra_aprovada"
+  | "titulo_definido"
   | "letra_reprocessada"
   | "letra_previa_aproveitada"
   | "letra_previa_descartada"

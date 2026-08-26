@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 // A partir daqui o pedido segue pra produção (gate do admin é da Fase 3).
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const { lyrics } = await req.json().catch(() => ({}))
+  const { lyrics, musicName } = await req.json().catch(() => ({}))
   const supabase = createServerClient()
 
   const { data: order } = await supabase
@@ -39,6 +39,25 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   await logOrderEvent(supabase, id, "letra_aprovada")
+
+  // Título escolhido na aprovação. Se o cliente não mexeu, chega aqui a
+  // sugestão da IA que ele viu na tela — em ambos os casos é um título que
+  // ele teve a chance de trocar.
+  //
+  // Grava antes da música existir: o ingest só preenche musicName quando está
+  // vazio, então isso vira o título definitivo (e é o que sai no e-mail de
+  // "música pronta", que dispara depois daqui). Criar a linha de
+  // generated_music cedo é seguro — quem lista música entregue filtra por
+  // mp3Url/slug, que seguem nulos.
+  const tituloFinal = String(musicName ?? "").trim().slice(0, 60)
+  if (tituloFinal) {
+    const { error: gmErr } = await supabase.from("generated_music").upsert(
+      { orderId: id, musicName: tituloFinal, updatedAt: new Date().toISOString() },
+      { onConflict: "orderId" },
+    )
+    if (gmErr) console.error("[letra/aprovar] título não salvo", gmErr.message)
+    else await logOrderEvent(supabase, id, "titulo_definido", tituloFinal)
+  }
 
   // Modo de produção (Operação): "manual" NÃO dispara o Suno — o pedido entra na
   // fila de Produção esperando o admin gerar/subir. "auto" e "review" disparam.

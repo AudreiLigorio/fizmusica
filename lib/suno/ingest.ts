@@ -81,9 +81,14 @@ export async function ingestSunoResult(
   // publicamente no player como "uma música especial para...". Cair pro nome
   // de quem comprou exporia um dado que a pessoa escolheu não divulgar.
   const personName = gmPrev?.personName || order.honoreeName || null
+  // Sem cair pro nome do homenageado: o título aparece publicamente na Rede
+  // Fiz Música, e o homenageado nunca consentiu em ter o nome divulgado.
+  // Falhou a IA? Fica sem título — o resto do fluxo já lida com null.
+  // No caminho normal esse título já vem preenchido da aprovação da letra,
+  // onde o cliente viu e pôde trocar; aqui é só rede de segurança.
   let musicName = gmPrev?.musicName || null
   if (!musicName && order.lyricsDraft) {
-    musicName = (await generateMusicTitle(order.lyricsDraft)) || (order.honoreeName ?? null)
+    musicName = await generateMusicTitle(order.lyricsDraft)
   }
 
   await supabase.from("generated_music").upsert({

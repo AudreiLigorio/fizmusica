@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import LetraPanel from "./LetraPanel"
 import FotosPanel from "./FotosPanel"
+import TituloMusica from "./TituloMusica"
 
 // Fluxo guiado de preparo da música: Letra → Fotos → Aprovar & gerar.
 // Compartilhado entre a área logada (/minha-musica) e a página tokenizada
@@ -25,13 +26,14 @@ export default function PreparoFlow({
   const [showFotos, setShowFotos] = useState(false)
   const [photosConfirmed, setPhotosConfirmed] = useState(false)
   const [approving, setApproving] = useState(false)
+  const [titulo, setTitulo] = useState("")
 
   async function approveAndGenerate() {
     setApproving(true)
     const res = await fetch(`/api/orders/${orderId}/letra/aprovar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lyrics: letra.lyrics }),
+      body: JSON.stringify({ lyrics: letra.lyrics, musicName: titulo }),
     })
     setApproving(false)
     if (res.ok) onApproved?.()
@@ -139,6 +141,17 @@ export default function PreparoFlow({
             Ao aprovar, a música é <strong>gerada automaticamente</strong> e a <strong>letra fica travada</strong>.
             As fotos você ainda pode ajustar depois, inclusive com a música pronta.
           </p>
+
+          <div className="mb-3">
+            <TituloMusica
+              orderId={orderId}
+              lyrics={letra.lyrics}
+              value={titulo}
+              onChange={setTitulo}
+              disabled={approving}
+            />
+          </div>
+
           <div className="flex flex-wrap gap-2">
             {temFotos && (
               <button

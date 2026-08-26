@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import TituloMusica from "./TituloMusica"
 
 type State = {
   lyricsDraft: string | null
@@ -66,6 +67,7 @@ export default function LetraPanel({
   const [text, setText]     = useState("")
   const [lastAiText, setLastAiText] = useState("")
   const [instrucao, setInstrucao] = useState("")
+  const [titulo, setTitulo] = useState("")
   const [loading, setLoading] = useState(true)
   const [busy, setBusy]     = useState<Busy>(null)
   const [error, setError]   = useState("")
@@ -181,7 +183,7 @@ export default function LetraPanel({
       const res = await fetch(`/api/orders/${orderId}/letra/aprovar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lyrics: text }),
+        body: JSON.stringify({ lyrics: text, musicName: titulo }),
       })
       const d = await res.json()
       if (d.error) { setError(friendlyError(d.error)); return }
@@ -304,6 +306,14 @@ export default function LetraPanel({
 
           {/* No modo fluxo, a aprovação fica no passo final (página). Aqui só geramos/revisamos. */}
           {!flowMode && (
+            <>
+            <TituloMusica
+              orderId={orderId}
+              lyrics={text}
+              value={titulo}
+              onChange={setTitulo}
+              disabled={busy !== null}
+            />
             <button
               onClick={aprovar}
               disabled={busy !== null || !podeAprovar}
@@ -317,6 +327,7 @@ export default function LetraPanel({
                 </span>
               ) : "✅ Aprovar letra"}
             </button>
+            </>
           )}
         </>
       )}
