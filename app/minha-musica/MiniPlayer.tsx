@@ -9,7 +9,7 @@ function fmt(s: number): string {
 }
 
 export default function MiniPlayer() {
-  const { track, playing, progress, duration, activeLine, lines, fullOpen, audioRef, toggle, seek, close, openFull, closeFull, onTimeUpdate } = usePlayer()
+  const { track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef, toggle, toggleRepeat, seek, close, openFull, closeFull, onTimeUpdate } = usePlayer()
   const activeLineRef = useRef<HTMLParagraphElement>(null)
 
   // Mesmo mecanismo real (PublicMusicPlayer.tsx): scrollIntoView na linha
@@ -26,6 +26,7 @@ export default function MiniPlayer() {
       <audio
         ref={audioRef}
         src={track.audioUrl}
+        loop={repeat}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onTimeUpdate}
         onEnded={close}
@@ -52,6 +53,19 @@ export default function MiniPlayer() {
               <p className="text-xs font-medium truncate">{track.title}</p>
               <p className="text-[11px] text-white/40 truncate">{track.occasion}</p>
             </div>
+          </button>
+          <button
+            onClick={toggleRepeat}
+            aria-label={repeat ? "Desativar repetir" : "Repetir música"}
+            aria-pressed={repeat}
+            title={repeat ? "Repetindo — toca de novo ao terminar" : "Repetir música"}
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0 border transition-colors ${
+              repeat
+                ? "border-fuchsia-400/60 bg-fuchsia-500/20 text-fuchsia-200"
+                : "border-white/15 text-white/45 hover:text-white/80"
+            }`}
+          >
+            🔁
           </button>
           <button
             onClick={toggle}

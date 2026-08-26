@@ -39,9 +39,11 @@ type PlayerState = {
   activeLine: number
   lines: string[]
   fullOpen: boolean
+  repeat: boolean
   audioRef: React.RefObject<HTMLAudioElement | null>
   playTrack: (t: PlayableTrack) => void
   toggle: () => void
+  toggleRepeat: () => void
   seek: (t: number) => void
   close: () => void
   openFull: () => void
@@ -61,6 +63,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const [duration, setDuration] = useState(0)
   const [activeLine, setActiveLine] = useState(0)
   const [fullOpen, setFullOpen] = useState(false)
+  // Repetir: usa o `loop` nativo do <audio>, então a faixa reinicia sem
+  // passar pelo onEnded (que é quem fecha o player no fim normal).
+  const [repeat, setRepeat] = useState(false)
 
   const lrcLines = track?.lyricsLrc ? parseLrc(track.lyricsLrc) : null
   const plainLines = (track?.lyrics ?? "").split("\n").map((l) => l.trim()).filter((l) => l && !/^\[.*\]$/.test(l))
@@ -113,8 +118,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, [lrcLines, plainLines])
 
   const value: PlayerState = {
-    track, playing, progress, duration, activeLine, lines, fullOpen, audioRef,
+    track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef,
     playTrack, toggle, seek, close,
+    toggleRepeat: () => setRepeat((r) => !r),
     openFull: () => setFullOpen(true),
     closeFull: () => setFullOpen(false),
     onTimeUpdate,
