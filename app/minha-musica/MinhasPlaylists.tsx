@@ -6,7 +6,7 @@ import { usePlayer } from "./PlayerContext"
 import { useToast } from "./ToastContext"
 import { combina } from "@/lib/busca"
 
-type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string }
+type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string; apelido: string | null }
 type PlaylistFull = { id: string; nome: string; tracks: Track[] }
 
 // Uma raia por playlist, sempre visível na tela (em vez de só um card que
@@ -116,7 +116,7 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                       )}
                       <button
                         type="button"
-                        onClick={() => playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null })}
+                        onClick={() => playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null, apelido: t.apelido })}
                         className="absolute inset-0"
                         aria-label={isPlaying ? "Pausar" : "Tocar"}
                       >

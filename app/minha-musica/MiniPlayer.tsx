@@ -48,6 +48,12 @@ export default function MiniPlayer() {
 
   if (!track) return null
 
+  // Música sem nome próprio cai no derivado "Uma canção de {ocasião}" — aí a
+  // linha de baixo repetiria a mesma coisa. Nesse caso a ocasião some e sobra
+  // só o apelido embaixo, quando houver.
+  const ocasiaoRepetida = !!track.occasion && track.title.includes(track.occasion)
+  const subtitulo = ocasiaoRepetida ? null : track.occasion
+
   return (
     <>
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
@@ -84,7 +90,7 @@ export default function MiniPlayer() {
             />
             <div className="min-w-0">
               <p className="text-xs font-medium truncate">{track.title}</p>
-              <p className="text-[11px] text-white/40 truncate">{track.occasion}</p>
+              {subtitulo && <p className="text-[11px] text-white/40 truncate">{subtitulo}</p>}
             </div>
           </button>
 
@@ -140,7 +146,9 @@ export default function MiniPlayer() {
             }}
           />
           <h2 className="text-center text-lg font-semibold mb-1 max-w-sm" style={{ textWrap: "balance" }}>{track.title}</h2>
-          <p className="text-sm text-white/40 mb-6">{track.occasion}</p>
+          <p className="text-sm text-white/40 mb-6">
+            {[subtitulo, track.apelido].filter(Boolean).join(" · ") || " "}
+          </p>
 
           {lines.length > 0 && (
             <>

@@ -35,28 +35,53 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const ids: string[] = pl.track_order_ids ?? []
   if (ids.length === 0) return NextResponse.json({ playlist: pl, tracks: [] })
 
-  const { data: orders } = await supabase.from("orders").select("id, subcategory, sunoTracks").in("id", ids)
-  const { data: gm } = await supabase.from("generated_music").select("orderId, mp3Url").in("orderId", ids)
-  const mp3ByOrder: Record<string, string | null> = {}
-  for (const g of gm ?? []) mp3ByOrder[g.orderId as string] = g.mp3Url ?? null
+  const { data: orders } = await supabase.from("orders").select("id, subcategory, sunoTracks, userId").in("id", ids)
+  const { data: gm } = await supabase.from("generated_music").select("orderId, mp3Url, musicName, musicNameConfirmed").in("orderId", ids)
+  const musicByOrder: Record<string, { mp3Url: string | null; musicName: string | null; confirmado: boolean }> = {}
+  for (const g of gm ?? []) musicByOrder[g.orderId as string] = {
+    mp3Url: g.mp3Url ?? null,
+    musicName: g.musicName ?? null,
+    confirmado: !!g.musicNameConfirmed,
+  }
+
+  // Apelido do autor: do próprio dono sempre; de terceiros só com o opt-in
+  // (mesma regra do catálogo — publication_consent não cobre identidade).
+  const ownerIds = [...new Set((orders ?? []).map((o) => o.userId).filter(Boolean))] as string[]
+  const { data: perfis } = ownerIds.length
+    ? await supabase.from("profiles").select("user_id, apelido, mostrar_apelido").in("user_id", ownerIds)
+    : { data: [] }
+  const apelidoPorUser: Record<string, string> = {}
+  for (const p of perfis ?? []) {
+    const proprio = p.user_id === user.id
+    if ((proprio || p.mostrar_apelido) && p.apelido?.trim()) apelidoPorUser[p.user_id as string] = p.apelido.trim()
+  }
 
   type Track = { audioUrl: string; imageUrl: string | null }
-  const byId: Record<string, { subcategory: string; sunoTracks: Track[] | null }> = {}
-  for (const o of orders ?? []) byId[o.id] = { subcategory: o.subcategory, sunoTracks: (o.sunoTracks as Track[] | null) ?? null }
+  const byId: Record<string, { subcategory: string; sunoTracks: Track[] | null; userId: string | null }> = {}
+  for (const o of orders ?? []) byId[o.id] = {
+    subcategory: o.subcategory,
+    sunoTracks: (o.sunoTracks as Track[] | null) ?? null,
+    userId: (o.userId as string | null) ?? null,
+  }
 
   const tracks = ids
     .map((orderId) => {
       const o = byId[orderId]
       if (!o) return null
-      const mp3Url = mp3ByOrder[orderId]
-      const principal = o.sunoTracks?.find((t) => t.audioUrl === mp3Url) ?? o.sunoTracks?.[0]
+      const music = musicByOrder[orderId]
+      const principal = o.sunoTracks?.find((t) => t.audioUrl === music?.mp3Url) ?? o.sunoTracks?.[0]
       if (!principal?.audioUrl) return null
+      // Mesma regra do catálogo: nome real só quando o cliente confirmou — ou
+      // sempre, se a música é do próprio dono da playlist.
+      const proprio = !!o.userId && o.userId === user.id
+      const nome = music?.musicName?.trim()
       return {
         orderId,
-        title: `Uma canção de ${o.subcategory}`,
+        title: nome && (music?.confirmado || proprio) ? nome : `Uma canção de ${o.subcategory}`,
         occasion: o.subcategory,
         imageUrl: principal.imageUrl,
         audioUrl: principal.audioUrl,
+        apelido: o.userId ? apelidoPorUser[o.userId] ?? null : null,
       }
     })
     .filter((t): t is NonNullable<typeof t> => t !== null)
