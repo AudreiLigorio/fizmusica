@@ -8,14 +8,16 @@ const MAX_APELIDO = 24
 
 // Cabeçalho da aba Carreira: quem é o cliente e onde ele vai crescer.
 //
-// Apelido e foto são PRIVADOS por decisão — só aparecem aqui. A Rede Fiz
-// Música segue anônima; se um dia o apelido virar autor público lá, precisa de
-// aceite separado (publication_consent cobre a música, não o rosto de quem
-// comprou).
+// Apelido e foto ficam salvos aqui, privados por padrão. O apelido pode
+// aparecer publicamente nas músicas que o cliente publica na Rede Fiz
+// Música — mas só se ele ligar `mostrarApelido` explicitamente. É um opt-in
+// separado do consentimento de publicar a música: aquele nunca foi pensado
+// pra expor identidade de ninguém.
 export default function CarreiraPainel({ nome, email }: { nome: string; email: string }) {
   const [apelido, setApelido] = useState("")
   const [salvo, setSalvo] = useState("")
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [mostrarApelido, setMostrarApelido] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState("")
   const fileRef = useRef<HTMLInputElement>(null)
@@ -32,6 +34,7 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
     setApelido(d.apelido ?? "")
     setSalvo(d.apelido ?? "")
     setAvatarUrl(d.avatarUrl ?? null)
+    setMostrarApelido(!!d.mostrarApelido)
   }
 
   useEffect(() => { carregar() }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -47,6 +50,17 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
     })
     setSalvo(limpo)
     showToast("Apelido salvo ✓")
+  }
+
+  async function alternarMostrarApelido(v: boolean) {
+    setMostrarApelido(v) // otimista
+    const headers = await authHeaders()
+    await fetch("/api/perfil", {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ mostrarApelido: v }),
+    })
+    showToast(v ? "Apelido visível na Rede ✓" : "Apelido voltou a ser privado ✓")
   }
 
   async function enviarFoto(file: File) {
@@ -124,6 +138,28 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
           Salvar
         </button>
       </div>
+
+      {/* Opt-in separado de propósito: publication_consent (lá no pedido) só
+          autoriza publicar a música. Mostrar o apelido é outra decisão, então
+          fica com o próprio interruptor, desligado até o cliente ligar. */}
+      <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/15 px-4 py-3 mb-4 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={mostrarApelido}
+          onChange={(e) => alternarMostrarApelido(e.target.checked)}
+          className="sr-only peer"
+        />
+        <span
+          className={`relative w-9 h-5 rounded-full shrink-0 transition-colors ${mostrarApelido ? "bg-fuchsia-500" : "bg-white/15"}`}
+          aria-hidden="true"
+        >
+          <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${mostrarApelido ? "translate-x-4" : ""}`} />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-xs font-semibold">Mostrar meu apelido na Rede Fiz Música</span>
+          <span className="block text-[11px] text-white/40">Aparece pra quem ouvir as músicas que você publicou lá</span>
+        </span>
+      </label>
 
       {/* Nível travado de propósito: o programa de fidelidade está
           especificado mas não construído, e número falso seria pior do que

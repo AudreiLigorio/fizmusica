@@ -31,13 +31,14 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient()
   const { data } = await supabase
     .from("profiles")
-    .select("apelido, avatar_path")
+    .select("apelido, avatar_path, mostrar_apelido")
     .eq("user_id", user.id)
     .maybeSingle()
 
   return NextResponse.json({
     apelido: data?.apelido ?? null,
     avatarUrl: await assinar(supabase, data?.avatar_path ?? null),
+    mostrarApelido: !!data?.mostrar_apelido,
     // E-mail de vínculo: é por ele que os pedidos entram na conta.
     email: user.email ?? null,
   })
@@ -47,14 +48,16 @@ export async function PATCH(req: NextRequest) {
   const user = await getUserFromAuth(req)
   if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
 
-  const { apelido } = await req.json().catch(() => ({}))
-  const limpo = String(apelido ?? "").trim().slice(0, MAX_APELIDO)
+  const body = await req.json().catch(() => ({}))
+  const patch: Record<string, unknown> = { user_id: user.id, updated_at: new Date().toISOString() }
+  if ("apelido" in body) patch.apelido = String(body.apelido ?? "").trim().slice(0, MAX_APELIDO) || null
+  // mostrar_apelido: opt-in separado do publication_consent — precisa ser
+  // enviado explicitamente pelo cliente, nunca assumido junto do apelido.
+  if ("mostrarApelido" in body) patch.mostrar_apelido = !!body.mostrarApelido
 
   const supabase = createServerClient()
-  const { error } = await supabase
-    .from("profiles")
-    .upsert({ user_id: user.id, apelido: limpo || null, updated_at: new Date().toISOString() }, { onConflict: "user_id" })
+  const { error } = await supabase.from("profiles").upsert(patch, { onConflict: "user_id" })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true, apelido: limpo || null })
+  return NextResponse.json({ ok: true })
 }

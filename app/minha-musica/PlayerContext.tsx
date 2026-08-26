@@ -10,6 +10,10 @@ export type PlayableTrack = {
   imageUrl: string | null
   lyrics: string | null
   lyricsLrc: string | null
+  // Opcional e nulo na maior parte das faixas de propósito: só aparece quando
+  // o autor optou por mostrar (profiles.mostrar_apelido) ou é o próprio
+  // cliente ouvindo a música dele.
+  apelido?: string | null
 }
 
 type LrcLine = { time: number; text: string }

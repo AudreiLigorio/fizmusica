@@ -19,6 +19,7 @@ type CatalogItem = {
   audioUrl: string
   lyrics: string | null
   lyricsLrc: string | null
+  authorApelido: string | null
   favorited: boolean
 }
 
@@ -203,7 +204,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
                   >
                     <button
                       type="button"
-                      onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc })}
+                      onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc, apelido: it.authorApelido })}
                       className="absolute inset-0 flex items-center justify-center text-2xl"
                     >
                       {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
@@ -256,7 +257,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
               <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-white/10">
                 <button
                   type="button"
-                  onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc })}
+                  onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc, apelido: it.authorApelido })}
                   className="block w-full h-full"
                 >
                   <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${it.imageUrl})` }} />

@@ -3,6 +3,34 @@
 import { useEffect, useRef } from "react"
 import { usePlayer } from "./PlayerContext"
 
+// Ícones vetoriais — o "▶" de texto Unicode renderiza torto e com peso
+// diferente por aparelho/fonte. Mesmo traço das abas (AreaTabs.tsx).
+function IconRepeat() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="m17 2 4 4-4 4" />
+      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+      <path d="m7 22-4-4 4-4" />
+      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </svg>
+  )
+}
+function IconPlay({ size = "w-4 h-4" }: { size?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`${size} translate-x-[1px]`} aria-hidden="true" fill="currentColor">
+      <path d="M7 4.7c0-1 1.1-1.6 1.9-1.1l11.6 7.3c.8.5.8 1.7 0 2.2L8.9 20.4C8.1 20.9 7 20.3 7 19.3Z" />
+    </svg>
+  )
+}
+function IconPause({ size = "w-4 h-4" }: { size?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={size} aria-hidden="true" fill="currentColor">
+      <rect x="6" y="4" width="4" height="16" rx="1.2" />
+      <rect x="14" y="4" width="4" height="16" rx="1.2" />
+    </svg>
+  )
+}
+
 function fmt(s: number): string {
   if (!s || isNaN(s)) return "0:00"
   return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`
@@ -56,6 +84,18 @@ export default function MiniPlayer() {
               <p className="text-[11px] text-white/40 truncate">{track.occasion}</p>
             </div>
           </button>
+
+          {/* Apelido do autor — só quando ele existe (a maioria das faixas não
+              tem: ou o dono não preencheu, ou não ligou o "mostrar na Rede").
+              Traço vertical separa de propósito do título/ocasião, que ficam
+              mais à esquerda. */}
+          {track.apelido && (
+            <div className="flex items-center gap-2.5 shrink-0 max-w-[76px] sm:max-w-[130px]">
+              <span className="w-px h-6 bg-white/15 shrink-0" aria-hidden="true" />
+              <p className="text-[11px] text-white/45 truncate" title={track.apelido}>{track.apelido}</p>
+            </div>
+          )}
+
           <button
             onClick={toggleRepeat}
             aria-label={repeat ? "Desativar repetir" : "Repetir música"}
@@ -67,15 +107,15 @@ export default function MiniPlayer() {
                 : "border-white/15 text-white/45 hover:text-white/80"
             }`}
           >
-            🔁
+            <IconRepeat />
           </button>
           <button
             onClick={toggle}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-xs shrink-0 text-white"
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white"
             style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
             aria-label={playing ? "Pausar" : "Tocar"}
           >
-            {playing ? "❚❚" : "▶"}
+            {playing ? <IconPause /> : <IconPlay />}
           </button>
         </div>
       </div>
@@ -145,10 +185,10 @@ export default function MiniPlayer() {
 
           <button
             onClick={toggle}
-            className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center text-xl"
+            className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center"
             aria-label={playing ? "Pausar" : "Tocar"}
           >
-            {playing ? "❚❚" : "▶"}
+            {playing ? <IconPause size="w-7 h-7" /> : <IconPlay size="w-7 h-7" />}
           </button>
         </div>
       )}

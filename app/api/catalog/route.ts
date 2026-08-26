@@ -22,6 +22,10 @@ async function getUserFromAuth(req: NextRequest) {
 // vazar foto real por engano aqui. Nome do homenageado nunca sai daqui, de
 // propósito (é dado de terceiro que não deu consentimento).
 //
+// Apelido do autor: só sai daqui quando o dono do pedido ligou
+// profiles.mostrar_apelido (opt-in separado — publication_consent autoriza
+// publicar a música, não expor identidade). Ver migração 052.
+//
 // Título: usa o real só quando `musicNameConfirmed` — a flag de "liberado pra
 // aparecer publicamente", que se ganha de duas formas: (1) o cliente confirmou
 // no passo de aprovar a letra, com sugestão que o prompt proíbe de ter nome
@@ -37,11 +41,24 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient()
   const { data: orders, error } = await supabase
     .from("orders")
-    .select(`id, context, subcategory, musicalStyle, sunoTracks, createdAt, products(${PLAN_FEATURE_COLUMNS})`)
+    .select(`id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId, products(${PLAN_FEATURE_COLUMNS})`)
     .eq("publication_consent", true)
     .eq("status", "DELIVERED")
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Apelido do autor: opt-in separado do publication_consent (que só cobre a
+  // música) — mostrar_apelido default false, então maioria dos pedidos não
+  // tem dono identificável (userId nulo, checkout sem conta) nem apelido
+  // preenchido, e isso é o esperado, não um bug.
+  const ownerIds = [...new Set((orders ?? []).map((o) => o.userId).filter(Boolean))] as string[]
+  const { data: perfis } = ownerIds.length
+    ? await supabase.from("profiles").select("user_id, apelido, mostrar_apelido").in("user_id", ownerIds)
+    : { data: [] }
+  const apelidoPorUser: Record<string, string> = {}
+  for (const p of perfis ?? []) {
+    if (p.mostrar_apelido && p.apelido?.trim()) apelidoPorUser[p.user_id as string] = p.apelido.trim()
+  }
 
   const ids = (orders ?? []).map((o) => o.id)
   const { data: gm } = ids.length
@@ -90,6 +107,7 @@ export async function GET(req: NextRequest) {
         audioUrl: principal.audioUrl,
         lyrics,
         lyricsLrc,
+        authorApelido: o.userId ? apelidoPorUser[o.userId as string] ?? null : null,
         favorited: favoriteSet.has(o.id),
         createdAt: o.createdAt as string,
       }
