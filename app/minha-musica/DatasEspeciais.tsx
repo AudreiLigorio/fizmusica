@@ -98,7 +98,7 @@ export default function DatasEspeciais() {
         {dates.length === 0 && (
           <span className="text-[10px] font-bold uppercase tracking-wide bg-fuchsia-500 text-white px-2 py-0.5 rounded-full shrink-0">Novo</span>
         )}
-        <InfoTooltip text="Cadastre aniversários e datas importantes pra nunca esquecer." />
+        <InfoTooltip text="Cadastre no lembrete as datas especiais e ganhe bônus." />
       </div>
 
       {dates.length > 0 && (
