@@ -179,10 +179,10 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid rgba(255,255,255,0.25)" }}>
       <div className="flex items-center gap-2.5 mb-1">
         <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>🎧</div>
-        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Ouvir na Rede Fiz Música</h3>
-        <InfoTooltip text="Descubra e ouça músicas que outros clientes decidiram publicar." />
+        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Rede Fiz Música</h3>
+        <InfoTooltip text="Explore músicas de outros usuários, comente, curta e divirta-se." />
       </div>
-      <p className="text-xs text-white/50 mb-3">Músicas de outros clientes que decidiram publicar.</p>
+      <p className="text-xs text-white/50 mb-3">Escute músicas publicadas por outros usuários</p>
 
       {favoritados.length > 0 && (
         <div className="mb-4 pb-4 border-b border-white/5">
