@@ -39,9 +39,11 @@ export default function MiniPlayer() {
           nunca ficar clara/genérica. Sem botão de fechar: o player some
           sozinho quando o cliente sai de /minha-musica; enquanto estiver
           na tela, pausar já resolve. */}
+      {/* No celular a barra de abas ocupa o rodapé, então o player sobe pra
+          cima dela; no desktop as abas estão no topo e ele volta pro pé. */}
       <div
-        className="fixed left-0 right-0 bottom-0 z-40 border-t border-white/10 px-4 py-2.5"
-        style={{ background: "#130e1c", backdropFilter: "blur(14px)" }}
+        className="fixed left-0 right-0 bottom-[var(--fm-tabbar)] sm:bottom-0 z-40 border-t border-white/10 px-4 py-2.5"
+        style={{ background: "#130e1c", backdropFilter: "blur(14px)", ["--fm-tabbar" as string]: "calc(4.15rem + env(safe-area-inset-bottom))" }}
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <button onClick={openFull} className="flex items-center gap-3 flex-1 min-w-0 text-left">

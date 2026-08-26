@@ -22,6 +22,8 @@ import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
 import MiniPlayer from "./MiniPlayer"
 import InfoTooltip from "./InfoTooltip"
+import { TabBarMobile, TabsDesktop, type Aba } from "./AreaTabs"
+import FaixaAtalhos from "./FaixaAtalhos"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -193,6 +195,17 @@ function MinhaMusicaContent() {
   // a raia de "Minhas Playlists" pra recarregar sempre que uma das duas
   // criar/alterar uma playlist, sem precisar compartilhar estado de verdade.
   const [playlistsVersion, setPlaylistsVersion] = useState(0)
+
+  // Aba no endereço (?aba=musicas): sem isso, atualizar a página ou usar o
+  // botão Voltar jogava o cliente de volta em Pedidos sem explicação.
+  const abaUrl = searchParams.get("aba")
+  const aba: Aba = abaUrl === "musicas" || abaUrl === "carreira" ? abaUrl : "pedidos"
+  function irPara(a: Aba) {
+    const qs = new URLSearchParams(Array.from(searchParams.entries()))
+    if (a === "pedidos") qs.delete("aba"); else qs.set("aba", a)
+    router.replace(qs.toString() ? `/minha-musica?${qs}` : "/minha-musica", { scroll: false })
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
 
   async function loadOrders() {
     const { data: { session } } = await supabase.auth.getSession()
@@ -638,7 +651,8 @@ function MinhaMusicaContent() {
 
         {/* Mais largo no desktop: as raias agora quebram em linha em vez de
             rolar na horizontal, então largura extra vira mais capa visível. */}
-        <section className="max-w-3xl lg:max-w-5xl mx-auto px-5 pt-24 pb-16">
+        {/* pb extra no celular: a barra de abas fixa cobriria o fim da lista. */}
+        <section className="max-w-3xl lg:max-w-5xl mx-auto px-5 pt-24 pb-40 sm:pb-16">
           {/* Cabeçalho */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -649,6 +663,8 @@ function MinhaMusicaContent() {
             </div>
             <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-red-400 transition-colors">Sair</button>
           </div>
+
+          <TabsDesktop aba={aba} onAba={irPara} onCriar={() => router.push("/criar")} />
 
           {claimed === "ok" && (
             <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-300 rounded-2xl px-4 py-3 text-sm">
@@ -661,10 +677,8 @@ function MinhaMusicaContent() {
             </div>
           )}
 
-          {/* ── PEDIDOS — sempre o primeiro bloco: quem precisa de ação agora
-              não pode ficar escondido atrás de datas/indicação/biblioteca.
-              Mesma moldura (borda + título) das outras seções da tela —
-              antes esse bloco era o único "solto", sem contexto nenhum. */}
+          {/* ── ABA PEDIDOS ────────────────────────────────────────────── */}
+          {aba === "pedidos" && <>
           {orders.length === 0 ? (
             <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl mb-6">
               <p className="text-4xl mb-3">🎵</p>
@@ -837,17 +851,13 @@ function MinhaMusicaContent() {
             )
           })()}
 
-          {/* Os dois cards compactos da tela — lado a lado no desktop pra não
-              empilhar tudo numa coluna só. Os de baixo (músicas, rede) seguem
-              full-width: precisam da largura pras raias de capas. */}
-          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-            {/* Datas especiais — ligada à conta, não ao pedido */}
-            <DatasEspeciais />
+          {/* Datas e indicação também vivem aqui, mas em versão de uma linha —
+              o card completo fica na Carreira, pra onde estes atalhos levam. */}
+          <FaixaAtalhos onIr={() => irPara("carreira")} />
+          </>}
 
-            {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
-            <ReferirAmigos />
-          </div>
-
+          {/* ── ABA MÚSICAS ────────────────────────────────────────────── */}
+          {aba === "musicas" && <>
           {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
               As raias de playlist (uma por playlist, com as músicas já
               dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
@@ -856,19 +866,20 @@ function MinhaMusicaContent() {
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
           <RedeFizMusica onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
-          {/* Criar nova música — CTA principal da tela, precisa se destacar
-              de verdade, não só mais um card discreto. */}
-          <button
-            onClick={() => router.push("/criar")}
-            className="w-full rounded-2xl p-5 mb-4 text-left flex items-center justify-between gap-4 transition-all hover:brightness-110 hover:scale-[1.01] active:scale-[0.98]"
-            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 8px 28px -6px rgba(240,25,107,0.55)" }}
-          >
-            <div>
-              <p className="font-bold text-lg text-white">✨ Criar nova música</p>
-              <p className="text-white/80 text-xs mt-0.5">Para outra pessoa ou ocasião especial</p>
-            </div>
-            <span className="text-3xl shrink-0">🎵</span>
-          </button>
+          <FaixaAtalhos onIr={() => irPara("carreira")} />
+          </>}
+
+          {/* ── ABA CARREIRA ───────────────────────────────────────────── */}
+          {/* Nasce com indicação, datas e conta. Nível e discos entram aqui
+              quando o programa de fidelidade existir. */}
+          {aba === "carreira" && <>
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+            {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
+            <ReferirAmigos />
+
+            {/* Datas especiais — ligada à conta, não ao pedido */}
+            <DatasEspeciais />
+          </div>
 
           {/* Ajuda — regras desta tela */}
           <AjudaCliente />
@@ -906,12 +917,14 @@ function MinhaMusicaContent() {
               </form>
             )}
           </div>
+          </>}
         </section>
 
         <Footer />
       </div>
     </div>
     <MiniPlayer />
+    <TabBarMobile aba={aba} onAba={irPara} onCriar={() => router.push("/criar")} />
     </ToastProvider>
     </PlayerProvider>
   )
