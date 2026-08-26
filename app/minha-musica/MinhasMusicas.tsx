@@ -113,10 +113,10 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #f0196b" }}>
       <div className="flex items-center gap-2.5 mb-1">
         <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.18), rgba(217,70,239,0.18))" }}>🗂️</div>
-        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Minhas Músicas</h3>
-        <InfoTooltip text="Suas músicas entregues, organizadas em playlists do seu jeito." />
+        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Minha Playlist</h3>
+        <InfoTooltip text="Organize suas músicas preferidas na sua playlist do seu jeito." />
       </div>
-      <p className="text-xs text-white/50 mb-3">Toque no + de uma música para adicionar a uma playlist.</p>
+      <p className="text-xs text-white/50 mb-3">Organize as músicas do seu jeito. Toque no + e adicione sua música na playlist abaixo.</p>
 
       <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1 mb-4">
         {tracks.map((t) => {
@@ -151,8 +151,9 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
         })}
       </div>
 
-      <div className="flex items-center justify-between mb-1.5">
-        <p className="text-[10px] uppercase tracking-wide font-bold text-white/30">Minha Playlist</p>
+      {/* Sem rótulo aqui: o título do card já é "Minha Playlist", repetir
+          duas vezes na mesma tela só polui. */}
+      <div className="flex items-center justify-end mb-1.5">
         <button
           type="button"
           onClick={() => abrirCriarPlaylist()}
