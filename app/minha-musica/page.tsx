@@ -25,6 +25,7 @@ import InfoTooltip from "./InfoTooltip"
 import { TabBarMobile, TabsDesktop, type Aba } from "./AreaTabs"
 import FaixaAtalhos from "./FaixaAtalhos"
 import BuscaMusicas from "./BuscaMusicas"
+import CarreiraPainel from "./CarreiraPainel"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -883,6 +884,8 @@ function MinhaMusicaContent() {
           {/* Nasce com indicação, datas e conta. Nível e discos entram aqui
               quando o programa de fidelidade existir. */}
           {aba === "carreira" && <>
+          <CarreiraPainel nome={firstName ?? ""} email={user.email ?? ""} />
+
           <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
             {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
             <ReferirAmigos />
