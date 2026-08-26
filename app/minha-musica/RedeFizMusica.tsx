@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
-import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
 import { useToast } from "./ToastContext"
@@ -58,7 +57,6 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
   // próprio: os dois cartões vivem em componentes separados na tela, não
   // vale a pena compartilhar estado por isso.
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
-  const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
   const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
   // Criação de playlist: orderId fica pendente enquanto o modal de nome está
   // aberto — undefined quando a playlist nasce vazia.
@@ -114,23 +112,20 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
   async function confirmarCriarPlaylist(nome: string) {
     setCreatingPlaylistOpen(false)
     const headers = await authHeaders()
-    const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
-    const d = await res.json().catch(() => ({}))
-    const lista = await carregarPlaylists()
+    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    await carregarPlaylists()
     onPlaylistsChanged?.()
+    // Só o toast: a raia em "Minha playlist" já mostra o resultado, abrir um
+    // modal por cima obrigava a fechar algo que o cliente não pediu.
     showToast("Adicionado com sucesso ✓")
-    // Só abre o modal quando há de fato mais de uma playlist pra diferenciar
-    // — com uma só, a raia em "Minhas Músicas" já mostra o resultado sozinha.
-    if (d.playlist?.id && lista.length > 1) setOpenPlaylistId(d.playlist.id)
   }
 
   async function adicionarNaPlaylist(playlistId: string, orderId: string) {
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
-    const lista = await carregarPlaylists()
+    await carregarPlaylists()
     onPlaylistsChanged?.()
     showToast("Adicionado com sucesso ✓")
-    if (lista.length > 1) setOpenPlaylistId(playlistId)
   }
 
   async function favoritar(orderId: string) {
@@ -280,7 +275,6 @@ export default function RedeFizMusica({ onPlaylistsChanged }: { onPlaylistsChang
         })}
       </div>
 
-      <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={() => { carregarPlaylists(); onPlaylistsChanged?.() }} />
       <AddToPlaylistModal
         open={!!addingTrackId}
         playlists={playlists}

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
-import PlaylistDetailModal from "./PlaylistDetailModal"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
 import MinhasPlaylists from "./MinhasPlaylists"
@@ -44,7 +43,6 @@ function gradientFor(id: string): string {
 // lista de pedidos já usa). Só a playlist (agrupamento) tem tabela própria.
 export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsChanged }: { tracks: LibraryTrack[]; playlistsVersion: number; onPlaylistsChanged?: () => void }) {
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
-  const [openPlaylistId, setOpenPlaylistId] = useState<string | null>(null)
   // Toque no "+" — o caminho que funciona em qualquer aparelho (arrastar é
   // só desktop; drag nativo HTML5 não existe em navegador mobile).
   const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
@@ -88,23 +86,20 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
   async function confirmarCriarPlaylist(nome: string) {
     setCreatingPlaylistOpen(false)
     const headers = await authHeaders()
-    const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
-    const d = await res.json().catch(() => ({}))
-    const lista = await carregar()
+    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    await carregar()
     onPlaylistsChanged?.()
+    // Só o toast: a raia logo abaixo já mostra o resultado, abrir um modal por
+    // cima obrigava a fechar algo que o cliente não pediu.
     showToast("Adicionado com sucesso ✓")
-    // Só abre o modal quando há de fato mais de uma playlist pra diferenciar
-    // — com uma só, a raia logo abaixo já mostra o resultado sozinha.
-    if (d.playlist?.id && lista.length > 1) setOpenPlaylistId(d.playlist.id)
   }
 
   async function adicionar(playlistId: string, orderId: string) {
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "PATCH", headers, body: JSON.stringify({ addOrderId: orderId }) })
-    const lista = await carregar()
+    await carregar()
     onPlaylistsChanged?.()
     showToast("Adicionado com sucesso ✓")
-    if (lista.length > 1) setOpenPlaylistId(playlistId)
   }
 
   if (tracks.length === 0) return null
@@ -166,7 +161,6 @@ export default function MinhasMusicas({ tracks, playlistsVersion, onPlaylistsCha
 
       <MinhasPlaylists version={playlistsVersion} embedded />
 
-      <PlaylistDetailModal playlistId={openPlaylistId} onClose={() => setOpenPlaylistId(null)} onChanged={() => { carregar(); onPlaylistsChanged?.() }} />
       <AddToPlaylistModal
         open={!!addingTrackId}
         playlists={playlists}
