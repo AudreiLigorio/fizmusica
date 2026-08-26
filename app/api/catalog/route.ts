@@ -57,7 +57,10 @@ export async function GET(req: NextRequest) {
     : { data: [] }
   const apelidoPorUser: Record<string, string> = {}
   for (const p of perfis ?? []) {
-    if (p.mostrar_apelido && p.apelido?.trim()) apelidoPorUser[p.user_id as string] = p.apelido.trim()
+    // Nas músicas do próprio cliente o apelido aparece sempre — mostrar_apelido
+    // controla o que OUTROS veem, não o que ele vê da própria música.
+    const proprio = p.user_id === user.id
+    if ((proprio || p.mostrar_apelido) && p.apelido?.trim()) apelidoPorUser[p.user_id as string] = p.apelido.trim()
   }
 
   const ids = (orders ?? []).map((o) => o.id)
@@ -98,7 +101,9 @@ export async function GET(req: NextRequest) {
       return {
         orderId: o.id,
         slug: music.slug,
-        title: music.musicNameConfirmed && music.musicName?.trim()
+        // Nome real quando o cliente confirmou — ou sempre, se a música é dele
+        // (a trava do confirmado existe pra não expor título de terceiro).
+        title: music.musicName?.trim() && (music.musicNameConfirmed || o.userId === user.id)
           ? music.musicName.trim()
           : `Uma canção de ${o.subcategory}`,
         occasion: o.subcategory,
