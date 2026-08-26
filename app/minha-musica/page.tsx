@@ -675,9 +675,9 @@ function MinhaMusicaContent() {
               <div className="flex items-center gap-2.5 mb-1">
                 <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>📦</div>
                 <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Meus pedidos</h3>
-                <InfoTooltip text="Acompanhe o status de cada música que você encomendou." />
+                <InfoTooltip text="Acompanhe o status de cada pedido e edite conforme a sua necessidade." />
               </div>
-              <p className="text-xs text-white/50 mb-3">O que precisa de você agora e o que já foi entregue.</p>
+              <p className="text-xs text-white/50 mb-3">Gerencie suas músicas e edições</p>
 
               {heroOrders.length > 0 ? (
                 <p className="text-[10.5px] uppercase tracking-wide font-bold text-fuchsia-300 mb-2.5 flex items-center gap-1.5">🔥 Precisa de você</p>
