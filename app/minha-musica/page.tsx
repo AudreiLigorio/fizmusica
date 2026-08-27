@@ -23,7 +23,6 @@ import { ToastProvider } from "./ToastContext"
 import MiniPlayer from "./MiniPlayer"
 import InfoTooltip from "./InfoTooltip"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
-import FaixaAtalhos from "./FaixaAtalhos"
 import BuscaMusicas from "./BuscaMusicas"
 import CarreiraPainel from "./CarreiraPainel"
 import { dbTime } from "@/lib/date"
@@ -880,9 +879,13 @@ function MinhaMusicaContent() {
             )
           })()}
 
-          {/* Datas e indicação também vivem aqui, mas em versão de uma linha —
-              o card completo fica na Carreira, pra onde estes atalhos levam. */}
-          <FaixaAtalhos onIr={() => irPara("carreira")} />
+          {/* Datas e indicação também vivem aqui, abertas de propósito
+              (pedido do Audrei — não é só o atalho compacto). Repete o mesmo
+              card da Carreira; não tem estado pra compartilhar entre eles. */}
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+            <ReferirAmigos />
+            <DatasEspeciais />
+          </div>
           </>}
 
           {/* ── ABA MÚSICAS ────────────────────────────────────────────── */}
@@ -897,7 +900,10 @@ function MinhaMusicaContent() {
           {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
           <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
-          <FaixaAtalhos onIr={() => irPara("carreira")} />
+          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+            <ReferirAmigos />
+            <DatasEspeciais />
+          </div>
           </>}
 
           {/* ── ABA CARREIRA ───────────────────────────────────────────── */}
