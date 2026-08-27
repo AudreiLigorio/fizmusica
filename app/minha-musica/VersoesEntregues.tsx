@@ -21,6 +21,7 @@ export default function VersoesEntregues({
   photoCount,
   features,
   canRevise,
+  linkAtivo = true,
   onQr,
   onNaoGostei,
   onChanged,
@@ -34,6 +35,9 @@ export default function VersoesEntregues({
   // Recursos do plano contratado: o que não estiver incluído não aparece.
   features: PlanFeatures
   canRevise?: boolean
+  // false = link público vencido pelo expurgo. Ouvir e baixar continuam; QR e
+  // compartilhar somem, senão o cliente divulgaria um endereço quebrado.
+  linkAtivo?: boolean
   onQr: () => void
   onNaoGostei?: () => void
   onChanged?: () => void
@@ -93,7 +97,7 @@ export default function VersoesEntregues({
     ...(features.fotos > 0
       ? [{ key: "fotos" as const, icon: "📸", label: "Fotos", done: hasPhotos, nudge: !hasPhotos }]
       : []),
-    ...(features.qrcode
+    ...(features.qrcode && linkAtivo
       ? [{ key: "surpresa" as const, icon: "🎁", label: "Surpresa", done: false }]
       : []),
     { key: "player",    icon: "▶",  label: "Player",    done: false },
@@ -219,31 +223,48 @@ export default function VersoesEntregues({
       {/* ── PLAYER ── ouvir, baixar e compartilhar */}
       {active === "player" && (
         <div className="space-y-2">
-          <p className="text-white/55 text-xs text-center mb-1 leading-relaxed">
-            Veja como ficou no player{features.fotos > 0 ? ", com as suas fotos e a música exclusiva" : ", com a capa e a música exclusiva"}. Aqui você pode compartilhar o acesso a esse player exclusivo.
-          </p>
-          {slug && (
+          {linkAtivo ? (
+            <p className="text-white/55 text-xs text-center mb-1 leading-relaxed">
+              Veja como ficou no player{features.fotos > 0 ? ", com as suas fotos e a música exclusiva" : ", com a capa e a música exclusiva"}. Aqui você pode compartilhar o acesso a esse player exclusivo.
+            </p>
+          ) : (
+            /* Link vencido: explica em vez de sumir sem aviso, senão o cliente
+               acha que perdeu a música — que continua aqui, ouvível e baixável. */
+            <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-3 mb-1">
+              <p className="text-xs font-semibold text-white/70 mb-1">🔒 Link de compartilhar expirado</p>
+              <p className="text-[11px] text-white/45 leading-relaxed">
+                O prazo do link público desta música terminou, então o QR Code e o
+                compartilhamento saíram do ar. Sua música continua sua: dá pra
+                ouvir aqui e baixar o MP3 quando quiser.
+              </p>
+            </div>
+          )}
+          {slug && linkAtivo && (
             <a href={`/m/${slug}`}
               className="block text-center py-3 rounded-lg text-sm font-bold text-white transition-all hover:brightness-110"
               style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
               ▶ Ouvir no player
             </a>
           )}
-          <div className={`grid gap-2 ${features.download && principalUrl ? "grid-cols-3" : "grid-cols-2"}`}>
+          <div className={`grid gap-2 ${!linkAtivo ? "grid-cols-1" : features.download && principalUrl ? "grid-cols-3" : "grid-cols-2"}`}>
             {principalUrl && features.download && (
               <a href={`/api/orders/${orderId}/musica/download`} download
                 className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
                 <span className="text-base leading-none">⬇</span> Baixar
               </a>
             )}
-            <button onClick={copiarLink}
-              className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
-              <span className="text-base leading-none">🔗</span> {copied ? "Copiado!" : "Copiar link"}
-            </button>
-            <a href={waUrl} target="_blank" rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-green-500/30 text-green-300 hover:bg-green-500/10 transition-colors">
-              <span className="text-base leading-none">💬</span> WhatsApp
-            </a>
+            {linkAtivo && (
+              <>
+                <button onClick={copiarLink}
+                  className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
+                  <span className="text-base leading-none">🔗</span> {copied ? "Copiado!" : "Copiar link"}
+                </button>
+                <a href={waUrl} target="_blank" rel="noopener noreferrer"
+                  className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-green-500/30 text-green-300 hover:bg-green-500/10 transition-colors">
+                  <span className="text-base leading-none">💬</span> WhatsApp
+                </a>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -39,13 +39,13 @@ export async function GET(req: NextRequest) {
 
   // Anexa slug + mp3 da música (quando publicada) para os botões Ouvir/Baixar
   const ids = (data ?? []).map((o) => o.id)
-  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null; musicName: string | null }> = {}
+  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null; musicName: string | null; linkAtivo: boolean }> = {}
   if (ids.length) {
     const { data: gm } = await supabase
       .from("generated_music")
-      .select("orderId, slug, mp3Url, lyrics, lyricsLrc, musicName")
+      .select("orderId, slug, mp3Url, lyrics, lyricsLrc, musicName, link_disabled_at")
       .in("orderId", ids)
-    for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null, lyrics: g.lyrics ?? null, lyricsLrc: g.lyricsLrc ?? null, musicName: g.musicName ?? null }
+    for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null, lyrics: g.lyrics ?? null, lyricsLrc: g.lyricsLrc ?? null, musicName: g.musicName ?? null, linkAtivo: !g.link_disabled_at }
   }
 
   const orders = (data ?? []).map((o) => {
@@ -84,6 +84,10 @@ export async function GET(req: NextRequest) {
       // Nome escolhido pelo cliente ao aprovar a letra. A prateleira usa este
       // em vez do title cru do Suno, que costuma ser o nome do homenageado.
       musicName:  music?.musicName ?? null,
+      // Link público vencido (expurgo). A música continua ouvível e baixável
+      // aqui dentro — o que morre é o /m/slug, então QR e compartilhar
+      // precisam sumir, senão o cliente divulga um link quebrado.
+      linkAtivo:  music ? music.linkAtivo : true,
       lyrics,
       lyricsLrc,
       photoCount: Array.isArray(order_photos) ? order_photos.length : 0,

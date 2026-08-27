@@ -55,6 +55,8 @@ type Order = {
   is_revision?: boolean
   mp3Url?: string | null
   musicName?: string | null
+  // false = link público vencido pelo expurgo (Admin → Operação).
+  linkAtivo?: boolean
   lyrics?: string | null
   lyricsLrc?: string | null
   sharing_term_accepted_at?: string | null
@@ -582,6 +584,7 @@ function MinhaMusicaContent() {
             photoCount={order.photoCount}
             features={order.features ?? TUDO}
             canRevise={!hasRevision && !order.is_revision}
+            linkAtivo={order.linkAtivo !== false}
             onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
             onNaoGostei={() => router.push(`/contestar/${order.id}`)}
             onChanged={loadOrders}
@@ -592,13 +595,17 @@ function MinhaMusicaContent() {
         <div className="flex flex-wrap gap-2">
           {delivered && order.slug && termAccepted && (order.tracks?.length ?? 0) <= 1 && (
             <>
-              <a
-                href={`/m/${order.slug}`}
-                className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110"
-                style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 6px 24px rgba(240,25,107,0.35)" }}
-              >
-                ▶ Ouvir minha música
-              </a>
+              {/* Link vencido pelo expurgo: ouvir no player e QR saem do ar
+                  (levariam a uma página bloqueada). Baixar continua. */}
+              {order.linkAtivo !== false && (
+                <a
+                  href={`/m/${order.slug}`}
+                  className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-bold transition-all hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 6px 24px rgba(240,25,107,0.35)" }}
+                >
+                  ▶ Ouvir minha música
+                </a>
+              )}
               {order.mp3Url && (order.features ?? TUDO).download && (
                 <a
                   href={`/api/orders/${order.id}/musica/download`}
@@ -608,13 +615,19 @@ function MinhaMusicaContent() {
                   ⬇ Baixar MP3
                 </a>
               )}
-              {!hasRevision && (order.features ?? TUDO).qrcode && (
+              {!hasRevision && (order.features ?? TUDO).qrcode && order.linkAtivo !== false && (
                 <button
                   onClick={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
                   className="flex-1 min-w-[140px] text-center py-3 rounded-xl text-sm font-semibold border border-[#B8963E]/40 text-[#B8963E] hover:bg-[#B8963E]/10 transition-colors"
                 >
                   📱 Imprimir QR e fazer a surpresa
                 </button>
+              )}
+              {order.linkAtivo === false && (
+                <p className="w-full text-[11px] text-white/40 leading-relaxed">
+                  🔒 O prazo do link público desta música terminou — o QR Code e o
+                  compartilhamento saíram do ar. A música continua sua: dá pra baixar o MP3 aqui.
+                </p>
               )}
             </>
           )}
