@@ -3,7 +3,7 @@ import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { detectDuplicatePayment } from "@/lib/paymentAlerts"
 import { validateCoupon } from "@/lib/coupons"
-import { concederDiscosDoPedido, descontoDeFidelidade } from "@/lib/fidelidade"
+import { concederDiscosDoPedido, concederDiscoDeIndicacao, descontoDeFidelidade } from "@/lib/fidelidade"
 import { melhorDesconto } from "@/lib/descontoRegra"
 
 const client = new MercadoPago({
@@ -223,6 +223,7 @@ export async function POST(req: Request) {
         // Único dos seis pontos de confirmação que não passa por
         // ensurePaymentPrep — precisa conceder o disco por conta própria.
         await concederDiscosDoPedido(supabase, orderId)
+        await concederDiscoDeIndicacao(supabase, orderId)
       }
 
       // O uso do cupom NÃO é mais incrementado aqui: ele é derivado da contagem

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
-import { concederDiscosDoPedido } from "@/lib/fidelidade"
+import { concederDiscosDoPedido, concederDiscoDeIndicacao } from "@/lib/fidelidade"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -26,20 +26,45 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient()
   const { data: pagos } = await supabase
     .from("orders")
-    .select("id")
+    .select("id, referral_code")
     .eq("paymentStatus", "PAID")
     .not("userId", "is", null)
     .limit(500)
 
+  // Quem já tem transação sai da fila ANTES do laço. Sem isso a rotina refazia
+  // várias consultas por pedido em todos os 69 a cada execução — chegou a
+  // derrubar o servidor de desenvolvimento. Como ela roda agendada e a maioria
+  // dos pedidos já foi processada, o caminho comum tem que ser barato.
+  const { data: jaFeitas } = await supabase
+    .from("loyalty_transactions")
+    .select("order_id, tipo")
+    .in("tipo", ["PURCHASE_DIGITAL", "PURCHASE_PHYSICAL", "REFERRAL_CONVERTED"])
+
+  const temCompra = new Set(
+    (jaFeitas ?? []).filter((t) => t.tipo !== "REFERRAL_CONVERTED").map((t) => t.order_id as string),
+  )
+  const temIndicacao = new Set(
+    (jaFeitas ?? []).filter((t) => t.tipo === "REFERRAL_CONVERTED").map((t) => t.order_id as string),
+  )
+
   let concedidos = 0
+  let indicacoes = 0
+  let pulados = 0
   for (const o of pagos ?? []) {
-    if (await concederDiscosDoPedido(supabase, o.id as string)) concedidos++
+    const id = o.id as string
+    const faltaCompra = !temCompra.has(id)
+    const faltaIndicacao = !!o.referral_code && !temIndicacao.has(id)
+    if (!faltaCompra && !faltaIndicacao) { pulados++; continue }
+
+    if (faltaCompra && await concederDiscosDoPedido(supabase, id)) concedidos++
+    if (faltaIndicacao && await concederDiscoDeIndicacao(supabase, id)) indicacoes++
   }
 
   return NextResponse.json({
     ok: true,
     analisados: pagos?.length ?? 0,
     concedidos,
-    jaTinham: (pagos?.length ?? 0) - concedidos,
+    indicacoes,
+    jaTinham: pulados,
   })
 }

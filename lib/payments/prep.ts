@@ -1,7 +1,7 @@
 import type { createServerClient } from "@/lib/supabase"
 import { sendPaymentConfirmedEmail } from "@/app/services/emailService"
 import { logOrderEvent } from "@/lib/orderEvents"
-import { concederDiscosDoPedido } from "@/lib/fidelidade"
+import { concederDiscosDoPedido, concederDiscoDeIndicacao } from "@/lib/fidelidade"
 import crypto from "crypto"
 
 type DB = ReturnType<typeof createServerClient>
@@ -19,6 +19,7 @@ export async function ensurePaymentPrep(supabase: DB, orderId: string): Promise<
   // programa existir nunca passaria por aqui de novo. A concessão é
   // idempotente (índice único order_id+tipo), então repetir é inofensivo.
   await concederDiscosDoPedido(supabase, orderId)
+  await concederDiscoDeIndicacao(supabase, orderId)
 
   const token = crypto.randomUUID()
   const { data: claimed, error } = await supabase

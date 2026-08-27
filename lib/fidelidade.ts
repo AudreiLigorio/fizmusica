@@ -150,6 +150,49 @@ export async function concederDiscosDoPedido(supabase: DB, orderId: string): Pro
   return true
 }
 
+// Etapa 3 do funil de indicação: a COMPRA convertida. Só aqui entra disco —
+// compartilhar e acessar não geram nada, é regra explícita da spec.
+//
+// O disco vai pra quem INDICOU, não pra quem comprou (esse já ganha o disco
+// da própria compra).
+export async function concederDiscoDeIndicacao(supabase: DB, orderId: string): Promise<boolean> {
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, userId, paymentStatus, referral_code")
+    .eq("id", orderId)
+    .maybeSingle()
+
+  if (!order?.referral_code) return false
+  if (order.paymentStatus !== "PAID") return false
+
+  const { data: codigo } = await supabase
+    .from("referral_codes")
+    .select("user_id")
+    .eq("code", String(order.referral_code).toUpperCase())
+    .maybeSingle()
+
+  const indicador = codigo?.user_id as string | undefined
+  if (!indicador) return false
+
+  // Antifraude da spec: bloquear autoindicação e compra pelo próprio link.
+  if (indicador === order.userId) return false
+
+  const { error } = await supabase.from("loyalty_transactions").insert({
+    user_id: indicador,
+    order_id: order.id,
+    tipo: "REFERRAL_CONVERTED",
+    discos: 2,
+    descricao: "Amigo indicado comprou",
+  })
+
+  if (error) {
+    if (error.code === "23505") return false // já concedido nesta compra
+    console.error("[fidelidade] indicação falhou", orderId, error.message)
+    return false
+  }
+  return true
+}
+
 // Estorno: transação reversa, nunca apagar a original. Sem trava de índice
 // único de propósito — um pedido pode ser estornado e ajustado mais de uma vez.
 export async function estornarDiscosDoPedido(supabase: DB, orderId: string, motivo?: string): Promise<void> {
