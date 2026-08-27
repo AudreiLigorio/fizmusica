@@ -79,7 +79,7 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
           className={embedded ? "mt-6 pt-5 border-t border-white/5" : "mb-9"}
         >
           <div className="flex items-center justify-between gap-2 mb-3">
-            <h2 className="font-display text-xl font-bold flex items-center gap-2 min-w-0 truncate">🎶 {pl.nome}</h2>
+            <h2 className="text-lg font-bold min-w-0 truncate">{pl.nome}</h2>
             <button
               type="button"
               onClick={() => excluirPlaylist(pl.id, pl.nome)}

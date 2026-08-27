@@ -190,7 +190,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
           seção da próxima, mesma lógica do Spotify aplicada nas outras duas
           telas de música. */}
       <div className="flex items-center gap-2.5 mb-1">
-        <h2 className="font-display text-2xl font-bold flex-1 min-w-0 truncate">Rede Fiz Música</h2>
+        <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Rede Fiz Música</h2>
         <InfoTooltip text="Explore músicas de outros usuários, comente, curta e divirta-se." />
       </div>
       <p className="text-xs text-white/50 mb-4">Escute músicas publicadas por outros usuários</p>

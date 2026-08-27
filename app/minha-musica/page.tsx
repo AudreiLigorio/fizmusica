@@ -713,13 +713,14 @@ function MinhaMusicaContent() {
               <p>Nenhum pedido encontrado para este e-mail.</p>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
+            <div className="mb-9">
+              {/* Sem card/borda — título grande e em negrito separa a seção,
+                  mesma lógica das telas de música. */}
               <div className="flex items-center gap-2.5 mb-1">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>📦</div>
-                <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Meus pedidos</h3>
+                <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Meus pedidos</h2>
                 <InfoTooltip text="Acompanhe o status de cada pedido e edite conforme a sua necessidade." />
               </div>
-              <p className="text-xs text-white/50 mb-3">Gerencie suas músicas e edições</p>
+              <p className="text-xs text-white/50 mb-4">Gerencie suas músicas e edições</p>
 
               {heroOrders.length > 0 ? (
                 <p className="text-[10.5px] uppercase tracking-wide font-bold text-fuchsia-300 mb-2.5 flex items-center gap-1.5">🔥 Precisa de você</p>
@@ -780,10 +781,10 @@ function MinhaMusicaContent() {
                     <button
                       key={order.id}
                       onClick={() => setOpenDetailOrderId(order.id)}
-                      className={`shrink-0 w-28 text-left group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}
+                      className={`shrink-0 w-32 text-left group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}
                     >
                       <div
-                        className="relative w-28 h-28 rounded-xl border border-white/10 flex items-center justify-center text-2xl bg-cover bg-center"
+                        className="relative w-32 h-32 rounded-xl flex items-center justify-center text-2xl bg-cover bg-center"
                         style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : abandonado ? "linear-gradient(135deg,#3a3a3a,#1f1f1f)" : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
                       >
                         {!principal?.imageUrl && (abandonado ? "💳" : "🎁")}
@@ -807,7 +808,7 @@ function MinhaMusicaContent() {
                           <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Entregues</span>
                           <span className="h-px flex-1 bg-white/10" />
                         </div>
-                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
+                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
                           {producedShelf.map(tile)}
                         </div>
                       </>
@@ -819,7 +820,7 @@ function MinhaMusicaContent() {
                           <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Pendentes</span>
                           <span className="h-px flex-1 bg-white/10" />
                         </div>
-                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
+                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
                           {pendingShelf.map(tile)}
                         </div>
                       </>

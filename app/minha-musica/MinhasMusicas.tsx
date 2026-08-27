@@ -103,7 +103,7 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
           serifa é quem separa esta seção da próxima — mesma lógica do
           Spotify. Capas maiores (w-32) e coladas na borda, "mais expandido". */}
       <div className="flex items-center gap-2.5 mb-1">
-        <h2 className="font-display text-2xl font-bold flex-1 min-w-0 truncate">Minha playlist</h2>
+        <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Minha playlist</h2>
         <InfoTooltip text="Organize suas músicas preferidas na sua playlist do seu jeito." />
       </div>
       <p className="text-xs text-white/50 mb-4">Organize as músicas do seu jeito. Toque no + e adicione sua música na playlist abaixo.</p>
