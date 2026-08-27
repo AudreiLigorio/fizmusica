@@ -34,9 +34,22 @@ async function getUserFromAuth(req: NextRequest) {
 // `sunoTracks[].title` costuma ser o nome do homenageado ("Lucas", "Deus") e
 // até o musicName antigo da IA já saiu com nome tirado da letra ("A Doce
 // Espera de Beatriz", corrigido no backfill).
+// Visitante SEM conta também acessa — a Rede é área de descoberta. Mas a
+// resposta anônima é cortada, e cada corte tem motivo:
+//
+// - `slug`: é a chave de /m/{slug}, página que MOSTRA AS FOTOS do cliente.
+//   Entregá-lo a estranho seria dar o caminho pras fotos de quem autorizou
+//   só "a música e a letra". Basta abrir o inspetor e copiar. O termo de
+//   publicação exclui reuso de fotos, então isso não é rigor extra, é o que
+//   está escrito. O link /m/slug em si continua legítimo: é o que o PRÓPRIO
+//   cliente compartilha, e o termo diz que isso é controlado por ele.
+// - `authorApelido`: o termo exclui "qualquer exposição que identifique o
+//   Cliente (autor do pedido)". Decisão do Audrei: apelido fora da área
+//   pública.
+// - `favorited`: não existe sem conta.
 export async function GET(req: NextRequest) {
   const user = await getUserFromAuth(req)
-  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
+  const publico = !user
 
   const supabase = createServerClient()
   const { data: orders, error } = await supabase
@@ -59,7 +72,7 @@ export async function GET(req: NextRequest) {
   for (const p of perfis ?? []) {
     // Nas músicas do próprio cliente o apelido aparece sempre — mostrar_apelido
     // controla o que OUTROS veem, não o que ele vê da própria música.
-    const proprio = p.user_id === user.id
+    const proprio = p.user_id === user?.id
     if ((proprio || p.mostrar_apelido) && p.apelido?.trim()) apelidoPorUser[p.user_id as string] = p.apelido.trim()
   }
 
@@ -77,10 +90,9 @@ export async function GET(req: NextRequest) {
     musicNameConfirmed: !!g.musicNameConfirmed,
   }
 
-  const { data: favs } = await supabase
-    .from("catalog_favorites")
-    .select("order_id")
-    .eq("user_id", user.id)
+  const { data: favs } = user
+    ? await supabase.from("catalog_favorites").select("order_id").eq("user_id", user.id)
+    : { data: [] }
   const favoriteSet = new Set((favs ?? []).map((f) => f.order_id))
 
   type Track = { audioUrl: string; imageUrl: string | null; title: string | null }
@@ -104,10 +116,11 @@ export async function GET(req: NextRequest) {
       const lyricsLrc = features.letraSincronizada ? music.lyricsLrc ?? null : null
       return {
         orderId: o.id,
-        slug: music.slug,
+        // Anônimo não recebe o slug — ver o comentário no topo.
+        ...(publico ? {} : { slug: music.slug }),
         // Nome real quando o cliente confirmou — ou sempre, se a música é dele
         // (a trava do confirmado existe pra não expor título de terceiro).
-        title: music.musicName?.trim() && (music.musicNameConfirmed || o.userId === user.id)
+        title: music.musicName?.trim() && (music.musicNameConfirmed || o.userId === user?.id)
           ? music.musicName.trim()
           : `Uma canção de ${o.subcategory}`,
         occasion: o.subcategory,
@@ -116,7 +129,7 @@ export async function GET(req: NextRequest) {
         audioUrl,
         lyrics,
         lyricsLrc,
-        authorApelido: o.userId ? apelidoPorUser[o.userId as string] ?? null : null,
+        authorApelido: publico ? null : (o.userId ? apelidoPorUser[o.userId as string] ?? null : null),
         favorited: favoriteSet.has(o.id),
         createdAt: o.createdAt as string,
       }
