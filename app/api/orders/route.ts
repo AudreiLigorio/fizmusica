@@ -17,16 +17,46 @@ export async function GET(req: NextRequest) {
   const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null
   let userId: string | null = null
   let email = req.nextUrl.searchParams.get("email")
+  let emailConfirmado = false
 
   if (bearer) {
     const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
     const { data } = await anon.auth.getUser(bearer)
-    if (data.user) { userId = data.user.id; email = data.user.email ?? email }
+    if (data.user) {
+      userId = data.user.id
+      email = data.user.email ?? email
+      emailConfirmado = !!data.user.email_confirmed_at
+    }
   }
 
   if (!email && !userId) return NextResponse.json({ orders: [] })
 
   const supabase = createServerClient()
+
+  // Adota pedidos órfãos do MESMO e-mail. Sem isso, quem compra sem conta (a
+  // jornada de quem vem de anúncio) e só depois se cadastra fica com os
+  // pedidos sem dono pra sempre — e a fidelidade nunca credita disco, porque
+  // ela pendura tudo em user_id. Foi o que obrigou um backfill manual de 58
+  // pedidos em 2026-08-27.
+  //
+  // TRÊS TRAVAS, e nenhuma é dispensável:
+  //
+  // 1. E-mail CONFIRMADO. É a prova de que a pessoa controla o endereço. Hoje
+  //    o Supabase já exige confirmação pra criar sessão, mas não dependemos
+  //    disso: se essa configuração mudar, contas não verificadas não podem
+  //    herdar pedido de ninguém. Existe conta não confirmada com pedido pago.
+  // 2. Só pedido SEM dono. Nunca reatribui o que já é de outra conta.
+  // 3. Igualdade exata do e-mail normalizado — mesma regra que já decide o que
+  //    a tela mostra, então não amplia acesso: só grava o que já era exibido.
+  if (userId && emailConfirmado && email) {
+    const alvo = email.trim().toLowerCase()
+    const { error: vincErr } = await supabase
+      .from("orders")
+      .update({ userId })
+      .is("userId", null)
+      .eq("email", alvo)
+    if (vincErr) console.error("[orders] vínculo automático falhou:", vincErr.message)
+  }
   const filter = [email ? `email.eq.${email}` : null, userId ? `userId.eq.${userId}` : null].filter(Boolean).join(",")
 
   const { data, error } = await supabase

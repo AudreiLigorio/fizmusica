@@ -8,6 +8,7 @@ import MicButton from "../components/MicButton"
 import JourneyProgress from "../components/JourneyProgress"
 import type { CreateOrderDTO } from "@/app/types/order"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
+import { supabase } from "@/lib/supabase"
 
 // Detecta erros de digitação comuns no domínio do e-mail e sugere correção
 const COMMON_EMAIL_DOMAINS = [
@@ -111,6 +112,13 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [email, setEmail] = useState("")
   const [whatsapp, setWhatsapp] = useState("")
   const [honoreeName, setHonoreeName] = useState("")
+  // Conta logada: o e-mail do pedido passa a ser SEMPRE o da conta. E-mail
+  // diferente cria outro cadastro neste sistema (contas e pedidos casam por
+  // e-mail), então deixar editável era oferecer ao cliente a chance de se
+  // dividir em dois sem perceber — e depois não achar os próprios pedidos.
+  // Nome vem preenchido mas segue editável: o do cadastro (Google) nem sempre
+  // é como a pessoa quer ser chamada.
+  const [contaEmail, setContaEmail] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [questionStep, setQuestionStep] = useState(0)
@@ -139,6 +147,20 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   // sem isso, numa etapa longa o aviso pode renderizar fora da tela.
   const errorRef = useRef<HTMLDivElement>(null)
   const leadErrorRef = useRef<HTMLDivElement>(null)
+  // Reconhece quem já está logado. Sem sessão, nada muda: o wizard segue
+  // funcionando sem conta, que é a jornada de quem vem de anúncio.
+  useEffect(() => {
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const u = session?.user
+      if (!u?.email) return
+      setContaEmail(u.email)
+      setEmail(u.email)
+      const nomeConta = (u.user_metadata?.full_name as string | undefined)?.trim()
+      if (nomeConta) setNome((atual) => atual || nomeConta)
+    })()
+  }, [])
+
   useEffect(() => { if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }) }, [error])
 
   // Session persistence
@@ -1241,13 +1263,26 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   <label className="text-sm text-gray-200 font-medium pl-2">
                     Seu e-mail
                   </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Ex: joao@email.com"
-                    className="w-full bg-black/40 border border-white/10 rounded-3xl px-6 py-5 text-lg outline-none focus:border-pink-500 transition-colors"
-                  />
+                  {contaEmail ? (
+                    // Informação, não campo desabilitado: campo apagado dá
+                    // vontade de clicar e frustra. A saída é trocar de conta,
+                    // que é exatamente o que comprar com outro e-mail significa.
+                    <div className="w-full bg-black/20 border border-white/10 rounded-3xl px-6 py-5">
+                      <p className="text-lg truncate">{contaEmail}</p>
+                      <p className="text-xs text-white/40 mt-1">
+                        Sua música vai para esta conta.{" "}
+                        <a href="/minha-musica" className="text-pink-400 underline">Não é você?</a>
+                      </p>
+                    </div>
+                  ) : (
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Ex: joao@email.com"
+                      className="w-full bg-black/40 border border-white/10 rounded-3xl px-6 py-5 text-lg outline-none focus:border-pink-500 transition-colors"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2 md:col-span-2">
