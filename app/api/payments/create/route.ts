@@ -3,6 +3,7 @@ import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { detectDuplicatePayment } from "@/lib/paymentAlerts"
 import { validateCoupon } from "@/lib/coupons"
+import { concederDiscosDoPedido } from "@/lib/fidelidade"
 
 const client = new MercadoPago({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -194,7 +195,12 @@ export async function POST(req: Request) {
         .eq("id", orderId)
 
       if (paidError) console.error("[create] paymentStatus update error:", paidError)
-      else console.log(`[create] order ${orderId} marcado como PAID`)
+      else {
+        console.log(`[create] order ${orderId} marcado como PAID`)
+        // Único dos seis pontos de confirmação que não passa por
+        // ensurePaymentPrep — precisa conceder o disco por conta própria.
+        await concederDiscosDoPedido(supabase, orderId)
+      }
 
       // O uso do cupom NÃO é mais incrementado aqui: ele é derivado da contagem
       // de pedidos PAGOS que carregam o coupon_code (ver countCouponUses em

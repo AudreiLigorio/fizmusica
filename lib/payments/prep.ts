@@ -1,6 +1,7 @@
 import type { createServerClient } from "@/lib/supabase"
 import { sendPaymentConfirmedEmail } from "@/app/services/emailService"
 import { logOrderEvent } from "@/lib/orderEvents"
+import { concederDiscosDoPedido } from "@/lib/fidelidade"
 import crypto from "crypto"
 
 type DB = ReturnType<typeof createServerClient>
@@ -13,6 +14,12 @@ type DB = ReturnType<typeof createServerClient>
 // O claim do token é ATÔMICO (update ... where photo_token IS NULL): só "ganha" um
 // dos caminhos, garantindo que o e-mail seja enviado uma única vez sem corrida.
 export async function ensurePaymentPrep(supabase: DB, orderId: string): Promise<void> {
+  // Fidelidade ANTES do claim do token, de propósito: o claim tem saída
+  // antecipada ("já preparado por outro caminho"), e pedido pago antes do
+  // programa existir nunca passaria por aqui de novo. A concessão é
+  // idempotente (índice único order_id+tipo), então repetir é inofensivo.
+  await concederDiscosDoPedido(supabase, orderId)
+
   const token = crypto.randomUUID()
   const { data: claimed, error } = await supabase
     .from("orders")
