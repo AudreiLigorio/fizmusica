@@ -79,7 +79,7 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
   const inicial = (nome || email || "?").trim().charAt(0).toUpperCase()
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #d946ef" }}>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
       <div className="flex items-center gap-3.5 mb-4">
         <button
           type="button"

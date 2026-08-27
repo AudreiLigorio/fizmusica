@@ -56,7 +56,7 @@ export default function ReferirAmigos() {
   }
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6" style={{ borderLeft: "3px solid #d946ef" }}>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
       <div className="flex items-center gap-2.5 mb-1">
         <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(217,70,239,0.14)" }}>💬</div>
         <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Indique amigos</h3>
