@@ -1,5 +1,8 @@
 "use client"
 
+import { useEffect } from "react"
+import { usePlayer } from "./PlayerContext"
+
 // Navegação da área do cliente. Ícones desenhados aqui mesmo (traço único,
 // grade de 24) em vez de emoji: emoji vem da fonte do sistema, tem peso
 // diferente em cada aparelho e não aceita cor de estado — a aba ativa precisa
@@ -131,4 +134,18 @@ export function TabsDesktop({ aba, onAba, onCriar }: { aba: Aba; onAba: (a: Aba)
       </button>
     </nav>
   )
+}
+
+// Fecha o player ao sair de "Músicas". Fica como componente próprio, e não
+// dentro do irPara(), porque a aba também muda pelo endereço e pelo botão
+// Voltar do navegador — reagir ao valor cobre os três caminhos de uma vez.
+//
+// Precisa ser filho do PlayerProvider (quem renderiza o provider não enxerga
+// o contexto dele), por isso mora aqui e é montado junto do MiniPlayer.
+export function FecharPlayerForaDeMusicas({ aba }: { aba: Aba }) {
+  const { close } = usePlayer()
+  useEffect(() => {
+    if (aba !== "musicas") close()
+  }, [aba, close])
+  return null
 }

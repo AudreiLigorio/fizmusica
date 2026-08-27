@@ -22,7 +22,7 @@ import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
 import MiniPlayer from "./MiniPlayer"
 import InfoTooltip from "./InfoTooltip"
-import { TabBarMobile, TabsDesktop, type Aba } from "./AreaTabs"
+import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
 import FaixaAtalhos from "./FaixaAtalhos"
 import BuscaMusicas from "./BuscaMusicas"
 import CarreiraPainel from "./CarreiraPainel"
@@ -957,6 +957,7 @@ function MinhaMusicaContent() {
       </div>
     </div>
     <MiniPlayer />
+    <FecharPlayerForaDeMusicas aba={aba} />
     <TabBarMobile aba={aba} onAba={irPara} onCriar={() => router.push("/criar")} />
     </ToastProvider>
     </PlayerProvider>
