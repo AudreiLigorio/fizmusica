@@ -66,10 +66,16 @@ export function TabBarMobile({
   onAba: (a: Aba) => void
   onCriar: () => void
 }) {
+  // O ::after estende a cor da barra pra baixo. No Safari/Chrome do celular, a
+  // barra de endereço encolhe ao rolar e o `fixed` não acompanha na hora —
+  // abre uma fresta onde o conteúdo aparecia POR BAIXO do menu. Assim a fresta
+  // mostra a cor da barra em vez da página. Fica fora da tela quando não há
+  // folga, então não custa nada no caso normal.
   return (
     <nav
       aria-label="Seções da sua área"
-      className="sm:hidden fixed left-0 right-0 bottom-0 z-40 grid grid-cols-4 border-t border-white/10 px-1 pt-2"
+      className="sm:hidden fixed left-0 right-0 bottom-0 z-40 grid grid-cols-4 border-t border-white/10 px-1 pt-2
+                 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-32 after:bg-[#130e1c]"
       style={{ background: "#130e1c", paddingBottom: "calc(0.6rem + env(safe-area-inset-bottom))" }}
     >
       <TabBtn {...ABAS[0]} ativa={aba === ABAS[0].id} onClick={() => onAba(ABAS[0].id)} />

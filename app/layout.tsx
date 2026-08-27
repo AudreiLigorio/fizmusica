@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
 import "./globals.css";
 import AuthHashHandler from "./components/AuthHashHandler";
@@ -21,6 +21,15 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Fiz Música — Sua história. Sua música.",
   description: "Músicas personalizadas feitas com amor para quem você ama.",
+};
+
+// viewport-fit=cover faz o env(safe-area-inset-*) valer de verdade. Sem isso
+// ele devolve 0, e o padding de área segura da barra de abas e do player era
+// letra morta em celular com notch/indicador de home.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
