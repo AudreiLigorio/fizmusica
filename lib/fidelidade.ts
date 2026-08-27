@@ -80,6 +80,31 @@ export async function carreiraDoUsuario(supabase: DB, userId: string): Promise<C
   return { discos, nivel: atual, proximo, faltam, progresso }
 }
 
+// Desconto que o nível do cliente dá neste preço. Calculado no servidor, como
+// a spec exige — o navegador nunca decide quanto alguém ganha.
+//
+// Devolve 0 pra visitante sem conta: fidelidade pendura em user_id, e pedido
+// de checkout sem login não tem a quem creditar.
+export async function descontoDeFidelidade(
+  supabase: DB,
+  userId: string | null | undefined,
+  precoBruto: number,
+  fisico: boolean,
+): Promise<{ desconto: number; percentual: number; nivel: Nivel | null }> {
+  const vazio = { desconto: 0, percentual: 0, nivel: null }
+  if (!userId) return vazio
+
+  const carreira = await carreiraDoUsuario(supabase, userId)
+  if (!carreira) return vazio
+
+  const percentual = fisico ? carreira.nivel.descontoFisico : carreira.nivel.descontoDigital
+  if (percentual <= 0) return { desconto: 0, percentual: 0, nivel: carreira.nivel }
+
+  // Arredonda pra centavo, sempre a favor do cliente no empate.
+  const desconto = Math.round(precoBruto * percentual) / 100
+  return { desconto, percentual, nivel: carreira.nivel }
+}
+
 // Concede os discos de um pedido pago. IDEMPOTENTE de propósito: a confirmação
 // de pagamento tem seis pontos de entrada neste projeto (webhook, confirm,
 // create, sync e reconcile do admin, cupom de 100%), então esta função vai ser

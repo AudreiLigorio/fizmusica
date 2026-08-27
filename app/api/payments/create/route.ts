@@ -3,7 +3,8 @@ import MercadoPago, { Payment } from "mercadopago"
 import { createServerClient } from "@/lib/supabase"
 import { detectDuplicatePayment } from "@/lib/paymentAlerts"
 import { validateCoupon } from "@/lib/coupons"
-import { concederDiscosDoPedido } from "@/lib/fidelidade"
+import { concederDiscosDoPedido, descontoDeFidelidade } from "@/lib/fidelidade"
+import { melhorDesconto } from "@/lib/descontoRegra"
 
 const client = new MercadoPago({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     // Fix 1: preço vem SEMPRE do banco (não confia no client)
     const { data: product } = await supabase
       .from("products")
-      .select("name, price")
+      .select("name, price, category")
       .eq("id", productId)
       .single()
 
@@ -89,6 +90,28 @@ export async function POST(req: Request) {
         discountAmount    = cv.discount
         appliedCouponCode = cv.coupon.code
       }
+    }
+
+    // Desconto de fidelidade — NÃO acumula com cupom: vale o MAIOR dos dois.
+    // Empilhar os dois abriria margem negativa sem ninguém perceber, e a spec
+    // deixa "acumula ou não" como decisão de admin, não como padrão.
+    //
+    // Registrado no mesmo campo de cupom, com código sintético CARREIRA-N{n}:
+    // mantém a contabilidade de desconto concedido num lugar só, e não polui a
+    // contagem de uso dos cupons reais (que é derivada por código).
+    const { data: pedidoDono } = await supabase
+      .from("orders").select("userId").eq("id", orderId).maybeSingle()
+    const ehFisico = (product.category as string | null ?? "").toUpperCase().includes("PHYSICAL")
+    const fid = await descontoDeFidelidade(supabase, pedidoDono?.userId as string | null, grossPrice, ehFisico)
+
+    const vencedor = melhorDesconto(
+      appliedCouponCode ? { desconto: discountAmount, codigo: appliedCouponCode } : null,
+      fid.nivel ? { desconto: fid.desconto, nivelId: fid.nivel.id } : null,
+    )
+    if (vencedor.origem === "fidelidade") {
+      finalPrice        = Math.max(0, grossPrice - vencedor.desconto)
+      discountAmount    = vencedor.desconto
+      appliedCouponCode = vencedor.codigo
     }
 
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "")

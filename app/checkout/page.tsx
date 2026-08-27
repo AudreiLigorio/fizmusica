@@ -7,6 +7,8 @@ import { Suspense } from "react"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
+import { supabase } from "@/lib/supabase"
+import { melhorDesconto } from "@/lib/descontoRegra"
 
 function CheckoutContent() {
   const searchParams = useSearchParams()
@@ -86,7 +88,30 @@ function CheckoutContent() {
     setCoupon(null); couponRef.current = ""; setCouponInput(""); setCouponMsg("")
   }
 
-  const displayTotal = coupon ? coupon.finalTotal : price
+  // Desconto de fidelidade: quem calcula é o servidor (a spec proíbe o
+  // navegador decidir benefício). Aqui só exibimos o que ele devolveu.
+  const [fid, setFid] = useState<{ desconto: number; percentual: number; nivelId: number; nivelNome: string; nivelIcone: string } | null>(null)
+  useEffect(() => {
+    if (!price || !productId) return
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return // visitante sem conta não tem fidelidade
+      const d = await fetch("/api/carreira/desconto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ productId, total: price }),
+      }).then((r) => r.json()).catch(() => null)
+      if (d?.desconto > 0) setFid(d)
+    })()
+  }, [price, productId])
+
+  // Mesma função que o /payments/create usa pra cobrar — se cada lado tivesse
+  // a própria regra, um dia divergiriam e o cliente pagaria diferente do que viu.
+  const vencedor = melhorDesconto(
+    coupon ? { desconto: coupon.discount, codigo: coupon.code } : null,
+    fid ? { desconto: fid.desconto, nivelId: fid.nivelId } : null,
+  )
+  const displayTotal = Math.max(0, price - vencedor.desconto)
   // Cupom que zera o total (ex.: 100% de teste) → não dá pra cobrar no MP; usa o
   // caminho "pedido grátis". Exige que um cupom esteja de fato aplicado.
   const isFreeOrder = !!coupon && displayTotal <= 0
@@ -355,7 +380,7 @@ function CheckoutContent() {
             <div className="flex items-center justify-between">
               <p className="text-white/55 text-sm">{productName}</p>
               <div className="text-right">
-                {coupon && (
+                {vencedor.desconto > 0 && (
                   <p className="text-white/30 text-xs line-through">
                     R$ {price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </p>
@@ -365,6 +390,19 @@ function CheckoutContent() {
                 </p>
               </div>
             </div>
+
+            {/* Desconto de fidelidade — só aparece quando é ele que está
+                valendo; se o cupom for maior, o bloco do cupom já explica. */}
+            {vencedor.origem === "fidelidade" && fid && (
+              <div className="mt-4 rounded-xl px-4 py-3 border border-fuchsia-500/25 bg-fuchsia-500/10">
+                <p className="text-fuchsia-200 text-sm font-semibold">
+                  {fid.nivelIcone} {fid.percentual}% de desconto — {fid.nivelNome}
+                </p>
+                <p className="text-fuchsia-300/70 text-xs">
+                  Benefício da sua carreira. Você economizou R$ {fid.desconto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            )}
 
             {/* Cupom de desconto */}
             <div className="mt-4">
