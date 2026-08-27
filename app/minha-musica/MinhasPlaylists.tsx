@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import { useToast } from "./ToastContext"
 import { combina } from "@/lib/busca"
+import { gradienteDaCapa } from "@/lib/capaGradiente"
 
 type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string; apelido: string | null }
 type PlaylistFull = { id: string; nome: string; tracks: Track[] }
@@ -101,7 +102,7 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                   <div key={t.orderId} className="shrink-0 w-28 group">
                     <div
                       className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10"
-                      style={{ background: "linear-gradient(150deg,#3a1440,#7a1f5c)" }}
+                      style={{ background: gradienteDaCapa(t.orderId) }}
                     >
                       {t.imageUrl && (
                         // <img> em vez de background-image: se a capa falhar

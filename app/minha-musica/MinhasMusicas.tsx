@@ -9,6 +9,7 @@ import MinhasPlaylists from "./MinhasPlaylists"
 import { useToast } from "./ToastContext"
 import InfoTooltip from "./InfoTooltip"
 import { combina } from "@/lib/busca"
+import { gradienteDaCapa } from "@/lib/capaGradiente"
 
 export type LibraryTrack = {
   id: string
@@ -21,23 +22,6 @@ export type LibraryTrack = {
   lyricsLrc: string | null
 }
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
-
-// Sem foto de capa própria pra cada música (o design não pediu upload de capa
-// custom) — gradiente estável por id, pra cada card ter uma cara diferente
-// sem depender de imagem.
-const GRADIENTS = [
-  "linear-gradient(150deg,#3a1440,#7a1f5c)",
-  "linear-gradient(150deg,#1c2f52,#3d1f66)",
-  "linear-gradient(150deg,#4a1330,#a3226b)",
-  "linear-gradient(150deg,#122b3a,#2c6b6f)",
-  "linear-gradient(150deg,#3a2312,#8a4a1f)",
-  "linear-gradient(150deg,#241541,#5c1f8a)",
-]
-function gradientFor(id: string): string {
-  let hash = 0
-  for (const ch of id) hash = (hash * 31 + ch.charCodeAt(0)) | 0
-  return GRADIENTS[Math.abs(hash) % GRADIENTS.length]
-}
 
 // "Minhas músicas" não guarda nada de novo — é derivado dos pedidos entregues
 // (prop `tracks`, montada em page.tsx a partir dos mesmos `orders` que a
@@ -129,7 +113,7 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
             <div key={t.id} className="shrink-0 w-28 group">
               <div
                 className="relative w-28 h-28 rounded-xl border border-white/10 bg-cover bg-center"
-                style={{ background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradientFor(t.id) }}
+                style={{ background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradienteDaCapa(t.id) }}
               >
                 <button
                   type="button"

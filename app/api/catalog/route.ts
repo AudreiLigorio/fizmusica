@@ -89,7 +89,11 @@ export async function GET(req: NextRequest) {
       const music = musicByOrder[o.id]
       const tracks = (o.sunoTracks as Track[] | null) ?? []
       const principal = tracks.find((t) => t.audioUrl === music?.mp3Url) ?? tracks[0]
-      if (!music?.slug || !principal?.imageUrl || !principal?.audioUrl) return null // sem capa/áudio do Suno, não entra
+      // Entrega antiga (manual) não tem sunoTracks: o áudio está só no mp3Url
+      // e não existe capa. Entra assim mesmo — a tela cai no gradiente da
+      // marca quando imageUrl é nulo. Sem áudio nenhum é que não entra.
+      const audioUrl = principal?.audioUrl ?? music?.mp3Url ?? null
+      if (!music?.slug || !audioUrl) return null
       const produto = Array.isArray(o.products) ? o.products[0] : o.products
       const features = featuresFromProduct(produto)
       // Mesma trava do player público — sincronizado só se o plano DAQUELE
@@ -108,8 +112,8 @@ export async function GET(req: NextRequest) {
           : `Uma canção de ${o.subcategory}`,
         occasion: o.subcategory,
         musicalStyle: o.musicalStyle ?? null,
-        imageUrl: principal.imageUrl,
-        audioUrl: principal.audioUrl,
+        imageUrl: principal?.imageUrl ?? null,
+        audioUrl,
         lyrics,
         lyricsLrc,
         authorApelido: o.userId ? apelidoPorUser[o.userId as string] ?? null : null,

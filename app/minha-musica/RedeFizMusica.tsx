@@ -8,6 +8,7 @@ import CreatePlaylistModal from "./CreatePlaylistModal"
 import { useToast } from "./ToastContext"
 import InfoTooltip from "./InfoTooltip"
 import { combina } from "@/lib/busca"
+import { gradienteDaCapa } from "@/lib/capaGradiente"
 
 type CatalogItem = {
   orderId: string
@@ -15,7 +16,9 @@ type CatalogItem = {
   title: string
   occasion: string
   musicalStyle: string | null
-  imageUrl: string
+  // Nulo nas entregas antigas (manuais), que não têm capa do Suno — a tela
+  // cai no gradiente da marca nesse caso.
+  imageUrl: string | null
   audioUrl: string
   lyrics: string | null
   lyricsLrc: string | null
@@ -200,7 +203,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
                 <div key={it.orderId} className="shrink-0 w-28 group">
                   <div
                     className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center"
-                    style={{ backgroundImage: `url(${it.imageUrl})` }}
+                    style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
                   >
                     <button
                       type="button"
@@ -260,7 +263,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
                   onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc, apelido: it.authorApelido })}
                   className="block w-full h-full"
                 >
-                  <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: `url(${it.imageUrl})` }} />
+                  <div className="w-full h-full bg-cover bg-center" style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }} />
                   {isPlaying && <div className="absolute inset-0 bg-black/35 flex items-center justify-center text-2xl">❚❚</div>}
                 </button>
                 <button
