@@ -93,7 +93,7 @@ export default function DatasEspeciais() {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
       <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(240,25,107,0.14)" }}>📅</div>
+        <div className="w-8 h-8 rounded-full flex items-center justify-center text-base shrink-0" style={{ background: "rgba(240,25,107,0.14)" }}>📅</div>
         <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Datas especiais</h3>
         {dates.length === 0 && (
           <span className="text-[10px] font-bold uppercase tracking-wide bg-fuchsia-500 text-white px-2 py-0.5 rounded-full shrink-0">Novo</span>

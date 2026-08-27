@@ -76,10 +76,10 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
       {visiveis.map((pl) => (
         <div
           key={pl.id}
-          className={embedded ? "mt-4 pt-4 border-t border-white/5" : "rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6"}
+          className={embedded ? "mt-6 pt-5 border-t border-white/5" : "mb-9"}
         >
           <div className="flex items-center justify-between gap-2 mb-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2 min-w-0 truncate">🎶 {pl.nome}</h3>
+            <h2 className="font-display text-xl font-bold flex items-center gap-2 min-w-0 truncate">🎶 {pl.nome}</h2>
             <button
               type="button"
               onClick={() => excluirPlaylist(pl.id, pl.nome)}
@@ -95,13 +95,13 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
               Clique no + de uma música na Rede Fiz Música e adicione músicas aqui.
             </p>
           ) : (
-            <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
+            <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
               {pl.tracks.map((t) => {
                 const isPlaying = nowPlaying?.id === t.orderId && playing
                 return (
-                  <div key={t.orderId} className="shrink-0 w-28 group">
+                  <div key={t.orderId} className="shrink-0 w-32 group">
                     <div
-                      className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10"
+                      className="relative w-32 h-32 rounded-xl overflow-hidden"
                       style={{ background: gradienteDaCapa(t.orderId) }}
                     >
                       {t.imageUrl && (
@@ -132,7 +132,7 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                         −
                       </button>
                     </div>
-                    <p className={`text-xs font-medium mt-1.5 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
+                    <p className={`text-xs font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
                   </div>
                 )
               })}

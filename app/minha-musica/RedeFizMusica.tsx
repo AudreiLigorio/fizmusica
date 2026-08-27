@@ -185,24 +185,26 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
       : porEstilo.get(filtro.valor) ?? []
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
+    <div className="mb-9">
+      {/* Sem card/borda de propósito — título grande em serifa separa esta
+          seção da próxima, mesma lógica do Spotify aplicada nas outras duas
+          telas de música. */}
       <div className="flex items-center gap-2.5 mb-1">
-        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "rgba(255,255,255,0.08)" }}>🎧</div>
-        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Rede Fiz Música</h3>
+        <h2 className="font-display text-2xl font-bold flex-1 min-w-0 truncate">Rede Fiz Música</h2>
         <InfoTooltip text="Explore músicas de outros usuários, comente, curta e divirta-se." />
       </div>
-      <p className="text-xs text-white/50 mb-3">Escute músicas publicadas por outros usuários</p>
+      <p className="text-xs text-white/50 mb-4">Escute músicas publicadas por outros usuários</p>
 
       {favoritados.length > 0 && (
-        <div className="mb-4 pb-4 border-b border-white/5">
-          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">❤️ Favoritas — toque no + para adicionar a uma playlist</p>
-          <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
+        <div className="mb-5 pb-5 border-b border-white/5">
+          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">❤️ Favoritas — toque no + para adicionar a uma playlist</p>
+          <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
             {favoritados.map((it) => {
               const isPlaying = nowPlaying?.id === it.orderId && playing
               return (
-                <div key={it.orderId} className="shrink-0 w-28 group">
+                <div key={it.orderId} className="shrink-0 w-32 group">
                   <div
-                    className="relative w-28 h-28 rounded-xl overflow-hidden border border-white/10 bg-cover bg-center"
+                    className="relative w-32 h-32 rounded-xl overflow-hidden bg-cover bg-center"
                     style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
                   >
                     <button
@@ -221,7 +223,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
                       +
                     </button>
                   </div>
-                  <p className={`text-xs font-medium mt-1.5 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{it.title}</p>
+                  <p className={`text-xs font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{it.title}</p>
                 </div>
               )
             })}
@@ -229,8 +231,8 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
         </div>
       )}
 
-      <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por ocasião</p>
-      <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-2 -mx-1 px-1">
+      <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">Por ocasião</p>
+      <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-3 -mx-5 sm:mx-0 px-5 sm:px-0">
         <Pill active={filtro === null} onClick={() => setFiltro(null)}>Todas · {itensBusca.length}</Pill>
         {ocasioes.map(([ocasiao, lista]) => (
           <Pill key={ocasiao} active={filtro?.tipo === "ocasiao" && filtro.valor === ocasiao} onClick={() => setFiltro({ tipo: "ocasiao", valor: ocasiao })}>
@@ -241,8 +243,8 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
 
       {estilos.length > 0 && (
         <>
-          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-1.5">Por estilo</p>
-          <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-1 -mx-1 px-1">
+          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">Por estilo</p>
+          <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
             {estilos.map(([estilo, lista]) => (
               <Pill key={estilo} active={filtro?.tipo === "estilo" && filtro.valor === estilo} onClick={() => setFiltro({ tipo: "estilo", valor: estilo })}>
                 {estilo} · {lista.length}
@@ -252,12 +254,12 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
         </>
       )}
 
-      <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1">
+      <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
         {visiveis.map((it) => {
           const isPlaying = nowPlaying?.id === it.orderId && playing
           return (
             <div key={it.orderId} className="shrink-0 w-32">
-              <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-white/10">
+              <div className="relative w-32 h-32 rounded-xl overflow-hidden">
                 <button
                   type="button"
                   onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics, lyricsLrc: it.lyricsLrc, apelido: it.authorApelido })}
@@ -282,7 +284,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
                   +
                 </button>
               </div>
-              <p className={`text-xs font-medium mt-1.5 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
+              <p className={`text-xs font-medium mt-2 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
               <p className="text-[11px] text-white/40 truncate">{it.occasion}</p>
             </div>
           )

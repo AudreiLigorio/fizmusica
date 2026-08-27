@@ -98,21 +98,23 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
   if (tracks.length === 0) return null
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
+    <div className="mb-9">
+      {/* Sem card/borda de propósito: no lugar da moldura, o título grande em
+          serifa é quem separa esta seção da próxima — mesma lógica do
+          Spotify. Capas maiores (w-32) e coladas na borda, "mais expandido". */}
       <div className="flex items-center gap-2.5 mb-1">
-        <div className="w-8 h-8 rounded-[10px] flex items-center justify-center text-base shrink-0" style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.18), rgba(217,70,239,0.18))" }}>🗂️</div>
-        <h3 className="text-sm font-semibold flex-1 min-w-0 truncate">Minha playlist</h3>
+        <h2 className="font-display text-2xl font-bold flex-1 min-w-0 truncate">Minha playlist</h2>
         <InfoTooltip text="Organize suas músicas preferidas na sua playlist do seu jeito." />
       </div>
-      <p className="text-xs text-white/50 mb-3">Organize as músicas do seu jeito. Toque no + e adicione sua música na playlist abaixo.</p>
+      <p className="text-xs text-white/50 mb-4">Organize as músicas do seu jeito. Toque no + e adicione sua música na playlist abaixo.</p>
 
-      <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-1 px-1 mb-4">
+      <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0 mb-5">
         {tracks.map((t) => {
           const isPlaying = nowPlaying?.id === t.id && playing
           return (
-            <div key={t.id} className="shrink-0 w-28 group">
+            <div key={t.id} className="shrink-0 w-32 group">
               <div
-                className="relative w-28 h-28 rounded-xl border border-white/10 bg-cover bg-center"
+                className="relative w-32 h-32 rounded-xl bg-cover bg-center"
                 style={{ background: t.imageUrl ? `url(${t.imageUrl}) center/cover` : gradienteDaCapa(t.id) }}
               >
                 <button
@@ -133,13 +135,13 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
                   +
                 </button>
               </div>
-              <p className={`text-xs font-medium mt-1.5 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
+              <p className={`text-xs font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
             </div>
           )
         })}
       </div>
 
-      {/* Sem rótulo aqui: o título do card já é "Minha Playlist", repetir
+      {/* Sem rótulo aqui: o título da seção já é "Minha Playlist", repetir
           duas vezes na mesma tela só polui. */}
       <div className="flex items-center justify-end mb-1.5">
         <button
