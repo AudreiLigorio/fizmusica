@@ -161,28 +161,6 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
         </span>
       </label>
 
-      {/* Nível travado de propósito: o programa de fidelidade está
-          especificado mas não construído, e número falso seria pior do que
-          dizer que ainda não chegou. */}
-      <div className="rounded-xl border border-dashed border-white/12 bg-black/20 px-4 py-3.5">
-        <div className="flex items-center gap-2 mb-1">
-          <svg
-            viewBox="0 0 24 24" className="w-4 h-4 text-white/30 shrink-0" aria-hidden="true"
-            fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"
-          >
-            <circle cx="12" cy="9" r="6" />
-            <path d="M8.2 14.3 7 22l5-3 5 3-1.2-7.7" />
-          </svg>
-          <p className="text-xs font-semibold text-white/60">Seu nível de cantor</p>
-          <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-white/30 border border-white/12 rounded-full px-2 py-0.5 shrink-0">
-            Em breve
-          </span>
-        </div>
-        <p className="text-[11px] text-white/35 leading-relaxed">
-          Cada música criada e cada amigo indicado vão virar pontos aqui — com
-          personagem que evolui conforme você sobe de nível.
-        </p>
-      </div>
     </div>
   )
 }

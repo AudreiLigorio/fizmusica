@@ -51,6 +51,11 @@ export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const patch: Record<string, unknown> = { user_id: user.id, updated_at: new Date().toISOString() }
   if ("apelido" in body) patch.apelido = String(body.apelido ?? "").trim().slice(0, MAX_APELIDO) || null
+  // Personagem da carreira. Só aceita os valores com arte existente — o check
+  // do banco recusaria de qualquer forma, mas errar aqui dá erro claro.
+  if ("personagem" in body && (body.personagem === "m" || body.personagem === "f")) {
+    patch.personagem = body.personagem
+  }
   // mostrar_apelido: opt-in separado do publication_consent — precisa ser
   // enviado explicitamente pelo cliente, nunca assumido junto do apelido.
   if ("mostrarApelido" in body) patch.mostrar_apelido = !!body.mostrarApelido

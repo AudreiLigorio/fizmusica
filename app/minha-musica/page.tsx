@@ -25,6 +25,7 @@ import InfoTooltip from "./InfoTooltip"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
 import BuscaMusicas from "./BuscaMusicas"
 import CarreiraPainel from "./CarreiraPainel"
+import MinhaCarreira from "./MinhaCarreira"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -938,6 +939,10 @@ function MinhaMusicaContent() {
           {/* Nasce com indicação, datas e conta. Nível e discos entram aqui
               quando o programa de fidelidade existir. */}
           {aba === "carreira" && <>
+          {/* A carreira vem primeiro: é o herói da aba. Dados da conta ficam
+              logo abaixo, como apoio. */}
+          <MinhaCarreira />
+
           <CarreiraPainel nome={firstName ?? ""} email={user.email ?? ""} />
 
           <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
