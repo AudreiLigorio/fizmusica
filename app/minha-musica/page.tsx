@@ -237,6 +237,8 @@ function MinhaMusicaContent() {
   useEffect(() => { setAba(abaDaUrl) }, [abaDaUrl])
 
   function irPara(a: Aba) {
+    // "Home" é a landing, não uma seção daqui — sai da área do cliente.
+    if (a === "home") { router.push("/"); return }
     setAba(a)
     const qs = new URLSearchParams(Array.from(searchParams.entries()))
     if (a === "pedidos") qs.delete("aba"); else qs.set("aba", a)

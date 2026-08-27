@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import FizMusicaCarousel from "./components/FizMusicaCarousel"
 import Header from "./components/Header"
 import Footer from "./components/Footer"
+import BarraHome from "./components/BarraHome"
 import ExperienceVideo from "./components/ExperienceVideo"
 import VideoExemplos from "./components/VideoExemplos"
 import FaqHome from "./components/FaqHome"
@@ -714,6 +715,7 @@ export default function Home() {
       </section>
 
       <Footer />
+      <BarraHome />
     </div>
   )
 }

@@ -7,10 +7,22 @@ import { usePlayer } from "./PlayerContext"
 // grade de 24) em vez de emoji: emoji vem da fonte do sistema, tem peso
 // diferente em cada aparelho e não aceita cor de estado — a aba ativa precisa
 // ficar branca e as outras apagadas.
-export type Aba = "pedidos" | "musicas" | "carreira"
+// "home" não é seção da área do cliente — é a landing. Entra aqui porque
+// divide a mesma barra, e é o que dá caminho de volta pra quem foi parar na
+// Rede e quer entender o produto.
+export type Aba = "home" | "pedidos" | "musicas" | "carreira"
 
 const S = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
 
+function IconHome() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" aria-hidden="true" {...S}>
+      <path d="M3 10.2 12 3l9 7.2" />
+      <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
+      <path d="M9.5 21v-6h5v6" />
+    </svg>
+  )
+}
 function IconPedidos() {
   return (
     <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" aria-hidden="true" {...S}>
@@ -50,6 +62,7 @@ function IconCriar() {
 }
 
 const ABAS: { id: Aba; label: string; Icon: () => React.JSX.Element }[] = [
+  { id: "home", label: "Home", Icon: IconHome },
   { id: "pedidos", label: "Pedidos", Icon: IconPedidos },
   { id: "musicas", label: "Músicas", Icon: IconMusicas },
   { id: "carreira", label: "Carreira", Icon: IconCarreira },
@@ -74,11 +87,12 @@ export function TabBarMobile({
   return (
     <nav
       aria-label="Seções da sua área"
-      className="sm:hidden fixed left-0 right-0 bottom-0 z-40 grid grid-cols-4 border-t border-white/10 px-1 pt-2
+      className="sm:hidden fixed left-0 right-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/10 px-1 pt-2
                  after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-32 after:bg-[#130e1c]"
       style={{ background: "#130e1c", paddingBottom: "calc(0.6rem + env(safe-area-inset-bottom))" }}
     >
       <TabBtn {...ABAS[0]} ativa={aba === ABAS[0].id} onClick={() => onAba(ABAS[0].id)} />
+      <TabBtn {...ABAS[1]} ativa={aba === ABAS[1].id} onClick={() => onAba(ABAS[1].id)} />
 
       {/* "Criar" não é aba, é atalho pra outro fluxo — por isso o tratamento
           visual diferente, senão o cliente estranha o menu sumir lá dentro. */}
@@ -92,8 +106,8 @@ export function TabBarMobile({
         Criar
       </button>
 
-      <TabBtn {...ABAS[1]} ativa={aba === ABAS[1].id} onClick={() => onAba(ABAS[1].id)} />
       <TabBtn {...ABAS[2]} ativa={aba === ABAS[2].id} onClick={() => onAba(ABAS[2].id)} />
+      <TabBtn {...ABAS[3]} ativa={aba === ABAS[3].id} onClick={() => onAba(ABAS[3].id)} />
     </nav>
   )
 }
