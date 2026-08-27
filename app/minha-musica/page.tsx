@@ -221,8 +221,19 @@ function MinhaMusicaContent() {
   // Aba no endereço (?aba=musicas): sem isso, atualizar a página ou usar o
   // botão Voltar jogava o cliente de volta em Pedidos sem explicação.
   const abaUrl = searchParams.get("aba")
-  const aba: Aba = abaUrl === "musicas" || abaUrl === "carreira" ? abaUrl : "pedidos"
+  const abaDaUrl: Aba = abaUrl === "musicas" || abaUrl === "carreira" ? abaUrl : "pedidos"
+
+  // A aba vive em estado local, não direto no endereço. Motivo: staleTimes
+  // dynamic=0 (next.config) faz cada router.replace buscar o RSC no servidor,
+  // e a tela só trocava DEPOIS da resposta — em conexão instável o clique
+  // parecia não funcionar, e só "pegava" ao clicar noutra aba. Agora troca na
+  // hora e o endereço acompanha atrás.
+  const [aba, setAba] = useState<Aba>(abaDaUrl)
+  // Endereço mudando por fora (Voltar/Avançar do navegador, link direto).
+  useEffect(() => { setAba(abaDaUrl) }, [abaDaUrl])
+
   function irPara(a: Aba) {
+    setAba(a)
     const qs = new URLSearchParams(Array.from(searchParams.entries()))
     if (a === "pedidos") qs.delete("aba"); else qs.set("aba", a)
     router.replace(qs.toString() ? `/minha-musica?${qs}` : "/minha-musica", { scroll: false })
