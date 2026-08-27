@@ -37,6 +37,13 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ orders: [] })
 
+  // Prazo do link público — hoje é único pra todos os produtos
+  // (purge_settings.music_days). A tela mostra o número em vez de dizer só
+  // "expirou", pra o cliente conferir contra o que foi contratado.
+  const { data: purge } = await supabase
+    .from("purge_settings").select("music_days, music_enabled").eq("id", 1).maybeSingle()
+  const linkPrazoDias = purge?.music_enabled ? (purge.music_days as number | null) ?? null : null
+
   // Anexa slug + mp3 da música (quando publicada) para os botões Ouvir/Baixar
   const ids = (data ?? []).map((o) => o.id)
   const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null; musicName: string | null; linkAtivo: boolean }> = {}
@@ -88,6 +95,7 @@ export async function GET(req: NextRequest) {
       // aqui dentro — o que morre é o /m/slug, então QR e compartilhar
       // precisam sumir, senão o cliente divulga um link quebrado.
       linkAtivo:  music ? music.linkAtivo : true,
+      linkPrazoDias,
       lyrics,
       lyricsLrc,
       photoCount: Array.isArray(order_photos) ? order_photos.length : 0,

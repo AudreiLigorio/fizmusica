@@ -57,6 +57,7 @@ type Order = {
   musicName?: string | null
   // false = link público vencido pelo expurgo (Admin → Operação).
   linkAtivo?: boolean
+  linkPrazoDias?: number | null
   lyrics?: string | null
   lyricsLrc?: string | null
   sharing_term_accepted_at?: string | null
@@ -585,6 +586,7 @@ function MinhaMusicaContent() {
             features={order.features ?? TUDO}
             canRevise={!hasRevision && !order.is_revision}
             linkAtivo={order.linkAtivo !== false}
+            linkPrazoDias={order.linkPrazoDias ?? null}
             onQr={() => setQrUrl(`https://fizmusica.com.br/m/${order.slug}`)}
             onNaoGostei={() => router.push(`/contestar/${order.id}`)}
             onChanged={loadOrders}
@@ -625,8 +627,9 @@ function MinhaMusicaContent() {
               )}
               {order.linkAtivo === false && (
                 <p className="w-full text-[11px] text-white/40 leading-relaxed">
-                  🔒 O prazo do link público desta música terminou — o QR Code e o
-                  compartilhamento saíram do ar. A música continua sua: dá pra baixar o MP3 aqui.
+                  🔒 Terminou o prazo{order.linkPrazoDias ? ` de ${order.linkPrazoDias} dias` : ""} de
+                  link público do seu plano — o QR Code, o compartilhamento e as fotos saíram do ar.
+                  A música continua sua: dá pra baixar o MP3 aqui.
                 </p>
               )}
             </>

@@ -22,6 +22,7 @@ export default function VersoesEntregues({
   features,
   canRevise,
   linkAtivo = true,
+  linkPrazoDias = null,
   onQr,
   onNaoGostei,
   onChanged,
@@ -38,6 +39,9 @@ export default function VersoesEntregues({
   // false = link público vencido pelo expurgo. Ouvir e baixar continuam; QR e
   // compartilhar somem, senão o cliente divulgaria um endereço quebrado.
   linkAtivo?: boolean
+  // Prazo configurado (dias). Vai no aviso pra o cliente conferir contra o
+  // que contratou, em vez de só ver "expirou" sem referência.
+  linkPrazoDias?: number | null
   onQr: () => void
   onNaoGostei?: () => void
   onChanged?: () => void
@@ -94,7 +98,9 @@ export default function VersoesEntregues({
   // fotos, e "Surpresa" (o QR pra colar no presente) some em plano sem QR.
   const steps: { key: StepKey; icon: string; label: string; done: boolean; nudge?: boolean }[] = [
     { key: "principal", icon: "⭐", label: "Principal", done: true },
-    ...(features.fotos > 0
+    // Fotos somem junto com o link: o expurgo apaga os arquivos no mesmo
+    // evento, e sem o player público não há mais onde elas apareceriam.
+    ...(features.fotos > 0 && linkAtivo
       ? [{ key: "fotos" as const, icon: "📸", label: "Fotos", done: hasPhotos, nudge: !hasPhotos }]
       : []),
     ...(features.qrcode && linkAtivo
@@ -231,10 +237,13 @@ export default function VersoesEntregues({
             /* Link vencido: explica em vez de sumir sem aviso, senão o cliente
                acha que perdeu a música — que continua aqui, ouvível e baixável. */
             <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-3 mb-1">
-              <p className="text-xs font-semibold text-white/70 mb-1">🔒 Link de compartilhar expirado</p>
+              <p className="text-xs font-semibold text-white/70 mb-1">🔒 Acesso público encerrado</p>
               <p className="text-[11px] text-white/45 leading-relaxed">
-                O prazo do link público desta música terminou, então o QR Code e o
-                compartilhamento saíram do ar. Sua música continua sua: dá pra
+                {linkPrazoDias
+                  ? `Terminou o prazo de ${linkPrazoDias} dias de link público do seu plano. `
+                  : "Terminou o prazo de link público do seu plano. "}
+                O QR Code, o compartilhamento e as fotos saíram do ar.{" "}
+                <strong className="text-white/60">Sua música continua sua</strong> — dá pra
                 ouvir aqui e baixar o MP3 quando quiser.
               </p>
             </div>
