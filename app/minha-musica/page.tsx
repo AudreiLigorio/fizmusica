@@ -378,7 +378,10 @@ function MinhaMusicaContent() {
         occasion: o.subcategory,
         slug: o.slug as string,
         imageUrl: principal?.imageUrl ?? null,
-        audioUrl: principal?.audioUrl ?? null,
+        // Cai pro mp3Url quando não há sunoTracks: entrega antiga (manual,
+        // antes da IA) guarda o áudio só ali. Sem isso o card aparecia na
+        // prateleira com o botão morto, mesmo tendo a música.
+        audioUrl: principal?.audioUrl ?? o.mp3Url ?? null,
         lyrics: o.lyrics ?? null,
         lyricsLrc: o.lyricsLrc ?? null,
       }

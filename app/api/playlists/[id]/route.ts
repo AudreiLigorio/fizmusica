@@ -70,7 +70,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       if (!o) return null
       const music = musicByOrder[orderId]
       const principal = o.sunoTracks?.find((t) => t.audioUrl === music?.mp3Url) ?? o.sunoTracks?.[0]
-      if (!principal?.audioUrl) return null
+      // Entrega antiga (manual) não tem sunoTracks — o áudio está só no
+      // mp3Url. Sem esse fallback a faixa sumia da playlist, e a contagem do
+      // card ("3 músicas") não batia com o que aparecia na raia.
+      const audioUrl = principal?.audioUrl ?? music?.mp3Url ?? null
+      if (!audioUrl) return null
       // Mesma regra do catálogo: nome real só quando o cliente confirmou — ou
       // sempre, se a música é do próprio dono da playlist.
       const proprio = !!o.userId && o.userId === user.id
@@ -79,8 +83,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         orderId,
         title: nome && (music?.confirmado || proprio) ? nome : `Uma canção de ${o.subcategory}`,
         occasion: o.subcategory,
-        imageUrl: principal.imageUrl,
-        audioUrl: principal.audioUrl,
+        imageUrl: principal?.imageUrl ?? null,
+        audioUrl,
         apelido: o.userId ? apelidoPorUser[o.userId] ?? null : null,
       }
     })
