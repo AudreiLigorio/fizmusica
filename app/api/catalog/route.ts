@@ -47,9 +47,44 @@ async function getUserFromAuth(req: NextRequest) {
 //   Cliente (autor do pedido)". Decisão do Audrei: apelido fora da área
 //   pública.
 // - `favorited`: não existe sem conta.
-export async function GET(req: NextRequest) {
-  const user = await getUserFromAuth(req)
-  const publico = !user
+// ── Catálogo base (compartilhado, cacheado em memória) ───────────────────
+//
+// Medido em produção antes desta mudança: a rota era `force-dynamic` sem
+// cache nenhum, então CADA visitante que abria a aba Músicas disparava 4
+// consultas e a montagem da lista inteira. Com a Rede aberta ao visitante
+// (sem login), isso virou carga de qualquer pessoa da internet.
+//
+// O que é IGUAL pra todo mundo fica aqui e é reaproveitado; o que é do
+// cliente (favorito, slug, apelido próprio) é aplicado depois, e é barato.
+//
+// Cache por instância do servidor (Vercel roda várias) — não é um cache
+// global perfeito, e não precisa ser: o objetivo é parar de refazer o mesmo
+// trabalho a cada visita, não garantir consistência absoluta. 60s é bem menor
+// que o intervalo real entre entregas de música nova.
+type ItemBase = {
+  orderId: string
+  slug: string
+  ownerId: string | null
+  musicName: string | null
+  musicNameConfirmed: boolean
+  occasion: string
+  musicalStyle: string | null
+  imageUrl: string | null
+  audioUrl: string
+  lyrics: string | null
+  lyricsLrc: string | null
+  // Apelido separado em dois: o público (respeita mostrar_apelido) e o cru,
+  // que SÓ pode ser usado quando quem pede é o próprio dono do pedido.
+  apelidoPublico: string | null
+  apelidoProprio: string | null
+  createdAt: string
+}
+
+const TTL_MS = 60_000
+let cache: { em: number; itens: ItemBase[] } | null = null
+
+async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
+  if (cache && Date.now() - cache.em < TTL_MS) return { itens: cache.itens }
 
   const supabase = createServerClient()
   const { data: orders, error } = await supabase
@@ -58,7 +93,7 @@ export async function GET(req: NextRequest) {
     .eq("publication_consent", true)
     .eq("status", "DELIVERED")
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return { itens: [], erro: error.message }
 
   // Apelido do autor: opt-in separado do publication_consent (que só cobre a
   // música) — mostrar_apelido default false, então maioria dos pedidos não
@@ -68,12 +103,13 @@ export async function GET(req: NextRequest) {
   const { data: perfis } = ownerIds.length
     ? await supabase.from("profiles").select("user_id, apelido, mostrar_apelido").in("user_id", ownerIds)
     : { data: [] }
-  const apelidoPorUser: Record<string, string> = {}
+  const apelidoPublico: Record<string, string> = {}
+  const apelidoProprio: Record<string, string> = {}
   for (const p of perfis ?? []) {
-    // Nas músicas do próprio cliente o apelido aparece sempre — mostrar_apelido
-    // controla o que OUTROS veem, não o que ele vê da própria música.
-    const proprio = p.user_id === user?.id
-    if ((proprio || p.mostrar_apelido) && p.apelido?.trim()) apelidoPorUser[p.user_id as string] = p.apelido.trim()
+    const nome = p.apelido?.trim()
+    if (!nome) continue
+    apelidoProprio[p.user_id as string] = nome
+    if (p.mostrar_apelido) apelidoPublico[p.user_id as string] = nome
   }
 
   const ids = (orders ?? []).map((o) => o.id)
@@ -90,14 +126,9 @@ export async function GET(req: NextRequest) {
     musicNameConfirmed: !!g.musicNameConfirmed,
   }
 
-  const { data: favs } = user
-    ? await supabase.from("catalog_favorites").select("order_id").eq("user_id", user.id)
-    : { data: [] }
-  const favoriteSet = new Set((favs ?? []).map((f) => f.order_id))
-
   type Track = { audioUrl: string; imageUrl: string | null; title: string | null }
-  const items = (orders ?? [])
-    .map((o) => {
+  const itens = (orders ?? [])
+    .map((o): ItemBase | null => {
       const music = musicByOrder[o.id]
       const tracks = (o.sunoTracks as Track[] | null) ?? []
       const principal = tracks.find((t) => t.audioUrl === music?.mp3Url) ?? tracks[0]
@@ -114,32 +145,76 @@ export async function GET(req: NextRequest) {
         ? music.lyrics ?? null
         : (music.lyrics?.trim() || (music.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null))
       const lyricsLrc = features.letraSincronizada ? music.lyricsLrc ?? null : null
+      const dono = (o.userId as string | null) ?? null
       return {
         orderId: o.id,
-        // Anônimo não recebe o slug — ver o comentário no topo.
-        ...(publico ? {} : { slug: music.slug }),
-        // Nome real quando o cliente confirmou — ou sempre, se a música é dele
-        // (a trava do confirmado existe pra não expor título de terceiro).
-        title: music.musicName?.trim() && (music.musicNameConfirmed || o.userId === user?.id)
-          ? music.musicName.trim()
-          : `Uma canção de ${o.subcategory}`,
+        slug: music.slug,
+        ownerId: dono,
+        musicName: music.musicName,
+        musicNameConfirmed: music.musicNameConfirmed,
         occasion: o.subcategory,
         musicalStyle: o.musicalStyle ?? null,
         imageUrl: principal?.imageUrl ?? null,
         audioUrl,
         lyrics,
         lyricsLrc,
-        authorApelido: publico ? null : (o.userId ? apelidoPorUser[o.userId as string] ?? null : null),
-        favorited: favoriteSet.has(o.id),
+        apelidoPublico: dono ? apelidoPublico[dono] ?? null : null,
+        apelidoProprio: dono ? apelidoProprio[dono] ?? null : null,
         createdAt: o.createdAt as string,
       }
     })
-    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .filter((x): x is ItemBase => x !== null)
+
+  cache = { em: Date.now(), itens }
+  return { itens }
+}
+
+export async function GET(req: NextRequest) {
+  const user = await getUserFromAuth(req)
+  const publico = !user
+
+  const { itens: base, erro } = await catalogoBase()
+  if (erro) return NextResponse.json({ error: erro }, { status: 500 })
+
+  const supabase = createServerClient()
+  const { data: favs } = user
+    ? await supabase.from("catalog_favorites").select("order_id").eq("user_id", user.id)
+    : { data: [] }
+  const favoriteSet = new Set((favs ?? []).map((f) => f.order_id))
+
+  // Personalização em cima da base compartilhada. Tudo o que depende de QUEM
+  // está pedindo mora aqui — nunca no cache.
+  const items = base.map((b) => {
+    const proprio = !!b.ownerId && b.ownerId === user?.id
+    return {
+      orderId: b.orderId,
+      // Anônimo não recebe o slug — ver o comentário no topo.
+      ...(publico ? {} : { slug: b.slug }),
+      // Nome real quando o cliente confirmou — ou sempre, se a música é dele
+      // (a trava do confirmado existe pra não expor título de terceiro).
+      title: b.musicName?.trim() && (b.musicNameConfirmed || proprio)
+        ? b.musicName.trim()
+        : `Uma canção de ${b.occasion}`,
+      occasion: b.occasion,
+      musicalStyle: b.musicalStyle,
+      imageUrl: b.imageUrl,
+      audioUrl: b.audioUrl,
+      lyrics: b.lyrics,
+      lyricsLrc: b.lyricsLrc,
+      // Apelido próprio só sai pro próprio dono; pros outros vale o opt-in.
+      authorApelido: publico ? null : (proprio ? b.apelidoProprio : b.apelidoPublico),
+      favorited: favoriteSet.has(b.orderId),
+      createdAt: b.createdAt,
+    }
+  })
 
   // Favoritados sempre primeiro (pedido do Audrei: "se o cliente favoritar
   // tem que manter como as primeiras"). Dentro de cada grupo, embaralhado —
   // por data sempre soterrava os pedidos antigos conforme o catálogo
   // crescia; embaralhar dá sensação de descoberta de verdade a cada visita.
+  //
+  // Fica FORA do cache de propósito: é o que faz a tela mudar a cada visita,
+  // e cachear isso deixaria a ordem congelada por um minuto.
   function embaralhar<T>(arr: T[]): T[] {
     const a = [...arr]
     for (let i = a.length - 1; i > 0; i--) {
@@ -149,7 +224,14 @@ export async function GET(req: NextRequest) {
     return a
   }
   const favoritados = embaralhar(items.filter((i) => i.favorited))
-  const resto        = embaralhar(items.filter((i) => !i.favorited))
+  const resto       = embaralhar(items.filter((i) => !i.favorited))
 
-  return NextResponse.json({ items: [...favoritados, ...resto] })
+  return NextResponse.json(
+    { items: [...favoritados, ...resto] },
+    // Explícito: a resposta muda por usuário (favorito, slug, apelido
+    // próprio). Sem isso, um CDN que cacheia por caminho poderia servir a
+    // versão de um cliente logado pra um visitante anônimo — o que vazaria
+    // slug (caminho pras fotos) e apelido, justo o que a Fase 2 fechou.
+    { headers: { "Cache-Control": "private, no-store" } },
+  )
 }
