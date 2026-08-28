@@ -84,7 +84,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         title: nome && (music?.confirmado || proprio) ? nome : `Uma canção de ${o.subcategory}`,
         occasion: o.subcategory,
         imageUrl: principal?.imageUrl ?? null,
-        audioUrl,
+        // Rota guardada, não o link do arquivo (ver /api/audio).
+        audioUrl: `/api/audio?o=${orderId}`,
         apelido: o.userId ? apelidoPorUser[o.userId] ?? null : null,
       }
     })

@@ -115,9 +115,18 @@ export async function GET(req: NextRequest) {
     return {
       ...rest,
       musicStatus: sunoStatus ?? null,
-      tracks:      sunoTracks ?? null,
+      // Cada versão também vai pela rota guardada — o cliente ouve as duas
+      // pra escolher, e antes o link cru de ambas ia pro navegador.
+      tracks: sunoTracks
+        ? sunoTracks.map((t: { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }) => ({
+            ...t,
+            audioUrl: `/api/audio?o=${o.id}&t=${encodeURIComponent(t.audioId)}`,
+          }))
+        : null,
       slug:       music?.slug ?? null,
-      mp3Url:     music?.mp3Url ?? null,
+      // Rota guardada, não o link do arquivo (ver /api/audio). Música
+      // não publicada só toca pro dono, autenticado.
+      mp3Url:     music?.mp3Url ? `/api/audio?o=${o.id}` : null,
       // Nome escolhido pelo cliente ao aprovar a letra. A prateleira usa este
       // em vez do title cru do Suno, que costuma ser o nome do homenageado.
       musicName:  music?.musicName ?? null,

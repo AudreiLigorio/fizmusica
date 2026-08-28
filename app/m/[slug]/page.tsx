@@ -95,7 +95,8 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
             : (music.lyrics?.trim() || (music.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null)),
           // O LRC nem sai do servidor quando o plano não inclui sincronização.
           lyricsLrc: features.letraSincronizada ? music.lyricsLrc : null,
-          mp3Url: music.mp3Url,
+          // Rota guardada: o slug é a credencial (ver /api/audio).
+          mp3Url: `/api/audio?slug=${encodeURIComponent(slug)}`,
           imageUrl: music.imageUrl,
           // Plano sem fotos mostra só a capa — é o que o player faz com a
           // lista vazia (cai no imageUrl).

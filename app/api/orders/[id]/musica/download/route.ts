@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { getPlanFeatures } from "@/lib/planFeatures"
+import { caminhoNoBucket, BUCKET_SONGS } from "@/lib/audioUrl"
 
 export const dynamic = "force-dynamic"
 
@@ -63,9 +64,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const srcUrl = picked ?? gm?.mp3Url ?? tracks[0]?.audioUrl ?? null
   if (!srcUrl) return NextResponse.json({ error: "Áudio não encontrado." }, { status: 404 })
 
-  const resp = await fetch(srcUrl)
-  if (!resp.ok) return NextResponse.json({ error: "Falha ao obter o áudio." }, { status: 502 })
-  const buf = stripId3(Buffer.from(await resp.arrayBuffer()))
+  // Baixa PELO STORAGE (service role), não pela URL pública: o bucket songs
+  // ficou privado, então buscar a URL pública daria 400. Aqui o servidor tem
+  // permissão total — o cliente nunca vê o caminho do arquivo.
+  const caminho = caminhoNoBucket(srcUrl)
+  if (!caminho) return NextResponse.json({ error: "Áudio não encontrado." }, { status: 404 })
+  const { data: blob, error: dlErr } = await supabase.storage.from(BUCKET_SONGS).download(caminho)
+  if (dlErr || !blob) return NextResponse.json({ error: "Falha ao obter o áudio." }, { status: 502 })
+  const buf = stripId3(Buffer.from(await blob.arrayBuffer()))
 
   // Nome amigável a partir do título/homenageado/nome (nunca expõe "suno").
   const rawName = gm?.musicName || gm?.personName || order.honoreeName || order.nome || "Minha música"

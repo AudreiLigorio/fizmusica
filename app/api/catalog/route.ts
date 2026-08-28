@@ -235,7 +235,11 @@ export async function GET(req: NextRequest) {
       occasion: b.occasion,
       musicalStyle: b.musicalStyle,
       imageUrl: b.imageUrl,
-      audioUrl: b.audioUrl,
+      // NUNCA o link do arquivo: /api/audio verifica quem pode ouvir e
+      // redireciona pra uma URL assinada que expira. Antes daqui saía o
+      // endereço permanente do MP3 — inclusive pro visitante anônimo — e
+      // dava pra baixar a música com dois comandos.
+      audioUrl: `/api/audio?o=${b.orderId}`,
       // Sem letra aqui de propósito: eram 76% do payload (medido — 114 KB de
       // 150 KB para 68 músicas) e a listagem não usa letra nenhuma. O player
       // busca em /api/catalog/letra quando vai tocar.
