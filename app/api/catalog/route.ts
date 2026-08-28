@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
-import { PLAN_FEATURE_COLUMNS, featuresFromProduct } from "@/lib/planFeatures"
-import { lrcToPlainLyrics } from "@/lib/suno/lrc"
 
 export const dynamic = "force-dynamic"
 
@@ -71,8 +69,9 @@ type ItemBase = {
   musicalStyle: string | null
   imageUrl: string | null
   audioUrl: string
-  lyrics: string | null
-  lyricsLrc: string | null
+  // Letra NÃO entra no cache: além de não ir pra listagem, guardá-la em
+  // memória em todo servidor multiplicaria o consumo por instância sem
+  // ninguém usar.
   // Apelido separado em dois: o público (respeita mostrar_apelido) e o cru,
   // que SÓ pode ser usado quando quem pede é o próprio dono do pedido.
   apelidoPublico: string | null
@@ -89,7 +88,10 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
   const supabase = createServerClient()
   const { data: orders, error } = await supabase
     .from("orders")
-    .select(`id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId, products(${PLAN_FEATURE_COLUMNS})`)
+    // Sem join com products: ele só existia pra decidir se a letra vinha
+    // sincronizada, e a letra saiu daqui (vai por /api/catalog/letra, que
+    // aplica a mesma trava). Uma tabela a menos na consulta mais cara da tela.
+    .select("id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId")
     .eq("publication_consent", true)
     .eq("status", "DELIVERED")
 
@@ -114,14 +116,12 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
 
   const ids = (orders ?? []).map((o) => o.id)
   const { data: gm } = ids.length
-    ? await supabase.from("generated_music").select("orderId, slug, mp3Url, lyrics, lyricsLrc, musicName, musicNameConfirmed").in("orderId", ids)
+    ? await supabase.from("generated_music").select("orderId, slug, mp3Url, musicName, musicNameConfirmed").in("orderId", ids)
     : { data: [] }
-  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null; musicName: string | null; musicNameConfirmed: boolean }> = {}
+  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean }> = {}
   for (const g of gm ?? []) musicByOrder[g.orderId as string] = {
     slug: g.slug ?? null,
     mp3Url: g.mp3Url ?? null,
-    lyrics: g.lyrics ?? null,
-    lyricsLrc: g.lyricsLrc ?? null,
     musicName: g.musicName ?? null,
     musicNameConfirmed: !!g.musicNameConfirmed,
   }
@@ -137,14 +137,6 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
       // marca quando imageUrl é nulo. Sem áudio nenhum é que não entra.
       const audioUrl = principal?.audioUrl ?? music?.mp3Url ?? null
       if (!music?.slug || !audioUrl) return null
-      const produto = Array.isArray(o.products) ? o.products[0] : o.products
-      const features = featuresFromProduct(produto)
-      // Mesma trava do player público — sincronizado só se o plano DAQUELE
-      // pedido (de quem publicou) incluía o recurso, não do plano de quem ouve.
-      const lyrics = features.letraSincronizada
-        ? music.lyrics ?? null
-        : (music.lyrics?.trim() || (music.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null))
-      const lyricsLrc = features.letraSincronizada ? music.lyricsLrc ?? null : null
       const dono = (o.userId as string | null) ?? null
       return {
         orderId: o.id,
@@ -156,8 +148,6 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
         musicalStyle: o.musicalStyle ?? null,
         imageUrl: principal?.imageUrl ?? null,
         audioUrl,
-        lyrics,
-        lyricsLrc,
         apelidoPublico: dono ? apelidoPublico[dono] ?? null : null,
         apelidoProprio: dono ? apelidoProprio[dono] ?? null : null,
         createdAt: o.createdAt as string,
@@ -199,8 +189,9 @@ export async function GET(req: NextRequest) {
       musicalStyle: b.musicalStyle,
       imageUrl: b.imageUrl,
       audioUrl: b.audioUrl,
-      lyrics: b.lyrics,
-      lyricsLrc: b.lyricsLrc,
+      // Sem letra aqui de propósito: eram 76% do payload (medido — 114 KB de
+      // 150 KB para 68 músicas) e a listagem não usa letra nenhuma. O player
+      // busca em /api/catalog/letra quando vai tocar.
       // Apelido próprio só sai pro próprio dono; pros outros vale o opt-in.
       authorApelido: publico ? null : (proprio ? b.apelidoProprio : b.apelidoPublico),
       favorited: favoriteSet.has(b.orderId),

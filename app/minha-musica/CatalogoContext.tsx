@@ -22,8 +22,10 @@ export type CatalogItem = {
   musicalStyle: string | null
   imageUrl: string | null
   audioUrl: string
-  lyrics: string | null
-  lyricsLrc: string | null
+  // Opcionais: a listagem não manda mais letra (76% do payload). O player
+  // busca em /api/catalog/letra quando vai tocar.
+  lyrics?: string | null
+  lyricsLrc?: string | null
   authorApelido: string | null
   favorited: boolean
   createdAt: string
@@ -127,6 +129,8 @@ export type Unificada = {
   musicalStyle: string | null
   imageUrl: string | null
   audioUrl: string
+  // Nulas nas músicas da Rede (a listagem não manda letra) — o player busca
+  // sob demanda ao tocar.
   lyrics: string | null
   lyricsLrc: string | null
   apelido: string | null
@@ -164,8 +168,8 @@ export function mesclar(
     .filter((i) => !ids.has(i.orderId))
     .map((i) => ({
       id: i.orderId, title: i.title, occasion: i.occasion, musicalStyle: i.musicalStyle,
-      imageUrl: i.imageUrl, audioUrl: i.audioUrl, lyrics: i.lyrics,
-      lyricsLrc: i.lyricsLrc, apelido: i.authorApelido, minha: false,
+      imageUrl: i.imageUrl, audioUrl: i.audioUrl, lyrics: i.lyrics ?? null,
+      lyricsLrc: i.lyricsLrc ?? null, apelido: i.authorApelido, minha: false,
     }))
 
   // As do cliente primeiro: quem procura algo que tem em casa espera achar o

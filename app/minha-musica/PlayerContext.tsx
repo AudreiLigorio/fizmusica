@@ -82,6 +82,32 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     // Só troca o src depois do state — o próximo render já aponta o <audio> pra cá.
     requestAnimationFrame(() => { audioRef.current?.play().catch(() => {}) })
     setPlaying(true)
+
+    // Letra sob demanda: a listagem parou de mandar `lyrics`/`lyricsLrc`
+    // (eram 76% do payload de /api/catalog e a lista não usa letra). Quem vem
+    // de lá chega com os dois nulos e a letra é buscada aqui, em paralelo —
+    // o áudio já começou a tocar, então isso não atrasa o play.
+    //
+    // Quem vem de outro lugar (a própria biblioteca do cliente, que já tem a
+    // letra em mãos) não dispara chamada nenhuma.
+    // Falsy, não `=== null`: a listagem OMITE o campo (vem `undefined`, não
+    // `null`), e letra vazia também não tem o que mostrar. Comparar com null
+    // estrito fazia a busca nunca disparar.
+    if (!t.lyrics && !t.lyricsLrc) {
+      fetch(`/api/catalog/letra?orderId=${encodeURIComponent(t.id)}`)
+        .then((r) => r.json())
+        .then((d: { lyrics: string | null; lyricsLrc: string | null }) => {
+          if (!d.lyrics && !d.lyricsLrc) return
+          // Confere que ainda é a mesma faixa: se a pessoa trocou de música
+          // enquanto a letra vinha, escrever aqui colaria a letra errada.
+          setTrack((atual) =>
+            atual && atual.id === t.id
+              ? { ...atual, lyrics: d.lyrics, lyricsLrc: d.lyricsLrc }
+              : atual,
+          )
+        })
+        .catch(() => { /* sem letra: o player só não mostra, e segue tocando */ })
+    }
   }, [])
 
   const toggle = useCallback(() => {
