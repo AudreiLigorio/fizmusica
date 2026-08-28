@@ -9,6 +9,45 @@ import { logOrderEvent } from "@/lib/orderEvents"
 const BUCKET = "songs"
 type DB = ReturnType<typeof createServerClient>
 
+// Música e capa não mudam depois de geradas — o arquivo é imutável. Sem isso
+// o Supabase serve com `no-cache` e TODA escuta faz uma ida ao servidor pra
+// revalidar antes de tocar (medido em produção: `cache-control: no-cache`),
+// custando latência em cada play e uma requisição no plano. Um ano é seguro
+// justamente porque o caminho inclui o audioId: arquivo novo = caminho novo.
+const CACHE_1_ANO = "31536000"
+
+// Salva a capa no NOSSO bucket.
+//
+// Antes só o áudio era baixado e a capa ficava como link direto pro host da
+// KIE (musicfile.kie.ai / tempfile.aiquickdraw.com), que é TEMPORÁRIO. Duas
+// capas já se perderam assim — viraram quadrado preto na tela, sem
+// recuperação possível. Falha aqui não derruba a entrega: sem capa a tela
+// cai no gradiente da marca, o que é muito melhor do que perder a música.
+async function salvarCapa(
+  supabase: DB,
+  srcUrl: string | null | undefined,
+  orderId: string,
+  audioId: string,
+): Promise<string | null> {
+  if (!srcUrl) return null
+  try {
+    const resp = await fetch(srcUrl)
+    if (!resp.ok) throw new Error(`download ${resp.status}`)
+    const tipo = resp.headers.get("content-type") ?? "image/jpeg"
+    const ext = tipo.includes("png") ? "png" : tipo.includes("webp") ? "webp" : "jpg"
+    const buf = Buffer.from(await resp.arrayBuffer())
+    const path = `${orderId}/capa-${audioId}.${ext}`
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, buf, { contentType: tipo, upsert: true, cacheControl: CACHE_1_ANO })
+    if (error) throw error
+    return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+  } catch (e) {
+    console.error("[suno/ingest] falha ao salvar capa", audioId, e instanceof Error ? e.message : e)
+    return null
+  }
+}
+
 type OrderForIngest = {
   id: string
   honoreeName?: string | null
@@ -41,13 +80,19 @@ export async function ingestSunoResult(
       if (!resp.ok) throw new Error(`download ${resp.status}`)
       const buf = Buffer.from(await resp.arrayBuffer())
       const path = `${order.id}/suno-${audioId}.mp3`
-      const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, buf, { contentType: "audio/mpeg", upsert: true })
+      const { error: upErr } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, buf, { contentType: "audio/mpeg", upsert: true, cacheControl: CACHE_1_ANO })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
+      // Capa também vem pro nosso bucket. Se falhar, guarda null em vez da URL
+      // externa: link que expira é pior que capa nenhuma, porque a tela tem
+      // gradiente de reserva mas não tem como detectar imagem morta.
+      const capa = await salvarCapa(supabase, t.image_url ?? t.imageUrl, order.id, audioId)
       tracks.push({
         audioId,
         audioUrl: publicUrl,
-        imageUrl: t.image_url ?? t.imageUrl ?? null,
+        imageUrl: capa,
         title: t.title ?? null,
         duration: t.duration ?? null,
       })
