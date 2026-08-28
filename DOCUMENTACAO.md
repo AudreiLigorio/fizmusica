@@ -361,7 +361,7 @@ Mesmo e-mail → automático. E-mail diferente e pedido recente (<24h, não vinc
   Nova exceção precisa do mesmo padrão: nome da página + motivo, registrado aqui.
 - **Paleta:** fundo `#07060d`, gradiente de marca `linear-gradient(135deg, #f0196b, #d946ef)` (rosa→roxo), orbs ambiente com blur.
 - **Cards com hover flutuante:** `translateY(-10px) scale(1.02)` + sombra rosa intensa + borda `rgba(240,25,107,0.35)`.
-- **Mobile "tela cheia" em fluxos** (wizard, produtos, checkout): `fixed inset-0` sem Header/Footer, progresso no topo, botão de ação fixo na base (glass blur). Desktop: `lg:static` com Header/Footer normais.
+- **Mobile "tela cheia" em fluxos** (wizard, produtos, checkout): `fixed inset-0` sem Header/Footer, progresso no topo, botão de ação fixo na base (glass blur). Desktop: `lg:static` com Header/Footer normais. Pelo mesmo motivo, essas três telas **não** ganham a barra de navegação persistente (`BarraHome` — Home/Pedidos/Criar/Músicas/Carreira, presente em Home/Quem somos/Contato/Legal desde 2026-08-27): página institucional convida a pessoa a explorar o site; funil de compra deve minimizar saídas, não oferecer 5 caminhos pra fora dele. Confirmado com o Audrei em 2026-08-28 — decisão consciente, reavaliar caso a caso se o site ganhar novas telas de conversão.
 - **Regra firme de posição do botão "Voltar":** no **mobile** fica no **topo**; no **desktop** fica **embaixo**. Aplicar em toda tela nova de fluxo.
 - **Links de termos legais abrem na MESMA aba** (não `target="_blank"`) — permite `router.back()`/bfcache preservar o estado da tela de origem.
 - **Admin responsivo:** sidebar `hidden lg:flex` desktop, bottom nav fixo mobile (`lg:hidden fixed bottom-0`), tabelas `hidden lg:block` / cards `lg:hidden`.
