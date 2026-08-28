@@ -1,12 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { track } from "@/lib/track"
 import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
 
 export default function Header({ showButton = true, progress }: { showButton?: boolean; progress?: number }) {
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
+  // null = ainda não sabemos. O botão só aparece depois de saber: mostrar
+  // "Entrar" por um instante pra quem já está logado seria oferecer uma ação
+  // que não faz sentido pra ele.
+  const [logado, setLogado] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setLogado(!!session))
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setLogado(!!s))
+    return () => sub.subscription.unsubscribe()
+  }, [])
 
   function go(path: string) {
     setMenuOpen(false)
@@ -48,9 +59,12 @@ export default function Header({ showButton = true, progress }: { showButton?: b
             Contato
           </button>
 
-          {showButton && (
+          {/* Só pra quem não entrou. Depois de logado o botão some: a pessoa
+              já tem a barra de abas e o "Minha música" aqui do lado, e
+              oferecer "Entrar" a quem está dentro é oferecer o nada. */}
+          {showButton && logado === false && (
             <button
-              onClick={() => { track("cta_criar", "header"); router.push("/criar") }}
+              onClick={() => { track("cta_entrar", "header"); router.push("/entrar") }}
               className="text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_4px_16px_rgba(240,25,107,0.3)]"
               style={{
                 background: "#f0196b",
@@ -62,7 +76,7 @@ export default function Header({ showButton = true, progress }: { showButton?: b
                 border: "1px solid rgba(255,255,255,0.12)",
               }}
             >
-              Criar música
+              Entrar
             </button>
           )}
 
