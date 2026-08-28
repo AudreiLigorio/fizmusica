@@ -318,6 +318,13 @@ Link mágico (`signInWithOtp`) e Google (`signInWithOAuth`). `/auth/callback` é
 ### Admin — cookie HMAC próprio
 Senha (`ADMIN_PASSWORD`) → token assinado HMAC-SHA256, cookie httpOnly 7 dias. `proxy.ts` protege `/admin/*`; `/api/admin/*` revalida internamente.
 
+### Quem pode criar conta (e o risco que isso trouxe)
+Desde a abertura da área ao visitante, **conta sem compra é legítima** — quem quer guardar favoritos na Rede precisa de uma. O `/entrar` não recusa mais e-mail sem pedido.
+
+A checagem de pedido (`/api/conta/check-email`) continua existindo, mas mudou de papel: não é barreira, é **detector de erro de digitação**. Quem escreve `gmial` receberia o link normalmente, criaria uma segunda conta vazia e acharia que perdeu as músicas. Por isso o aviso aparece **antes de qualquer e-mail sair**, o botão de enviar fica desabilitado enquanto ele está na tela, e prosseguir exige um segundo clique em "Criar minha conta"; corrigir o e-mail refaz a checagem.
+
+⚠️ **Atenção operacional:** o volume de e-mail para endereços desconhecidos deixou de ser zero. O domínio é jovem e já esteve na caixa de spam. Se a entrega dos transacionais piorar, este é o primeiro lugar a investigar — freios possíveis, do mais barato ao mais drástico: captcha só no caminho "criar conta", limite por IP no `check-email`, ou voltar a exigir pedido (e então trocar os convites de favoritar por "Criar minha música"). Nota: o login com Google nunca teve essa trava — a assimetria entre os dois botões foi o que motivou a mudança.
+
 ### Vínculo de pedido à conta
 Mesmo e-mail → automático. E-mail diferente e pedido recente (<24h, não vinculado) → popup na área linka e iguala o e-mail (jornada recém-paga já é a prova). E-mail diferente em geral → reivindicação confirmada por e-mail de compra. E-mail com erro de digitação → admin corrige no detalhe do pedido (bloqueado após `PAID`, evita sequestro de pedido por quem souber o `orderId`).
 
@@ -365,7 +372,7 @@ Mesmo e-mail → automático. E-mail diferente e pedido recente (<24h, não vinc
 
 ## 20. Pendências (backlog)
 
-- Branding do login Google / domínio customizado de auth (cosmético, baixa prioridade).
+- **Branding do login Google** (subiu de prioridade em 2026-08-27): a tela de consentimento diz "Prosseguir para `esjjcqwxcflppyqrixqt.supabase.co`". Era cosmético enquanto só cliente logava — quem já comprou confia na marca. Com a área aberta ao visitante, quem vê essa tela é um **estranho vindo de anúncio**, e a URL aleatória mata a confiança no pior momento. Correção: (1) grátis — Google Auth Platform → Branding: nome do app "Fiz Música" + logo + domínio autorizado; (2) se o `*.supabase.co` persistir, Supabase Custom Domain (pago) pra o callback virar `auth.fizmusica.com.br`. Ambos são configuração de painel, não código.
 - CSP (Content-Security-Policy) — cuidado com o Brick do Mercado Pago.
 - Contador de expiração do QR PIX + botão "gerar novo".
 - WhatsApp Business Cloud (Meta) + n8n — finalizar workflow.
