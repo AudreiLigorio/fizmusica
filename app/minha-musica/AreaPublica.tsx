@@ -9,6 +9,7 @@ import BuscaMusicas from "./BuscaMusicas"
 import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
+import CarreiraPublica from "./CarreiraPublica"
 
 // A área do cliente vista por quem ainda não tem conta.
 //
@@ -20,8 +21,6 @@ import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "
 // é pessoal (playlist, pedidos, discos) aparece VAZIO e explicado — o vazio é
 // o convite. Cada aba tem no máximo uma frase e um botão; qualquer coisa além
 // disso vira parede de texto pra quem só queria ouvir uma música.
-
-type Nivel = { id: number; icone: string; nome: string; minDiscos: number; descontoDigital: number }
 
 // Bloco de convite — mesma peça nas três abas pessoais, muda só o texto.
 function Convite({ icone, titulo, frase, acao, onAcao }: {
@@ -48,19 +47,8 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
   const [aba, setAba] = useState<Aba>(abaInicial === "home" ? "musicas" : abaInicial)
   const [busca, setBusca] = useState("")
   const [nRede, setNRede] = useState(0)
-  const [trilha, setTrilha] = useState<Nivel[] | null>(null)
 
   const entrar = () => router.push("/entrar")
-
-  // Só a trilha de níveis — a API devolve `publico: true` e nenhum dado de
-  // cliente quando não há sessão.
-  useEffect(() => {
-    if (aba !== "carreira") return
-    fetch("/api/carreira")
-      .then((r) => r.json())
-      .then((d) => setTrilha(d.trilha ?? []))
-      .catch(() => setTrilha([]))
-  }, [aba])
 
   function irPara(a: Aba) {
     if (a === "home") { router.push("/"); return }
@@ -116,50 +104,8 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
             />
           )}
 
-          {aba === "carreira" && (
-            <div className="py-8">
-              <div className="text-center mb-10">
-                <div className="text-5xl mb-4">💿</div>
-                <h2 className="text-2xl font-bold mb-2">Minha Carreira</h2>
-                <p className="text-gray-400 text-sm leading-relaxed max-w-sm mx-auto">
-                  Cada música que você cria rende discos. Os discos sobem seu nível — e cada nível dá desconto na próxima.
-                </p>
-              </div>
+          {aba === "carreira" && <CarreiraPublica onEntrar={entrar} />}
 
-              {trilha === null ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-7 h-7 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : (
-                <div className="space-y-2.5 max-w-md mx-auto">
-                  {trilha.map((n) => (
-                    <div key={n.id} className="flex items-center gap-4 bg-white/[0.04] rounded-2xl px-5 py-4">
-                      <div className="text-2xl shrink-0">{n.icone}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{n.nome}</p>
-                        <p className="text-xs text-white/40 mt-0.5">
-                          {n.minDiscos === 0 ? "de início" : `a partir de ${n.minDiscos} 💿`}
-                        </p>
-                      </div>
-                      {n.descontoDigital > 0 && (
-                        <div className="shrink-0 text-sm font-bold text-pink-300">{n.descontoDigital}% off</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="text-center mt-8">
-                <button
-                  onClick={entrar}
-                  className="px-7 py-3 rounded-full font-semibold text-white transition-transform hover:scale-[1.03] active:scale-95"
-                  style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
-                >
-                  Começar minha carreira
-                </button>
-              </div>
-            </div>
-          )}
         </section>
       </div>
     </div>
