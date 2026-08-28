@@ -46,6 +46,8 @@ type PlayerState = {
   repeat: boolean
   audioRef: React.RefObject<HTMLAudioElement | null>
   playTrack: (t: PlayableTrack) => void
+  // Clique na capa: pausa/retoma se for a faixa atual, troca se for outra.
+  playOuPausa: (t: PlayableTrack) => void
   toggle: () => void
   toggleRepeat: () => void
   seek: (t: number) => void
@@ -117,6 +119,21 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setPlaying(!playing)
   }, [playing])
 
+  // O que a capa de uma música deve fazer ao ser clicada.
+  //
+  // Todos os cartões chamavam `playTrack` direto, inclusive na faixa que JÁ
+  // estava tocando — então clicar em cima do ícone de pausa REINICIAVA a
+  // música do zero em vez de pausar. O ícone prometia uma coisa e o clique
+  // fazia outra; só o botão do mini player pausava de verdade.
+  //
+  // Fica aqui, e não em cada cartão, porque eram cinco lugares repetindo a
+  // mesma chamada — corrigir um a um deixaria o próximo a ser criado errado
+  // de novo.
+  const playOuPausa = useCallback((t: PlayableTrack) => {
+    if (track?.id === t.id) { toggle(); return }
+    playTrack(t)
+  }, [track?.id, toggle, playTrack])
+
   const seek = useCallback((t: number) => {
     const audio = audioRef.current
     if (!audio) return
@@ -149,7 +166,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const value: PlayerState = {
     track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef,
-    playTrack, toggle, seek, close,
+    playTrack, playOuPausa, toggle, seek, close,
     toggleRepeat: () => setRepeat((r) => !r),
     openFull: () => setFullOpen(true),
     closeFull: () => setFullOpen(false),

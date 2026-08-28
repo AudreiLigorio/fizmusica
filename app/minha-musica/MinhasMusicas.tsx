@@ -39,7 +39,7 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
   // pelo "Nova playlist" dentro do modal de adicionar).
   const [creatingPlaylistOpen, setCreatingPlaylistOpen] = useState(false)
   const [pendingOrderId, setPendingOrderId] = useState<string | undefined>(undefined)
-  const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
   // Campos da busca — lista pra crescer: quando existir apelido do autor,
@@ -123,7 +123,7 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
                 <button
                   type="button"
                   disabled={!t.audioUrl}
-                  onClick={() => t.audioUrl && playTrack({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc, apelido: meuApelido })}
+                  onClick={() => t.audioUrl && playOuPausa({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc, apelido: meuApelido })}
                   className="absolute inset-0 flex items-center justify-center text-2xl disabled:cursor-default"
                 >
                   {!t.imageUrl && "▶"}

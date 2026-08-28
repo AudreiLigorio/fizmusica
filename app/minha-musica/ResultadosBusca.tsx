@@ -64,7 +64,7 @@ export default function ResultadosBusca({
   meuApelido?: string | null
 }) {
   const { items: rede, busca, filtro, temMais, carregando, carregarMais } = useCatalogo()
-  const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { track: nowPlaying, playing, playOuPausa } = usePlayer()
 
   // As músicas da REDE já vêm buscadas e filtradas do servidor (desde a
   // paginação) — refiltrar aqui esconderia resultado válido. Só as do
@@ -109,7 +109,7 @@ export default function ResultadosBusca({
             <button
               key={l.id}
               type="button"
-              onClick={() => playTrack({
+              onClick={() => playOuPausa({
                 id: l.id, title: l.title, occasion: l.occasion, audioUrl: l.audioUrl,
                 imageUrl: l.imageUrl, lyrics: l.lyrics, lyricsLrc: l.lyricsLrc, apelido: l.apelido,
               })}

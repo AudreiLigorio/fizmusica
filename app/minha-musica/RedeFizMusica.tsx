@@ -20,7 +20,7 @@ type Playlist = { id: string; nome: string; track_order_ids: string[] }
 
 export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { onPlaylistsChanged?: () => void; onPrecisaLogin?: () => void }) {
   const { items, alternarFavorito, temMais, carregando, carregarMais, total } = useCatalogo()
-  const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
   // Playlist é a mesma tabela/API de "Minhas Músicas" (guarda ids de pedido,
@@ -143,7 +143,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   >
                     <button
                       type="button"
-                      onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null, apelido: it.authorApelido })}
+                      onClick={() => playOuPausa({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null, apelido: it.authorApelido })}
                       className="absolute inset-0 flex items-center justify-center text-2xl"
                     >
                       {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
@@ -175,7 +175,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
               <div className="relative w-32 h-32 rounded-xl overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => playTrack({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null, apelido: it.authorApelido })}
+                  onClick={() => playOuPausa({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null, apelido: it.authorApelido })}
                   className="block w-full h-full"
                 >
                   <div className="w-full h-full bg-cover bg-center" style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }} />

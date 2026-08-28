@@ -17,7 +17,7 @@ type PlaylistFull = { id: string; nome: string; tracks: Track[] }
 // cartões cria/altera uma playlist, disparando o recarregamento.
 export default function MinhasPlaylists({ version, embedded, busca = "" }: { version: number; embedded?: boolean; busca?: string }) {
   const [playlists, setPlaylists] = useState<PlaylistFull[] | null>(null)
-  const { track: nowPlaying, playing, playTrack } = usePlayer()
+  const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
   async function authHeaders() {
@@ -117,7 +117,7 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                       )}
                       <button
                         type="button"
-                        onClick={() => playTrack({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null, apelido: t.apelido })}
+                        onClick={() => playOuPausa({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null, apelido: t.apelido })}
                         className="absolute inset-0"
                         aria-label={isPlaying ? "Pausar" : "Tocar"}
                       >
