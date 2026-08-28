@@ -1,7 +1,12 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
+import { useCatalogo } from "./CatalogoContext"
+import { useToast } from "./ToastContext"
+import AddToPlaylistModal from "./AddToPlaylistModal"
+import CreatePlaylistModal from "./CreatePlaylistModal"
 
 // Ícones vetoriais — o "▶" de texto Unicode renderiza torto e com peso
 // diferente por aparelho/fonte. Mesmo traço das abas (AreaTabs.tsx).
@@ -31,6 +36,22 @@ function IconPause({ size = "w-4 h-4" }: { size?: string }) {
   )
 }
 
+function IconCoracao({ cheio }: { cheio: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true"
+      fill={cheio ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.8 5.6a5.1 5.1 0 0 0-7.2 0L12 7.2l-1.6-1.6a5.1 5.1 0 0 0-7.2 7.2l1.6 1.6L12 21.6l7.2-7.2 1.6-1.6a5.1 5.1 0 0 0 0-7.2Z" />
+    </svg>
+  )
+}
+function IconMais() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <path d="M12 5v14" /><path d="M5 12h14" />
+    </svg>
+  )
+}
+
 function fmt(s: number): string {
   if (!s || isNaN(s)) return "0:00"
   return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, "0")}`
@@ -39,6 +60,63 @@ function fmt(s: number): string {
 export default function MiniPlayer() {
   const { track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef, toggle, toggleRepeat, seek, close, openFull, closeFull, onTimeUpdate } = usePlayer()
   const activeLineRef = useRef<HTMLParagraphElement>(null)
+
+  // Ações do player aberto: as MESMAS do card (favoritar e adicionar à
+  // playlist), pra quem já está ouvindo não precisar voltar pra lista.
+  //
+  // `items` do catálogo diz se a faixa é DA REDE — favoritar só existe pra
+  // música de outra pessoa (não há o que favoritar na sua própria, e o motor
+  // nem registra). O "+" vale pra qualquer uma.
+  const { items, alternarFavorito } = useCatalogo()
+  const { showToast } = useToast()
+  const naRede = items?.find((i) => i.orderId === track?.id) ?? null
+  const [playlists, setPlaylists] = useState<{ id: string; nome: string; track_order_ids: string[] }[] | null>(null)
+  const [escolhendoPlaylist, setEscolhendoPlaylist] = useState(false)
+  const [criandoPlaylist, setCriandoPlaylist] = useState(false)
+
+  async function authHeaders() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" }
+  }
+
+  async function favoritar() {
+    if (!naRede) return
+    alternarFavorito(naRede.orderId)
+    const headers = await authHeaders()
+    await fetch("/api/catalog/favorite", {
+      method: "POST", headers, body: JSON.stringify({ orderId: naRede.orderId }),
+    }).catch(() => {})
+  }
+
+  async function abrirAdicionar() {
+    if (!track) return
+    const headers = await authHeaders()
+    const d = await fetch("/api/playlists", { headers }).then((r) => r.json()).catch(() => ({}))
+    const lista = d.playlists ?? []
+    setPlaylists(lista)
+    // Uma playlist só? Adiciona direto — o popup de escolher só faz sentido
+    // quando há de fato uma escolha. Mesma regra dos cards.
+    if (lista.length === 1) adicionarNa(lista[0].id)
+    else setEscolhendoPlaylist(true)
+  }
+
+  async function adicionarNa(playlistId: string) {
+    if (!track) return
+    setEscolhendoPlaylist(false)
+    const headers = await authHeaders()
+    await fetch(`/api/playlists/${playlistId}`, {
+      method: "PATCH", headers, body: JSON.stringify({ addOrderId: track.id }),
+    })
+    showToast("Adicionado com sucesso ✓")
+  }
+
+  async function criarPlaylist(nome: string) {
+    if (!track) return
+    setCriandoPlaylist(false)
+    const headers = await authHeaders()
+    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: track.id }) })
+    showToast("Adicionado com sucesso ✓")
+  }
 
   // Mesmo mecanismo real (PublicMusicPlayer.tsx): scrollIntoView na linha
   // ativa dentro do próprio container, nunca a página inteira.
@@ -132,31 +210,67 @@ export default function MiniPlayer() {
       {/* player cheio */}
       {fullOpen && (
         <div className="fixed inset-0 z-50 flex flex-col items-center px-6 pt-6 pb-8 text-white" style={{ background: "linear-gradient(180deg, #1f1830, #0b0812)" }}>
-          <div className="w-full max-w-md flex items-center justify-between mb-8">
-            <button onClick={closeFull} className="text-white/60 hover:text-white text-xl px-1" aria-label="Voltar">▾</button>
+          {/* Puxador horizontal no lugar do "▾" — estilo Spotify. Continua
+              sendo um CLIQUE que fecha (não é gesto de arrastar): a área de
+              toque é generosa pra não virar alvo difícil no celular. */}
+          <button
+            onClick={closeFull}
+            aria-label="Fechar player"
+            className="w-full max-w-md flex justify-center py-2 -mt-2 mb-4 group"
+          >
+            <span className="w-10 h-1 rounded-full bg-white/25 group-hover:bg-white/50 transition-colors" />
+          </button>
+
+          <div className="w-full max-w-md flex items-center justify-center mb-6">
             <span className="text-[11px] uppercase tracking-wide text-white/40 font-bold">Tocando agora</span>
-            <span className="w-6" />
           </div>
 
           <div
-            className="rounded-2xl mb-7 flex-none bg-cover bg-center border border-white/10"
+            className="rounded-2xl mb-5 flex-none bg-cover bg-center border border-white/10"
             style={{
-              width: "min(70vw, 300px)", height: "min(70vw, 300px)",
+              width: "min(62vw, 260px)", height: "min(62vw, 260px)",
               ...(track.imageUrl ? { backgroundImage: `url(${track.imageUrl})` } : { background: "linear-gradient(135deg,#3a1440,#7a1f5c)" }),
             }}
           />
           <h2 className="text-center text-lg font-semibold mb-1 max-w-sm" style={{ textWrap: "balance" }}>{track.title}</h2>
-          <p className="text-sm text-white/40 mb-6">
+          <p className="text-sm text-white/40 mb-4">
             {[subtitulo, track.apelido].filter(Boolean).join(" · ") || " "}
           </p>
 
+          {/* Favoritar e adicionar à playlist — as mesmas ações do card, pra
+              quem já está ouvindo não precisar voltar pra lista.
+              O coração SÓ aparece em música da Rede: na sua própria não há o
+              que favoritar (o motor nem registra), e botão sem função gera
+              mais dúvida do que a posição variar entre uma faixa e outra. */}
+          <div className="flex items-center gap-3 mb-5 shrink-0">
+            {naRede && (
+              <button
+                onClick={favoritar}
+                aria-label={naRede.favorited ? "Remover dos favoritos" : "Favoritar"}
+                className={`w-11 h-11 shrink-0 rounded-full border flex items-center justify-center transition-colors ${
+                  naRede.favorited
+                    ? "border-transparent bg-pink-500/15 text-pink-400"
+                    : "border-white/15 text-white/60 hover:text-white hover:border-white/35"
+                }`}
+              >
+                <IconCoracao cheio={naRede.favorited} />
+              </button>
+            )}
+            <button
+              onClick={abrirAdicionar}
+              aria-label="Adicionar esta música a uma playlist"
+              className="w-11 h-11 shrink-0 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/35 flex items-center justify-center transition-colors"
+            >
+              <IconMais />
+            </button>
+          </div>
+
           {lines.length > 0 && (
             <>
-              <span className="text-[10px] uppercase tracking-wide font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full mb-3">
-                🎤 Letra sincronizada
-              </span>
+              {/* Selo "🎤 Letra sincronizada" removido a pedido do Audrei —
+                  a letra rolando já mostra que é sincronizada. */}
               <div
-                className="w-full max-w-md h-[150px] overflow-y-auto mb-6 px-2"
+                className="w-full max-w-md h-[130px] min-h-0 overflow-y-auto mb-5 px-2"
                 style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)" }}
               >
                 <div className="flex flex-col gap-3 text-center py-16">
@@ -203,6 +317,22 @@ export default function MiniPlayer() {
           </button>
         </div>
       )}
+
+      {/* Modais de playlist. Ficam FORA do bloco `fullOpen` porque o player
+          cheio ocupa a tela inteira com z-50 — dentro dele, o modal ficaria
+          preso no mesmo contexto de empilhamento e apareceria por baixo. */}
+      <AddToPlaylistModal
+        open={escolhendoPlaylist}
+        playlists={playlists}
+        onClose={() => setEscolhendoPlaylist(false)}
+        onAdd={(playlistId) => adicionarNa(playlistId)}
+        onCreateNew={() => { setEscolhendoPlaylist(false); setCriandoPlaylist(true) }}
+      />
+      <CreatePlaylistModal
+        open={criandoPlaylist}
+        onClose={() => setCriandoPlaylist(false)}
+        onCreate={criarPlaylist}
+      />
     </>
   )
 }
