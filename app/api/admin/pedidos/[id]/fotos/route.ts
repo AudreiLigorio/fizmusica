@@ -47,7 +47,10 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     getPhotoLimit(supabase, id),
   ])
 
-  return NextResponse.json({ photos: data ?? [], photoLimit })
+  // O bucket order-photos ficou privado. O admin já está autenticado no
+  // servidor (cookie HMAC + verifyAdminToken), então aqui a URL é assinada
+  // direto na resposta, sem precisar de rota intermediária como o cliente.
+  return NextResponse.json({ photos: await assinarFotos(supabase, data ?? []), photoLimit })
 }
 
 // ── POST: admin envia uma foto (mesma validação defensiva) ──
@@ -105,7 +108,9 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   await logOrderEvent(supabase, id, "foto_enviada", undefined, "admin")
 
-  return NextResponse.json({ photo: img })
+  // Assinada também: sem isso a foto recém-enviada apareceria quebrada no
+  // admin até a próxima recarga.
+  return NextResponse.json({ photo: (await assinarFotos(supabase, [img]))[0] })
 }
 
 // ── PATCH: define capa ──
@@ -145,4 +150,24 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
   await logOrderEvent(supabase, id, "foto_removida", undefined, "admin")
   await renumerarFotos(supabase, id)
   return NextResponse.json({ ok: true })
+}
+
+// Troca a URL pública (inutilizável desde que o bucket fechou) por uma
+// assinada e temporária. Foto sem caminho reconhecível é devolvida como
+// estava — melhor uma imagem quebrada isolada que a lista inteira falhar.
+type FotoLinha = { id: string; url: string; is_cover: boolean; sort_order: number }
+async function assinarFotos(
+  supabase: ReturnType<typeof createServerClient>,
+  fotos: FotoLinha[],
+): Promise<FotoLinha[]> {
+  return Promise.all(
+    fotos.map(async (f) => {
+      const m = (f.url ?? "").match(/\/storage\/v1\/object\/(?:public|sign)\/order-photos\/(.+?)(?:\?|$)/)
+      if (!m) return f
+      const { data } = await supabase.storage
+        .from("order-photos")
+        .createSignedUrl(decodeURIComponent(m[1]), 60 * 60)
+      return data?.signedUrl ? { ...f, url: data.signedUrl } : f
+    }),
+  )
 }

@@ -65,7 +65,7 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
   // Fotos do cliente (capa primeiro) para o carrossel do player
   const { data: photoRows } = await supabase
     .from("order_photos")
-    .select("url, is_cover, sort_order")
+    .select("id, url, is_cover, sort_order")
     .eq("orderId", music.orderId)
     .order("is_cover", { ascending: false })
     .order("sort_order", { ascending: true })
@@ -75,7 +75,12 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
   // é enviado ao navegador, em vez de ir junto e ficar escondido por CSS.
   const features = await getPlanFeatures(supabase, music.orderId)
 
-  const photos = (photoRows ?? []).map((p) => p.url as string)
+  // Rota guardada, não o link do arquivo: o bucket order-photos ficou
+  // privado. O slug é a credencial — se o expurgo desativar o link, a foto
+  // para de ser servida junto (ver /api/foto).
+  const photos = (photoRows ?? []).map(
+    (p) => `/api/foto?f=${p.id}&slug=${encodeURIComponent(slug)}`,
+  )
   const photoEffect = (order?.photo_effect ?? "slide") as "slide" | "fade" | "cards" | "coverflow"
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"

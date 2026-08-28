@@ -69,7 +69,10 @@ export async function GET(_req: NextRequest, { params }: { params: Params }) {
     getPhotoLimit(supabase, order.id),
   ])
 
-  return NextResponse.json({ nome: order.nome, photos: data ?? [], photoLimit })
+  // Rota guardada, não o link do arquivo: o bucket order-photos ficou
+  // privado. O token desta rota é a credencial (ver /api/foto).
+  const photos = (data ?? []).map((p) => ({ ...p, url: `/api/foto?f=${p.id}&token=${encodeURIComponent(token)}` }))
+  return NextResponse.json({ nome: order.nome, photos, photoLimit })
 }
 
 // ── POST: envia uma foto (validação defensiva completa) ──
@@ -142,7 +145,9 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
 
   await logOrderEvent(supabase, order.id, "foto_enviada")
 
-  return NextResponse.json({ photo: img })
+  // Devolve pela rota guardada também — a URL pública gravada no banco não
+  // é mais acessível pelo navegador.
+  return NextResponse.json({ photo: { ...img, url: `/api/foto?f=${img.id}&token=${encodeURIComponent(token)}` } })
 }
 
 // ── PATCH: define uma foto como capa, ou reordena as fotos do cliente ──
