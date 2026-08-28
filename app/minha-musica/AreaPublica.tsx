@@ -77,17 +77,14 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
       </div>
 
       <div className="relative z-10">
-        <Header showButton={false} />
+        {/* Com botão: o "Entrar" do visitante fica no topo, igual à home.
+            O Header já se esconde sozinho pra quem está logado. */}
+        <Header />
 
         <section className="max-w-3xl lg:max-w-5xl mx-auto px-5 pt-24 pb-40 sm:pb-16">
-          {/* Sem título próprio: cada aba já traz o seu (a Rede tem o dela, os
-              vazios têm o do convite). Um h1 aqui em cima repetia o de baixo. */}
-          <div className="flex justify-end mb-5">
-            <button onClick={entrar} className="text-sm text-white/70 hover:text-white transition-colors border border-white/15 rounded-full px-4 py-2">
-              Entrar
-            </button>
-          </div>
-
+          {/* Sem título nem botão próprios: cada aba já traz o seu título (a
+              Rede tem o dela, os vazios têm o do convite) e o "Entrar" agora
+              vive no topo, no Header, como na home. */}
           <TabsDesktop aba={aba} onAba={irPara} onCriar={() => router.push("/criar")} />
 
           {/* ── MÚSICAS: o coração da visita. Toca sem pedir nada. ───────── */}
@@ -100,9 +97,10 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
                   sentido como convite pra quem já ouviu algo e quis guardar. */}
               <div className="mt-12 pt-10 border-t border-white/[0.06]">
                 <h2 className="text-2xl font-bold mb-1">Minha playlist</h2>
+                {/* Sem link de "Entrar" aqui: o botão do topo é o único ponto
+                    de entrada, pra não repetir a mesma ação em dois lugares. */}
                 <p className="text-gray-400 text-sm">
-                  Crie uma conta pra guardar as que você gostou.{" "}
-                  <button onClick={entrar} className="text-pink-400 hover:text-pink-300 underline">Entrar</button>
+                  Crie uma conta pra guardar as que você gostou.
                 </p>
               </div>
             </>
