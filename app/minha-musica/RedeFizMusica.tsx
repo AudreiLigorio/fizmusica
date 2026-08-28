@@ -10,7 +10,7 @@ import { useToast } from "./ToastContext"
 import InfoTooltip from "./InfoTooltip"
 import { combina } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
-import { useCatalogo, agruparPorOcasiao, agruparPorEstilo } from "./CatalogoContext"
+import { useCatalogo } from "./CatalogoContext"
 
 // Rede Fiz Música: músicas de outros clientes que autorizaram divulgação.
 // Nunca mostra o nome do homenageado (dado de terceiro sem consentimento
@@ -18,8 +18,8 @@ import { useCatalogo, agruparPorOcasiao, agruparPorEstilo } from "./CatalogoCont
 // capa gerada pelo Suno, tudo vindo direto do banco (nada fixo).
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
 
-export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContagem, onPrecisaLogin }: { busca?: string; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void; onPrecisaLogin?: () => void }) {
-  const { items, alternarFavorito } = useCatalogo()
+export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { onPlaylistsChanged?: () => void; onPrecisaLogin?: () => void }) {
+  const { items, alternarFavorito, temMais, carregando, carregarMais, total } = useCatalogo()
   const { track: nowPlaying, playing, playTrack } = usePlayer()
   const { showToast } = useToast()
 
@@ -104,16 +104,12 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
     await fetch("/api/catalog/favorite", { method: "POST", headers, body: JSON.stringify({ orderId }) }).catch(() => {})
   }
 
-  // Busca: mesmos campos da playlist, mais o estilo musical. Filtra antes dos
-  // agrupamentos, então os filtros de ocasião/estilo passam a contar só o que
-  // sobrou — se a busca deixou 3 músicas, as pílulas refletem essas 3.
-  const itensBusca = (items ?? []).filter((it) => combina(busca, [it.title, it.occasion, it.musicalStyle]))
-  useEffect(() => { onContagem?.(itensBusca.length) }, [itensBusca.length, onContagem])
+  // Este componente só existe no modo NAVEGAÇÃO (ver AbaMusicas): com busca
+  // ou filtro ativo a tela troca pela lista de resultados. Então aqui não há
+  // mais filtragem — os itens vêm prontos do servidor, já paginados.
+  const itensBusca = items ?? []
 
   if (!items || items.length === 0) return null
-  // Busca sem resultado aqui: some o cartão inteiro. A contagem geral no campo
-  // de busca já explica o vazio.
-  if (busca.trim() && itensBusca.length === 0) return null
 
   // Este componente só existe no modo NAVEGAÇÃO agora: quando há busca ou
   // filtro ativo, a tela troca pela lista de resultados (ResultadosBusca), e
@@ -207,6 +203,20 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
           )
         })}
       </div>
+
+      {/* Paginação: a Rede vem em páginas de 40 do servidor. Sem este botão o
+          cliente veria só as 40 primeiras e não teria como chegar no resto. */}
+      {temMais && (
+        <div className="flex justify-center mt-5">
+          <button
+            onClick={carregarMais}
+            disabled={carregando}
+            className="px-6 py-2.5 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 disabled:opacity-50 transition-colors"
+          >
+            {carregando ? "Carregando…" : `Mostrar mais (${total - itensBusca.length} restantes)`}
+          </button>
+        </div>
+      )}
 
       <AddToPlaylistModal
         open={!!addingTrackId}

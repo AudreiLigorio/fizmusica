@@ -1,18 +1,19 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
 // O catálogo da Rede virou dado compartilhado da aba Músicas.
 //
 // Antes cada peça buscava o seu: RedeFizMusica tinha o fetch dentro, e quando
 // a lista de resultados entrou (a0c68ae) ela fez outro igual. Agora os filtros
-// também precisam da mesma lista (pra montar as pílulas de ocasião e estilo
-// com as contagens), e seriam três chamadas iguais na mesma tela.
+// também precisam da mesma lista, e seriam três chamadas iguais na mesma tela.
 //
-// Uma busca só, dividida por contexto. O favoritar continua otimista — a
-// alteração acontece aqui pra que a raia da Rede e a lista de resultados nunca
-// discordem sobre o que está favoritado.
+// Desde a paginação, este contexto também é quem MONTA A CONSULTA: busca e
+// filtro viraram parâmetros mandados ao servidor, porque o cliente não recebe
+// mais o catálogo inteiro e não teria como filtrar o que não carregou. As
+// contagens das pílulas vêm junto, como facetas — contar na tela diria
+// "Rock · 12" quando o catálogo tem 300.
 
 export type CatalogItem = {
   orderId: string
@@ -22,8 +23,8 @@ export type CatalogItem = {
   musicalStyle: string | null
   imageUrl: string | null
   audioUrl: string
-  // Opcionais: a listagem não manda mais letra (76% do payload). O player
-  // busca em /api/catalog/letra quando vai tocar.
+  // Opcionais: a listagem não manda letra (76% do payload). O player busca
+  // em /api/catalog/letra quando vai tocar.
   lyrics?: string | null
   lyricsLrc?: string | null
   authorApelido: string | null
@@ -31,41 +32,103 @@ export type CatalogItem = {
   createdAt: string
 }
 
+export type Filtro = { tipo: "ocasiao" | "estilo"; valor: string } | null
+
+export type Facetas = {
+  ocasioes: [string, number][]
+  estilos: [string, number][]
+}
+
 type Ctx = {
   items: CatalogItem[] | null
+  total: number
+  temMais: boolean
+  carregando: boolean
+  facetas: Facetas
+  busca: string
+  filtro: Filtro
+  setBusca: (v: string) => void
+  setFiltro: (f: Filtro) => void
+  carregarMais: () => void
   alternarFavorito: (orderId: string) => void
 }
 
-const CatalogoCtx = createContext<Ctx>({ items: null, alternarFavorito: () => {} })
+const VAZIO: Facetas = { ocasioes: [], estilos: [] }
+
+const CatalogoCtx = createContext<Ctx>({
+  items: null, total: 0, temMais: false, carregando: false, facetas: VAZIO,
+  busca: "", filtro: null,
+  setBusca: () => {}, setFiltro: () => {}, carregarMais: () => {}, alternarFavorito: () => {},
+})
+
+const POR_PAGINA = 40
 
 export function CatalogoProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
+  const [total, setTotal] = useState(0)
+  const [temMais, setTemMais] = useState(false)
+  const [carregando, setCarregando] = useState(false)
+  const [facetas, setFacetas] = useState<Facetas>(VAZIO)
+  const [busca, setBusca] = useState("")
+  const [filtro, setFiltro] = useState<Filtro>(null)
 
+  // Semente fixa por visita: o servidor embaralha com ela, então a ordem é a
+  // mesma entre as páginas (sem repetir nem pular música) e muda na próxima
+  // visita, mantendo a sensação de descoberta.
+  const semente = useMemo(() => Math.floor(Math.random() * 2_000_000_000) + 1, [])
+
+  // Descarta resposta de consulta antiga que chegou atrasada — digitar
+  // rápido dispara várias, e a última a chegar pode não ser a última pedida.
+  const consultaAtual = useRef(0)
+
+  const buscar = useCallback(async (desde: number, b: string, f: Filtro) => {
+    const id = ++consultaAtual.current
+    setCarregando(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    const p = new URLSearchParams({ semente: String(semente), limite: String(POR_PAGINA), desde: String(desde) })
+    if (b.trim()) p.set("busca", b.trim())
+    if (f?.tipo === "ocasiao") p.set("ocasiao", f.valor)
+    if (f?.tipo === "estilo") p.set("estilo", f.valor)
+
+    // Sem sessão o header vai vazio de propósito: /api/catalog responde a
+    // anônimo também (Fase 2 da abertura ao visitante), só que cortado.
+    const res = await fetch(`/api/catalog?${p}`, {
+      headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+    })
+    const d = await res.json().catch(() => ({}))
+    if (id !== consultaAtual.current) return // chegou tarde, já há consulta mais nova
+
+    setItems((prev) => (desde === 0 ? (d.items ?? []) : [...(prev ?? []), ...(d.items ?? [])]))
+    setTotal(d.total ?? 0)
+    setTemMais(!!d.temMais)
+    setFacetas(d.facetas ?? VAZIO)
+    setCarregando(false)
+  }, [semente])
+
+  // Busca digitada espera 300ms antes de ir ao servidor — sem isso cada
+  // tecla vira uma requisição.
   useEffect(() => {
-    ;(async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      // Sem sessão o header vai vazio de propósito: /api/catalog responde a
-      // anônimo também (Fase 2 da abertura ao visitante), só que cortado.
-      const res = await fetch("/api/catalog", {
-        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
-      })
-      const d = await res.json().catch(() => ({}))
-      setItems(d.items ?? [])
-    })()
-  }, [])
+    const t = setTimeout(() => { buscar(0, busca, filtro) }, busca ? 300 : 0)
+    return () => clearTimeout(t)
+  }, [busca, filtro, buscar])
+
+  const carregarMais = useCallback(() => {
+    if (carregando || !temMais) return
+    buscar(items?.length ?? 0, busca, filtro)
+  }, [carregando, temMais, items?.length, busca, filtro, buscar])
 
   const alternarFavorito = useCallback((orderId: string) => {
-    setItems((prev) => {
-      if (!prev) return prev
-      const next = prev.map((it) => (it.orderId === orderId ? { ...it, favorited: !it.favorited } : it))
-      // Favoritado sobe pro topo — pedido antigo do Audrei ("se o cliente
-      // favoritar tem que manter como as primeiras").
-      return [...next].sort((a, b) => Number(b.favorited) - Number(a.favorited))
-    })
+    // Só alterna o estado visual — sem reordenar. Reordenar aqui brigaria
+    // com a paginação: a ordem é do servidor, e mexer nela na tela faria a
+    // próxima página chegar fora de lugar.
+    setItems((prev) => prev?.map((it) => (it.orderId === orderId ? { ...it, favorited: !it.favorited } : it)) ?? prev)
   }, [])
 
   return (
-    <CatalogoCtx.Provider value={{ items, alternarFavorito }}>
+    <CatalogoCtx.Provider value={{
+      items, total, temMais, carregando, facetas, busca, filtro,
+      setBusca, setFiltro, carregarMais, alternarFavorito,
+    }}>
       {children}
     </CatalogoCtx.Provider>
   )
@@ -73,46 +136,6 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
 
 export function useCatalogo() {
   return useContext(CatalogoCtx)
-}
-
-// Filtro ativo da aba Músicas. Vive fora dos componentes porque agora é
-// compartilhado: as pílulas ficam junto da busca (topo) e o que elas filtram
-// está mais abaixo, na raia da Rede ou na lista de resultados.
-// Só um filtro por vez (ocasião OU estilo) — combinar os dois deixou a
-// interação confusa quando foi testado.
-export type Filtro = { tipo: "ocasiao" | "estilo"; valor: string } | null
-
-// Agrupamentos usados pelas pílulas e pela filtragem. Ficam aqui pra a
-// contagem mostrada na pílula e o resultado do clique saírem da MESMA conta —
-// senão a pílula diz "Rock · 16" e a lista mostra outro número.
-export function agruparPorOcasiao(items: CatalogItem[]): Map<string, CatalogItem[]> {
-  const m = new Map<string, CatalogItem[]>()
-  for (const it of items) {
-    const lista = m.get(it.occasion) ?? []
-    lista.push(it)
-    m.set(it.occasion, lista)
-  }
-  return m
-}
-
-// Um pedido pode ter mais de um estilo marcado ("🎸 Rock, 🎵 Forró") — nesse
-// caso ele entra em cada grupo separadamente.
-export function agruparPorEstilo(items: CatalogItem[]): Map<string, CatalogItem[]> {
-  const m = new Map<string, CatalogItem[]>()
-  for (const it of items) {
-    for (const estilo of (it.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
-      const lista = m.get(estilo) ?? []
-      lista.push(it)
-      m.set(estilo, lista)
-    }
-  }
-  return m
-}
-
-export function aplicarFiltro(items: CatalogItem[], filtro: Filtro): CatalogItem[] {
-  if (!filtro) return items
-  const grupos = filtro.tipo === "ocasiao" ? agruparPorOcasiao(items) : agruparPorEstilo(items)
-  return grupos.get(filtro.valor) ?? []
 }
 
 // ── Lista unificada (suas músicas + Rede) ────────────────────────────────
@@ -177,30 +200,11 @@ export function mesclar(
   return [...doCliente, ...daRede]
 }
 
-export function agruparUnificadaPorOcasiao(items: Unificada[]): Map<string, Unificada[]> {
-  const m = new Map<string, Unificada[]>()
-  for (const it of items) {
-    const lista = m.get(it.occasion) ?? []
-    lista.push(it)
-    m.set(it.occasion, lista)
-  }
-  return m
-}
-
-export function agruparUnificadaPorEstilo(items: Unificada[]): Map<string, Unificada[]> {
-  const m = new Map<string, Unificada[]>()
-  for (const it of items) {
-    for (const estilo of (it.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
-      const lista = m.get(estilo) ?? []
-      lista.push(it)
-      m.set(estilo, lista)
-    }
-  }
-  return m
-}
-
-export function aplicarFiltroUnificada(items: Unificada[], filtro: Filtro): Unificada[] {
-  if (!filtro) return items
-  const grupos = filtro.tipo === "ocasiao" ? agruparUnificadaPorOcasiao(items) : agruparUnificadaPorEstilo(items)
-  return grupos.get(filtro.valor) ?? []
+// Filtro aplicado às músicas DO CLIENTE (as da Rede já vêm filtradas do
+// servidor). Elas são poucas e estão todas carregadas, então filtrar na tela
+// aqui não custa nada.
+export function casaFiltroCliente(ocasiao: string, estilo: string | null, filtro: Filtro): boolean {
+  if (!filtro) return true
+  if (filtro.tipo === "ocasiao") return ocasiao === filtro.valor
+  return (estilo ?? "").split(",").map((x) => x.trim()).includes(filtro.valor)
 }

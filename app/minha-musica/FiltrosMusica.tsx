@@ -1,72 +1,67 @@
 "use client"
 
-import { useCatalogo, mesclar, agruparUnificadaPorOcasiao, agruparUnificadaPorEstilo, type Filtro } from "./CatalogoContext"
+import { useCatalogo } from "./CatalogoContext"
 import type { LibraryTrack } from "./MinhasMusicas"
 import { combina } from "@/lib/busca"
 
-// Pílulas de ocasião e estilo, agora logo abaixo da busca.
+// Pílulas de ocasião e estilo, logo abaixo da busca.
 //
 // Antes viviam dentro do cartão "Rede Fiz Música", no meio da tela. Subiram
 // porque fazem a mesma coisa que a busca — reduzir o que você está vendo — e
 // separá-las era pedir pra pessoa procurar num lugar e filtrar noutro.
 //
-// Isso só ficou possível depois dos dois modos (a0c68ae): enquanto os filtros
-// só mexiam na raia da Rede, colocá-los acima de "Minha Playlist" seria
-// mentira visual — a pessoa clicaria em "Rock" e a playlist logo abaixo
-// continuaria intacta. Agora filtro ativo entra em modo resultado, igual à
-// busca, e o que está na tela é de fato só o que passou pelo filtro.
-export default function FiltrosMusica({
-  busca,
-  filtro,
-  onFiltro,
-  minhas = [],
-}: {
-  busca: string
-  filtro: Filtro
-  onFiltro: (f: Filtro) => void
-  minhas?: LibraryTrack[]
-}) {
-  const { items } = useCatalogo()
+// As contagens vêm do SERVIDOR (facetas). Com a paginação o cliente só tem
+// uma página do catálogo, então contar na tela diria "Rock · 12" quando o
+// catálogo tem 300 — a pílula prometeria um número e a lista entregaria
+// outro, erro que já aconteceu uma vez (ver 78faf4d). Às facetas somam-se as
+// músicas do próprio cliente, que a Rede não conhece.
+export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[] }) {
+  const { facetas, filtro, setFiltro, busca, total } = useCatalogo()
 
-  // As pílulas contam sobre o que a BUSCA já deixou passar: se você digitou
-  // "natal" e sobraram 3 músicas, as pílulas refletem essas 3 — não o catálogo
-  // inteiro. Senão a pílula prometeria 16 e a lista entregaria 2.
-  //
-  // Conta sobre suas músicas + Rede, a MESMA lista que o resultado monta
-  // (mesclar). Antes contava só a Rede: a pílula dizia "🎤 Sertanejo · 6" e a
-  // lista abria com 9, porque as do próprio cliente entravam lá e não aqui.
-  const base = mesclar(minhas, items, null)
-    .filter((it) => combina(busca, [it.title, it.occasion, it.musicalStyle]))
+  // As do cliente são poucas e estão todas carregadas — contar na tela aqui
+  // não custa nada, e sem isso a pílula ignoraria a biblioteca dele.
+  const minhasNaBusca = minhas.filter((t) => t.audioUrl && combina(busca, [t.title, t.occasion, t.musicalStyle]))
 
-  const ocasioes = [...agruparUnificadaPorOcasiao(base).entries()].sort((a, b) => b[1].length - a[1].length)
-  const estilos  = [...agruparUnificadaPorEstilo(base).entries()].sort((a, b) => b[1].length - a[1].length)
+  const somar = (base: [string, number][], chave: (t: LibraryTrack) => string[]) => {
+    const m = new Map(base)
+    for (const t of minhasNaBusca) {
+      for (const k of chave(t)) m.set(k, (m.get(k) ?? 0) + 1)
+    }
+    return [...m.entries()].sort((a, b) => b[1] - a[1])
+  }
 
-  if (base.length === 0) return null
+  const ocasioes = somar(facetas.ocasioes, (t) => [t.occasion])
+  const estilos = somar(facetas.estilos, (t) =>
+    (t.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean))
+
+  const totalGeral = total + minhasNaBusca.length
+
+  if (ocasioes.length === 0) return null
 
   return (
     <div className="mb-6">
       <Linha titulo="Por ocasião">
-        <Pill ativa={filtro === null} onClick={() => onFiltro(null)}>Todas · {base.length}</Pill>
-        {ocasioes.map(([valor, lista]) => (
+        <Pill ativa={filtro === null} onClick={() => setFiltro(null)}>Todas · {totalGeral}</Pill>
+        {ocasioes.map(([valor, n]) => (
           <Pill
             key={valor}
             ativa={filtro?.tipo === "ocasiao" && filtro.valor === valor}
-            onClick={() => onFiltro({ tipo: "ocasiao", valor })}
+            onClick={() => setFiltro({ tipo: "ocasiao", valor })}
           >
-            {valor} · {lista.length}
+            {valor} · {n}
           </Pill>
         ))}
       </Linha>
 
       {estilos.length > 0 && (
         <Linha titulo="Por estilo">
-          {estilos.map(([valor, lista]) => (
+          {estilos.map(([valor, n]) => (
             <Pill
               key={valor}
               ativa={filtro?.tipo === "estilo" && filtro.valor === valor}
-              onClick={() => onFiltro({ tipo: "estilo", valor })}
+              onClick={() => setFiltro({ tipo: "estilo", valor })}
             >
-              {valor} · {lista.length}
+              {valor} · {n}
             </Pill>
           ))}
         </Linha>

@@ -6,7 +6,7 @@ import { combina, normalizar } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
 import type { LibraryTrack } from "./MinhasMusicas"
 import type { Unificada as Linha } from "./CatalogoContext"
-import { useCatalogo, mesclar, aplicarFiltroUnificada, type Filtro } from "./CatalogoContext"
+import { useCatalogo, mesclar, casaFiltroCliente } from "./CatalogoContext"
 
 // Modo resultado da aba Músicas.
 //
@@ -57,28 +57,23 @@ function Realce({ texto, termo }: { texto: string; termo: string }) {
 }
 
 export default function ResultadosBusca({
-  busca,
-  filtro = null,
   minhas = [],
   meuApelido = null,
-  onContagem,
 }: {
-  busca: string
-  filtro?: Filtro
   minhas?: LibraryTrack[]
   meuApelido?: string | null
-  onContagem?: (n: number) => void
 }) {
-  const { items: rede } = useCatalogo()
+  const { items: rede, busca, filtro, temMais, carregando, carregarMais } = useCatalogo()
   const { track: nowPlaying, playing, playTrack } = usePlayer()
 
-  // Uma lista só, montada pela MESMA função que alimenta a contagem das
-  // pílulas — se as duas divergirem, a pílula promete um número e a tela
-  // entrega outro.
-  const linhas: Linha[] = aplicarFiltroUnificada(mesclar(minhas, rede, meuApelido), filtro)
-    .filter((l) => combina(busca, [l.title, l.occasion, l.musicalStyle]))
-
-  useEffect(() => { onContagem?.(linhas.length) }, [linhas.length, onContagem])
+  // As músicas da REDE já vêm buscadas e filtradas do servidor (desde a
+  // paginação) — refiltrar aqui esconderia resultado válido. Só as do
+  // cliente são filtradas na tela, porque estão todas carregadas.
+  const minhasFiltradas = minhas.filter(
+    (t) => casaFiltroCliente(t.occasion, t.musicalStyle, filtro)
+      && combina(busca, [t.title, t.occasion, t.musicalStyle]),
+  )
+  const linhas: Linha[] = mesclar(minhasFiltradas, rede, meuApelido)
 
   if (rede === null) {
     return (
@@ -160,6 +155,20 @@ export default function ResultadosBusca({
           )
         })}
       </div>
+
+      {/* Paginação: a Rede vem em páginas de 40 do servidor. Sem isso, um
+          catálogo de milhares viria inteiro numa requisição só. */}
+      {temMais && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={carregarMais}
+            disabled={carregando}
+            className="px-6 py-2.5 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 disabled:opacity-50 transition-colors"
+          >
+            {carregando ? "Carregando…" : "Mostrar mais"}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

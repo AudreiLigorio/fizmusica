@@ -17,16 +17,13 @@ import VersoesEntregues from "./VersoesEntregues"
 import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
-import ResultadosBusca from "./ResultadosBusca"
-import FiltrosMusica from "./FiltrosMusica"
-import { CatalogoProvider, type Filtro } from "./CatalogoContext"
-import RedeFizMusica from "./RedeFizMusica"
+import AbaMusicas from "./AbaMusicas"
+import { CatalogoProvider } from "./CatalogoContext"
 import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
 import MiniPlayer from "./MiniPlayer"
 import InfoTooltip from "./InfoTooltip"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
-import BuscaMusicas from "./BuscaMusicas"
 import CarreiraPainel from "./CarreiraPainel"
 import AreaPublica from "./AreaPublica"
 import MinhaCarreira from "./MinhaCarreira"
@@ -222,16 +219,6 @@ function MinhaMusicaContent() {
     })()
   }, [])
 
-  const [busca, setBusca] = useState("")
-  const [nMinhas, setNMinhas] = useState(0)
-  const [nRede, setNRede] = useState(0)
-  // Contagem do modo resultado. Separada de nMinhas/nRede porque a lista
-  // unificada deduplica (música sua publicada na Rede aparece uma vez só),
-  // então somar os dois daria um número maior que o de linhas na tela.
-  const [nBusca, setNBusca] = useState(0)
-  // Filtro de ocasião/estilo: vive aqui porque as pílulas ficam no topo (junto
-  // da busca) e o que elas filtram está mais abaixo.
-  const [filtro, setFiltro] = useState<Filtro>(null)
 
   // Aba no endereço (?aba=musicas): sem isso, atualizar a página ou usar o
   // botão Voltar jogava o cliente de volta em Pedidos sem explicação.
@@ -1002,40 +989,24 @@ function MinhaMusicaContent() {
 
           {/* ── ABA MÚSICAS ────────────────────────────────────────────── */}
           {aba === "musicas" && <>
-          <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() || filtro ? nBusca : null} />
+          <AbaMusicas
+            minhas={libraryTracks}
+            meuApelido={meuApelido}
+            onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)}
+          >
+            {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
+                As raias de playlist (uma por playlist, com as músicas já
+                dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
+            <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} meuApelido={meuApelido} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
-          {/* Pílulas logo abaixo da busca: filtrar e buscar são a mesma ação
-              (reduzir o que está na tela), então moram juntos. */}
-          <FiltrosMusica busca={busca} filtro={filtro} onFiltro={setFiltro} minhas={libraryTracks} />
-
-          {/* Dois modos, como no Spotify: buscando OU filtrando, as seções
-              somem e vira uma lista única de resultados; sem nada disso, a
-              tela é de navegação. Antes a busca filtrava as raias no lugar, e
-              o resultado ficava espalhado entre duas seções, no meio dos
-              títulos e bordas delas. */}
-          {busca.trim() || filtro ? (
-            <ResultadosBusca busca={busca} filtro={filtro} minhas={libraryTracks} meuApelido={meuApelido} onContagem={setNBusca} />
-          ) : (
-            <>
-              {/* Rede primeiro (pedido do Audrei): descoberta puxa mais que a
-                  própria biblioteca, que já é o conteúdo principal da aba
-                  Pedidos. Mesma ordem da visão do visitante. */}
-              <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
-
-              {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
-                  As raias de playlist (uma por playlist, com as músicas já
-                  dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
-              <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} busca={busca} meuApelido={meuApelido} onContagem={setNMinhas} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
-
-              {/* Também só no modo navegação: quem está procurando uma música
-                  não quer o painel de indicação e as datas de aniversário
-                  ocupando a tela logo abaixo dos resultados. */}
-              <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-                <ReferirAmigos />
-                <DatasEspeciais />
-              </div>
-            </>
-          )}
+            {/* Também só no modo navegação: quem está procurando uma música
+                não quer o painel de indicação e as datas de aniversário
+                ocupando a tela logo abaixo dos resultados. */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+              <ReferirAmigos />
+              <DatasEspeciais />
+            </div>
+          </AbaMusicas>
           </>}
 
           {/* ── ABA CARREIRA ───────────────────────────────────────────── */}

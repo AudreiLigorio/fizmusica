@@ -159,6 +159,43 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
   return { itens }
 }
 
+// Embaralhamento ESTÁVEL por semente.
+//
+// A ordem aleatória a cada visita é intencional (por data soterrava os
+// pedidos antigos conforme o catálogo crescia). Mas com paginação, sortear
+// de novo a cada requisição faria a página 2 repetir ou pular músicas da
+// página 1. A semente vem do cliente, gerada uma vez por visita: dentro da
+// mesma visita a ordem é sempre a mesma; numa visita nova, muda.
+function embaralharComSemente<T>(arr: T[], semente: number): T[] {
+  const a = [...arr]
+  let s = semente || 1
+  for (let i = a.length - 1; i > 0; i--) {
+    // PRNG simples e determinístico (xorshift) — não precisa ser bom
+    // aleatório, precisa ser REPETÍVEL pra mesma semente.
+    s ^= s << 13; s ^= s >>> 17; s ^= s << 5; s |= 0
+    const j = Math.abs(s) % (i + 1)
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function normalizarTexto(t: string): string {
+  return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim()
+}
+
+// Mesma regra do lib/busca.ts do cliente: cada palavra digitada precisa
+// aparecer em algum campo. Duplicada aqui porque a busca passou a acontecer
+// no SERVIDOR — o cliente não tem mais o catálogo inteiro pra filtrar.
+function combinaBusca(termo: string, campos: (string | null)[]): boolean {
+  const t = normalizarTexto(termo)
+  if (!t) return true
+  const alvo = campos.filter(Boolean).map((c) => normalizarTexto(c as string)).join(" ")
+  return t.split(/\s+/).every((parte) => alvo.includes(parte))
+}
+
+const LIMITE_PADRAO = 40
+const LIMITE_MAX = 200
+
 export async function GET(req: NextRequest) {
   const user = await getUserFromAuth(req)
   const publico = !user
@@ -172,9 +209,19 @@ export async function GET(req: NextRequest) {
     : { data: [] }
   const favoriteSet = new Set((favs ?? []).map((f) => f.order_id))
 
+  // A Rede é o catálogo de OUTRAS pessoas — é o que o próprio subtítulo da
+  // tela promete ("Escute músicas publicadas por outros usuários"). As do
+  // cliente vêm da biblioteca dele, não daqui.
+  //
+  // Sem isso a música dele aparecia nas duas listas e a contagem somava duas
+  // vezes: a tela dizia "27 encontradas" e mostrava 16. Deduplicar só na tela
+  // não resolve com paginação — o cliente não vê o catálogo inteiro pra saber
+  // o que é repetido.
+  const deOutros = user ? base.filter((b) => b.ownerId !== user.id) : base
+
   // Personalização em cima da base compartilhada. Tudo o que depende de QUEM
   // está pedindo mora aqui — nunca no cache.
-  const items = base.map((b) => {
+  const items = deOutros.map((b) => {
     const proprio = !!b.ownerId && b.ownerId === user?.id
     return {
       orderId: b.orderId,
@@ -199,26 +246,71 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  // Favoritados sempre primeiro (pedido do Audrei: "se o cliente favoritar
-  // tem que manter como as primeiras"). Dentro de cada grupo, embaralhado —
-  // por data sempre soterrava os pedidos antigos conforme o catálogo
-  // crescia; embaralhar dá sensação de descoberta de verdade a cada visita.
+  // ── Busca e filtro agora acontecem AQUI ───────────────────────────────
   //
-  // Fica FORA do cache de propósito: é o que faz a tela mudar a cada visita,
-  // e cachear isso deixaria a ordem congelada por um minuto.
-  function embaralhar<T>(arr: T[]): T[] {
-    const a = [...arr]
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[a[i], a[j]] = [a[j], a[i]]
+  // Antes o cliente recebia o catálogo inteiro e filtrava na tela. Com
+  // paginação isso deixa de funcionar: não dá pra buscar no que não foi
+  // carregado. A busca subiu pro servidor, que tem a lista completa em cache.
+  const sp = req.nextUrl.searchParams
+  const busca = sp.get("busca")?.trim() ?? ""
+  const ocasiao = sp.get("ocasiao")?.trim() || null
+  const estilo = sp.get("estilo")?.trim() || null
+
+  const porBusca = busca
+    ? items.filter((i) => combinaBusca(busca, [i.title, i.occasion, i.musicalStyle]))
+    : items
+
+  // ── Facetas ───────────────────────────────────────────────────────────
+  //
+  // As contagens das pílulas vêm do SERVIDOR agora. Com paginação o cliente
+  // só tem uma página, então contar na tela diria "Rock · 12" quando o
+  // catálogo tem 300 — a pílula prometeria um número e a lista entregaria
+  // outro, erro que já aconteceu uma vez (ver 78faf4d).
+  //
+  // Contadas sobre o resultado da BUSCA, mas ANTES do filtro de
+  // ocasião/estilo: senão clicar em "Rock" zeraria todas as outras pílulas e
+  // não haveria como voltar.
+  const ocasioes: Record<string, number> = {}
+  const estilos: Record<string, number> = {}
+  for (const i of porBusca) {
+    ocasioes[i.occasion] = (ocasioes[i.occasion] ?? 0) + 1
+    for (const e of (i.musicalStyle ?? "").split(",").map((x) => x.trim()).filter(Boolean)) {
+      estilos[e] = (estilos[e] ?? 0) + 1
     }
-    return a
   }
-  const favoritados = embaralhar(items.filter((i) => i.favorited))
-  const resto       = embaralhar(items.filter((i) => !i.favorited))
+
+  const filtrados = porBusca.filter((i) => {
+    if (ocasiao && i.occasion !== ocasiao) return false
+    if (estilo && !(i.musicalStyle ?? "").split(",").map((x) => x.trim()).includes(estilo)) return false
+    return true
+  })
+
+  // ── Ordem e página ────────────────────────────────────────────────────
+  //
+  // Favoritados sempre primeiro (pedido do Audrei: "se o cliente favoritar
+  // tem que manter como as primeiras").
+  const semente = Number(sp.get("semente")) || 1
+  const ordenados = [
+    ...embaralharComSemente(filtrados.filter((i) => i.favorited), semente),
+    ...embaralharComSemente(filtrados.filter((i) => !i.favorited), semente),
+  ]
+
+  const limite = Math.min(LIMITE_MAX, Math.max(1, Number(sp.get("limite")) || LIMITE_PADRAO))
+  const inicio = Math.max(0, Number(sp.get("desde")) || 0)
+  const pagina = ordenados.slice(inicio, inicio + limite)
 
   return NextResponse.json(
-    { items: [...favoritados, ...resto] },
+    {
+      items: pagina,
+      total: ordenados.length,
+      // `temMais` explícito em vez de deixar o cliente calcular: ele não
+      // precisa saber como a página foi cortada pra decidir se pede mais.
+      temMais: inicio + pagina.length < ordenados.length,
+      facetas: {
+        ocasioes: Object.entries(ocasioes).sort((a, b) => b[1] - a[1]),
+        estilos: Object.entries(estilos).sort((a, b) => b[1] - a[1]),
+      },
+    },
     // Explícito: a resposta muda por usuário (favorito, slug, apelido
     // próprio). Sem isso, um CDN que cacheia por caminho poderia servir a
     // versão de um cliente logado pra um visitante anônimo — o que vazaria
