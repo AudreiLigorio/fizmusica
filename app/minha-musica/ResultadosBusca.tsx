@@ -1,0 +1,211 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
+import { usePlayer } from "./PlayerContext"
+import { combina, normalizar } from "@/lib/busca"
+import { gradienteDaCapa } from "@/lib/capaGradiente"
+import type { LibraryTrack } from "./MinhasMusicas"
+
+// Modo resultado da aba Músicas.
+//
+// Sem busca, a tela é de NAVEGAÇÃO: raias da Rede, playlists, capas grandes.
+// Com busca, ela vira RESULTADO: as seções somem e sobra uma lista única.
+// Antes a busca filtrava as raias no lugar, então procurar "natal" deixava
+// uma capinha solta em "Minhas Músicas" e outra na Rede, cada uma no meio do
+// título e das bordas da sua seção — o resultado tinha que ser caçado dentro
+// do layout de navegação.
+//
+// Cada linha carrega o CONTEXTO que casou (ocasião · estilo · origem), com o
+// trecho digitado destacado. Sem isso, buscar "rock" devolvia uma capa sem
+// nenhuma pista do porquê: o estilo é campo de busca desde sempre, mas nunca
+// era mostrado em lugar nenhum.
+
+type ItemRede = {
+  orderId: string
+  title: string
+  occasion: string
+  musicalStyle: string | null
+  imageUrl: string | null
+  audioUrl: string
+  lyrics: string | null
+  lyricsLrc: string | null
+  authorApelido: string | null
+}
+
+type Linha = {
+  id: string
+  title: string
+  occasion: string
+  musicalStyle: string | null
+  imageUrl: string | null
+  audioUrl: string
+  lyrics: string | null
+  lyricsLrc: string | null
+  apelido: string | null
+  minha: boolean
+}
+
+// Acende no texto o trecho que o cliente digitou. Compara sem acento (a busca
+// também ignora), mas recorta em cima do texto ORIGINAL — senão a tela
+// mostraria "ocasiao" no lugar de "ocasião".
+function Realce({ texto, termo }: { texto: string; termo: string }) {
+  const alvo = normalizar(texto)
+  const partes = normalizar(termo).split(/\s+/).filter(Boolean)
+  // Marca quais posições do texto pertencem a alguma palavra buscada.
+  const marcado = new Array(texto.length).fill(false)
+  for (const p of partes) {
+    let de = alvo.indexOf(p)
+    while (de !== -1) {
+      for (let i = de; i < de + p.length && i < marcado.length; i++) marcado[i] = true
+      de = alvo.indexOf(p, de + p.length)
+    }
+  }
+  if (!marcado.some(Boolean)) return <>{texto}</>
+
+  // Agrupa em blocos contínuos pra não gerar um <span> por letra.
+  const blocos: { txt: string; on: boolean }[] = []
+  for (let i = 0; i < texto.length; i++) {
+    const on = marcado[i]
+    const ultimo = blocos[blocos.length - 1]
+    if (ultimo && ultimo.on === on) ultimo.txt += texto[i]
+    else blocos.push({ txt: texto[i], on })
+  }
+  return (
+    <>
+      {blocos.map((b, i) =>
+        b.on ? <span key={i} className="text-fuchsia-300 font-semibold">{b.txt}</span> : <span key={i}>{b.txt}</span>
+      )}
+    </>
+  )
+}
+
+export default function ResultadosBusca({
+  busca,
+  minhas = [],
+  meuApelido = null,
+  onContagem,
+}: {
+  busca: string
+  minhas?: LibraryTrack[]
+  meuApelido?: string | null
+  onContagem?: (n: number) => void
+}) {
+  const [rede, setRede] = useState<ItemRede[] | null>(null)
+  const { track: nowPlaying, playing, playTrack } = usePlayer()
+
+  useEffect(() => {
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch("/api/catalog", {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      })
+      const d = await res.json().catch(() => ({}))
+      setRede(d.items ?? [])
+    })()
+  }, [])
+
+  // As músicas do cliente entram como "minha" e ganham prioridade na ordem:
+  // quem busca algo que tem em casa espera achar o seu primeiro.
+  const linhasMinhas: Linha[] = minhas
+    .filter((t) => t.audioUrl && combina(busca, [t.title, t.occasion, t.musicalStyle]))
+    .map((t) => ({
+      id: t.id, title: t.title, occasion: t.occasion, musicalStyle: t.musicalStyle,
+      imageUrl: t.imageUrl, audioUrl: t.audioUrl as string, lyrics: t.lyrics,
+      lyricsLrc: t.lyricsLrc, apelido: meuApelido, minha: true,
+    }))
+
+  // Mesma música pode estar nas duas listas (a sua, publicada na Rede) —
+  // aparecer duas vezes no resultado pareceria bug. Vale a versão "minha".
+  const idsMinhas = new Set(linhasMinhas.map((l) => l.id))
+  const linhasRede: Linha[] = (rede ?? [])
+    .filter((i) => !idsMinhas.has(i.orderId) && combina(busca, [i.title, i.occasion, i.musicalStyle]))
+    .map((i) => ({
+      id: i.orderId, title: i.title, occasion: i.occasion, musicalStyle: i.musicalStyle,
+      imageUrl: i.imageUrl, audioUrl: i.audioUrl, lyrics: i.lyrics,
+      lyricsLrc: i.lyricsLrc, apelido: i.authorApelido, minha: false,
+    }))
+
+  const linhas = [...linhasMinhas, ...linhasRede]
+
+  useEffect(() => { onContagem?.(linhas.length) }, [linhas.length, onContagem])
+
+  if (rede === null) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-7 h-7 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (linhas.length === 0) {
+    return (
+      <div className="text-center py-14">
+        <div className="text-4xl mb-3">🔍</div>
+        <p className="text-white/70 text-sm">Nada encontrado para <span className="text-white font-medium">“{busca}”</span>.</p>
+        <p className="text-white/35 text-xs mt-1.5">Tente por ocasião (natal, aniversário) ou estilo (rock, pop).</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-9">
+      <div className="space-y-1">
+        {linhas.map((l) => {
+          const tocando = nowPlaying?.id === l.id && playing
+          // Ocasião · estilo · origem: é o contexto inteiro pelo qual a busca
+          // procura, então é o que precisa aparecer pra explicar o resultado.
+          const contexto = [l.occasion, l.musicalStyle].filter(Boolean) as string[]
+          return (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => playTrack({
+                id: l.id, title: l.title, occasion: l.occasion, audioUrl: l.audioUrl,
+                imageUrl: l.imageUrl, lyrics: l.lyrics, lyricsLrc: l.lyricsLrc, apelido: l.apelido,
+              })}
+              className="w-full flex items-center gap-3.5 px-1 py-2 rounded-xl hover:bg-white/[0.04] transition-colors text-left"
+            >
+              {/* Gradiente SEMPRE por baixo da foto (duas camadas de
+                  background-image, a primeira em cima). Capas antigas apontam
+                  pra tempfile.aiquickdraw.com, que expira — sem a camada de
+                  baixo a linha fica com um quadrado preto no lugar da capa. */}
+              <div
+                className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-cover bg-center"
+                style={{
+                  backgroundImage: l.imageUrl
+                    ? `url(${l.imageUrl}), ${gradienteDaCapa(l.id)}`
+                    : gradienteDaCapa(l.id),
+                }}
+              >
+                {tocando && <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-[11px]">❚❚</div>}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${tocando ? "text-fuchsia-300" : ""}`}>
+                  <Realce texto={l.title} termo={busca} />
+                </p>
+                {/* Origem PRIMEIRO e curta ("Da Rede", não "Rede Fiz Música"):
+                    a linha trunca no fim, e saber de quem é a música não pode
+                    ser justo a parte cortada. Ocasião e estilo vêm depois —
+                    se algo se perder, que seja o fim do estilo, que já aparece
+                    destacado quando foi ele que casou com a busca. */}
+                <p className="text-[11px] text-white/40 truncate mt-0.5">
+                  <span className={l.minha ? "text-white/60" : "text-fuchsia-300/60"}>
+                    {l.minha ? "Sua música" : "Da Rede"}
+                  </span>
+                  {contexto.map((c, i) => (
+                    <span key={i}>
+                      <span className="text-white/20"> · </span>
+                      <Realce texto={c} termo={busca} />
+                    </span>
+                  ))}
+                </p>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

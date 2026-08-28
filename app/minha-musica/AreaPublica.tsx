@@ -10,6 +10,7 @@ import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
 import CarreiraPublica from "./CarreiraPublica"
+import ResultadosBusca from "./ResultadosBusca"
 
 // A área do cliente vista por quem ainda não tem conta.
 //
@@ -83,20 +84,29 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
           {aba === "musicas" && (
             <>
               <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() ? nRede : null} />
-              <RedeFizMusica busca={busca} onContagem={setNRede} onPrecisaLogin={entrar} />
 
-              {/* A playlist vazia vem DEPOIS da Rede de propósito: só faz
-                  sentido como convite pra quem já ouviu algo e quis guardar. */}
-              <div className="mt-12 pt-10 border-t border-white/[0.06]">
-                {/* text-xl, igual ao "Rede Fiz Música" logo acima — antes
-                    estava text-2xl, maior que o título da própria aba. */}
-                <h2 className="text-xl font-bold mb-1">Minha playlist</h2>
-                {/* Sem link de "Entrar" aqui: o botão do topo é o único ponto
-                    de entrada, pra não repetir a mesma ação em dois lugares. */}
-                <p className="text-white/50 text-xs">
-                  Crie uma conta pra guardar as que você gostou.
-                </p>
-              </div>
+              {/* Mesmos dois modos da área logada (ver page.tsx): buscando,
+                  vira lista de resultados com o contexto; sem busca, navegação. */}
+              {busca.trim() ? (
+                <ResultadosBusca busca={busca} onContagem={setNRede} />
+              ) : (
+                <>
+                  <RedeFizMusica busca={busca} onContagem={setNRede} onPrecisaLogin={entrar} />
+
+                  {/* A playlist vazia vem DEPOIS da Rede de propósito: só faz
+                      sentido como convite pra quem já ouviu algo e quis guardar. */}
+                  <div className="mt-12 pt-10 border-t border-white/[0.06]">
+                    {/* text-xl, igual ao "Rede Fiz Música" logo acima — antes
+                        estava text-2xl, maior que o título da própria aba. */}
+                    <h2 className="text-xl font-bold mb-1">Minha playlist</h2>
+                    {/* Sem link de "Entrar" aqui: o botão do topo é o único ponto
+                        de entrada, pra não repetir a mesma ação em dois lugares. */}
+                    <p className="text-white/50 text-xs">
+                      Crie uma conta pra guardar as que você gostou.
+                    </p>
+                  </div>
+                </>
+              )}
             </>
           )}
 

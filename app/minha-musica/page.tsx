@@ -17,6 +17,7 @@ import VersoesEntregues from "./VersoesEntregues"
 import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
+import ResultadosBusca from "./ResultadosBusca"
 import RedeFizMusica from "./RedeFizMusica"
 import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
@@ -222,6 +223,10 @@ function MinhaMusicaContent() {
   const [busca, setBusca] = useState("")
   const [nMinhas, setNMinhas] = useState(0)
   const [nRede, setNRede] = useState(0)
+  // Contagem do modo resultado. Separada de nMinhas/nRede porque a lista
+  // unificada deduplica (música sua publicada na Rede aparece uma vez só),
+  // então somar os dois daria um número maior que o de linhas na tela.
+  const [nBusca, setNBusca] = useState(0)
 
   // Aba no endereço (?aba=musicas): sem isso, atualizar a página ou usar o
   // botão Voltar jogava o cliente de volta em Pedidos sem explicação.
@@ -401,6 +406,7 @@ function MinhaMusicaContent() {
         // "Lucas"), que não é o nome da música.
         title: o.musicName?.trim() || principal?.title || o.subcategory,
         occasion: o.subcategory,
+        musicalStyle: o.musicalStyle ?? null,
         slug: o.slug as string,
         imageUrl: principal?.imageUrl ?? null,
         // Cai pro mp3Url quando não há sunoTracks: entrega antiga (manual,
@@ -990,20 +996,33 @@ function MinhaMusicaContent() {
 
           {/* ── ABA MÚSICAS ────────────────────────────────────────────── */}
           {aba === "musicas" && <>
-          <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() ? nMinhas + nRede : null} />
+          <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() ? nBusca : null} />
 
-          {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
-              As raias de playlist (uma por playlist, com as músicas já
-              dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
-          <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} busca={busca} meuApelido={meuApelido} onContagem={setNMinhas} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+          {/* Dois modos, como no Spotify: buscando, as seções somem e vira uma
+              lista única de resultados; sem busca, a tela é de navegação.
+              Antes a busca filtrava as raias no lugar, e o resultado ficava
+              espalhado entre duas seções, no meio dos títulos e bordas delas. */}
+          {busca.trim() ? (
+            <ResultadosBusca busca={busca} minhas={libraryTracks} meuApelido={meuApelido} onContagem={setNBusca} />
+          ) : (
+            <>
+              {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
+                  As raias de playlist (uma por playlist, com as músicas já
+                  dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
+              <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} busca={busca} meuApelido={meuApelido} onContagem={setNMinhas} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
-          {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
-          <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+              {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
+              <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
-          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-            <ReferirAmigos />
-            <DatasEspeciais />
-          </div>
+              {/* Também só no modo navegação: quem está procurando uma música
+                  não quer o painel de indicação e as datas de aniversário
+                  ocupando a tela logo abaixo dos resultados. */}
+              <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+                <ReferirAmigos />
+                <DatasEspeciais />
+              </div>
+            </>
+          )}
           </>}
 
           {/* ── ABA CARREIRA ───────────────────────────────────────────── */}

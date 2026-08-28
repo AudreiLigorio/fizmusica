@@ -15,6 +15,9 @@ export type LibraryTrack = {
   id: string
   title: string
   occasion: string
+  // A busca já procurava por estilo, mas o dado não vinha até aqui — então
+  // buscar "rock" trazia a música e não mostrava por quê. Ver ResultadosBusca.
+  musicalStyle: string | null
   slug: string
   imageUrl: string | null
   audioUrl: string | null
