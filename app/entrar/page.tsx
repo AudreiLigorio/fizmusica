@@ -13,6 +13,10 @@ export default function EntrarPage() {
   // "login": magic link (entra na conta). "link": reenvia o link de token da
   // música (/preparar/[token]) — sem login, pra quem perdeu o e-mail original.
   const [mode, setMode]       = useState<"login" | "link">("login")
+  // Nenhum pedido nesse e-mail: mostra a escolha (conferir x criar conta) em
+  // vez de recusar. `contaNova` só ajusta o texto da confirmação depois.
+  const [semPedido, setSemPedido] = useState(false)
+  const [contaNova, setContaNova] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -35,7 +39,14 @@ export default function EntrarPage() {
       return
     }
 
-    // Verifica se existe algum pedido com esse e-mail antes de enviar o link
+    // Verifica se existe algum pedido com esse e-mail antes de enviar o link.
+    //
+    // Essa checagem NÃO é mais uma barreira — desde que a área abriu pro
+    // visitante, criar conta sem ter comprado é legítimo. Ela virou o que
+    // sempre foi de fato útil: pegar erro de digitação. Um cliente que escreve
+    // "gmial" receberia o link numa boa, criaria uma segunda conta vazia e
+    // acharia que perdeu as músicas. Por isso o aviso vem ANTES de qualquer
+    // e-mail sair, e seguir em frente exige um segundo clique consciente.
     const check = await fetch("/api/conta/check-email", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -43,25 +54,32 @@ export default function EntrarPage() {
     }).then((r) => r.json()).catch(() => ({ hasOrders: true }))
 
     if (!check.hasOrders) {
-      setError("Não encontramos nenhum pedido com esse e-mail. Verifique se digitou corretamente ou acesse pelo e-mail usado na compra.")
+      setSemPedido(true)
       setLoading(false)
       return
     }
 
+    await enviarLink(false)
+  }
+
+  // Disparo do magic link. `novo` só muda o texto da tela de confirmação —
+  // o Supabase cria a conta sozinho quando o e-mail ainda não existe.
+  async function enviarLink(novo: boolean) {
+    setLoading(true)
+    setError("")
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     })
-
     if (authError) {
       setError(authError.message)
-      setLoading(false)
     } else {
+      setContaNova(novo)
       setSent(true)
-      setLoading(false)
     }
+    setLoading(false)
   }
 
   async function handleGoogle() {
@@ -89,6 +107,10 @@ export default function EntrarPage() {
                   <>Se houver pedidos no e-mail{" "}
                   <span className="text-white font-medium">{email}</span>,
                   você receberá o link da sua música em instantes. Confira também a caixa de spam.</>
+                ) : contaNova ? (
+                  <>Enviamos um link para{" "}
+                  <span className="text-white font-medium">{email}</span>.
+                  Clique nele para criar sua conta. Confira também a caixa de spam.</>
                 ) : (
                   <>Enviamos um link de acesso para{" "}
                   <span className="text-white font-medium">{email}</span>.
@@ -96,7 +118,7 @@ export default function EntrarPage() {
                 )}
               </p>
               <button
-                onClick={() => { setSent(false); setEmail("") }}
+                onClick={() => { setSent(false); setEmail(""); setSemPedido(false); setContaNova(false) }}
                 className="text-sm text-pink-400 hover:text-pink-300"
               >
                 Usar outro e-mail
@@ -136,7 +158,10 @@ export default function EntrarPage() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    /* Corrigiu o e-mail? A checagem tem que rodar de novo —
+                       senão o cliente que consertou o "gmial" seguiria pelo
+                       caminho de criar conta nova. */
+                    onChange={(e) => { setEmail(e.target.value); setSemPedido(false); setError("") }}
                     placeholder="seuemail@exemplo.com"
                     required
                     autoFocus
@@ -150,9 +175,31 @@ export default function EntrarPage() {
                   </p>
                 )}
 
+                {/* Âmbar, não vermelho: não é erro. Pra quem nunca comprou é
+                    o caminho normal; pra quem errou a digitação é o alerta
+                    que evita uma segunda conta vazia. */}
+                {semPedido && (
+                  <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl px-4 py-4 space-y-3">
+                    <p className="text-amber-200 text-sm leading-relaxed">
+                      Não encontramos nenhum pedido com <span className="font-medium text-white">{email}</span>.
+                    </p>
+                    <p className="text-amber-200/70 text-xs leading-relaxed">
+                      Se você já comprou, confira se digitou certo — é só corrigir o e-mail acima. Se ainda não comprou, pode criar sua conta agora mesmo.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => enviarLink(true)}
+                      disabled={loading}
+                      className="w-full bg-white/10 hover:bg-white/15 disabled:opacity-60 transition-colors py-2.5 rounded-xl text-sm font-semibold"
+                    >
+                      {loading ? "Enviando…" : "Criar minha conta"}
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || semPedido}
                   className="w-full bg-pink-500 hover:bg-pink-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
                 >
                   {loading ? (

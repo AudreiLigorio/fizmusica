@@ -677,6 +677,45 @@ function MinhaMusicaContent() {
     )
   }
 
+  // O mesmo bloco aparece em dois lugares: na Carreira (onde sempre esteve) e
+  // na aba Pedidos vazia. Quem comprou com outro e-mail e cria conta nova cai
+  // numa tela que diz "suas músicas ficam aqui" — sem esta saída ali, ele não
+  // teria como descobrir que o pedido dele existe, só está em outro endereço.
+  const blocoVincular = (
+            <div className="mt-8 border-t border-white/10 pt-6">
+              {!claimOpen ? (
+                <button onClick={() => setClaimOpen(true)} className="text-sm text-gray-400 hover:text-white transition-colors">
+                  Fez um pedido com outro e-mail? <span className="text-pink-400">Vincular aqui →</span>
+                </button>
+              ) : (
+                <form onSubmit={submitClaim} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-3">
+                  <p className="text-sm font-medium">Vincular pedidos feitos com outro e-mail</p>
+                  <p className="text-xs text-gray-500">Enviaremos um e-mail de confirmação para o e-mail usado na compra. Ao confirmar, todos os pedidos daquele e-mail entram na sua conta.</p>
+                  <input
+                    type="email" value={claimEmail} onChange={(e) => setClaimEmail(e.target.value)}
+                    placeholder="E-mail usado na compra"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500"
+                  />
+                  {claimMsg && (
+                    <p className={`text-xs px-3 py-2 rounded-lg ${claimMsg.ok ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300"}`}>
+                      {claimMsg.text}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={claiming}
+                      className="bg-pink-500 hover:bg-pink-600 disabled:opacity-50 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                      {claiming ? "Enviando…" : "Enviar confirmação"}
+                    </button>
+                    <button type="button" onClick={() => { setClaimOpen(false); setClaimMsg(null) }}
+                      className="px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white border border-white/10">
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+  )
+
   return (
     <PlayerProvider>
     <ToastProvider>
@@ -749,9 +788,32 @@ function MinhaMusicaContent() {
           {/* ── ABA PEDIDOS ────────────────────────────────────────────── */}
           {aba === "pedidos" && <>
           {orders.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 bg-white/[0.03] border border-white/10 rounded-2xl mb-6">
-              <p className="text-4xl mb-3">🎵</p>
-              <p>Nenhum pedido encontrado para este e-mail.</p>
+            /* Conta sem pedido é situação legítima desde que a área abriu pro
+               visitante: quem cria conta pra guardar favoritos cai aqui. O
+               texto antigo ("Nenhum pedido encontrado") foi escrito pra outra
+               pessoa — o cliente cujo pedido não vinculou — e soava como
+               defeito pra quem nunca comprou. Esse cliente continua atendido
+               pelo "Fez um pedido com outro e-mail?" logo abaixo, que aparece
+               em todas as abas. Como a tela não sabe distinguir os dois, o
+               texto acolhe e a saída fica visível: assim nenhum dos dois erra. */
+            <div className="text-center py-16 mb-6">
+              <div className="text-5xl mb-4">🎁</div>
+              <h2 className="text-2xl font-bold mb-2">Suas músicas ficam aqui</h2>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto mb-6">
+                Quando você encomendar uma música, é nesta tela que ela aparece — com a letra, as fotos e o link pra presentear.
+              </p>
+              <button
+                onClick={() => router.push("/criar")}
+                className="px-7 py-3 rounded-full font-semibold text-white transition-transform hover:scale-[1.03] active:scale-95"
+                style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+              >
+                Criar minha música
+              </button>
+
+              {/* Saída pro cliente que comprou com outro e-mail: sem isso, a
+                  mensagem acolhedora vira armadilha pra ele — diria que não
+                  tem música nenhuma quando na verdade tem, noutro endereço. */}
+              <div className="max-w-sm mx-auto mt-10 text-left">{blocoVincular}</div>
             </div>
           ) : (
             <div className="mb-9">
@@ -969,39 +1031,7 @@ function MinhaMusicaContent() {
           {/* Ajuda — regras desta tela */}
           <AjudaCliente />
 
-          {/* Reivindicar pedido feito com outro e-mail */}
-          <div className="mt-8 border-t border-white/10 pt-6">
-            {!claimOpen ? (
-              <button onClick={() => setClaimOpen(true)} className="text-sm text-gray-400 hover:text-white transition-colors">
-                Fez um pedido com outro e-mail? <span className="text-pink-400">Vincular aqui →</span>
-              </button>
-            ) : (
-              <form onSubmit={submitClaim} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-3">
-                <p className="text-sm font-medium">Vincular pedidos feitos com outro e-mail</p>
-                <p className="text-xs text-gray-500">Enviaremos um e-mail de confirmação para o e-mail usado na compra. Ao confirmar, todos os pedidos daquele e-mail entram na sua conta.</p>
-                <input
-                  type="email" value={claimEmail} onChange={(e) => setClaimEmail(e.target.value)}
-                  placeholder="E-mail usado na compra"
-                  className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500"
-                />
-                {claimMsg && (
-                  <p className={`text-xs px-3 py-2 rounded-lg ${claimMsg.ok ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300"}`}>
-                    {claimMsg.text}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <button type="submit" disabled={claiming}
-                    className="bg-pink-500 hover:bg-pink-600 disabled:opacity-50 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors">
-                    {claiming ? "Enviando…" : "Enviar confirmação"}
-                  </button>
-                  <button type="button" onClick={() => { setClaimOpen(false); setClaimMsg(null) }}
-                    className="px-4 py-2.5 rounded-xl text-sm text-gray-400 hover:text-white border border-white/10">
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+          {blocoVincular}
           </>}
         </section>
 
