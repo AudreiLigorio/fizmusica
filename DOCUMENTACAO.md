@@ -362,10 +362,13 @@ Levantamento feito a pedido do Audrei, com números medidos em produção — n�
 
 - **Letra viajava na listagem** (`7444f42`) — eram 76% do payload e a lista não usa letra. Agora sai por `/api/catalog/letra?orderId=` só quando o player vai tocar. Medido: **150.219 → 37.800 bytes (75% menor)**; projeção para 5.000 músicas caiu de ~9,7 MB para ~2,7 MB. A trava de publicação é repetida na rota nova de propósito — ela é acessível direto por URL.
 
-**Pendências, em ordem de impacto:**
+- **Sem paginação** (`69665d4`) — o catálogo vinha inteiro. Agora páginas de 40 com "Mostrar mais": **23 KB por página, e esse número não cresce com o catálogo**. Obrigou busca e filtro a subirem pro servidor (não dá pra buscar no que não foi carregado), as contagens das pílulas a virarem facetas do servidor, e o embaralhamento a virar estável por semente (senão a página 2 repete ou pula música). A Rede passou a excluir os pedidos do próprio usuário — é o que o subtítulo dela sempre prometeu, e sem isso a música dele era contada duas vezes ("Todas · 113" quando o número real era 68).
 
-1. **Sem paginação.** O `select` do catálogo não tem `limit` — retorna tudo. Cuidado ao implementar: as pílulas de ocasião/estilo contam sobre a lista completa no cliente, então paginar exige devolver as contagens agregadas pelo servidor, senão a pílula promete um número e a lista entrega outro (erro que já aconteceu uma vez, ver `78faf4d`).
-2. **`cache-control: no-cache` nos arquivos do Storage.** O `cacheControl` de 1 ano passou a ser gravado no upload e o metadata guarda certo (`max-age=31536000`, conferido), mas o Supabase **serve `no-cache` mesmo assim** — aparenta ser limite de plano/Smart CDN, não do código. O CDN ainda cacheia (`cf-cache-status: REVALIDATED`), então a banda está protegida; o custo é uma revalidação por play. Para resolver de verdade: plano do Supabase com Smart CDN, ou pôr o nosso Cloudflare na frente do Storage.
+**Pendência restante:**
+
+1. **`cache-control: no-cache` nos arquivos do Storage.** O `cacheControl` de 1 ano passou a ser gravado no upload e o metadata guarda certo (`max-age=31536000`, conferido), mas o Supabase **serve `no-cache` mesmo assim** — aparenta ser limite de plano/Smart CDN, não do código. O CDN ainda cacheia (`cf-cache-status: REVALIDATED`), então a banda está protegida; o custo é uma revalidação por play. Para resolver de verdade: plano do Supabase com Smart CDN, ou pôr o nosso Cloudflare na frente do Storage.
+
+**Limite conhecido do desenho atual:** o cache em memória guarda o catálogo inteiro por instância (sem letras, ~38 KB para 68 músicas). Na casa das dezenas de milhares de músicas isso passa a pesar e a filtragem/paginação precisa descer pro banco (índices + `range`). Não é o horizonte próximo.
 
 **Referência de escala (como o Spotify resolve):** catálogo cacheado em vez de recalculado (item 2 aqui, já feito), nada carregado inteiro (itens 1 e 2 pendentes) e áudio fragmentado servido de CDN próximo ao ouvinte — este último é exagero para o volume atual.
 
