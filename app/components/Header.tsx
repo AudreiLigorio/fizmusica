@@ -71,6 +71,17 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
             Contato
           </button>
 
+          {/* Um botão só, levando pro índice /legal — que já lista os 10
+              documentos organizados. Antes esses links viviam espalhados
+              (repetidos) no rodapé de toda página; agora moram aqui, um
+              lugar só. */}
+          <button
+            onClick={() => router.push("/legal")}
+            className="hidden md:block text-white/50 hover:text-white/90 transition-colors text-sm font-medium"
+          >
+            Termos e Políticas
+          </button>
+
           {/* Mesmo lugar, a ação troca com a sessão: Entrar pra quem não tem
               conta, Sair pra quem tem e quer trocar de usuário. Nunca os
               dois juntos. Sem "Entrar" em cima do próprio /entrar — seria
@@ -144,10 +155,18 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
             </button>
             <button
               onClick={() => go("/contato")}
-              className="flex items-center gap-3 text-left text-white/80 hover:text-white py-4 transition-colors"
+              className="flex items-center gap-3 text-left text-white/80 hover:text-white py-4 border-b border-white/[0.05] transition-colors"
             >
               <span className="text-lg">💬</span>
               <span className="font-medium">Contato</span>
+              <span className="ml-auto text-white/30">→</span>
+            </button>
+            <button
+              onClick={() => go("/legal")}
+              className="flex items-center gap-3 text-left text-white/80 hover:text-white py-4 transition-colors"
+            >
+              <span className="text-lg">📄</span>
+              <span className="font-medium">Termos e Políticas</span>
               <span className="ml-auto text-white/30">→</span>
             </button>
             {/* Sair não repete aqui: agora fica sempre visível no topo (linha
