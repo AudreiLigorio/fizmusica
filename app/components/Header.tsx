@@ -2,15 +2,21 @@
 
 import { useEffect, useState } from "react"
 import { track } from "@/lib/track"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
-export default function Header({ showButton = true, progress }: { showButton?: boolean; progress?: number }) {
+// `showButton` não gate mais nada aqui — Entrar/Sair agora aparecem em
+// TODAS as páginas (pedido do Audrei: antes só existiam na Home e em Quem
+// somos, e nas outras 12 páginas do site "Minha música" era o único
+// caminho de volta pra área do cliente). O parâmetro fica só pra não obrigar
+// a mexer nos 13 call-sites que ainda passam `showButton={false}` à toa.
+export default function Header({ progress }: { showButton?: boolean; progress?: number }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
-  // null = ainda não sabemos. O botão só aparece depois de saber: mostrar
-  // "Entrar" por um instante pra quem já está logado seria oferecer uma ação
-  // que não faz sentido pra ele.
+  // null = ainda não sabemos. Entrar/Sair só aparecem depois de saber: mostrar
+  // "Entrar" por um instante pra quem já está logado (ou vice-versa) seria
+  // oferecer uma ação que não faz sentido pra ele.
   const [logado, setLogado] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -22,6 +28,12 @@ export default function Header({ showButton = true, progress }: { showButton?: b
   function go(path: string) {
     setMenuOpen(false)
     router.push(path)
+  }
+
+  async function sair() {
+    setMenuOpen(false)
+    await supabase.auth.signOut()
+    router.push("/")
   }
 
   return (
@@ -59,10 +71,11 @@ export default function Header({ showButton = true, progress }: { showButton?: b
             Contato
           </button>
 
-          {/* Só pra quem não entrou. Depois de logado o botão some: a pessoa
-              já tem a barra de abas e o "Minha música" aqui do lado, e
-              oferecer "Entrar" a quem está dentro é oferecer o nada. */}
-          {showButton && logado === false && (
+          {/* Mesmo lugar, a ação troca com a sessão: Entrar pra quem não tem
+              conta, Sair pra quem tem e quer trocar de usuário. Nunca os
+              dois juntos. Sem "Entrar" em cima do próprio /entrar — seria
+              o botão apontando pra tela em que a pessoa já está. */}
+          {logado === false && pathname !== "/entrar" && (
             <button
               onClick={() => { track("cta_entrar", "header"); router.push("/entrar") }}
               className="text-white transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_4px_16px_rgba(240,25,107,0.3)]"
@@ -77,6 +90,15 @@ export default function Header({ showButton = true, progress }: { showButton?: b
               }}
             >
               Entrar
+            </button>
+          )}
+
+          {logado === true && (
+            <button
+              onClick={sair}
+              className="hidden md:block text-white/40 hover:text-red-400 transition-colors text-sm font-medium"
+            >
+              Sair
             </button>
           )}
 
@@ -122,6 +144,19 @@ export default function Header({ showButton = true, progress }: { showButton?: b
               <span className="font-medium">Contato</span>
               <span className="ml-auto text-white/30">→</span>
             </button>
+
+            {/* Sair fica separado por uma borda — é a única ação da lista que
+                não é navegação, é saída. Só aparece logado, pra quem quiser
+                trocar de conta. */}
+            {logado === true && (
+              <button
+                onClick={sair}
+                className="flex items-center gap-3 text-left text-white/60 hover:text-red-400 py-4 border-t border-white/[0.05] transition-colors"
+              >
+                <span className="text-lg">🚪</span>
+                <span className="font-medium">Sair</span>
+              </button>
+            )}
           </nav>
         </div>
       )}
