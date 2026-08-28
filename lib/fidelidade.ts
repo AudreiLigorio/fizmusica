@@ -29,9 +29,12 @@ export type Carreira = {
   progresso: number    // 0..1 dentro da faixa atual, para a barra
 }
 
-// Digital ganha 1 disco, físico 2. A distinção existe porque produto físico
-// tem custo e margem diferentes — a spec pede tabelas separadas pelos dois.
-const DISCOS_POR_COMPRA = { digital: 1, fisico: 2 } as const
+// Quanto cada compra digital rende quando o produto não tem loyalty_discos
+// configurado (produto novo, criado antes de alguém lembrar de ajustar no
+// admin). Não deveria acontecer depois da migração 055, mas se acontecer é
+// melhor pecar pelo valor mais baixo — corrigir pra cima é indolor, corrigir
+// pra baixo exigiria estornar disco já gasto em desconto.
+const DISCOS_PADRAO_SEM_CONFIG = 1
 
 export async function listarNiveis(supabase: DB): Promise<Nivel[]> {
   const { data } = await supabase
@@ -116,7 +119,7 @@ export async function descontoDeFidelidade(
 export async function concederDiscosDoPedido(supabase: DB, orderId: string): Promise<boolean> {
   const { data: order } = await supabase
     .from("orders")
-    .select("id, userId, paymentStatus, products(category)")
+    .select("id, userId, paymentStatus, products(category, loyalty_discos)")
     .eq("id", orderId)
     .maybeSingle()
 
@@ -126,11 +129,14 @@ export async function concederDiscosDoPedido(supabase: DB, orderId: string): Pro
   if (order.paymentStatus !== "PAID") return false
 
   // Categorias reais no banco: DIGITAL e DIGITAL_PHYSICAL (conferido, não
-  // suposto). Vale o disco maior sempre que houver item físico no plano.
+  // suposto) — só decide o TIPO da transação (pro histórico e pro desconto
+  // físico x digital do nível). A QUANTIDADE de discos vem do produto
+  // (migração 055): antes era fixa por categoria, então Essencial e
+  // Retrospectiva premium rendiam o mesmo — sem estímulo pra plano maior.
   const produto = Array.isArray(order.products) ? order.products[0] : order.products
   const fisico = (produto?.category as string | null ?? "").toUpperCase().includes("PHYSICAL")
   const tipo = fisico ? "PURCHASE_PHYSICAL" : "PURCHASE_DIGITAL"
-  const discos = fisico ? DISCOS_POR_COMPRA.fisico : DISCOS_POR_COMPRA.digital
+  const discos = (produto?.loyalty_discos as number | null) ?? DISCOS_PADRAO_SEM_CONFIG
 
   const { error } = await supabase.from("loyalty_transactions").insert({
     user_id: order.userId,

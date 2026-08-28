@@ -16,6 +16,14 @@ export async function GET() {
     .select("id, nome, icone, min_discos, desconto_digital, desconto_fisico, ativo")
     .order("min_discos", { ascending: true })
 
+  // Achado do Audrei (2026-08-27): antes o disco valia fixo por categoria —
+  // Essencial (R$15,90) e Retrospectiva premium (R$89,90) rendiam o mesmo.
+  // Agora cada produto tem seu próprio valor (migração 055), editável aqui.
+  const { data: produtos } = await supabase
+    .from("products")
+    .select("id, name, category, price, active, loyalty_discos")
+    .order("price", { ascending: true })
+
   const { data: txs } = await supabase
     .from("loyalty_transactions")
     .select("user_id, tipo, discos")
@@ -51,6 +59,7 @@ export async function GET() {
 
   return NextResponse.json({
     niveis: niveis ?? [],
+    produtos: produtos ?? [],
     resumo: {
       clientes: Object.keys(saldo).length,
       discosDistribuidos: Object.values(saldo).reduce((a, b) => a + b, 0),
@@ -60,11 +69,22 @@ export async function GET() {
   })
 }
 
-// Edita um nível. A spec pede que nome, faixa, descontos e status sejam
-// configuráveis — o id e a arte ficam fixos porque dependem do arquivo em
-// public/carreira/.
+// Edita um nível OU o valor em discos de um produto (discriminado por
+// `produtoId` no corpo — dois formulários diferentes na mesma tela, mais
+// simples que duas rotas pra um painel deste tamanho).
 export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
+
+  if ("produtoId" in body) {
+    const produtoId = String(body.produtoId ?? "").trim()
+    if (!produtoId) return NextResponse.json({ error: "Produto inválido." }, { status: 400 })
+    const discos = Math.max(0, Math.round(Number(body.discos) || 0))
+    const supabase = createServerClient()
+    const { error } = await supabase.from("products").update({ loyalty_discos: discos }).eq("id", produtoId)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  }
+
   const id = Number(body.id)
   if (!Number.isFinite(id)) return NextResponse.json({ error: "Nível inválido." }, { status: 400 })
 
