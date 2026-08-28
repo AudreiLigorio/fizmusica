@@ -81,19 +81,45 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 mb-6">
       <div className="flex items-center gap-3.5 mb-4">
+        {/* O upload sempre existiu — o círculo É o botão. Só que a única
+            pista disso era um "Trocar" que aparecia no HOVER, e hover não
+            existe em celular: no toque, nada indicava que dava pra clicar,
+            e o cliente concluía que faltava o campo de foto.
+            Agora a câmera fica fixa na borda, visível em qualquer aparelho. */}
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={enviando}
-          aria-label="Trocar foto do perfil"
-          className="relative w-16 h-16 rounded-full shrink-0 overflow-hidden group disabled:opacity-60"
-          style={avatarUrl ? undefined : { background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
+          aria-label={avatarUrl ? "Trocar foto do perfil" : "Adicionar foto do perfil"}
+          className="relative w-16 h-16 shrink-0 group disabled:opacity-60"
         >
-          {avatarUrl
-            ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-            : <span className="text-xl font-bold text-white">{inicial}</span>}
-          <span className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-semibold text-white">
-            {enviando ? "…" : "Trocar"}
+          <span
+            className="block w-full h-full rounded-full overflow-hidden"
+            style={avatarUrl ? undefined : { background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
+          >
+            {avatarUrl
+              ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              : <span className="w-full h-full flex items-center justify-center text-xl font-bold text-white">{inicial}</span>}
+            <span className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-semibold text-white">
+              {enviando ? "…" : "Trocar"}
+            </span>
+          </span>
+          {/* Câmera em SVG, não emoji: o 📷 é escuro por natureza e sumia
+              sobre o rosa da marca. Mesma razão já registrada nos ícones das
+              abas — emoji vem da fonte do sistema e não aceita cor. */}
+          <span
+            aria-hidden="true"
+            className="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full flex items-center justify-center border-2 border-[#0d0b14] text-white"
+            style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
+          >
+            {enviando ? (
+              <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            )}
           </span>
         </button>
 
@@ -109,6 +135,17 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
           <p className="font-bold text-base truncate">{salvo || nome}</p>
           <p className="text-xs text-white/45 truncate">{email}</p>
           <p className="text-[11px] text-white/30 mt-0.5">É por este e-mail que seus pedidos entram na conta.</p>
+          {/* Em texto também: ícone sozinho ainda deixa dúvida sobre o que
+              acontece ao tocar, e quem não tem foto precisa saber que pode
+              colocar uma. */}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={enviando}
+            className="text-[11px] text-pink-400 hover:text-pink-300 disabled:opacity-50 mt-1.5"
+          >
+            {enviando ? "Enviando…" : avatarUrl ? "Trocar foto" : "Adicionar foto"}
+          </button>
         </div>
       </div>
 
