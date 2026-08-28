@@ -18,12 +18,33 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
   // "Entrar" por um instante pra quem já está logado (ou vice-versa) seria
   // oferecer uma ação que não faz sentido pra ele.
   const [logado, setLogado] = useState<boolean | null>(null)
+  // Foto de perfil do cliente (bucket privado → URL assinada que expira, por
+  // isso é buscada e não guardada). Nulo = ainda não subiu foto; aí o avatar
+  // cai na inicial do nome sobre o gradiente da marca.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [inicial, setInicial] = useState("")
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setLogado(!!session))
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setLogado(!!s))
     return () => sub.subscription.unsubscribe()
   }, [])
+
+  // Só busca o perfil depois de confirmar a sessão — evita um 401 garantido
+  // em toda visita de quem não tem conta.
+  useEffect(() => {
+    if (logado !== true) { setAvatarUrl(null); setInicial(""); return }
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
+      const nome = (user?.user_metadata?.full_name as string)?.trim() || user?.email || ""
+      setInicial(nome.charAt(0).toUpperCase())
+      const d = await fetch("/api/perfil", {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      }).then((r) => r.json()).catch(() => ({}))
+      setAvatarUrl(d.avatarUrl ?? null)
+    })()
+  }, [logado])
 
   function go(path: string) {
     setMenuOpen(false)
@@ -110,6 +131,24 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
               Sair escondido — a pessoa não teria como saber que só precisava
               abrir o menu. Por isso não repete dentro do hambúrguer também
               (evita dois botões de Sair na tela ao mesmo tempo no mobile). */}
+          {/* Avatar = a identidade que saiu do conteúdo (commit c290645).
+              Redondo em vez do nome + e-mail escritos: "Olá, Audrei" mais
+              audreiligorio@gmail.com não cabem numa barra de 375px junto com
+              logo, Sair e hambúrguer. Leva pra Carreira, onde o perfil
+              completo (nome, e-mail, foto) vive. */}
+          {logado === true && (
+            <button
+              onClick={() => router.push("/minha-musica?aba=carreira")}
+              aria-label="Meu perfil"
+              className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold text-white border border-white/15 hover:border-white/40 transition-colors"
+              style={avatarUrl ? undefined : { background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
+            >
+              {avatarUrl
+                ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                : inicial}
+            </button>
+          )}
+
           {logado === true && (
             <button
               onClick={sair}
