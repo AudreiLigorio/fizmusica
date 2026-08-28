@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import BarraHome from "@/app/components/BarraHome"
 
 const VALORES = [
   {
@@ -208,6 +209,7 @@ export default function QuemSomosPage() {
       </div>
 
       <Footer />
+      <BarraHome />
     </div>
   )
 }

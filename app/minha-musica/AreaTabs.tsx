@@ -75,7 +75,11 @@ export function TabBarMobile({
   onAba,
   onCriar,
 }: {
-  aba: Aba
+  // null = nenhuma aba ativa — a barra agora também vive em páginas fora da
+  // área do cliente (Quem somos, Contato, migração 2026-08-28) que não têm
+  // aba correspondente nas 4 opções. Marcar uma delas como ativa ali seria
+  // mentir sobre onde a pessoa está.
+  aba: Aba | null
   onAba: (a: Aba) => void
   onCriar: () => void
 }) {

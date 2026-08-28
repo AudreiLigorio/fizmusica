@@ -1,19 +1,28 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { TabBarMobile, TabsDesktop, type Aba } from "@/app/minha-musica/AreaTabs"
 
-// A mesma barra da área do cliente, agora também na landing — é ela que dá
-// caminho de volta pra quem foi parar na Rede e quer entender o produto.
+// A mesma barra da área do cliente, agora também na landing e nas páginas
+// institucionais (Quem somos, Contato) — pedido do Audrei: clicar num link do
+// menu não pode fazer esse rodapé desaparecer, senão vira ida sem volta fácil.
 //
 // Aparece pra todo mundo, logado ou não: /minha-musica agora tem uma versão
 // pro visitante (AreaPublica), então tocar em "Músicas" leva a uma Rede que
 // toca de verdade em vez de uma tela travada.
 export default function BarraHome() {
   const router = useRouter()
+  const pathname = usePathname()
+  // Só a Home propriamente dita acende o ícone Home — nas outras páginas que
+  // montam esta barra (Quem somos, Contato) nenhuma das 4 abas representa
+  // onde a pessoa está, então nenhuma acende.
+  const aba: Aba | null = pathname === "/" ? "home" : null
 
   function ir(a: Aba) {
-    if (a === "home") return // já está aqui
+    // Antes assumia que "home" clicado só podia significar "já está na
+    // Home" (por só existir ali). Agora a barra também vive em Quem
+    // somos/Contato, então precisa navegar de verdade.
+    if (a === "home") { if (pathname !== "/") router.push("/"); return }
     router.push(`/minha-musica?aba=${a}`)
   }
 
@@ -22,7 +31,7 @@ export default function BarraHome() {
       {/* Respiro pra barra fixa não cobrir o fim da página (o rodapé tem os
           links legais — encobri-los não é só questão de estética). */}
       <div className="h-24 sm:h-0" aria-hidden="true" />
-      <TabBarMobile aba="home" onAba={ir} onCriar={() => router.push("/criar")} />
+      <TabBarMobile aba={aba} onAba={ir} onCriar={() => router.push("/criar")} />
     </>
   )
 }

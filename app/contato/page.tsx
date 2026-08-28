@@ -2,6 +2,7 @@
 
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import BarraHome from "@/app/components/BarraHome"
 
 const WHATSAPP = "5511996645678"
 const WHATSAPP_LABEL = "(11) 99664-5678"
@@ -91,6 +92,7 @@ export default function ContatoPage() {
 
         <Footer />
       </div>
+      <BarraHome />
     </div>
   )
 }
