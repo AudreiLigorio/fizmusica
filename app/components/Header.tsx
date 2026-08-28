@@ -93,10 +93,16 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
             </button>
           )}
 
+          {/* Sem "hidden md:block" — Sair fica visível no topo em qualquer
+              tamanho de tela, no mesmo lugar onde "Entrar" aparecia. Deixar
+              só no hambúrguer criaria uma assimetria: Entrar sempre visível,
+              Sair escondido — a pessoa não teria como saber que só precisava
+              abrir o menu. Por isso não repete dentro do hambúrguer também
+              (evita dois botões de Sair na tela ao mesmo tempo no mobile). */}
           {logado === true && (
             <button
               onClick={sair}
-              className="hidden md:block text-white/40 hover:text-red-400 transition-colors text-sm font-medium"
+              className="text-white/50 hover:text-red-400 transition-colors text-sm font-medium"
             >
               Sair
             </button>
@@ -144,19 +150,9 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
               <span className="font-medium">Contato</span>
               <span className="ml-auto text-white/30">→</span>
             </button>
-
-            {/* Sair fica separado por uma borda — é a única ação da lista que
-                não é navegação, é saída. Só aparece logado, pra quem quiser
-                trocar de conta. */}
-            {logado === true && (
-              <button
-                onClick={sair}
-                className="flex items-center gap-3 text-left text-white/60 hover:text-red-400 py-4 border-t border-white/[0.05] transition-colors"
-              >
-                <span className="text-lg">🚪</span>
-                <span className="font-medium">Sair</span>
-              </button>
-            )}
+            {/* Sair não repete aqui: agora fica sempre visível no topo (linha
+                acima), inclusive no mobile — não precisa abrir o hambúrguer
+                pra achar. */}
           </nav>
         </div>
       )}
