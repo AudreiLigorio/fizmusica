@@ -149,6 +149,15 @@ export default function ResultadosBusca({
                       <Realce texto={c} termo={busca} />
                     </span>
                   ))}
+                  {/* Apelido no fim, e só nas músicas de OUTRAS pessoas: em
+                      "Sua música" o autor é quem está olhando. Nulo na maioria
+                      dos casos — o apelido exige opt-in e só vem pra logado. */}
+                  {!l.minha && l.apelido && (
+                    <>
+                      <span className="text-white/20"> | </span>
+                      <span className="text-white/55">{l.apelido}</span>
+                    </>
+                  )}
                 </p>
               </div>
             </button>

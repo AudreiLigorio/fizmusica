@@ -198,7 +198,22 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                 </button>
               </div>
               <p className={`text-xs font-medium mt-2 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
+              {/* Apelido em LINHA PRÓPRIA, não "ocasião | apelido" na mesma.
+                  O card tem 128px e a ocasião sozinha já truncava ("Já tenho a
+                  composição da…") — inline, o apelido virava "| Lig…", que é
+                  pior que não mostrar. Na mesma linha só funciona no player,
+                  que tem a largura da tela.
+
+                  Só vem da API pra quem está logado, e só de quem ligou
+                  "Mostrar meu apelido na Rede" (opt-in separado do
+                  consentimento de publicação). Nulo na maioria dos cards, e
+                  isso é o esperado — não é falta de dado. */}
               <p className="text-[11px] text-white/40 truncate">{it.occasion}</p>
+              {it.authorApelido && (
+                <p className="text-[11px] text-white/55 truncate" title={it.authorApelido}>
+                  {it.authorApelido}
+                </p>
+              )}
             </div>
           )
         })}
