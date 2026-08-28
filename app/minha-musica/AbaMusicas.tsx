@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import BuscaMusicas from "./BuscaMusicas"
 import FiltrosMusica from "./FiltrosMusica"
 import ResultadosBusca from "./ResultadosBusca"
@@ -24,12 +25,18 @@ export default function AbaMusicas({
   meuApelido = null,
   onPlaylistsChanged,
   onPrecisaLogin,
+  onModoResultado,
   children,
 }: {
   minhas?: LibraryTrack[]
   meuApelido?: string | null
   onPlaylistsChanged?: () => void
   onPrecisaLogin?: () => void
+  // Avisa a página quando entra/sai do modo resultado. Painéis que vivem
+  // FORA da aba (indicação, datas) precisam saber disso pra sumir durante a
+  // busca — eles não podem ser filhos daqui, senão remontariam a cada troca
+  // de aba e refariam as consultas.
+  onModoResultado?: (v: boolean) => void
   // O que vem DEPOIS da Rede no modo navegação — é a única parte que muda
   // entre as duas telas (biblioteca do cliente x convite pra criar conta).
   children?: React.ReactNode
@@ -37,6 +44,7 @@ export default function AbaMusicas({
   const { busca, setBusca, filtro, total } = useCatalogo()
 
   const modoResultado = !!busca.trim() || !!filtro
+  useEffect(() => { onModoResultado?.(modoResultado) }, [modoResultado, onModoResultado])
 
   // Só as SUAS músicas que casam com a busca/filtro — somar todas daria um
   // número maior que o de linhas na tela (a Rede já vem filtrada do

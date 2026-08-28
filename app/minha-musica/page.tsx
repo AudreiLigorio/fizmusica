@@ -172,6 +172,9 @@ function MinhaMusicaContent() {
   const [termChecked, setTermChecked] = useState<Record<string, boolean>>({})
   const [acceptingTerm, setAcceptingTerm] = useState<string | null>(null)
   const [gaveUpProd, setGaveUpProd] = useState(false)
+  // Modo resultado da aba Músicas, informado por AbaMusicas (busca/filtro
+  // vivem no CatalogoContext, não aqui).
+  const [modoResultado, setModoResultado] = useState(false)
   // Pedido entregue (sem ação pendente) vira linha compacta por padrão —
   // senão a tela cresce sem fim conforme o cliente acumula pedidos.
   // Modal de detalhes — substitui o antigo colapsar/expandir inline: pedido
@@ -240,7 +243,19 @@ function MinhaMusicaContent() {
     setAba(a)
     const qs = new URLSearchParams(Array.from(searchParams.entries()))
     if (a === "pedidos") qs.delete("aba"); else qs.set("aba", a)
-    router.replace(qs.toString() ? `/minha-musica?${qs}` : "/minha-musica", { scroll: false })
+
+    // history.replaceState, NÃO router.replace.
+    //
+    // A aba é estado do cliente — trocar de aba não precisa de nada do
+    // servidor. Mas `router.replace` avisa o roteador do Next, e com
+    // `staleTimes.dynamic: 0` (next.config) ele refaz o RSC a cada
+    // navegação: medido, um clique em "Pedidos" disparava DUAS idas ao
+    // servidor (`/minha-musica?_rsc=…`) e levava ~1s pra tela responder.
+    //
+    // O replaceState do próprio navegador mantém a URL compartilhável e o
+    // botão Voltar iguais, sem round-trip. O `aba` já está no state, então
+    // ninguém depende do searchParams se atualizar.
+    window.history.replaceState(null, "", qs.toString() ? `/minha-musica?${qs}` : "/minha-musica")
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
@@ -978,13 +993,6 @@ function MinhaMusicaContent() {
             )
           })()}
 
-          {/* Datas e indicação também vivem aqui, abertas de propósito
-              (pedido do Audrei — não é só o atalho compacto). Repete o mesmo
-              card da Carreira; não tem estado pra compartilhar entre eles. */}
-          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-            <ReferirAmigos />
-            <DatasEspeciais />
-          </div>
           </>}
 
           {/* ── ABA MÚSICAS ────────────────────────────────────────────── */}
@@ -993,19 +1001,13 @@ function MinhaMusicaContent() {
             minhas={libraryTracks}
             meuApelido={meuApelido}
             onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)}
+            onModoResultado={setModoResultado}
           >
             {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
                 As raias de playlist (uma por playlist, com as músicas já
                 dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
             <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} meuApelido={meuApelido} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
-            {/* Também só no modo navegação: quem está procurando uma música
-                não quer o painel de indicação e as datas de aniversário
-                ocupando a tela logo abaixo dos resultados. */}
-            <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-              <ReferirAmigos />
-              <DatasEspeciais />
-            </div>
           </AbaMusicas>
           </>}
 
@@ -1019,19 +1021,27 @@ function MinhaMusicaContent() {
 
           <CarreiraPainel nome={firstName ?? ""} email={user.email ?? ""} />
 
-          <div className="lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
-            {/* Indicar amigos — link único (modelo B), funil compartilhou/acessou/comprou */}
-            <ReferirAmigos />
-
-            {/* Datas especiais — ligada à conta, não ao pedido */}
-            <DatasEspeciais />
-          </div>
-
           {/* Ajuda — regras desta tela */}
           <AjudaCliente />
 
           {blocoVincular}
           </>}
+
+          {/* Indicação e datas ficam FORA do switch de abas, montados uma vez
+              só. Estavam repetidos nas três abas — como cada aba os coloca
+              numa posição diferente da árvore, o React desmontava e remontava
+              a cada troca, refazendo /api/referral/code e /api/special-dates
+              toda vez (medido). São os mesmos dados da conta em qualquer aba.
+
+              `hidden` em vez de não renderizar: some da tela onde não deve
+              aparecer sem destruir o componente — que é justamente o que
+              causava a busca repetida. */}
+          <div className={`lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start ${
+            aba === "musicas" && modoResultado ? "hidden" : ""
+          }`}>
+            <ReferirAmigos />
+            <DatasEspeciais />
+          </div>
         </section>
 
         <Footer />
