@@ -4,6 +4,7 @@ import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import BarraHome from "@/app/components/BarraHome"
 
 export default function EntrarPage() {
   const [email, setEmail]     = useState("")
@@ -117,20 +118,38 @@ export default function EntrarPage() {
                   Clique no link para entrar.</>
                 )}
               </p>
+              {/* "Digitei o e-mail errado" em vez de "Usar outro e-mail":
+                  quem acabou de criar conta fez a coisa CERTA, e o texto
+                  antigo sugeria que havia algo a corrigir. Agora só chama
+                  quem de fato errou. */}
               <button
                 onClick={() => { setSent(false); setEmail(""); setSemPedido(false); setContaNova(false) }}
                 className="text-sm text-pink-400 hover:text-pink-300"
               >
-                Usar outro e-mail
+                Digitei o e-mail errado
               </button>
             </div>
           ) : (
             <>
+              {/* "Entre ou crie sua conta" em vez de "Acompanhe sua música":
+                  o texto antigo era linguagem de área de cliente, e quem nunca
+                  comprou lia e concluía que a tela não era pra ele — desistia
+                  antes de digitar. O caminho de cadastro existia, mas só
+                  aparecia DEPOIS de tentar e o e-mail não ser encontrado.
+                  Um campo só é o padrão do login sem senha: os dois fluxos são
+                  idênticos (digita, recebe link, entra), então perguntar "você
+                  já tem conta?" obrigaria a pessoa a responder algo que ela
+                  muitas vezes não sabe — e errar levaria a um beco. */}
               <div className="text-center mb-8">
                 <span className="text-pink-400 font-bold text-2xl">Fiz Música</span>
-                <p className="text-gray-300 text-sm mt-1">
-                  {mode === "link" ? "Receba de novo o link da sua música 🎵" : "Acompanhe sua música ❤️"}
+                <p className="text-gray-200 text-sm mt-1.5 font-medium">
+                  {mode === "link" ? "Receba de novo o link da sua música 🎵" : "Entre ou crie sua conta"}
                 </p>
+                {mode === "login" && (
+                  <p className="text-gray-400 text-xs mt-1">
+                    O mesmo e-mail serve pra quem já é cliente e pra quem está começando agora.
+                  </p>
+                )}
               </div>
 
               {mode === "login" && (<>
@@ -241,6 +260,11 @@ export default function EntrarPage() {
       </div>
 
       <Footer />
+      {/* Com a barra: /entrar NÃO é etapa de funil de compra (a regra que
+          mantém Criar/Produtos/Checkout sem ela — ver DOCUMENTACAO §18).
+          Abandonar o login não custa venda nenhuma, e quem chegou aqui e
+          desistiu de entrar consegue ir ouvir a Rede em vez de sair do site. */}
+      <BarraHome />
     </div>
   )
 }
