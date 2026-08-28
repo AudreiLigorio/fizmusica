@@ -5,11 +5,18 @@ import { useEffect, useState } from "react"
 // A explicação do programa pra quem ainda não tem conta.
 //
 // Regra que vale pra tudo aqui: só entra o que o motor REALMENTE credita
-// hoje (lib/fidelidade.ts) — compra digital 1 💿, plano com item físico 2 💿,
-// indicação que vira compra 2 💿. Ouvir música, lembretes de data e "interagir"
+// hoje (lib/fidelidade.ts). Ouvir música, lembretes de data e "interagir"
 // não geram disco nenhum ainda; prometer isso numa tela pública viraria
-// promessa quebrada com cliente de verdade. Quando o motor ganhar novas
-// formas de crédito, elas entram na lista COMO_GANHAR e aparecem sozinhas.
+// promessa quebrada com cliente de verdade.
+//
+// A lista "como ganhar" por plano NÃO é mais texto fixo — cada produto tem
+// seu próprio valor de disco (migração 055, editável em /admin/fidelidade),
+// e não é só "digital vs físico": Retrospectiva, premium e Exclusivo já têm
+// valores diferentes entre si. Escrever isso à mão de novo é o mesmo erro
+// que gerou este pedido do Audrei ("não é só produto físico, tem
+// retrospectiva e etc") — a tela buscava a REGRA antiga (1 fixo) só que em
+// prosa. Agora busca /api/produtos, então quando o Audrei mexer nos valores
+// no admin essa tela muda sozinha, sem precisar de mim de novo.
 
 type Nivel = {
   id: number
@@ -18,6 +25,13 @@ type Nivel = {
   minDiscos: number
   descontoDigital: number
   artePrefixo: string | null
+}
+
+type Produto = {
+  id: string
+  name: string
+  price: number
+  loyalty_discos: number
 }
 
 // Cada degrau ganha mais presença que o anterior: é a evolução acontecendo na
@@ -30,14 +44,14 @@ const DEGRAU = [
   { avatar: "w-32", brilho: "drop-shadow(0 14px 34px rgba(240,25,107,0.55))", anel: "rgba(240,25,107,0.60)" },
 ]
 
-const COMO_GANHAR = [
-  { icone: "🎵", discos: 1, titulo: "Cada música que você cria", texto: "Toda música digital entregue rende um disco." },
-  { icone: "📦", discos: 2, titulo: "Planos com item físico", texto: "Quando o presente também chega na casa da pessoa." },
-  { icone: "💌", discos: 2, titulo: "Indicar um amigo", texto: "Você ganha quando ele cria a música dele pelo seu link." },
-]
+// Indicação não é produto — não vem do /api/produtos, então continua fixa
+// aqui. O valor (lib/fidelidade.ts, concederDiscoDeIndicacao) não é
+// configurável no admin ainda; se um dia virar, esse número sai daqui.
+const DISCOS_POR_INDICACAO = 2
 
 export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) {
   const [trilha, setTrilha] = useState<Nivel[] | null>(null)
+  const [produtos, setProdutos] = useState<Produto[] | null>(null)
   // O cliente escolhe o personagem quando entra — deixar a escolha aqui já
   // mostra que ela existe, e dá o que fazer numa tela que só se lê.
   const [personagem, setPersonagem] = useState<"f" | "m">("f")
@@ -47,6 +61,12 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
       .then((r) => r.json())
       .then((d) => setTrilha(d.trilha ?? []))
       .catch(() => setTrilha([]))
+    fetch("/api/produtos")
+      .then((r) => r.json())
+      .then((d) => setProdutos(
+        [...(d.products ?? [])].sort((a: Produto, b: Produto) => a.price - b.price)
+      ))
+      .catch(() => setProdutos([]))
   }, [])
 
   const topo = trilha?.[trilha.length - 1]
@@ -188,21 +208,38 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
       <div className="max-w-md mx-auto mt-12">
         <h2 className="text-xl font-bold mb-1">Como se ganha um 💿</h2>
         <p className="text-white/40 text-xs mb-5">
-          Cada disco é uma história que virou música. Eles ficam na sua conta e não expiram.
+          Quanto maior o plano, mais discos de uma vez. Eles ficam na sua conta e não expiram.
         </p>
 
-        <div className="space-y-2.5">
-          {COMO_GANHAR.map((c) => (
-            <div key={c.titulo} className="flex items-start gap-3.5 bg-white/[0.03] rounded-2xl px-4 py-3.5">
-              <span className="text-xl leading-none mt-0.5">{c.icone}</span>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm">{c.titulo}</p>
-                <p className="text-xs text-white/45 mt-0.5 leading-relaxed">{c.texto}</p>
+        {produtos === null ? (
+          <div className="flex justify-center py-6">
+            <div className="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {produtos.map((p) => (
+              <div key={p.id} className="flex items-center gap-3.5 bg-white/[0.03] rounded-2xl px-4 py-3.5">
+                <span className="text-xl leading-none">🎵</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm truncate">{p.name}</p>
+                  <p className="text-xs text-white/45 mt-0.5">
+                    R$ {p.price.toFixed(2).replace(".", ",")}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm font-bold text-fuchsia-300">+{p.loyalty_discos}</span>
               </div>
-              <span className="shrink-0 text-sm font-bold text-fuchsia-300 mt-0.5">+{c.discos}</span>
+            ))}
+
+            <div className="flex items-start gap-3.5 bg-white/[0.03] rounded-2xl px-4 py-3.5">
+              <span className="text-xl leading-none mt-0.5">💌</span>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Indicar um amigo</p>
+                <p className="text-xs text-white/45 mt-0.5 leading-relaxed">Você ganha quando ele cria a música dele pelo seu link.</p>
+              </div>
+              <span className="shrink-0 text-sm font-bold text-fuchsia-300 mt-0.5">+{DISCOS_POR_INDICACAO}</span>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ── Fecho ──────────────────────────────────────────────────── */}
