@@ -55,9 +55,17 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
     <div className="pb-4">
       {/* ── Abertura ───────────────────────────────────────────────── */}
       <div className="text-center pt-2 pb-9">
-        <p className="text-[11px] uppercase tracking-[0.18em] font-bold text-fuchsia-300/80 mb-3">
+        {/* Rótulo no mesmo tamanho/traço do "Por ocasião" e "Por estilo" da
+            aba Músicas (text-[10px] uppercase tracking-wide font-bold) —
+            estava em 11px com tracking mais largo, sem motivo pra divergir. */}
+        <p className="text-[10px] uppercase tracking-wide font-bold text-fuchsia-300/80 mb-3">
           Programa de fidelidade
         </p>
+        {/* O h1 abaixo é a ÚNICA exceção à normalização: é o hero da página
+            de venda que o Audrei pediu ("linda e vendável"), não um título de
+            seção como os outros — não existe equivalente pra ele na aba
+            Músicas. Encolher pra text-xl junto com o resto mataria o impacto
+            que essa tela foi construída pra ter. */}
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 leading-[1.05]">
           Sua carreira<br />
           <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">

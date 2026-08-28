@@ -23,14 +23,18 @@ import CarreiraPublica from "./CarreiraPublica"
 // disso vira parede de texto pra quem só queria ouvir uma música.
 
 // Bloco de convite — mesma peça nas três abas pessoais, muda só o texto.
+//
+// Título e corpo seguem a escala da aba Músicas (RedeFizMusica.tsx): h2
+// text-xl font-bold, descrição text-xs — pra não ter uma aba com título
+// maior que a outra dentro da mesma área.
 function Convite({ icone, titulo, frase, acao, onAcao }: {
   icone: string; titulo: string; frase: string; acao: string; onAcao: () => void
 }) {
   return (
     <div className="text-center py-14 px-6">
       <div className="text-5xl mb-4">{icone}</div>
-      <h2 className="text-2xl font-bold mb-2">{titulo}</h2>
-      <p className="text-gray-400 text-sm leading-relaxed max-w-xs mx-auto mb-6">{frase}</p>
+      <h2 className="text-xl font-bold mb-2">{titulo}</h2>
+      <p className="text-white/50 text-xs leading-relaxed max-w-xs mx-auto mb-6">{frase}</p>
       <button
         onClick={onAcao}
         className="px-7 py-3 rounded-full font-semibold text-white transition-transform hover:scale-[1.03] active:scale-95"
@@ -84,10 +88,12 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
               {/* A playlist vazia vem DEPOIS da Rede de propósito: só faz
                   sentido como convite pra quem já ouviu algo e quis guardar. */}
               <div className="mt-12 pt-10 border-t border-white/[0.06]">
-                <h2 className="text-2xl font-bold mb-1">Minha playlist</h2>
+                {/* text-xl, igual ao "Rede Fiz Música" logo acima — antes
+                    estava text-2xl, maior que o título da própria aba. */}
+                <h2 className="text-xl font-bold mb-1">Minha playlist</h2>
                 {/* Sem link de "Entrar" aqui: o botão do topo é o único ponto
                     de entrada, pra não repetir a mesma ação em dois lugares. */}
-                <p className="text-gray-400 text-sm">
+                <p className="text-white/50 text-xs">
                   Crie uma conta pra guardar as que você gostou.
                 </p>
               </div>
