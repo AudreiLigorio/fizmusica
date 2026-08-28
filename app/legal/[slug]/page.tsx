@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import BarraHome from "@/app/components/BarraHome"
 import LegalBackButton from "./LegalBackButton"
 
 const DOCS: Record<string, { file: string; title: string }> = {
@@ -87,6 +88,7 @@ export default async function LegalDoc({ params }: { params: Promise<{ slug: str
         </div>
       </article>
       <Footer />
+      <BarraHome />
     </div>
   )
 }

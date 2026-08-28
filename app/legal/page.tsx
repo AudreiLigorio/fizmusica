@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
+import BarraHome from "@/app/components/BarraHome"
 
 export const metadata = { title: "Documentos legais — Fiz Música" }
 
@@ -34,6 +35,7 @@ export default function LegalIndex() {
         </div>
       </section>
       <Footer />
+      <BarraHome />
     </div>
   )
 }
