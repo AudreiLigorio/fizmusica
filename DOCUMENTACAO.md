@@ -352,6 +352,13 @@ Mesmo e-mail → automático. E-mail diferente e pedido recente (<24h, não vinc
 
 ## 18. Design system e padrões de UX (referência rápida)
 
+- **Premissa: toda página nova leva `<Header />` e `<Footer />`** (pedido do Audrei, 2026-08-28, depois de uma auditoria achar `/contestar/[orderId]` com Header mas sem Footer — corrigido no commit `70cdff7`). É o padrão de partida; só foge dele quem tiver um motivo de UX deliberado, e esse motivo entra na lista abaixo, não fica implícito:
+  - `/m/[slug]` — player público do presente, imersivo de propósito (é a "surpresa").
+  - `/auth/callback` — spinner transitório, redireciona sozinho em menos de 1s.
+  - `/criar`, `/produtos`, `/checkout` no **mobile** — tela cheia sem distração (ver item de fluxo logo abaixo); no desktop os três têm Header/Footer normais.
+  - `/feedback/[token]` — formulário curto de uma tela só, sem navegação pra não distrair de responder.
+  - `/teste-qr` — ferramenta interna, não é página de produto.
+  Nova exceção precisa do mesmo padrão: nome da página + motivo, registrado aqui.
 - **Paleta:** fundo `#07060d`, gradiente de marca `linear-gradient(135deg, #f0196b, #d946ef)` (rosa→roxo), orbs ambiente com blur.
 - **Cards com hover flutuante:** `translateY(-10px) scale(1.02)` + sombra rosa intensa + borda `rgba(240,25,107,0.35)`.
 - **Mobile "tela cheia" em fluxos** (wizard, produtos, checkout): `fixed inset-0` sem Header/Footer, progresso no topo, botão de ação fixo na base (glass blur). Desktop: `lg:static` com Header/Footer normais.
