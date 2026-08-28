@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import type { CatalogItem } from "./CatalogoContext"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import AddToPlaylistModal from "./AddToPlaylistModal"
@@ -9,51 +10,16 @@ import { useToast } from "./ToastContext"
 import InfoTooltip from "./InfoTooltip"
 import { combina } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
-
-type CatalogItem = {
-  orderId: string
-  slug: string
-  title: string
-  occasion: string
-  musicalStyle: string | null
-  // Nulo nas entregas antigas (manuais), que não têm capa do Suno — a tela
-  // cai no gradiente da marca nesse caso.
-  imageUrl: string | null
-  audioUrl: string
-  lyrics: string | null
-  lyricsLrc: string | null
-  authorApelido: string | null
-  favorited: boolean
-}
+import { useCatalogo, agruparPorOcasiao, agruparPorEstilo } from "./CatalogoContext"
 
 // Rede Fiz Música: músicas de outros clientes que autorizaram divulgação.
 // Nunca mostra o nome do homenageado (dado de terceiro sem consentimento
 // próprio) nem fotos do cliente — só título real da música + ocasião +
 // capa gerada pelo Suno, tudo vindo direto do banco (nada fixo).
-// Só um filtro ativo por vez (ocasião OU estilo, nunca os dois juntos —
-// combinar os dois deixou a interação confusa no rascunho).
-type Filtro = { tipo: "ocasiao" | "estilo"; valor: string } | null
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
 
-// Pill de filtro — extraída pra não repetir o gradiente/sombra do estado
-// ativo duas vezes (ocasião e estilo usam a mesma peça visual).
-function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all hover:scale-[1.04] active:scale-95 ${
-        active ? "border-transparent text-white shadow-[0_4px_16px_-2px_rgba(217,70,239,0.55)]" : "border-white/10 bg-white/[0.04] text-white/55 hover:text-white/85 hover:border-white/20"
-      }`}
-      style={active ? { background: "linear-gradient(135deg, #f0196b, #d946ef)" } : undefined}
-    >
-      {children}
-    </button>
-  )
-}
-
 export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContagem, onPrecisaLogin }: { busca?: string; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void; onPrecisaLogin?: () => void }) {
-  const [items, setItems] = useState<CatalogItem[] | null>(null)
-  const [filtro, setFiltro] = useState<Filtro>(null)
+  const { items, alternarFavorito } = useCatalogo()
   const { track: nowPlaying, playing, playTrack } = usePlayer()
   const { showToast } = useToast()
 
@@ -73,13 +39,6 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
     return { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" }
   }
 
-  async function carregar() {
-    const headers = await authHeaders()
-    const res = await fetch("/api/catalog", { headers })
-    const d = await res.json().catch(() => ({}))
-    setItems(d.items ?? [])
-  }
-
   async function carregarPlaylists() {
     const headers = await authHeaders()
     const res = await fetch("/api/playlists", { headers })
@@ -89,7 +48,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
     return lista
   }
 
-  useEffect(() => { carregar(); carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function abrirAdicionar(orderId: string) {
     // Sem conta, o botão não some nem fica cinza: ele CONVIDA. É o gatilho de
@@ -138,12 +97,9 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
 
   async function favoritar(orderId: string) {
     if (onPrecisaLogin) { onPrecisaLogin(); return }
-    // Otimista: alterna na hora e já reordena (favoritado sobe pro topo).
-    setItems((prev) => {
-      if (!prev) return prev
-      const next = prev.map((it) => (it.orderId === orderId ? { ...it, favorited: !it.favorited } : it))
-      return [...next].sort((a, b) => Number(b.favorited) - Number(a.favorited))
-    })
+    // Otimista: o contexto alterna e reordena, pra a raia daqui e a lista de
+    // resultados nunca discordarem sobre o que está favoritado.
+    alternarFavorito(orderId)
     const headers = await authHeaders()
     await fetch("/api/catalog/favorite", { method: "POST", headers, body: JSON.stringify({ orderId }) }).catch(() => {})
   }
@@ -159,34 +115,12 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
   // de busca já explica o vazio.
   if (busca.trim() && itensBusca.length === 0) return null
 
-  // Agrupado por ocasião — o cliente navega por tema em vez de rolar tudo junto.
-  const porOcasiao = new Map<string, CatalogItem[]>()
-  for (const it of itensBusca) {
-    const lista = porOcasiao.get(it.occasion) ?? []
-    lista.push(it)
-    porOcasiao.set(it.occasion, lista)
-  }
-  const ocasioes = [...porOcasiao.entries()].sort((a, b) => b[1].length - a[1].length)
-
-  // Um pedido pode ter mais de um estilo marcado ("🎸 Rock, 🎵 Forró") — nesse
-  // caso ele entra em cada grupo separadamente.
-  const porEstilo = new Map<string, CatalogItem[]>()
-  for (const it of itensBusca) {
-    for (const estilo of (it.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean)) {
-      const lista = porEstilo.get(estilo) ?? []
-      lista.push(it)
-      porEstilo.set(estilo, lista)
-    }
-  }
-  const estilos = [...porEstilo.entries()].sort((a, b) => b[1].length - a[1].length)
-
+  // Este componente só existe no modo NAVEGAÇÃO agora: quando há busca ou
+  // filtro ativo, a tela troca pela lista de resultados (ResultadosBusca), e
+  // as pílulas moram junto da busca (FiltrosMusica). Por isso aqui não há
+  // mais agrupamento nem estado de filtro — a raia mostra o catálogo inteiro.
   const favoritados = itensBusca.filter((it) => it.favorited)
-
-  const visiveis = !filtro
-    ? itensBusca
-    : filtro.tipo === "ocasiao"
-      ? porOcasiao.get(filtro.valor) ?? []
-      : porEstilo.get(filtro.valor) ?? []
+  const visiveis = itensBusca
 
   return (
     <div className="mb-9">
@@ -235,28 +169,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
         </div>
       )}
 
-      <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">Por ocasião</p>
-      <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-3 -mx-5 sm:mx-0 px-5 sm:px-0">
-        <Pill active={filtro === null} onClick={() => setFiltro(null)}>Todas · {itensBusca.length}</Pill>
-        {ocasioes.map(([ocasiao, lista]) => (
-          <Pill key={ocasiao} active={filtro?.tipo === "ocasiao" && filtro.valor === ocasiao} onClick={() => setFiltro({ tipo: "ocasiao", valor: ocasiao })}>
-            {ocasiao} · {lista.length}
-          </Pill>
-        ))}
-      </div>
-
-      {estilos.length > 0 && (
-        <>
-          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">Por estilo</p>
-          <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
-            {estilos.map(([estilo, lista]) => (
-              <Pill key={estilo} active={filtro?.tipo === "estilo" && filtro.valor === estilo} onClick={() => setFiltro({ tipo: "estilo", valor: estilo })}>
-                {estilo} · {lista.length}
-              </Pill>
-            ))}
-          </div>
-        </>
-      )}
+      {/* Pílulas movidas pra FiltrosMusica, logo abaixo da busca. */}
 
       <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
         {visiveis.map((it) => {

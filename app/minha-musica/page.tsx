@@ -18,6 +18,8 @@ import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
 import ResultadosBusca from "./ResultadosBusca"
+import FiltrosMusica from "./FiltrosMusica"
+import { CatalogoProvider, type Filtro } from "./CatalogoContext"
 import RedeFizMusica from "./RedeFizMusica"
 import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
@@ -227,6 +229,9 @@ function MinhaMusicaContent() {
   // unificada deduplica (música sua publicada na Rede aparece uma vez só),
   // então somar os dois daria um número maior que o de linhas na tela.
   const [nBusca, setNBusca] = useState(0)
+  // Filtro de ocasião/estilo: vive aqui porque as pílulas ficam no topo (junto
+  // da busca) e o que elas filtram está mais abaixo.
+  const [filtro, setFiltro] = useState<Filtro>(null)
 
   // Aba no endereço (?aba=musicas): sem isso, atualizar a página ou usar o
   // botão Voltar jogava o cliente de volta em Pedidos sem explicação.
@@ -723,6 +728,7 @@ function MinhaMusicaContent() {
   return (
     <PlayerProvider>
     <ToastProvider>
+    <CatalogoProvider>
     <div className="relative min-h-screen text-white font-sans overflow-hidden" style={{ background: "#07060d" }}>
       {/* Fundo gradiente da marca */}
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -996,23 +1002,30 @@ function MinhaMusicaContent() {
 
           {/* ── ABA MÚSICAS ────────────────────────────────────────────── */}
           {aba === "musicas" && <>
-          <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() ? nBusca : null} />
+          <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() || filtro ? nBusca : null} />
 
-          {/* Dois modos, como no Spotify: buscando, as seções somem e vira uma
-              lista única de resultados; sem busca, a tela é de navegação.
-              Antes a busca filtrava as raias no lugar, e o resultado ficava
-              espalhado entre duas seções, no meio dos títulos e bordas delas. */}
-          {busca.trim() ? (
-            <ResultadosBusca busca={busca} minhas={libraryTracks} meuApelido={meuApelido} onContagem={setNBusca} />
+          {/* Pílulas logo abaixo da busca: filtrar e buscar são a mesma ação
+              (reduzir o que está na tela), então moram juntos. */}
+          <FiltrosMusica busca={busca} filtro={filtro} onFiltro={setFiltro} minhas={libraryTracks} />
+
+          {/* Dois modos, como no Spotify: buscando OU filtrando, as seções
+              somem e vira uma lista única de resultados; sem nada disso, a
+              tela é de navegação. Antes a busca filtrava as raias no lugar, e
+              o resultado ficava espalhado entre duas seções, no meio dos
+              títulos e bordas delas. */}
+          {busca.trim() || filtro ? (
+            <ResultadosBusca busca={busca} filtro={filtro} minhas={libraryTracks} meuApelido={meuApelido} onContagem={setNBusca} />
           ) : (
             <>
+              {/* Rede primeiro (pedido do Audrei): descoberta puxa mais que a
+                  própria biblioteca, que já é o conteúdo principal da aba
+                  Pedidos. Mesma ordem da visão do visitante. */}
+              <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+
               {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
                   As raias de playlist (uma por playlist, com as músicas já
                   dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
               <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} busca={busca} meuApelido={meuApelido} onContagem={setNMinhas} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
-
-              {/* Ouvir na Rede Fiz Música — catálogo de outros clientes autorizados */}
-              <RedeFizMusica busca={busca} onContagem={setNRede} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
 
               {/* Também só no modo navegação: quem está procurando uma música
                   não quer o painel de indicação e as datas de aniversário
@@ -1056,6 +1069,7 @@ function MinhaMusicaContent() {
     <MiniPlayer />
     <FecharPlayerForaDeMusicas aba={aba} />
     <TabBarMobile aba={aba} onAba={irPara} onCriar={() => router.push("/criar")} />
+    </CatalogoProvider>
     </ToastProvider>
     </PlayerProvider>
   )

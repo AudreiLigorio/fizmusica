@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import { combina, normalizar } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
 import type { LibraryTrack } from "./MinhasMusicas"
+import type { Unificada as Linha } from "./CatalogoContext"
+import { useCatalogo, mesclar, aplicarFiltroUnificada, type Filtro } from "./CatalogoContext"
 
 // Modo resultado da aba Músicas.
 //
@@ -20,31 +21,6 @@ import type { LibraryTrack } from "./MinhasMusicas"
 // trecho digitado destacado. Sem isso, buscar "rock" devolvia uma capa sem
 // nenhuma pista do porquê: o estilo é campo de busca desde sempre, mas nunca
 // era mostrado em lugar nenhum.
-
-type ItemRede = {
-  orderId: string
-  title: string
-  occasion: string
-  musicalStyle: string | null
-  imageUrl: string | null
-  audioUrl: string
-  lyrics: string | null
-  lyricsLrc: string | null
-  authorApelido: string | null
-}
-
-type Linha = {
-  id: string
-  title: string
-  occasion: string
-  musicalStyle: string | null
-  imageUrl: string | null
-  audioUrl: string
-  lyrics: string | null
-  lyricsLrc: string | null
-  apelido: string | null
-  minha: boolean
-}
 
 // Acende no texto o trecho que o cliente digitou. Compara sem acento (a busca
 // também ignora), mas recorta em cima do texto ORIGINAL — senão a tela
@@ -82,51 +58,25 @@ function Realce({ texto, termo }: { texto: string; termo: string }) {
 
 export default function ResultadosBusca({
   busca,
+  filtro = null,
   minhas = [],
   meuApelido = null,
   onContagem,
 }: {
   busca: string
+  filtro?: Filtro
   minhas?: LibraryTrack[]
   meuApelido?: string | null
   onContagem?: (n: number) => void
 }) {
-  const [rede, setRede] = useState<ItemRede[] | null>(null)
+  const { items: rede } = useCatalogo()
   const { track: nowPlaying, playing, playTrack } = usePlayer()
 
-  useEffect(() => {
-    ;(async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch("/api/catalog", {
-        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
-      })
-      const d = await res.json().catch(() => ({}))
-      setRede(d.items ?? [])
-    })()
-  }, [])
-
-  // As músicas do cliente entram como "minha" e ganham prioridade na ordem:
-  // quem busca algo que tem em casa espera achar o seu primeiro.
-  const linhasMinhas: Linha[] = minhas
-    .filter((t) => t.audioUrl && combina(busca, [t.title, t.occasion, t.musicalStyle]))
-    .map((t) => ({
-      id: t.id, title: t.title, occasion: t.occasion, musicalStyle: t.musicalStyle,
-      imageUrl: t.imageUrl, audioUrl: t.audioUrl as string, lyrics: t.lyrics,
-      lyricsLrc: t.lyricsLrc, apelido: meuApelido, minha: true,
-    }))
-
-  // Mesma música pode estar nas duas listas (a sua, publicada na Rede) —
-  // aparecer duas vezes no resultado pareceria bug. Vale a versão "minha".
-  const idsMinhas = new Set(linhasMinhas.map((l) => l.id))
-  const linhasRede: Linha[] = (rede ?? [])
-    .filter((i) => !idsMinhas.has(i.orderId) && combina(busca, [i.title, i.occasion, i.musicalStyle]))
-    .map((i) => ({
-      id: i.orderId, title: i.title, occasion: i.occasion, musicalStyle: i.musicalStyle,
-      imageUrl: i.imageUrl, audioUrl: i.audioUrl, lyrics: i.lyrics,
-      lyricsLrc: i.lyricsLrc, apelido: i.authorApelido, minha: false,
-    }))
-
-  const linhas = [...linhasMinhas, ...linhasRede]
+  // Uma lista só, montada pela MESMA função que alimenta a contagem das
+  // pílulas — se as duas divergirem, a pílula promete um número e a tela
+  // entrega outro.
+  const linhas: Linha[] = aplicarFiltroUnificada(mesclar(minhas, rede, meuApelido), filtro)
+    .filter((l) => combina(busca, [l.title, l.occasion, l.musicalStyle]))
 
   useEffect(() => { onContagem?.(linhas.length) }, [linhas.length, onContagem])
 
@@ -142,7 +92,11 @@ export default function ResultadosBusca({
     return (
       <div className="text-center py-14">
         <div className="text-4xl mb-3">🔍</div>
-        <p className="text-white/70 text-sm">Nada encontrado para <span className="text-white font-medium">“{busca}”</span>.</p>
+        <p className="text-white/70 text-sm">
+          {busca.trim()
+            ? <>Nada encontrado para <span className="text-white font-medium">“{busca}”</span>.</>
+            : "Nada nesse filtro."}
+        </p>
         <p className="text-white/35 text-xs mt-1.5">Tente por ocasião (natal, aniversário) ou estilo (rock, pop).</p>
       </div>
     )

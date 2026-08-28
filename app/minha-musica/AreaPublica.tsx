@@ -11,6 +11,8 @@ import { ToastProvider } from "./ToastContext"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
 import CarreiraPublica from "./CarreiraPublica"
 import ResultadosBusca from "./ResultadosBusca"
+import FiltrosMusica from "./FiltrosMusica"
+import { CatalogoProvider, type Filtro } from "./CatalogoContext"
 
 // A área do cliente vista por quem ainda não tem conta.
 //
@@ -52,6 +54,7 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
   const [aba, setAba] = useState<Aba>(abaInicial === "home" ? "musicas" : abaInicial)
   const [busca, setBusca] = useState("")
   const [nRede, setNRede] = useState(0)
+  const [filtro, setFiltro] = useState<Filtro>(null)
 
   const entrar = () => router.push("/entrar")
 
@@ -63,6 +66,7 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
   return (
     <PlayerProvider>
     <ToastProvider>
+    <CatalogoProvider>
     <div className="relative min-h-screen text-white font-sans overflow-hidden" style={{ background: "#07060d" }}>
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0" style={{ background: "radial-gradient(55% 45% at 12% 6%, rgba(240,25,107,0.26) 0%, transparent 60%)" }} />
@@ -83,12 +87,14 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
           {/* ── MÚSICAS: o coração da visita. Toca sem pedir nada. ───────── */}
           {aba === "musicas" && (
             <>
-              <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() ? nRede : null} />
+              <BuscaMusicas valor={busca} onValor={setBusca} resultados={busca.trim() || filtro ? nRede : null} />
+              <FiltrosMusica busca={busca} filtro={filtro} onFiltro={setFiltro} />
 
-              {/* Mesmos dois modos da área logada (ver page.tsx): buscando,
-                  vira lista de resultados com o contexto; sem busca, navegação. */}
-              {busca.trim() ? (
-                <ResultadosBusca busca={busca} onContagem={setNRede} />
+              {/* Mesmos dois modos da área logada (ver page.tsx): buscando ou
+                  filtrando, vira lista de resultados com o contexto; sem nada
+                  disso, navegação. */}
+              {busca.trim() || filtro ? (
+                <ResultadosBusca busca={busca} filtro={filtro} onContagem={setNRede} />
               ) : (
                 <>
                   <RedeFizMusica busca={busca} onContagem={setNRede} onPrecisaLogin={entrar} />
@@ -129,6 +135,7 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
     <MiniPlayer />
     <FecharPlayerForaDeMusicas aba={aba} />
     <TabBarMobile aba={aba} onAba={irPara} onCriar={() => router.push("/criar")} />
+    </CatalogoProvider>
     </ToastProvider>
     </PlayerProvider>
   )
