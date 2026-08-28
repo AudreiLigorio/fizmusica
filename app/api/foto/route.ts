@@ -5,11 +5,6 @@ export const dynamic = "force-dynamic"
 
 const BUCKET = "order-photos"
 
-// Mesma validade do áudio: sobrevive à visita, morre depois. Foto é
-// carregada de uma vez (não tem "arrastar a barra"), então nem precisaria de
-// tanto — mas a página de fotos fica aberta enquanto o cliente organiza.
-const VALIDADE_SEGUNDOS = 30 * 60
-
 // Porta única das FOTOS DO CLIENTE.
 //
 // Mesmo problema que o áudio tinha (ver /api/audio): o bucket `order-photos`
@@ -63,14 +58,26 @@ export async function GET(req: NextRequest) {
   const caminho = caminhoNoBucket(foto.url as string)
   if (!caminho) return negar()
 
-  const { data: assinada, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(caminho, VALIDADE_SEGUNDOS)
-  if (error || !assinada?.signedUrl) return negar()
+  // ENTREGA OS BYTES, não redireciona — diferente do áudio (/api/audio).
+  //
+  // As fotos passam pelo otimizador do next/image, que busca a URL e NÃO
+  // segue redirecionamento pra outro host: com 302 o player público
+  // devolvia HTTP 400 e as fotos apareciam quebradas (pego testando).
+  //
+  // Aqui repassar é barato, ao contrário do áudio: foto tem ~100 KB contra
+  // 4 MB do MP3, e o next/image guarda a versão otimizada — então o arquivo
+  // não é buscado de novo a cada visita. Ganho extra: a URL assinada nunca
+  // chega ao navegador.
+  const { data: blob, error } = await supabase.storage.from(BUCKET).download(caminho)
+  if (error || !blob) return negar()
 
-  return NextResponse.redirect(assinada.signedUrl, {
-    status: 302,
-    headers: { "Cache-Control": "private, no-store" },
+  return new NextResponse(await blob.arrayBuffer(), {
+    headers: {
+      "Content-Type": blob.type || "image/jpeg",
+      // `private` mantém a foto fora de cache compartilhado; o navegador de
+      // quem tem a credencial pode guardar por 1h.
+      "Cache-Control": "private, max-age=3600",
+    },
   })
 }
 
