@@ -64,9 +64,10 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
             de cantor
           </span>
         </h1>
-        <p className="text-white/55 text-[15px] leading-relaxed max-w-xs mx-auto">
-          Começa no chuveiro, de pantufa. Termina no palco. A cada música que você
-          cria, seu personagem sobe um degrau — e o desconto sobe junto.
+        <p className="text-white/55 text-[15px] leading-relaxed max-w-[19rem] mx-auto">
+          Ninguém começa famoso. Você começa de pantufa, cantando no chuveiro.
+          A cada música que você cria pra alguém, seu personagem ganha um palco
+          maior — e você paga menos na próxima.
         </p>
       </div>
 
@@ -111,6 +112,16 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
       )}
 
       {/* ── A trilha ───────────────────────────────────────────────── */}
+      <div className="max-w-md mx-auto mb-5 text-center">
+        <h2 className="text-xl font-bold">Cinco degraus até o topo</h2>
+        {/* Nada de "nunca desce": estorno de pedido reverte discos (REFUND em
+            lib/fidelidade.ts) e o nível pode cair junto. O que é verdade — e
+            vende igual — é que o desconto entra sozinho. */}
+        <p className="text-white/40 text-xs mt-1">
+          O desconto entra sozinho no seu próximo pedido. Sem cupom, sem código.
+        </p>
+      </div>
+
       {trilha === null ? (
         <div className="flex justify-center py-10">
           <div className="w-7 h-7 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
@@ -168,7 +179,9 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
       {/* ── Como ganhar discos ─────────────────────────────────────── */}
       <div className="max-w-md mx-auto mt-12">
         <h2 className="text-xl font-bold mb-1">Como se ganha um 💿</h2>
-        <p className="text-white/40 text-xs mb-5">Os discos ficam na sua conta e não expiram.</p>
+        <p className="text-white/40 text-xs mb-5">
+          Cada disco é uma história que virou música. Eles ficam na sua conta e não expiram.
+        </p>
 
         <div className="space-y-2.5">
           {COMO_GANHAR.map((c) => (
@@ -193,7 +206,10 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
         >
           Começar minha carreira
         </button>
-        <p className="text-white/30 text-xs mt-3">Grátis. Sua primeira música já vale um disco.</p>
+        <p className="text-white/40 text-xs mt-3.5 max-w-[17rem] mx-auto leading-relaxed">
+          Criar a conta é grátis. A primeira música que você fizer já te tira
+          do chuveiro.
+        </p>
       </div>
     </div>
   )
