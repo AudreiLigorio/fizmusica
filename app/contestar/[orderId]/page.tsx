@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import Header from "@/app/components/Header"
+import Footer from "@/app/components/Footer"
 import MicButton from "@/app/components/MicButton"
 
 export default function ContestarPage() {
@@ -174,6 +175,8 @@ export default function ContestarPage() {
           </>
         )}
       </div>
+
+      <Footer />
     </div>
   )
 }
