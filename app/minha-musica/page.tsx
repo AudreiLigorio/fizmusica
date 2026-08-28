@@ -338,10 +338,8 @@ function MinhaMusicaContent() {
     if (res.ok) await loadOrders()
   }
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push("/")
-  }
+  // handleLogout removido junto com o bloco de identidade — quem desloga
+  // agora é o Header, que tem a mesma lógica (signOut + volta pra "/").
 
   // Auto-refresh enquanto algum pedido está em produção: re-checa a cada 8s e a
   // tela troca sozinha (o stepper avança / abre "escolher versão") quando fica
@@ -761,17 +759,15 @@ function MinhaMusicaContent() {
             rolar na horizontal, então largura extra vira mais capa visível. */}
         {/* pb extra no celular: a barra de abas fixa cobriria o fim da lista. */}
         <section className="max-w-3xl lg:max-w-5xl mx-auto px-5 pt-24 pb-40 sm:pb-16">
-          {/* Cabeçalho */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold">
-                Olá, <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">{firstName}</span>
-              </h1>
-              <p className="text-gray-400 mt-1 text-sm">{user.email}</p>
-            </div>
-            <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-red-400 transition-colors">Sair</button>
-          </div>
-
+          {/* Sem bloco de identidade aqui.
+              Ele mostrava "Olá, {nome} / e-mail / Sair" e ficava FORA do
+              switch de abas, então repetia nas três (Pedidos, Músicas,
+              Carreira) comendo ~120px antes do conteúdo em toda troca de aba.
+              O "Sair" ainda duplicava com o do Header desde `2c5fa08`.
+              Identidade e sessão vivem no topo agora (avatar + Sair no
+              Header); o e-mail continua visível na aba Carreira, no painel
+              de perfil, que é onde a pergunta "estou na conta certa?"
+              realmente aparece. */}
           <TabsDesktop aba={aba} onAba={irPara} onCriar={() => router.push("/criar")} />
 
           {claimed === "ok" && (
