@@ -60,8 +60,16 @@ export async function GET(req: NextRequest) {
     faltam: carreira.faltam,
     progresso: carreira.progresso,
     personagem: (perfil?.personagem as string | null) ?? null,
-    // A trilha 🚿→❤️→🎤→🎶→⭐ da tela, pra mostrar onde ele está na jornada.
-    trilha: niveis.map((n) => ({ id: n.id, icone: n.icone, nome: n.nome, minDiscos: n.minDiscos })),
+    // A trilha da tela, pra mostrar onde ele está na jornada.
+    //
+    // `artePrefixo` e `descontoDigital` entram aqui porque a trilha passou a
+    // desenhar os PERSONAGENS (antes eram emojis) e a dizer quanto o desconto
+    // sobe no próximo nível — emoji cinza não faz ninguém querer chegar lá, e
+    // "faltam 4 discos" sem o prêmio não responde "por que vale a pena".
+    trilha: niveis.map((n) => ({
+      id: n.id, icone: n.icone, nome: n.nome, minDiscos: n.minDiscos,
+      descontoDigital: n.descontoDigital, artePrefixo: n.artePrefixo,
+    })),
     extrato: (extrato ?? []).map((t) => ({
       tipo: t.tipo, discos: t.discos, descricao: t.descricao, data: t.created_at,
     })),
