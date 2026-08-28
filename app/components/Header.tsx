@@ -18,10 +18,15 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
   // "Entrar" por um instante pra quem já está logado (ou vice-versa) seria
   // oferecer uma ação que não faz sentido pra ele.
   const [logado, setLogado] = useState<boolean | null>(null)
-  // Foto de perfil do cliente (bucket privado → URL assinada que expira, por
-  // isso é buscada e não guardada). Nulo = ainda não subiu foto; aí o avatar
-  // cai na inicial do nome sobre o gradiente da marca.
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  // Foto de perfil do cliente.
+  //
+  // Três estados, e a diferença entre eles é o que corrige o bug de trocar
+  // "A" por "L" a cada navegação: `undefined` = AINDA NÃO SEI (não desenha
+  // letra nenhuma), `null` = sei que não tem foto (aí sim mostra a inicial),
+  // string = a foto. Antes só existiam dois estados, então enquanto o fetch
+  // corria o avatar mostrava a inicial e depois pulava pra foto — o Header
+  // remonta a cada troca de página, então isso piscava sempre.
+  const [avatarUrl, setAvatarUrl] = useState<string | null | undefined>(undefined)
   const [inicial, setInicial] = useState("")
 
   useEffect(() => {
@@ -33,16 +38,33 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
   // Só busca o perfil depois de confirmar a sessão — evita um 401 garantido
   // em toda visita de quem não tem conta.
   useEffect(() => {
-    if (logado !== true) { setAvatarUrl(null); setInicial(""); return }
+    if (logado !== true) { setAvatarUrl(undefined); setInicial(""); return }
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user
-      const nome = (user?.user_metadata?.full_name as string)?.trim() || user?.email || ""
+      if (!user) return
+      const nome = (user.user_metadata?.full_name as string)?.trim() || user.email || ""
       setInicial(nome.charAt(0).toUpperCase())
+
+      // Cache por sessão do navegador: sem ele, cada navegação refazia o
+      // fetch e o avatar ficava vazio até responder. A URL é assinada e
+      // expira em 1h (ver /api/perfil), então guardo com hora e só reuso
+      // por 45min — e o onError do <img> cobre o resto.
+      const chave = `fm_avatar_${user.id}`
+      try {
+        const bruto = sessionStorage.getItem(chave)
+        if (bruto) {
+          const { url, ts } = JSON.parse(bruto) as { url: string | null; ts: number }
+          if (Date.now() - ts < 45 * 60 * 1000) setAvatarUrl(url)
+        }
+      } catch { /* sessionStorage indisponível: segue pro fetch */ }
+
       const d = await fetch("/api/perfil", {
         headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
       }).then((r) => r.json()).catch(() => ({}))
-      setAvatarUrl(d.avatarUrl ?? null)
+      const url = (d.avatarUrl as string | null) ?? null
+      setAvatarUrl(url)
+      try { sessionStorage.setItem(chave, JSON.stringify({ url, ts: Date.now() })) } catch { /* idem */ }
     })()
   }, [logado])
 
@@ -144,8 +166,16 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
               style={avatarUrl ? undefined : { background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
             >
               {avatarUrl
-                ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-                : inicial}
+                ? <img
+                    src={avatarUrl} alt="" className="w-full h-full object-cover"
+                    // URL assinada vencida (cache de 45min contra expiração de
+                    // 1h, mais a aba que ficou aberta): cai na inicial em vez
+                    // de deixar um quadrado quebrado no topo.
+                    onError={() => setAvatarUrl(null)}
+                  />
+                : /* undefined = ainda carregando: círculo vazio, sem letra que
+                     depois vira foto. null = confirmado sem foto: inicial. */
+                  avatarUrl === null ? inicial : null}
             </button>
           )}
 
