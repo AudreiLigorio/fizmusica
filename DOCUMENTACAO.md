@@ -350,6 +350,26 @@ Mesmo e-mail → automático. E-mail diferente e pedido recente (<24h, não vinc
 
 ---
 
+## 17.1 Performance, custo e crescimento (análise de 2026-08-28)
+
+Levantamento feito a pedido do Audrei, com números medidos em produção — não estimados.
+
+**Como o conteúdo é servido hoje.** Cloudflare está na frente do **Vercel** (HTML/JS). O **áudio não passa por ele**: os MP3 saem direto do Supabase Storage, que tem CDN próprio (também Cloudflare). Funciona, mas essa camada não é controlada por nós.
+
+**Resolvido nesta rodada:**
+- **Capas eram link externo que expira** (`fd6776a`) — o ingest baixava o áudio pro nosso bucket mas guardava a capa apontando pra `musicfile.kie.ai` / `tempfile.aiquickdraw.com`. Não era lentidão, era **perda de dado**: 2 capas já tinham morrido (viraram quadrado preto). 104 resgatadas via `scripts/backfill-capas.mjs`; as 2 perdidas viraram `null` (caem no gradiente da marca).
+- **Catálogo sem cache** (`722f80c`) — a rota era `force-dynamic` e cada visitante disparava 4 consultas + montagem completa. Agora a parte compartilhada é cacheada 60s em memória e só a personalização (favorito, slug, apelido próprio) roda por requisição.
+
+**Pendências, em ordem de impacto:**
+
+1. **Letra viaja na listagem sem necessidade.** Medido: `lyrics` + `lyricsLrc` são **76% do payload** (114 KB de 150 KB para 68 músicas). A lista não usa letra — só o player, e só da faixa que está tocando. Tirando isso, a projeção para 5.000 músicas cai de **~9,7 MB para ~2,5 MB** por requisição. Exige endpoint de letra sob demanda e ajuste no player.
+2. **Sem paginação.** O `select` do catálogo não tem `limit` — retorna tudo. Cuidado ao implementar: as pílulas de ocasião/estilo contam sobre a lista completa no cliente, então paginar exige devolver as contagens agregadas pelo servidor, senão a pílula promete um número e a lista entrega outro (erro que já aconteceu uma vez, ver `78faf4d`).
+3. **`cache-control: no-cache` nos arquivos do Storage.** O `cacheControl` de 1 ano passou a ser gravado no upload e o metadata guarda certo (`max-age=31536000`, conferido), mas o Supabase **serve `no-cache` mesmo assim** — aparenta ser limite de plano/Smart CDN, não do código. O CDN ainda cacheia (`cf-cache-status: REVALIDATED`), então a banda está protegida; o custo é uma revalidação por play. Para resolver de verdade: plano do Supabase com Smart CDN, ou pôr o nosso Cloudflare na frente do Storage.
+
+**Referência de escala (como o Spotify resolve):** catálogo cacheado em vez de recalculado (item 2 aqui, já feito), nada carregado inteiro (itens 1 e 2 pendentes) e áudio fragmentado servido de CDN próximo ao ouvinte — este último é exagero para o volume atual.
+
+---
+
 ## 18. Design system e padrões de UX (referência rápida)
 
 - **Premissa: toda página nova leva `<Header />` e `<Footer />`** (pedido do Audrei, 2026-08-28, depois de uma auditoria achar `/contestar/[orderId]` com Header mas sem Footer — corrigido no commit `70cdff7`). É o padrão de partida; só foge dele quem tiver um motivo de UX deliberado, e esse motivo entra na lista abaixo, não fica implícito:
