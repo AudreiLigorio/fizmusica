@@ -113,12 +113,16 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
           Spotify. Capas maiores (w-32) e coladas na borda, "mais expandido". */}
       <div className="flex items-center gap-2.5 mb-1">
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Minha playlist</h2>
-        <InfoTooltip text="Organize suas músicas preferidas na sua playlist do seu jeito." />
+        <InfoTooltip text="Suas músicas entram aqui automaticamente quando ficam prontas. Você também pode juntar músicas da Rede Fiz Música tocando no + de cada capa." />
       </div>
+      {/* Pra quem ainda não tem música, o texto põe a MÚSICA DELE em primeiro
+          lugar e a Rede como complemento. A versão anterior falava só da Rede
+          e, sem querer, ensinava que a playlist é pra colecionar música dos
+          outros — o oposto do que o produto quer. */}
       <p className="text-xs text-white/50 mb-4">
         {semMusicaPropria
-          ? "Monte playlists com as músicas da Rede — toque no + em qualquer capa acima."
-          : "Organize as músicas do seu jeito. Toque no + e adicione sua música na playlist abaixo."}
+          ? "Aqui ficam as músicas que você criar — e você ainda pode juntar as da Rede tocando no +. Faça a sua música, monte a sua playlist."
+          : "Suas músicas ficam aqui. Toque no + para juntar também as da Rede e montar a playlist do seu jeito."}
       </p>
 
       <div className={`flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0 ${semMusicaPropria ? "" : "mb-5"}`}>
