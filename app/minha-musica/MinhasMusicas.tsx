@@ -95,10 +95,16 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
     showToast("Adicionado com sucesso ✓")
   }
 
-  // Some inteiro quando o cliente não tem música, e também quando a busca não
-  // achou nada aqui — a contagem geral já explica o vazio, e duas prateleiras
-  // vazias na tela ficariam confusas.
-  if (tracks.length === 0) return null
+  // Some só quando a BUSCA não achou nada aqui — a contagem geral já explica
+  // o vazio, e duas prateleiras vazias ficariam confusas.
+  //
+  // Cliente SEM música nenhuma NÃO some mais: o botão "Nova playlist" e as
+  // playlists existentes moram nesta seção, então quem ainda não comprou
+  // ficava sem nenhum caminho pra criar playlist — mesmo podendo montá-la
+  // com músicas da Rede. O visitante deslogado via "Minha playlist" e o
+  // cliente logado não via: invertido.
+  const semMusicaPropria = todasTracks.length === 0
+  if (!semMusicaPropria && tracks.length === 0) return null
 
   return (
     <div className="mb-9">
@@ -109,9 +115,13 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Minha playlist</h2>
         <InfoTooltip text="Organize suas músicas preferidas na sua playlist do seu jeito." />
       </div>
-      <p className="text-xs text-white/50 mb-4">Organize as músicas do seu jeito. Toque no + e adicione sua música na playlist abaixo.</p>
+      <p className="text-xs text-white/50 mb-4">
+        {semMusicaPropria
+          ? "Monte playlists com as músicas da Rede — toque no + em qualquer capa acima."
+          : "Organize as músicas do seu jeito. Toque no + e adicione sua música na playlist abaixo."}
+      </p>
 
-      <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0 mb-5">
+      <div className={`flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0 ${semMusicaPropria ? "" : "mb-5"}`}>
         {tracks.map((t) => {
           const isPlaying = nowPlaying?.id === t.id && playing
           return (
