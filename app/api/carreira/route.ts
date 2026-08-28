@@ -21,9 +21,22 @@ async function getUserFromAuth(req: NextRequest) {
 // desenha o que vem daqui.
 export async function GET(req: NextRequest) {
   const user = await getUserFromAuth(req)
-  if (!user) return NextResponse.json({ error: "Não autenticado." }, { status: 401 })
-
   const supabase = createServerClient()
+
+  // Visitante recebe só a explicação do programa — os cinco níveis e o que
+  // cada um dá. É a melhor peça de venda que existe pra criar conta, e não
+  // expõe dado de ninguém: são as regras, não o saldo de alguém.
+  if (!user) {
+    const niveis = await listarNiveis(supabase)
+    return NextResponse.json({
+      publico: true,
+      trilha: niveis.map((n) => ({
+        id: n.id, icone: n.icone, nome: n.nome,
+        minDiscos: n.minDiscos, descontoDigital: n.descontoDigital,
+        artePrefixo: n.artePrefixo,
+      })),
+    })
+  }
   const carreira = await carreiraDoUsuario(supabase, user.id)
   if (!carreira) return NextResponse.json({ error: "Programa indisponível." }, { status: 503 })
 

@@ -25,6 +25,7 @@ import InfoTooltip from "./InfoTooltip"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
 import BuscaMusicas from "./BuscaMusicas"
 import CarreiraPainel from "./CarreiraPainel"
+import AreaPublica from "./AreaPublica"
 import MinhaCarreira from "./MinhaCarreira"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
@@ -289,14 +290,20 @@ function MinhaMusicaContent() {
     }
   }
 
+  // Sem sessão NÃO redireciona mais pra /entrar: a tela tem uma versão pro
+  // visitante (AreaPublica), e mandar quem chegou pela propaganda direto pra
+  // um formulário de login era perder a visita antes de mostrar qualquer
+  // música. Quem quiser entrar tem o botão lá dentro.
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) setUser(data.session.user)
-      else router.push("/entrar")
+      setUser(data.session?.user ?? null)
+      // Só o visitante sai do loading aqui. Pro logado quem desliga é o
+      // loadOrders — antecipar faria a tela piscar "nenhum pedido" antes de
+      // os pedidos chegarem.
+      if (!data.session?.user) setLoading(false)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (session?.user) setUser(session.user)
-      else router.push("/entrar")
+      setUser(session?.user ?? null)
     })
     return () => listener.subscription.unsubscribe()
   }, [router])
@@ -358,13 +365,17 @@ function MinhaMusicaContent() {
     // eslint-disable-next-line
   }, [anyInProduction, user])
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#07060d" }}>
         <div className="w-10 h-10 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
+
+  // Sem conta: a mesma casa, com as portas pessoais vazias. Antes daqui saía
+  // um spinner infinito — o visitante batia numa tela travada.
+  if (!user) return <AreaPublica abaInicial={abaDaUrl} />
 
   const firstName = (user.user_metadata?.full_name as string)?.split(" ")[0] || user.email?.split("@")[0]
 

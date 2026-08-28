@@ -51,7 +51,7 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
   )
 }
 
-export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContagem }: { busca?: string; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void }) {
+export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContagem, onPrecisaLogin }: { busca?: string; onPlaylistsChanged?: () => void; onContagem?: (n: number) => void; onPrecisaLogin?: () => void }) {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [filtro, setFiltro] = useState<Filtro>(null)
   const { track: nowPlaying, playing, playTrack } = usePlayer()
@@ -92,6 +92,9 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
   useEffect(() => { carregar(); carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function abrirAdicionar(orderId: string) {
+    // Sem conta, o botão não some nem fica cinza: ele CONVIDA. É o gatilho de
+    // cadastro mais natural que existe aqui — a pessoa já quis guardar algo.
+    if (onPrecisaLogin) { onPrecisaLogin(); return }
     // Recarrega antes de decidir — este cartão só busca playlists no mount,
     // então uma playlist criada em "Minhas Músicas" (estado separado) não
     // apareceria aqui sem isso.
@@ -134,6 +137,7 @@ export default function RedeFizMusica({ busca = "", onPlaylistsChanged, onContag
   }
 
   async function favoritar(orderId: string) {
+    if (onPrecisaLogin) { onPrecisaLogin(); return }
     // Otimista: alterna na hora e já reordena (favoritado sobe pro topo).
     setItems((prev) => {
       if (!prev) return prev
