@@ -7,6 +7,12 @@ import { notifyMusicReady, notifyAdminReviewNeeded } from "./notify"
 import { logOrderEvent } from "@/lib/orderEvents"
 
 const BUCKET = "songs"
+// Capa vai pra bucket SEPARADO e público. O `songs` é privado (proteção
+// contra download do MP3, 90508d4) — quando as capas moravam lá, fechar o
+// bucket quebrou a Rede inteira. Capa não é dado pessoal: é arte gerada pela
+// IA, mostrada publicamente no catálogo, e precisa do cache de CDN (uma
+// página da Rede carrega ~40 delas).
+const BUCKET_CAPAS = "covers"
 type DB = ReturnType<typeof createServerClient>
 
 // Música e capa não mudam depois de geradas — o arquivo é imutável. Sem isso
@@ -38,10 +44,10 @@ async function salvarCapa(
     const buf = Buffer.from(await resp.arrayBuffer())
     const path = `${orderId}/capa-${audioId}.${ext}`
     const { error } = await supabase.storage
-      .from(BUCKET)
+      .from(BUCKET_CAPAS)
       .upload(path, buf, { contentType: tipo, upsert: true, cacheControl: CACHE_1_ANO })
     if (error) throw error
-    return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+    return supabase.storage.from(BUCKET_CAPAS).getPublicUrl(path).data.publicUrl
   } catch (e) {
     console.error("[suno/ingest] falha ao salvar capa", audioId, e instanceof Error ? e.message : e)
     return null
