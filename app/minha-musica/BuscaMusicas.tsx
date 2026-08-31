@@ -16,6 +16,12 @@ export default function BuscaMusicas({
 
   return (
     <div className="mb-5">
+      {/* Mesmo par título+linha de apoio do "Rede Fiz Música" (text-xl /
+          text-xs): sem ele a tela abria direto num campo e num muro de
+          pílulas, sem dizer o que era aquilo nem onde uma seção terminava. */}
+      <h2 className="text-xl font-bold">Buscar</h2>
+      <p className="text-xs text-white/50 mb-3">Encontre por nome, ocasião ou estilo</p>
+
       <div className="relative">
         <svg
           viewBox="0 0 24 24" aria-hidden="true"
