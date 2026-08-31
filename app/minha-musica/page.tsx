@@ -955,14 +955,26 @@ function MinhaMusicaContent() {
               >
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#15111f] p-6"
+                  className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#15111f] p-6 pt-16"
                 >
+                  {/* Botão de verdade, não um "✕" solto.
+                      Antes era `float-right` com o glifo em text-lg: saía do
+                      fluxo e caía EM CIMA do preço, virando um alvo minúsculo
+                      e escondido. Agora é um círculo de 36px, fixo no canto,
+                      com fundo próprio — e o `pt-16` do modal garante que o
+                      conteúdo comece abaixo dele, sem depender do que cada
+                      variação do cartão renderiza no topo.
+                      SVG em vez do caractere: glifo tem peso e alinhamento
+                      diferentes por fonte/aparelho (mesma razão dos ícones
+                      das abas). */}
                   <button
                     onClick={() => setOpenDetailOrderId(null)}
-                    className="float-right text-white/40 hover:text-white text-lg leading-none -mt-1"
                     aria-label="Fechar"
+                    className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full flex items-center justify-center bg-white/[0.06] border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.14] hover:border-white/25 transition-colors"
                   >
-                    ✕
+                    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round">
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
                   </button>
                   {order.paymentStatus !== "PAID" ? (
                     <div>
