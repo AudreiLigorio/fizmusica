@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useRef, useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { track } from "@/lib/track"
 import { useRouter } from "next/navigation"
 import FizMusicaCarousel from "./components/FizMusicaCarousel"
@@ -230,6 +231,30 @@ export default function Home() {
              style={{ background: "linear-gradient(180deg, rgba(7,6,13,0.55) 0%, rgba(7,6,13,0.35) 40%, rgba(7,6,13,0.9) 100%)" }} />
         <div className="absolute inset-0 z-10 pointer-events-none"
              style={{ background: "radial-gradient(ellipse at 20% 30%, rgba(240,25,107,0.14) 0%, transparent 55%)" }} />
+
+        {/* Colagem "Player Exclusivo" enquadrada no centro da área dos
+            quadros na parede (pedido do Audrei: nem cantinho, nem sangrando
+            pra fora — contida ali). Só desktop, versão web. Terceira versão
+            do arquivo: as duas primeiras vieram com fundo quadriculado
+            PINTADO (sem alfa de verdade); esta já chegou com transparência
+            real — sem recorte manual. */}
+        <Image
+          src="/decor/hero-player-exclusivo-v2.png"
+          alt=""
+          aria-hidden="true"
+          width={1200}
+          height={800}
+          priority={false}
+          className="hidden lg:block absolute z-20 pointer-events-none select-none animate-fade-up delay-400"
+          style={{
+            top: "50%",
+            right: "4%",
+            transform: "translateY(-50%)",
+            width: "min(38vw, 640px)",
+            height: "auto",
+            filter: "drop-shadow(0 20px 50px rgba(0,0,0,0.55))",
+          }}
+        />
 
         {/* conteúdo sobreposto. pt-28 no mobile limpa o header FIXO (não tem
             mais nada acima do hero lá — `hidden sm:block` faz TabsHomeDesktop
