@@ -241,13 +241,12 @@ export default function Home() {
                 peça que ocupava o primeiro tempo da sequência não existe
                 mais. */}
             <h1 className="animate-fade-up delay-100 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>O primeiro presente</span>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>que pode ser ouvido,</span>
-              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(2.1rem, 4vw, 3.3rem)", color: "#ff3d84" }}>assistido e compartilhado.</em>
+              <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>Aqui você escolhe</span>
+              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(2.1rem, 4vw, 3.3rem)", color: "#ff3d84" }}>como quer viver essa experiência.</em>
             </h1>
 
             <p className="animate-fade-up delay-200 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
-              Transforme uma história real em uma música exclusiva criada especialmente para quem você ama. Com fotos, letra sincronizada, QR Code e um player personalizado.
+              Pode ser apenas uma música que emociona, ou uma experiência completa com fotos sincronizadas, capa exclusiva e QR Code.
             </p>
 
             <div className="animate-fade-up delay-300 flex flex-wrap gap-3 mb-9">
