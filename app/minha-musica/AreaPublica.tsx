@@ -31,13 +31,16 @@ function Convite({ icone, titulo, frase, acao, onAcao }: {
   icone: string; titulo: string; frase: string; acao: string; onAcao: () => void
 }) {
   return (
-    <div className="text-center py-14 px-6">
-      <div className="text-5xl mb-4">{icone}</div>
-      <h2 className="text-xl font-bold mb-2">{titulo}</h2>
-      <p className="text-white/50 text-xs leading-relaxed max-w-xs mx-auto mb-6">{frase}</p>
+    // Prefixos sm: só — o mobile fica exatamente como estava. No desktop a
+    // coluna estreita deixava a tela parecendo um celular esticado, com
+    // metade da largura vazia.
+    <div className="text-center py-14 sm:py-24 px-6">
+      <div className="text-5xl sm:text-6xl mb-4">{icone}</div>
+      <h2 className="text-xl sm:text-3xl font-bold mb-2">{titulo}</h2>
+      <p className="text-white/50 text-xs sm:text-sm leading-relaxed max-w-xs sm:max-w-md mx-auto mb-6 sm:mb-8">{frase}</p>
       <button
         onClick={onAcao}
-        className="px-7 py-3 rounded-full font-semibold text-white transition-transform hover:scale-[1.03] active:scale-95"
+        className="px-7 sm:px-9 py-3 sm:py-3.5 rounded-full font-semibold text-white sm:text-[15px] transition-transform hover:scale-[1.03] active:scale-95"
         style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
       >
         {acao}

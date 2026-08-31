@@ -86,13 +86,13 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
             seção como os outros — não existe equivalente pra ele na aba
             Músicas. Encolher pra text-xl junto com o resto mataria o impacto
             que essa tela foi construída pra ter. */}
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4 leading-[1.05]">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 leading-[1.05]">
           Sua carreira<br />
           <span className="bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
             de cantor
           </span>
         </h1>
-        <p className="text-white/55 text-[15px] leading-relaxed max-w-[19rem] mx-auto">
+        <p className="text-white/55 text-[15px] sm:text-base leading-relaxed max-w-[19rem] sm:max-w-md mx-auto">
           Ninguém começa famoso. Você começa de pantufa, cantando no chuveiro.
           A cada música que você cria pra alguém, seu personagem ganha um palco
           maior — e você paga menos na próxima.
@@ -107,15 +107,15 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
             style={{ background: "radial-gradient(60% 100% at 78% 100%, rgba(217,70,239,0.35), transparent 70%)" }}
           />
           <div className="flex items-end justify-center gap-1">
-            <img src={`/carreira/nivel-1-${personagem}.webp`} alt="Cantor de chuveiro" className="w-20 h-auto opacity-45" />
-            <div className="flex-1 max-w-[70px] pb-8 flex items-center gap-1">
+            <img src={`/carreira/nivel-1-${personagem}.webp`} alt="Cantor de chuveiro" className="w-20 sm:w-32 lg:w-40 h-auto opacity-45" />
+            <div className="flex-1 max-w-[70px] sm:max-w-[160px] pb-8 flex items-center gap-1">
               <span className="h-px flex-1 bg-gradient-to-r from-white/10 to-fuchsia-400/60" />
               <span className="text-fuchsia-300 text-lg leading-none">›</span>
             </div>
             <img
               src={`/carreira/${topo.artePrefixo}-${personagem}.webp`}
               alt="Popstar"
-              className="w-36 h-auto"
+              className="w-36 sm:w-52 lg:w-64 h-auto"
               style={{ filter: "drop-shadow(0 14px 34px rgba(240,25,107,0.55))" }}
             />
           </div>
@@ -140,7 +140,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
       )}
 
       {/* ── A trilha ───────────────────────────────────────────────── */}
-      <div className="max-w-md mx-auto mb-5 text-center">
+      <div className="max-w-md sm:max-w-2xl mx-auto mb-5 text-center">
         <h2 className="text-xl font-bold">Cinco degraus até o topo</h2>
         {/* Nada de "nunca desce": estorno de pedido reverte discos (REFUND em
             lib/fidelidade.ts) e o nível pode cair junto. O que é verdade — e
@@ -155,7 +155,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
           <div className="w-7 h-7 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="relative max-w-md mx-auto">
+        <div className="relative max-w-md sm:max-w-2xl mx-auto">
           {/* Sem fio ligando os degraus: os cartões são translúcidos, então a
               linha aparecia POR CIMA deles em vez de atrás. O caminho já se lê
               no avatar crescendo e na borda acendendo a cada nível. */}
@@ -174,7 +174,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
                 >
                   <div className="w-[74px] shrink-0 flex justify-center">
                     {arte ? (
-                      <img src={arte} alt={n.nome} className={`${d.avatar} h-auto`} style={{ filter: d.brilho }} />
+                      <img src={arte} alt={n.nome} className={`${d.avatar} sm:scale-125 h-auto transition-transform`} style={{ filter: d.brilho }} />
                     ) : (
                       <span className="text-3xl">{n.icone}</span>
                     )}
@@ -205,7 +205,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
       )}
 
       {/* ── Como ganhar discos ─────────────────────────────────────── */}
-      <div className="max-w-md mx-auto mt-12">
+      <div className="max-w-md sm:max-w-2xl mx-auto mt-12">
         <h2 className="text-xl font-bold mb-1">Como se ganha um 💿</h2>
         <p className="text-white/40 text-xs mb-5">
           Quanto maior o plano, mais discos de uma vez. Eles ficam na sua conta e não expiram.
@@ -251,7 +251,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
         >
           Começar minha carreira
         </button>
-        <p className="text-white/40 text-xs mt-3.5 max-w-[17rem] mx-auto leading-relaxed">
+        <p className="text-white/40 text-xs mt-3.5 max-w-[17rem] sm:max-w-sm mx-auto leading-relaxed">
           Criar a conta é grátis. A primeira música que você fizer já te tira
           do chuveiro.
         </p>
