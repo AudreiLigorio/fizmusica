@@ -649,12 +649,26 @@ interface SpecialDateReminderEmailData {
   diasFaltando:  number
 }
 
+// "Faltam 1 dias" e "Faltam 0 dias" sairiam quando o aviso de 2 dias pega a
+// data em cima da hora (o cron falhou um dia, ou a pessoa cadastrou tarde).
+// Desde que o e-mail passou a receber os dias REAIS em vez do número da
+// faixa, esses dois casos existem de verdade.
+function contagem(dias: number): string {
+  if (dias <= 0) return "É hoje"
+  if (dias === 1) return "Falta 1 dia"
+  return `Faltam ${dias} dias`
+}
+
 export async function sendSpecialDateReminderEmail(data: SpecialDateReminderEmailData): Promise<{ ok: boolean; error?: string }> {
   try {
     const result = await resend.emails.send({
       from:    FROM_ADDRESS,
       to:      data.email,
-      subject: `Faltam ${data.diasFaltando} dias para ${data.ocasiaoLabel.toLowerCase()} de ${data.nome} ${data.ocasiaoEmoji}`,
+      // "É hoje para aniversário de Márcia" fica torto — no dia, a frase
+      // muda de forma, não só de número.
+      subject: data.diasFaltando <= 0
+        ? `É hoje: ${data.ocasiaoLabel.toLowerCase()} de ${data.nome} ${data.ocasiaoEmoji}`
+        : `${contagem(data.diasFaltando)} para ${data.ocasiaoLabel.toLowerCase()} de ${data.nome} ${data.ocasiaoEmoji}`,
       html: buildSpecialDateReminderEmail(data),
     })
     if ((result as any).error) {
@@ -674,7 +688,7 @@ function buildSpecialDateReminderEmail(data: SpecialDateReminderEmailData): stri
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
   return emailShell({
     emoji: data.ocasiaoEmoji,
-    title: `Faltam ${data.diasFaltando} dias!`,
+    title: `${contagem(data.diasFaltando)}!`,
     subtitle: `${data.ocasiaoLabel} de ${data.nome} está chegando`,
     body:
       para(saudacao) +
