@@ -5,11 +5,14 @@ import { track } from "@/lib/track"
 import { useRouter, usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
-// `showButton` não gate mais nada aqui — Entrar/Sair agora aparecem em
-// TODAS as páginas (pedido do Audrei: antes só existiam na Home e em Quem
-// somos, e nas outras 12 páginas do site "Minha música" era o único
-// caminho de volta pra área do cliente). O parâmetro fica só pra não obrigar
-// a mexer nos 13 call-sites que ainda passam `showButton={false}` à toa.
+// Este cabeçalho é o menu INSTITUCIONAL: Quem somos, Contato, Termos,
+// Entrar/Sair e o avatar. A navegação do aplicativo (Pedidos, Músicas,
+// Carreira) mora na barra Home/Pedidos/Músicas/Carreira, não aqui — foi por
+// misturar os dois que "Minha música" ficou duplicando a aba Pedidos.
+//
+// `showButton` não gate mais nada — Entrar/Sair aparecem em TODAS as páginas
+// (pedido do Audrei: antes só existiam na Home e em Quem somos). O parâmetro
+// fica só pra não obrigar a mexer nos 13 call-sites que ainda o passam à toa.
 export default function Header({ progress }: { showButton?: boolean; progress?: number }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -100,13 +103,17 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
             Quem somos
           </button>
 
-          <button
-            onClick={() => router.push("/minha-musica")}
-            className="hidden md:block text-white/50 hover:text-white/90 transition-colors text-sm font-medium"
-          >
-            🎵 Minha música
-          </button>
+          {/* Aqui existia "🎵 Minha música". Saiu: era o único link de
+              APLICATIVO no meio dos institucionais, sobra de quando a barra
+              Home/Pedidos/Músicas/Carreira ainda não existia. Além de
+              duplicar a aba "Pedidos" da barra, o rótulo mentia — nota
+              musical no ícone e caía em "Meus pedidos".
 
+              Quem quiser ver os pedidos entra por "Entrar" (mesma barra,
+              logo ao lado) e cai na área já logado. E nas telas do funil
+              (/criar, /produtos, /checkout), que de propósito NÃO têm a
+              barra pra não convidar à saída, este link era exatamente a
+              saída que tínhamos decidido não oferecer. */}
           <button
             onClick={() => router.push("/contato")}
             className="hidden md:block text-white/50 hover:text-white/90 transition-colors text-sm font-medium"
@@ -206,14 +213,8 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
       {menuOpen && (
         <div className="md:hidden border-t border-white/[0.06]" style={{ background: "rgba(7,6,13,0.97)" }}>
           <nav className="flex flex-col px-6 py-2">
-            <button
-              onClick={() => go("/minha-musica")}
-              className="flex items-center gap-3 text-left text-white/80 hover:text-white py-4 border-b border-white/[0.05] transition-colors"
-            >
-              <span className="text-lg">🎵</span>
-              <span className="font-medium">Minha música</span>
-              <span className="ml-auto text-white/30">→</span>
-            </button>
+            {/* "Minha música" saiu daqui junto com o de cima — o hambúrguer é
+                o mesmo menu institucional, em outro formato. */}
             <button
               onClick={() => go("/quem-somos")}
               className="flex items-center gap-3 text-left text-white/80 hover:text-white py-4 border-b border-white/[0.05] transition-colors"
