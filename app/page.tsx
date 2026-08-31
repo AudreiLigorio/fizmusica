@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import FizMusicaCarousel from "./components/FizMusicaCarousel"
 import Header from "./components/Header"
 import Footer from "./components/Footer"
-import BarraHome from "./components/BarraHome"
+import BarraHome, { TabsHomeDesktop } from "./components/BarraHome"
 import ExperienceVideo from "./components/ExperienceVideo"
 import VideoExemplos from "./components/VideoExemplos"
 import FaqHome from "./components/FaqHome"
@@ -188,6 +188,21 @@ export default function Home() {
     <div className="noise min-h-screen text-white overflow-x-hidden" style={{ backgroundColor: "#07060d", ...bodyFont }}>
       <Header />
       <ResumeMusicBanner />
+
+      {/* Abas também na home, no DESKTOP. O componente existia desde a Fase 1
+          mas nunca tinha sido montado: no celular a barra fica no rodapé
+          (BarraHome, mais abaixo), e no desktop a home simplesmente não tinha
+          navegação nenhuma — quem entrava pelo computador não via que existem
+          Pedidos, Músicas e Carreira.
+          `hidden sm:block` porque o rodapé mobile já cumpre esse papel; o
+          pedido do Audrei foi explícito em não mexer no mobile. */}
+      {/* pt-24: o Header é `fixed`, então sem esse respiro as abas nascem
+          POR BAIXO dele (foi o que aconteceu na primeira tentativa — só
+          aparecia um risquinho do sublinhado da aba ativa). Mesmo valor que
+          a área do cliente usa. */}
+      <div className="hidden sm:block pt-24 pb-2">
+        <TabsHomeDesktop />
+      </div>
 
       {/* ═══════════════════════════════════════════
           HERO — vídeo de fundo em loop + textos sobrepostos
