@@ -231,8 +231,13 @@ export default function Home() {
         <div className="absolute inset-0 z-10 pointer-events-none"
              style={{ background: "radial-gradient(ellipse at 20% 30%, rgba(240,25,107,0.14) 0%, transparent 55%)" }} />
 
-        {/* conteúdo sobreposto — pt extra pra limpar o header fixo */}
-        <div className="relative z-20 max-w-6xl mx-auto px-6 pt-28 lg:pt-36 pb-16 lg:pb-24 w-full">
+        {/* conteúdo sobreposto. pt-28 no mobile limpa o header FIXO (não tem
+            mais nada acima do hero lá — `hidden sm:block` faz TabsHomeDesktop
+            sumir nessa largura). Do sm pra cima esse espaço já foi aberto
+            pelo wrapper `pt-24` da barra de abas (linha ~203) — manter o
+            pt-36 aqui somava os dois respiros e afastava o título do topo
+            bem mais do que o previsto (era 144px de sobra, não decoração). */}
+        <div className="relative z-20 max-w-6xl mx-auto px-6 pt-28 sm:pt-8 lg:pt-10 pb-16 lg:pb-24 w-full">
           <div className="max-w-xl">
             {/* Aqui existia o rótulo "MÚSICAS PERSONALIZADAS" em caixa alta.
                 Saiu a pedido do Audrei. Os delays das linhas abaixo subiram
