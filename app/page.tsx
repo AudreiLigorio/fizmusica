@@ -232,49 +232,23 @@ export default function Home() {
         <div className="absolute inset-0 z-10 pointer-events-none"
              style={{ background: "radial-gradient(ellipse at 20% 30%, rgba(240,25,107,0.14) 0%, transparent 55%)" }} />
 
-        {/* Colagem "Player Exclusivo" enquadrada no centro da área dos
-            quadros na parede (pedido do Audrei: nem cantinho, nem sangrando
-            pra fora — contida ali). Só desktop, versão web. Terceira versão
-            do arquivo: as duas primeiras vieram com fundo quadriculado
-            PINTADO (sem alfa de verdade); esta já chegou com transparência
-            real — sem recorte manual.
-
-            DOIS elementos, não um: a centralização vertical precisa de
-            `transform: translateY(-50%)`, e o `animate-fade-up` TAMBÉM anima
-            `transform` — com `fill-mode: both` ele congela em
-            `translateY(0)` e apaga a centralização (animação CSS ganha de
-            estilo inline). Os dois brigavam pela mesma propriedade e a
-            imagem descia 40px pra fora do rodapé da seção. Agora o wrapper
-            posiciona e a imagem anima, cada um com seu transform. */}
-        <div
-          aria-hidden="true"
-          className="hidden lg:block absolute z-20 pointer-events-none select-none"
-          style={{
-            top: "50%",
-            right: "4%",
-            transform: "translateY(-50%)",
-            width: "min(38vw, 640px)",
-          }}
-        >
-          <Image
-            src="/decor/hero-player-exclusivo-v2.png"
-            alt=""
-            width={1200}
-            height={800}
-            priority={false}
-            className="animate-fade-up delay-400 w-full h-auto"
-            style={{ filter: "drop-shadow(0 20px 50px rgba(0,0,0,0.55))" }}
-          />
-        </div>
-
         {/* conteúdo sobreposto. pt-28 no mobile limpa o header FIXO (não tem
             mais nada acima do hero lá — `hidden sm:block` faz TabsHomeDesktop
             sumir nessa largura). Do sm pra cima esse espaço já foi aberto
             pelo wrapper `pt-24` da barra de abas (linha ~203) — manter o
             pt-36 aqui somava os dois respiros e afastava o título do topo
             bem mais do que o previsto (era 144px de sobra, não decoração). */}
-        <div className="relative z-20 max-w-6xl mx-auto px-6 pt-28 sm:pt-8 lg:pt-10 pb-16 lg:pb-24 w-full">
-          <div className="max-w-xl">
+        <div className="relative z-20 max-w-6xl mx-auto px-6 pt-28 sm:pt-8 lg:pt-10 pb-16 lg:pb-14 w-full">
+
+          {/* Linha de cima: texto à esquerda, colagem à direita.
+              GRADE de verdade, não mais `position:absolute`. Enquanto a
+              colagem era absoluta ela não ocupava espaço nenhum, então a
+              altura da seção ignorava a imagem e ela vazava pro rodapé —
+              foi o bug de 40px de `5ec25f4`. Na grade, a imagem participa
+              da altura e nunca mais pode transbordar. */}
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,54%)] lg:gap-6 lg:items-center">
+
+            <div className="max-w-xl">
             {/* Aqui existia o rótulo "MÚSICAS PERSONALIZADAS" em caixa alta.
                 Saiu a pedido do Audrei. Os delays das linhas abaixo subiram
                 um degrau junto (200→100 e assim por diante): mantidos como
@@ -303,9 +277,52 @@ export default function Home() {
               >
                 Criar minha música ❤️
               </button>
+              </div>
             </div>
 
-            <div className="animate-fade-up delay-400 flex flex-wrap gap-6 text-xs text-white/70 tracking-wide" style={bodyFont}>
+            {/* Colagem "Player Exclusivo". Só desktop (versão web): no
+                celular ela competiria com o próprio vídeo, que já mostra
+                fotos flutuando.
+
+                `-mr-6` deixa a arte encostar na borda da tela em vez de
+                parar no limite do container — é o que faz ela parecer
+                grande sem espremer a coluna do texto. 24px é exatamente o
+                `px-6` do container, ou seja, o menor respiro lateral que
+                existe em qualquer largura: passar disso cortava a arte em
+                1024px (chegou a vazar 16px, escondidos pelo overflow da
+                seção).
+
+                Envelope + imagem separados de propósito: `animate-fade-up`
+                anima `transform`, então qualquer transform de layout no
+                MESMO elemento seria apagado por ele (ver 5ec25f4). */}
+            <div aria-hidden="true" className="hidden lg:block pointer-events-none select-none lg:-mr-6">
+              <Image
+                src="/decor/hero-colagem.webp"
+                alt=""
+                width={1400}
+                height={933}
+                priority
+                // Sem `sizes` o navegador não sabe o tamanho de exibição e
+                // baixava a maior variante (w=3840, 223KB) pra desenhar
+                // ~680px. Com ele pede a faixa certa. O `1px` abaixo de
+                // 1024 é intencional: a arte é `hidden` no celular, mas o
+                // navegador baixa mesmo assim — assim ele baixa a menor
+                // variante possível em vez do arquivo cheio.
+                sizes="(min-width: 1024px) 54vw, 1px"
+                className="animate-fade-up delay-400 w-full h-auto"
+                style={{ filter: "drop-shadow(0 20px 50px rgba(0,0,0,0.55))" }}
+              />
+            </div>
+          </div>
+
+          {/* Selos em faixa de largura INTEIRA, abaixo das duas colunas
+              (pedido do Audrei: usar o lado direito também). Antes viviam
+              dentro do `max-w-xl` do texto, onde 9 itens quebravam em 3
+              fileiras irregulares — o desalinho é o que dava ar de amador.
+              Grade de colunas iguais em vez de `flex-wrap`: assim as
+              fileiras batem umas com as outras em vez de terminarem cada
+              uma num ponto. */}
+          <div className="animate-fade-up delay-400 mt-10 lg:mt-12 pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-3.5 text-xs text-white/70 tracking-wide" style={bodyFont}>
               {[
                 // Mesmos ícones da /produtos (música e QR Code), pra selo e
                 // cartão de produto lerem como a mesma linguagem visual.
@@ -318,12 +335,14 @@ export default function Home() {
                 { label: "Player exclusivo", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5Z" fill="currentColor" stroke="none"/></svg> },
                 { label: "Letra sincronizada", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h16M4 12h10M4 18h13"/></svg> },
                 { label: "Publicação gratuita na Rede Fiz Música", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5 15.4 17.4M15.4 6.6 8.6 10.5"/></svg> },
-              ].map(({ label, icon }) => (
-                <span key={label} className="flex items-center gap-1.5">
-                  <span style={{ color: "#ff3d84" }}>{icon}</span> {label}
-                </span>
-              ))}
-            </div>
+            ].map(({ label, icon }) => (
+              // `items-start` + `shrink-0`: em coluna estreita o rótulo
+              // longo quebra em duas linhas, e sem isso o ícone escorregaria
+              // pro meio do bloco de texto ou seria espremido.
+              <span key={label} className="flex items-start gap-2 leading-snug">
+                <span className="shrink-0 mt-px" style={{ color: "#ff3d84" }}>{icon}</span> {label}
+              </span>
+            ))}
           </div>
         </div>
       </section>
