@@ -237,24 +237,35 @@ export default function Home() {
             pra fora — contida ali). Só desktop, versão web. Terceira versão
             do arquivo: as duas primeiras vieram com fundo quadriculado
             PINTADO (sem alfa de verdade); esta já chegou com transparência
-            real — sem recorte manual. */}
-        <Image
-          src="/decor/hero-player-exclusivo-v2.png"
-          alt=""
+            real — sem recorte manual.
+
+            DOIS elementos, não um: a centralização vertical precisa de
+            `transform: translateY(-50%)`, e o `animate-fade-up` TAMBÉM anima
+            `transform` — com `fill-mode: both` ele congela em
+            `translateY(0)` e apaga a centralização (animação CSS ganha de
+            estilo inline). Os dois brigavam pela mesma propriedade e a
+            imagem descia 40px pra fora do rodapé da seção. Agora o wrapper
+            posiciona e a imagem anima, cada um com seu transform. */}
+        <div
           aria-hidden="true"
-          width={1200}
-          height={800}
-          priority={false}
-          className="hidden lg:block absolute z-20 pointer-events-none select-none animate-fade-up delay-400"
+          className="hidden lg:block absolute z-20 pointer-events-none select-none"
           style={{
             top: "50%",
             right: "4%",
             transform: "translateY(-50%)",
             width: "min(38vw, 640px)",
-            height: "auto",
-            filter: "drop-shadow(0 20px 50px rgba(0,0,0,0.55))",
           }}
-        />
+        >
+          <Image
+            src="/decor/hero-player-exclusivo-v2.png"
+            alt=""
+            width={1200}
+            height={800}
+            priority={false}
+            className="animate-fade-up delay-400 w-full h-auto"
+            style={{ filter: "drop-shadow(0 20px 50px rgba(0,0,0,0.55))" }}
+          />
+        </div>
 
         {/* conteúdo sobreposto. pt-28 no mobile limpa o header FIXO (não tem
             mais nada acima do hero lá — `hidden sm:block` faz TabsHomeDesktop
