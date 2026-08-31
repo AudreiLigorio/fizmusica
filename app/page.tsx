@@ -234,21 +234,23 @@ export default function Home() {
         {/* conteúdo sobreposto — pt extra pra limpar o header fixo */}
         <div className="relative z-20 max-w-6xl mx-auto px-6 pt-28 lg:pt-36 pb-16 lg:pb-24 w-full">
           <div className="max-w-xl">
-            <p className="animate-fade-up delay-100 text-[#ff6b9d] text-xs font-medium tracking-[0.3em] uppercase mb-6" style={bodyFont}>
-              Músicas personalizadas
-            </p>
-
-            <h1 className="animate-fade-up delay-200 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
+            {/* Aqui existia o rótulo "MÚSICAS PERSONALIZADAS" em caixa alta.
+                Saiu a pedido do Audrei. Os delays das linhas abaixo subiram
+                um degrau junto (200→100 e assim por diante): mantidos como
+                estavam, a entrada abriria com 200ms de tela parada, porque a
+                peça que ocupava o primeiro tempo da sequência não existe
+                mais. */}
+            <h1 className="animate-fade-up delay-100 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
               <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>O primeiro presente</span>
               <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>que pode ser ouvido,</span>
               <em className="block font-semibold not-italic" style={{ fontSize: "clamp(2.1rem, 4vw, 3.3rem)", color: "#ff3d84" }}>assistido e compartilhado.</em>
             </h1>
 
-            <p className="animate-fade-up delay-300 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
+            <p className="animate-fade-up delay-200 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
               Transforme uma história real em uma música exclusiva criada especialmente para quem você ama. Com fotos, letra sincronizada, QR Code e um player personalizado.
             </p>
 
-            <div className="animate-fade-up delay-400 flex flex-wrap gap-3 mb-9">
+            <div className="animate-fade-up delay-300 flex flex-wrap gap-3 mb-9">
               <button
                 onClick={() => { track("cta_criar", "home"); router.push("/criar") }}
                 className="text-white px-8 py-4 rounded-2xl transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
@@ -263,7 +265,7 @@ export default function Home() {
               </button>
             </div>
 
-            <div className="animate-fade-up delay-500 flex flex-wrap gap-6 text-xs text-white/70 tracking-wide" style={bodyFont}>
+            <div className="animate-fade-up delay-400 flex flex-wrap gap-6 text-xs text-white/70 tracking-wide" style={bodyFont}>
               {[
                 { label: "Presente único", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg> },
                 { label: "Entrega imediata", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> },
