@@ -89,7 +89,12 @@ export default function ProdutosCarrossel() {
   useEffect(() => {
     fetch("/api/produtos")
       .then((r) => r.json())
-      .then((d) => setProdutos(d.products ?? []))
+      // Ordena por PREÇO, do menor pro maior (pedido do Audrei). A API
+      // devolve na ordem da loja — destaque primeiro, depois `sortOrder` —
+      // que aqui jogava o plano de R$ 89,90 na frente do de R$ 15,90.
+      // Ordenar aqui, e não na API, porque /produtos e /admin dependem
+      // daquela ordem; esta é uma escolha de vitrine, não do catálogo.
+      .then((d) => setProdutos([...(d.products ?? [])].sort((a, b) => a.price - b.price)))
       .catch(() => setProdutos([]))
   }, [])
 
@@ -220,10 +225,14 @@ function SetaRolagem({ lado, onClick }: { lado: "esq" | "dir"; onClick: () => vo
   )
 }
 
-// Largura das cartas: no celular 78% da tela, pra sobrar um pedaço da
-// seguinte aparecendo — é o que avisa que dá pra arrastar. No desktop todas
-// dividem a linha por igual (`basis-0 grow`), sem sobrar carta órfã.
-const LARGURA = "snap-start shrink-0 w-[78vw] sm:w-[300px] lg:w-auto lg:flex-1 lg:basis-0 lg:min-w-0"
+// Largura das cartas: enxutas (pedido do Audrei). No celular 66% da tela,
+// deixando um pedaço da seguinte aparecer — é o que avisa que dá pra
+// arrastar. No desktop dividem a linha por igual, mas com PISO de 200px:
+// sem ele, cada plano novo espremia todos os outros (com 6 cartas dariam
+// ~180px e nomes longos viravam quatro linhas). Batendo no piso o trilho
+// passa a rolar e as setas aparecem — que é o comportamento de carrossel
+// esperado, em vez de cartas ilegíveis.
+const LARGURA = "snap-start shrink-0 w-[66vw] sm:w-[240px] lg:w-auto lg:flex-1 lg:basis-0 lg:min-w-[200px]"
 
 function CartaRede({ onClick }: { onClick: () => void }) {
   const itens = [
@@ -254,9 +263,13 @@ function CartaRede({ onClick }: { onClick: () => void }) {
         ))}
       </ul>
 
+      {/* Botão roxo (pedido do Audrei) — o selo "Gratuito" continua verde,
+          que é o que carrega a informação de preço; o roxo aqui puxa a
+          carta pra paleta da marca em vez de deixá-la verde inteira. */}
       <button
         onClick={onClick}
-        className="mt-5 w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold transition-colors"
+        className="mt-5 w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.98]"
+        style={{ background: "linear-gradient(135deg,#8b5cf6,#a855f7)", boxShadow: "0 6px 20px rgba(139,92,246,0.35)" }}
       >
         Começar agora
         <svg viewBox="0 0 24 24" className="w-4 h-4" {...S} strokeWidth={2.2}><path d="m9 6 6 6-6 6" /></svg>
