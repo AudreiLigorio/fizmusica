@@ -284,18 +284,24 @@ export default function Home() {
                 celular ela competiria com o próprio vídeo, que já mostra
                 fotos flutuando.
 
-                `-mr-6` deixa a arte encostar na borda da tela em vez de
-                parar no limite do container — é o que faz ela parecer
-                grande sem espremer a coluna do texto. 24px é exatamente o
-                `px-6` do container, ou seja, o menor respiro lateral que
-                existe em qualquer largura: passar disso cortava a arte em
-                1024px (chegou a vazar 16px, escondidos pelo overflow da
-                seção).
+                Margens PAREADAS (`ml-N` positiva + `-mr-N` igual) pra
+                empurrar a arte pra direita e liberar a mulher com o celular
+                do vídeo, que ela cobria (pedido do Audrei). Só a negativa
+                não resolvia: ela estica a caixa pra direita e a borda
+                ESQUERDA fica onde estava — a arte engordava em vez de
+                andar. Com as duas, a largura se mantém (−ml +mr se anulam)
+                e o bloco inteiro desloca.
+
+                O passo cresce com a tela porque o teto é a margem que sobra
+                entre o container (max-w-6xl, 1152px) e a borda: 24px até
+                1279 (o próprio `px-6`), 64px a partir de 1280, 192px a
+                partir de 1536. Passar do teto corta a arte — com -40px ela
+                vazava 16px em 1024, escondidos pelo overflow da seção.
 
                 Envelope + imagem separados de propósito: `animate-fade-up`
                 anima `transform`, então qualquer transform de layout no
                 MESMO elemento seria apagado por ele (ver 5ec25f4). */}
-            <div aria-hidden="true" className="hidden lg:block pointer-events-none select-none lg:-mr-6">
+            <div aria-hidden="true" className="hidden lg:block pointer-events-none select-none lg:ml-6 lg:-mr-6 xl:ml-12 xl:-mr-12 2xl:ml-32 2xl:-mr-32">
               <Image
                 src="/decor/hero-colagem.webp"
                 alt=""
