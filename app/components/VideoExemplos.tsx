@@ -96,6 +96,9 @@ export default function VideoExemplos() {
                     {isPlaying ? (
                       <video
                         src={`/videos/exemplos/${ex.slug}.mp4`}
+                        // Mesma capa do card: sem ela o vídeo pisca preto no
+                        // instante entre o clique e o primeiro quadro.
+                        poster={`/videos/exemplos/${ex.slug}-capa.webp`}
                         autoPlay
                         playsInline
                         disablePictureInPicture
@@ -107,6 +110,27 @@ export default function VideoExemplos() {
                       />
                     ) : (
                       <>
+                        {/* Capa = quadro REAL do vídeo (pedido do Audrei:
+                            chamar atenção com a imagem de verdade em vez do
+                            gradiente). Extraída com ffmpeg pelo filtro
+                            `thumbnail`, que escolhe um quadro representativo
+                            — o primeiro quadro costuma ser preto ou uma
+                            transição.
+
+                            `lazy` porque a seção fica abaixo da dobra: são 4
+                            imagens que ninguém vê ao abrir a home. Se o
+                            arquivo faltar, `onError` esconde a imagem e o
+                            gradiente do card (ex.grad, atrás) reaparece — a
+                            capa some, o card não quebra. */}
+                        <img
+                          src={`/videos/exemplos/${ex.slug}-capa.webp`}
+                          alt=""
+                          aria-hidden="true"
+                          loading="lazy"
+                          onError={(e) => { e.currentTarget.style.display = "none" }}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+
                         {/* Vinheta pra legibilidade do texto */}
                         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.3) 34%,rgba(0,0,0,0) 48%,rgba(0,0,0,0) 62%,rgba(0,0,0,0.55) 100%)" }} />
 
@@ -116,15 +140,13 @@ export default function VideoExemplos() {
                           {ex.ocasiao}
                         </span>
 
-                        {/* Capa: "Uma música especial para..." */}
-                        <div className="absolute top-0 left-0 right-0 z-10 text-center px-4 pt-[3.6rem]">
-                          <p className="text-[0.62rem] font-semibold uppercase text-white/75" style={{ letterSpacing: "0.07em" }}>Uma música especial para</p>
-                          <h3 className="mt-1 text-[1.55rem] font-extrabold leading-none"
-                              style={{ background: "linear-gradient(120deg,#ff9fce,#ffe1a8)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", textShadow: "0 2px 18px rgba(0,0,0,0.25)" }}>
-                            {ex.nome}
-                          </h3>
-                          <p className="mt-1 text-[0.74rem] italic text-white/85">&ldquo;{ex.musica}&rdquo;</p>
-                        </div>
+                        {/* Aqui o card desenhava "Uma música especial para /
+                            nome / música". Saiu junto com a entrada da capa
+                            real: o próprio quadro do vídeo já traz esse
+                            texto, então os dois apareciam sobrepostos, um
+                            por cima do outro. A legenda abaixo do celular
+                            continua repetindo nome, música e ocasião, então
+                            nenhuma informação se perdeu. */}
 
                         {/* Play central */}
                         <button
