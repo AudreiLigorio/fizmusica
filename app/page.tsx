@@ -10,6 +10,7 @@ import Footer from "./components/Footer"
 import BarraHome, { TabsHomeDesktop } from "./components/BarraHome"
 import ExperienceVideo from "./components/ExperienceVideo"
 import VideoExemplos from "./components/VideoExemplos"
+import ProdutosCarrossel from "./components/ProdutosCarrossel"
 import FaqHome from "./components/FaqHome"
 import ResumeMusicBanner from "./components/ResumeMusicBanner"
 
@@ -365,6 +366,13 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          PRODUTOS E PREÇOS — vitrine antes dos exemplos
+      ═══════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-6 pt-14 lg:pt-20">
+        <ProdutosCarrossel />
       </section>
 
       {/* ═══════════════════════════════════════════
