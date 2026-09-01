@@ -298,10 +298,15 @@ export default function Home() {
                 partir de 1536. Passar do teto corta a arte — com -40px ela
                 vazava 16px em 1024, escondidos pelo overflow da seção.
 
+                Os valores estão quase colados no teto de cada faixa (56 de
+                64, 160 de 192) pra revelar o celular com o efeito saindo.
+                Até 1279 não dá pra ir além: lá o teto de 24px já está em
+                uso e a arte encosta na borda.
+
                 Envelope + imagem separados de propósito: `animate-fade-up`
                 anima `transform`, então qualquer transform de layout no
                 MESMO elemento seria apagado por ele (ver 5ec25f4). */}
-            <div aria-hidden="true" className="hidden lg:block pointer-events-none select-none lg:ml-6 lg:-mr-6 xl:ml-12 xl:-mr-12 2xl:ml-32 2xl:-mr-32">
+            <div aria-hidden="true" className="hidden lg:block pointer-events-none select-none lg:ml-6 lg:-mr-6 xl:ml-14 xl:-mr-14 2xl:ml-40 2xl:-mr-40">
               <Image
                 src="/decor/hero-colagem.webp"
                 alt=""
