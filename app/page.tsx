@@ -256,12 +256,37 @@ export default function Home() {
                 estavam, a entrada abriria com 200ms de tela parada, porque a
                 peça que ocupava o primeiro tempo da sequência não existe
                 mais. */}
-            <h1 className="animate-fade-up delay-100 leading-[0.95] mb-7" style={{ ...displayFont, textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
-              <span className="block font-light text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>Aqui você escolhe</span>
-              <em className="block font-semibold not-italic" style={{ fontSize: "clamp(2.1rem, 4vw, 3.3rem)", color: "#ff3d84" }}>como quer viver essa experiência.</em>
+            {/* Mesma fonte e mesmas cores da vitrine de produtos (pedido do
+                Audrei): DM Sans extrabold em caixa alta, primeira linha
+                branca e segunda no degradê rosa→roxo. Antes era a serifada
+                (Cormorant) com o rosa chapado.
+
+                A segunda linha usa `drop-shadow` em vez de `text-shadow`:
+                com o degradê a letra fica `color: transparent` e o texto
+                aparece pelo `background-clip`, então `text-shadow` desenharia
+                a sombra a partir da silhueta e sujaria o degradê. O
+                `drop-shadow` age sobre o que foi realmente pintado. Sombra é
+                necessária nas duas: o texto fica sobre vídeo em movimento. */}
+            <h1 className="animate-fade-up delay-100 font-extrabold uppercase leading-[0.98] tracking-tight mb-7" style={bodyFont}>
+              <span className="block text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
+                Aqui você escolhe
+              </span>
+              <span
+                className="block"
+                style={{
+                  fontSize: "clamp(2.1rem, 4vw, 3.3rem)",
+                  background: "linear-gradient(90deg,#f0196b,#d946ef)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                  filter: "drop-shadow(0 2px 18px rgba(0,0,0,0.55))",
+                }}
+              >
+                como quer viver essa experiência.
+              </span>
             </h1>
 
-            <p className="animate-fade-up delay-200 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
+            <p className="animate-fade-up delay-200 text-white/60 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
               Pode ser apenas uma música que emociona, ou uma experiência completa com fotos sincronizadas, capa exclusiva e QR Code.
             </p>
 
