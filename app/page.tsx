@@ -54,48 +54,6 @@ const STATS = [
   { target: 100,   prefix: "",  suffix: "%", decimals: 0, label: "personalizado" },
 ]
 
-const WHY = [
-  {
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-      </svg>
-    ),
-    title: "Experiência emocional real",
-    desc: "Cada música nasce da sua história, sentimentos e momentos marcantes.",
-    gradient: "linear-gradient(135deg, #f0196b, #d946ef)",
-  },
-  {
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
-      </svg>
-    ),
-    title: "Letra exclusiva para você",
-    desc: "A letra é editada e validada por você, online. Você tem à disposição 3 edições e uma revisão completa.",
-    gradient: "linear-gradient(135deg, #d946ef, #f0196b)",
-  },
-  {
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    ),
-    title: "Plataforma premium assistida",
-    desc: "Nossa plataforma é completa. Vamos além e entregamos muitas funcionalidades desde a música até a produção final. Tudo é feito por você, de forma online e sem esperas.",
-    gradient: "linear-gradient(135deg, #f0196b, #d946ef)",
-  },
-  {
-    icon: (
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-    ),
-    title: "Satisfação garantida",
-    desc: "Nosso produto é diferenciado e feito para emocionar de verdade.",
-    gradient: "linear-gradient(135deg, #d946ef, #f0196b)",
-  },
-]
 
 // Dispara uma vez quando o elemento entra na tela — usado pra animar a
 // entrada de "Como funciona" (cartões + linha conectando os números) só
@@ -805,7 +763,7 @@ export default function Home() {
               cards pra fora da tela. Em duas colunas ela fica com ~520px
               de largura e altura de gente. No mobile empilha, com teto de
               largura pra não virar rolagem infinita. */}
-          <div className="mb-14 lg:mb-16 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <div className="max-w-2xl">
               <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight mb-6" style={bodyFont}>
                 <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
@@ -851,51 +809,6 @@ export default function Home() {
                 className="w-full h-auto"
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            {WHY.map((w) => (
-              <div key={w.title}
-                   className="group relative p-8 rounded-3xl cursor-default"
-                   style={{
-                     background: "rgba(255,255,255,0.03)",
-                     border: "1px solid rgba(255,255,255,0.07)",
-                     transition: "transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, border-color 0.3s ease",
-                   }}
-                   onMouseEnter={e => {
-                     const el = e.currentTarget
-                     el.style.transform = "translateY(-10px) scale(1.02)"
-                     el.style.boxShadow = "0 24px 60px rgba(240,25,107,0.22), 0 8px 24px rgba(0,0,0,0.6)"
-                     el.style.borderColor = "rgba(240,25,107,0.35)"
-                     el.style.background = "rgba(20,18,35,1)"
-                     el.style.zIndex = "10"
-                   }}
-                   onMouseLeave={e => {
-                     const el = e.currentTarget
-                     el.style.transform = ""
-                     el.style.boxShadow = ""
-                     el.style.borderColor = "rgba(255,255,255,0.07)"
-                     el.style.background = "rgba(255,255,255,0.03)"
-                     el.style.zIndex = ""
-                   }}>
-                {/* glow hover */}
-                <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                     style={{ background: "radial-gradient(ellipse at 30% 0%, rgba(240,25,107,0.08) 0%, transparent 70%)" }} />
-
-                {/* icon badge */}
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-7 text-white"
-                     style={{ background: w.gradient, boxShadow: "0 4px 20px rgba(240,25,107,0.25)" }}>
-                  {w.icon}
-                </div>
-
-                <h3 className="font-semibold text-white text-base mb-3 leading-snug" style={bodyFont}>
-                  {w.title}
-                </h3>
-                <p className="text-sm leading-relaxed" style={{ ...bodyFont, color: "rgba(255,255,255,0.45)" }}>
-                  {w.desc}
-                </p>
-              </div>
-            ))}
           </div>
 
         </div>
