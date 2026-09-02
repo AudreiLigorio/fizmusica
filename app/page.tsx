@@ -13,6 +13,7 @@ import VideoExemplos from "./components/VideoExemplos"
 import ProdutosCarrossel from "./components/ProdutosCarrossel"
 import FaqHome from "./components/FaqHome"
 import ResumeMusicBanner from "./components/ResumeMusicBanner"
+import FizMascot from "./components/FizMascot"
 
 const DEMOS = [
   { id: "namoro",    src: "/namoro_2anos.mp3",          title: "Homenagem Dia dos Namorados", meta: "Maria Eduarda · Sertanejo romântico · 3:12", emoji: "💖" },
@@ -432,43 +433,47 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+        {/* Encolhida (pedido do Audrei): era um cartão largo com bastante
+            respiro por linha (py-3.5, ícone de 36px). `max-w-xl` centraliza
+            a lista num corpo mais compacto — um mini-player, não uma
+            tabela — e libera espaço pro convite da Rede logo abaixo. */}
+        <div className="max-w-xl mx-auto rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
              style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.14) 0%, rgba(217,70,239,0.10) 50%, rgba(255,255,255,0.03) 100%)", border: "1px solid rgba(240,25,107,0.2)", backdropFilter: "blur(24px)" }}>
-          <div className="space-y-0 p-2">
+          <div className="space-y-0 p-1.5">
             {DEMOS.map((d, idx) => {
               const isActive = currentAudio === d.src && playing
               return (
                 <button
                   key={d.id}
                   onClick={() => togglePlay(d.src)}
-                  className="w-full flex items-center gap-3 px-3 py-3.5 rounded-xl text-left transition-all duration-200 group"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group"
                   style={{ background: isActive ? "rgba(240,25,107,0.15)" : "rgba(255,255,255,0.03)" }}
                 >
-                  <span className="shrink-0 w-6 text-center tabular-nums"
-                        style={{ ...bodyFont, fontSize: "0.7rem", color: isActive ? "rgba(240,25,107,0.8)" : "rgba(255,255,255,0.25)" }}>
+                  <span className="shrink-0 w-5 text-center tabular-nums"
+                        style={{ ...bodyFont, fontSize: "0.68rem", color: isActive ? "rgba(240,25,107,0.8)" : "rgba(255,255,255,0.25)" }}>
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate leading-snug mb-0.5"
-                       style={{ ...bodyFont, fontSize: "0.875rem", fontWeight: 500, color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)" }}>
+                    <p className="truncate leading-snug"
+                       style={{ ...bodyFont, fontSize: "0.82rem", fontWeight: 500, color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)" }}>
                       {d.emoji} {d.title}
                     </p>
-                    <p className="truncate" style={{ ...bodyFont, fontSize: "0.72rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)" }}>
+                    <p className="truncate" style={{ ...bodyFont, fontSize: "0.68rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)" }}>
                       {d.meta}
                     </p>
                   </div>
-                  <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110"
+                  <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110"
                        style={{
                          background: isActive ? "#f0196b" : "rgba(255,255,255,0.07)",
                          boxShadow: isActive ? "0 0 18px rgba(240,25,107,0.55)" : "none",
                          border: `1px solid ${isActive ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.1)"}`,
                        }}>
                     {isActive ? (
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="white">
                         <rect x="2" y="1" width="3" height="10" rx="1"/><rect x="7" y="1" width="3" height="10" rx="1"/>
                       </svg>
                     ) : (
-                      <svg width="11" height="12" viewBox="0 0 11 12" fill="none" style={{ marginLeft: "1px" }}>
+                      <svg width="10" height="11" viewBox="0 0 11 12" fill="none" style={{ marginLeft: "1px" }}>
                         <path d="M1 1.5L10 6L1 10.5V1.5Z" fill="rgba(255,255,255,0.7)" stroke="rgba(255,255,255,0.7)" strokeWidth="0.5" strokeLinejoin="round"/>
                       </svg>
                     )}
@@ -476,6 +481,52 @@ export default function Home() {
                 </button>
               )
             })}
+          </div>
+        </div>
+
+        {/* Convite pra Rede Fiz Música (pedido do Audrei): quem acabou de
+            ouvir 4 exemplos está no clima certo pra descobrir que existe
+            uma rede inteira de músicas publicadas por outros clientes —
+            não é só o catálogo fixo acima. Mascote "Fiz" (arara com fones,
+            ver FizMascot.tsx) dançando puxa o tom de "divirta-se", igual ao
+            resto da marca.
+
+            Mesmo cartão em desktop e mobile, só troca de linha pra coluna
+            (`flex-col sm:flex-row`) — nada de versão separada pra cada
+            tela, que é o tipo de duplicação que sai da sincronia sozinha. */}
+        <div className="relative mt-6 rounded-3xl overflow-hidden">
+          <div className="absolute inset-0"
+               style={{ background: "radial-gradient(130% 160% at 12% 15%, rgba(240,25,107,0.38) 0%, transparent 55%), radial-gradient(130% 160% at 88% 85%, rgba(139,92,246,0.38) 0%, transparent 55%), #14111f" }} />
+          <div className="absolute inset-0 opacity-40"
+               style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "22px 22px", maskImage: "radial-gradient(ellipse at center, black 0%, transparent 70%)" }} />
+
+          <div className="relative flex flex-col sm:flex-row items-center gap-1 sm:gap-6 px-6 pt-2 pb-7 sm:py-8 text-center sm:text-left">
+            <div className="shrink-0 -mt-4 sm:mt-0 pointer-events-none select-none">
+              <FizMascot mood="energetic" size={104} />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <p className="font-extrabold leading-tight" style={{ ...bodyFont, fontSize: "clamp(1.35rem, 3.2vw, 1.75rem)" }}>
+                <span className="text-white">Divirta-se ouvindo</span>{" "}
+                <span style={{ background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                  Fiz Música
+                </span>
+              </p>
+              <p className="text-white/60 text-sm mt-2 max-w-sm mx-auto sm:mx-0" style={bodyFont}>
+                Explore a Rede Fiz Música: histórias reais que outros clientes escolheram publicar. Curta, favorite e monte sua playlist.
+              </p>
+            </div>
+
+            <button
+              onClick={() => { track("cta_rede", "home_player_exemplos"); router.push("/minha-musica?aba=musicas") }}
+              className="shrink-0 mt-1 sm:mt-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
+              style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
+            >
+              Ouvir a Rede
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
           </div>
         </div>
 
