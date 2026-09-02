@@ -623,7 +623,16 @@ export default function Home() {
               de largura e altura de gente. No mobile empilha, com teto de
               largura pra não virar rolagem infinita. */}
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-            <div className="max-w-2xl">
+            {/* `contents` no mobile: dissolve esta div e joga o texto e o
+                botao como itens diretos do grid, pra dar `order` no botao e
+                manda-lo pra baixo da imagem (pedido do Audrei). Duplicar o
+                botao com hidden/lg:hidden resolveria tambem, mas deixaria
+                dois nos no DOM disparando o mesmo track() — leitor de tela
+                anunciaria o CTA duas vezes. No desktop volta a ser bloco e a
+                coluna se comporta como antes. O h2 e o paragrafo ficam
+                envolvidos juntos pra nao ganharem o gap-10 entre si. */}
+            <div className="contents lg:block lg:max-w-2xl">
+             <div>
               <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight mb-6" style={bodyFont}>
                 <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
                   Chegou a hora de você
@@ -632,12 +641,13 @@ export default function Home() {
                   sair da mesmice.
                 </span>
               </h2>
-              <p className="text-white/60 leading-relaxed mb-7" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
+              <p className="text-white/60 leading-relaxed mb-0 lg:mb-7" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
                 Coloque a sua criatividade em prática. Aqui, o que importa é o destaque real entre pessoas comuns.
               </p>
+             </div>
               <button
                 onClick={() => { track("cta_criar", "por_que_escolher"); router.push("/criar") }}
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
+                className="order-2 lg:order-none justify-self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
                 style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
               >
                 Quero criar minha música
@@ -658,7 +668,7 @@ export default function Home() {
                 Next pede a maior variante em qualquer tela larga mesmo a
                 imagem nunca desenhando mais que isso. Já errei isso duas
                 vezes nesta home (colagem do hero e a arte anterior daqui). */}
-            <div className="rounded-3xl overflow-hidden w-full max-w-[26rem] mx-auto lg:max-w-none">
+            <div className="order-1 lg:order-none rounded-3xl overflow-hidden w-full max-w-[26rem] mx-auto lg:max-w-none">
               <Image
                 src="/images/ideia-vira-hit.webp"
                 alt="Rapaz de fones sentado no chão compondo no notebook, cercado de violão, microfone e anotações; ao lado, uma porta aberta revela um palco lotado e os ícones do TikTok, Instagram e YouTube — aqui sua ideia vira hit e pode parar na Rede"
