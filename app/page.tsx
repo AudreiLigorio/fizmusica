@@ -411,7 +411,7 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           PLAYER DE EXEMPLOS — abaixo do hero
       ═══════════════════════════════════════════ */}
-      <section className="max-w-3xl mx-auto px-6 py-14 lg:py-20">
+      <section className="max-w-3xl lg:max-w-5xl mx-auto px-6 py-14 lg:py-20">
         {/* Mesma lógica do cabeçalho de exemplos em vídeo (pedido do
             Audrei): selo removido, título passa da serifada (Cormorant)
             pra DM Sans extrabold em caixa alta, quebrado em duas linhas
@@ -419,7 +419,7 @@ export default function Home() {
             desta vez ("Ouça como ficam as músicas" é uma frase corrida),
             então a quebra fica entre verbo+advérbio e o objeto — mesmo
             equilíbrio de peso das duas linhas dos outros títulos. */}
-        <div className="text-center mb-8">
+        <div className="max-w-3xl mx-auto text-center mb-8">
           <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight" style={bodyFont}>
             <span className="block text-white/90" style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.5rem)" }}>
               Ouça como ficam
@@ -433,11 +433,20 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Lista + convite lado a lado na web (pedido do Audrei — só na
+            web, o celular continua empilhado, que já era o layout natural
+            aqui). `lg:items-stretch` faz as duas colunas terem a MESMA
+            altura, senão o cartão mais curto ficava com um vão vazio ao
+            lado do mais alto. */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,42%)_minmax(0,1fr)] lg:gap-6 lg:items-stretch">
+
         {/* Encolhida (pedido do Audrei): era um cartão largo com bastante
             respiro por linha (py-3.5, ícone de 36px). `max-w-xl` centraliza
-            a lista num corpo mais compacto — um mini-player, não uma
-            tabela — e libera espaço pro convite da Rede logo abaixo. */}
-        <div className="max-w-xl mx-auto rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+            a lista num corpo mais compacto no celular — um mini-player, não
+            uma tabela. No desktop ela é a coluna esquerda da grade acima,
+            então perde o `max-w-xl`/centralização própria (`lg:max-w-none
+            lg:mx-0`) pra preencher a coluna inteira. */}
+        <div className="max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:h-full rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
              style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.14) 0%, rgba(217,70,239,0.10) 50%, rgba(255,255,255,0.03) 100%)", border: "1px solid rgba(240,25,107,0.2)", backdropFilter: "blur(24px)" }}>
           <div className="space-y-0 p-1.5">
             {DEMOS.map((d, idx) => {
@@ -491,35 +500,43 @@ export default function Home() {
             ver FizMascot.tsx) dançando puxa o tom de "divirta-se", igual ao
             resto da marca.
 
-            Mesmo cartão em desktop e mobile, só troca de linha pra coluna
-            (`flex-col sm:flex-row`) — nada de versão separada pra cada
-            tela, que é o tipo de duplicação que sai da sincronia sozinha. */}
-        <div className="relative mt-6 rounded-3xl overflow-hidden">
+            Empilhado no celular e no tablet (`flex-col sm:flex-row`
+            controla só o CONTEÚDO interno do cartão — mascote/texto/botão
+            em linha a partir de 640px). No desktop o cartão vira a coluna
+            direita da grade acima; como essa coluna fica mais estreita que
+            a largura cheia de antes, o conteúdo interno volta a empilhar
+            em coluna (`lg:flex-col`) e centraliza (`lg:text-center`) — do
+            jeito que ficava no celular — em vez de espremer mascote, texto
+            e botão numa linha só que não cabe mais. `lg:justify-center`
+            centraliza verticalmente: a coluna da lista ao lado dita a
+            altura (`items-stretch` no grid), e sem isso o conteúdo ficaria
+            grudado no topo com um vão vazio embaixo. */}
+        <div className="relative mt-6 lg:mt-0 lg:h-full rounded-3xl overflow-hidden">
           <div className="absolute inset-0"
                style={{ background: "radial-gradient(130% 160% at 12% 15%, rgba(240,25,107,0.38) 0%, transparent 55%), radial-gradient(130% 160% at 88% 85%, rgba(139,92,246,0.38) 0%, transparent 55%), #14111f" }} />
           <div className="absolute inset-0 opacity-40"
                style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "22px 22px", maskImage: "radial-gradient(ellipse at center, black 0%, transparent 70%)" }} />
 
-          <div className="relative flex flex-col sm:flex-row items-center gap-1 sm:gap-6 px-6 pt-2 pb-7 sm:py-8 text-center sm:text-left">
-            <div className="shrink-0 -mt-4 sm:mt-0 pointer-events-none select-none">
+          <div className="relative flex flex-col sm:flex-row lg:flex-col items-center justify-center gap-1 sm:gap-6 lg:gap-1 h-full px-6 pt-2 pb-7 sm:py-8 text-center sm:text-left lg:text-center">
+            <div className="shrink-0 -mt-4 sm:mt-0 lg:mt-0 pointer-events-none select-none">
               <FizMascot mood="energetic" size={104} />
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 lg:flex-none min-w-0">
               <p className="font-extrabold leading-tight" style={{ ...bodyFont, fontSize: "clamp(1.35rem, 3.2vw, 1.75rem)" }}>
                 <span className="text-white">Divirta-se ouvindo</span>{" "}
                 <span style={{ background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
                   Fiz Música
                 </span>
               </p>
-              <p className="text-white/60 text-sm mt-2 max-w-sm mx-auto sm:mx-0" style={bodyFont}>
+              <p className="text-white/60 text-sm mt-2 max-w-sm mx-auto sm:mx-0 lg:mx-auto" style={bodyFont}>
                 Explore a Rede Fiz Música: histórias reais que outros clientes escolheram publicar. Curta, favorite e monte sua playlist.
               </p>
             </div>
 
             <button
               onClick={() => { track("cta_rede", "home_player_exemplos"); router.push("/minha-musica?aba=musicas") }}
-              className="shrink-0 mt-1 sm:mt-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
+              className="shrink-0 mt-1 sm:mt-0 lg:mt-3 inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
               style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
             >
               Ouvir a Rede
@@ -528,6 +545,8 @@ export default function Home() {
               </svg>
             </button>
           </div>
+        </div>
+
         </div>
 
         <audio ref={audioRef} onEnded={() => { setPlaying(false); setCurrentAudio(null) }} />
