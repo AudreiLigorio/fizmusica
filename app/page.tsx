@@ -821,11 +821,30 @@ export default function Home() {
             </button>
           </div>
 
-          {/* ESPAÇO RESERVADO pra imagem de impacto ("print 2" — as duas
-              portas: "só alguns podem criar" vs. "bem-vindo à sua música").
-              Não entrou ainda: o arquivo não caiu em Downloads como nas
-              vezes anteriores desta sessão, e sem o arquivo real não dá
-              pra otimizar (WebP, tamanho) nem posicionar direito. */}
+          {/* Imagem de impacto — as duas portas ("só alguns podem criar" vs.
+              "bem-vindo à sua música"), pedido do Audrei. WebP otimizado:
+              1400px de largura (cobre o container de ~1100px em telas
+              retina) e qualidade 82 — 116KB pra uma peça com bastante
+              detalhe (as placas na parede têm texto pequeno, testado
+              legível nessa compressão).
+
+              Ela ocupa o container inteiro (nunca meia coluna), mas o
+              container tem teto de max-w-6xl (1152px, menos o padding) —
+              `sizes="100vw"` (sem teto) fazia o Next pedir a maior variante
+              em qualquer tela larga, mesmo a imagem nunca desenhando mais
+              que ~1100px. Já vi esse erro antes nesta mesma sessão (na
+              colagem do hero) e caí nele de novo aqui: o teto precisa
+              entrar no `sizes`, não só "ocupa a linha toda". */}
+          <div className="mb-14 lg:mb-16 rounded-3xl overflow-hidden">
+            <Image
+              src="/images/portas-criatividade.webp"
+              alt="Duas portas: uma leva a um clube fechado só pra poucos, a outra é o seu próprio estúdio de criação — bem-vindo à sua música"
+              width={1400}
+              height={846}
+              sizes="(min-width: 1152px) 1104px, calc(100vw - 48px)"
+              className="w-full h-auto"
+            />
+          </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {WHY.map((w) => (
