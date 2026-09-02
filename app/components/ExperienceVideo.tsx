@@ -32,16 +32,31 @@ export default function ExperienceVideo() {
           <video
             ref={videoRef}
             src="/videos/experiencia.mp4"
+            poster="/videos/experiencia-capa.webp"
             controls
             playsInline
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
           <>
-            {/* Capa com gradiente + botão de play */}
+            {/* Capa ABERTA (pedido do Audrei: chamar atenção, gerar
+                engajamento) — quadro real do vídeo, não mais o gradiente
+                liso de antes que escondia o conteúdo até o clique. Mesmo
+                recorte usado em VideoExemplos.tsx: ffmpeg com o filtro
+                `thumbnail`, que escolhe um quadro representativo em vez do
+                primeiro (que costuma ser preto ou uma transição). */}
+            <img
+              src="/videos/experiencia-capa.webp"
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* Vinheta leve só pra legibilidade do play/texto — bem mais
+                sutil que o gradiente antigo, que cobria a capa inteira. */}
             <div
               className="absolute inset-0"
-              style={{ background: "linear-gradient(135deg, rgba(240,25,107,0.18) 0%, rgba(217,70,239,0.10) 100%)" }}
+              style={{ background: "linear-gradient(180deg, rgba(7,6,13,0.05) 0%, rgba(7,6,13,0.10) 55%, rgba(7,6,13,0.55) 100%)" }}
             />
             <div className="absolute inset-0 flex items-center justify-center">
               <div
