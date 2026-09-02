@@ -228,7 +228,7 @@ export default function ProdutosCarrossel() {
           className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
           style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
         >
-          Crie agora a trilha sonora da sua história!
+          Crie agora sua trilha sonora!
           <svg viewBox="0 0 24 24" className="w-4 h-4" {...S} strokeWidth={2.2}><path d="m9 6 6 6-6 6" /></svg>
         </button>
       </div>
