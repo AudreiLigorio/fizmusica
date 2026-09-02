@@ -191,9 +191,12 @@ export default function Home() {
 
   // Animação de entrada de "Como funciona" — dispara quando a seção aparece.
   const { ref: stepsRef, inView: stepsInView } = useInView()
-  // Número REAL de músicas entregues (consultado no banco em 2026-09-02),
-  // contando a partir de 0 quando o bloco entra na tela.
-  const { ref: statRef, value: statValue } = useCountUp(68, 0, 1600)
+  // Número de marketing, NÃO vem do banco — decisão explícita do Audrei em
+  // 2026-09-02 ("publicar 2361 músicas criadas. é fictício mesmo"), depois
+  // de eu mostrar o número real (68 entregues) e ele pedir pra inflar mesmo
+  // assim. Registrado aqui pra quem ler o código depois não achar que isto
+  // é uma consulta ao banco — não é.
+  const { ref: statRef, value: statValue } = useCountUp(2361, 0, 1600)
 
   // Linha que conecta os 4 números de "Como funciona": MEDIDA, não em
   // porcentagem fixa. O badge não fica centralizado na coluna do grid —
@@ -717,15 +720,15 @@ export default function Home() {
                     </div>
                     <h3 className="font-semibold text-white text-base mb-2" style={bodyFont}>{s.label}</h3>
                     {i === 3 ? (
-                      // Número REAL de músicas entregues (banco, 2026-09-02),
-                      // não os "43 mil" pedidos nem os 10.000/8.000 que já
-                      // estavam soltos (e nunca exibidos) na STATS array lá
-                      // em cima — mesmo raciocínio da vitrine de preços:
-                      // número que o cliente vê vem do banco, não é digitado.
+                      // NÚMERO FICTÍCIO — decisão explícita do Audrei (ver
+                      // comentário em `statValue` lá em cima). Não confundir
+                      // com a vitrine de preços/produtos, onde todo número
+                      // que o cliente vê vem do banco: aqui é o oposto,
+                      // registrado por escrito porque é a exceção.
                       <p className="text-sm text-white/60 leading-relaxed" style={bodyFont}>
                         <span className="font-extrabold tabular-nums"
                               style={{ background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
-                          +{Math.floor(statValue)}
+                          +{Math.floor(statValue).toLocaleString("pt-BR")}
                         </span>{" "}
                         histórias já viraram música — sem complicação.
                       </p>
