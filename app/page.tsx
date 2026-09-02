@@ -27,11 +27,17 @@ const HERO_POSTER = "/videos/hero-home.poster.jpg"
 const HERO_SRC_DESKTOP = "/videos/hero-home.opt.mp4"    // 720p, ~1MB
 const HERO_SRC_MOBILE = "/videos/hero-home.mobile.mp4"  // 480p, ~490KB
 
+// Pedido do Audrei: o passo 3 antigo ("É só adicionar as suas fotos")
+// descrevia um fluxo que não existe mais — as fotos entram DEPOIS do
+// pagamento, na área do cliente (ver comentário no redirect final do
+// wizard, mais abaixo). Reescrito pra bater com o wizard real: ocasião
+// (inclui "composição livre" como opção, não só homenagem) → estilo →
+// dados do produto escolhido → pronto.
 const STEPS = [
-  { n: "1", label: "Conte sua história",    desc: "Escolha a ocasião e preencha o questionário guiado." },
-  { n: "2", label: "Escolha o estilo e sentimento", desc: "Sertanejo, MPB, pagode, pop — você decide." },
-  { n: "3", label: "É só adicionar as suas fotos.", desc: "Aqui você vai surpreender ainda mais." },
-  { n: "4", label: "Emocione alguém",        desc: "Um presente que ficará guardado para sempre." },
+  { n: "1", label: "Escolha a ocasião",       desc: "Composição livre ou homenagem — você define, contando pra quem é." },
+  { n: "2", label: "Defina o estilo musical", desc: "Sertanejo, MPB, pagode, pop — você decide." },
+  { n: "3", label: "Informe os dados do produto", desc: "Preencha de acordo com o que você escolheu — capa, fotos, QR Code." },
+  { n: "4", label: "Pronto em minutos",       desc: "Sua história vira música rapidinho, sem complicação." },
 ]
 
 const STEP_GRADIENTS = [
@@ -90,6 +96,26 @@ const WHY = [
     gradient: "linear-gradient(135deg, #d946ef, #f0196b)",
   },
 ]
+
+// Dispara uma vez quando o elemento entra na tela — usado pra animar a
+// entrada de "Como funciona" (cartões + linha conectando os números) só
+// quando a pessoa rola até lá, em vez de tocar a animação inteira antes
+// de qualquer um ver (a seção fica bem abaixo da dobra).
+function useInView(threshold = 0.25) {
+  const ref = useRef<HTMLDivElement | null>(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setInView(true); observer.disconnect() } },
+      { threshold }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [threshold])
+  return { ref, inView }
+}
 
 function useCountUp(target: number, decimals: number, duration = 1800) {
   const [value, setValue] = useState(0)
@@ -162,6 +188,38 @@ export default function Home() {
   const [currentAudio, setCurrentAudio] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
   const router = useRouter()
+
+  // Animação de entrada de "Como funciona" — dispara quando a seção aparece.
+  const { ref: stepsRef, inView: stepsInView } = useInView()
+  // Número REAL de músicas entregues (consultado no banco em 2026-09-02),
+  // contando a partir de 0 quando o bloco entra na tela.
+  const { ref: statRef, value: statValue } = useCountUp(68, 0, 1600)
+
+  // Linha que conecta os 4 números de "Como funciona": MEDIDA, não em
+  // porcentagem fixa. O badge não fica centralizado na coluna do grid —
+  // o `p-8` do cartão empurra o círculo pra perto da borda esquerda —
+  // então "12.5% a 87.5%" (os centros de uma grade de 4 colunas) erraria
+  // o alvo. Mede o centro real do 1º e do último badge e recalcula no
+  // resize, porque esse deslocamento muda com a largura da tela.
+  const [lineSpan, setLineSpan] = useState<{ left: number; width: number } | null>(null)
+  const badgeRefs = useRef<(HTMLDivElement | null)[]>([])
+  useEffect(() => {
+    function medir() {
+      const wrap = stepsRef.current
+      const first = badgeRefs.current[0]
+      const last = badgeRefs.current[STEPS.length - 1]
+      if (!wrap || !first || !last) return
+      const wrapRect = wrap.getBoundingClientRect()
+      const firstRect = first.getBoundingClientRect()
+      const lastRect = last.getBoundingClientRect()
+      const firstCenter = (firstRect.left + firstRect.right) / 2 - wrapRect.left
+      const lastCenter = (lastRect.left + lastRect.right) / 2 - wrapRect.left
+      setLineSpan({ left: firstCenter, width: lastCenter - firstCenter })
+    }
+    medir()
+    window.addEventListener("resize", medir)
+    return () => window.removeEventListener("resize", medir)
+  }, [stepsRef])
 
   // Vídeo de fundo do hero: escolhe a resolução no cliente (baixa só a certa)
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -580,39 +638,93 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {STEPS.map((s, i) => (
-              <div key={s.n}
-                   className="group relative p-8 rounded-3xl cursor-default"
+          {/* `stepsRef` no container: dispara a entrada (linha + cartões)
+              quando a seção aparece na tela, uma vez só. */}
+          <div ref={stepsRef} className="relative">
+            {/* Linha conectando os números — só desktop (no celular os
+                cartões quebram em 2 colunas, uma linha reta não bate com
+                nenhum centro de badge). `top: 56px` é exato (p-8 do cartão
+                + metade de w-12 = 32+24), mas `left`/`width` vêm MEDIDOS
+                (ver `lineSpan` acima) — o badge não fica centralizado na
+                coluna, então uma % fixa erraria o alvo horizontal. */}
+            {lineSpan && (
+              <div aria-hidden="true" className="hidden lg:block absolute h-px origin-left"
                    style={{
-                     background: "rgba(14,13,26,0.95)",
-                     border: "1px solid rgba(255,255,255,0.07)",
-                     transition: "transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, border-color 0.3s ease",
-                   }}
-                   onMouseEnter={e => {
-                     const el = e.currentTarget
-                     el.style.transform = "translateY(-10px) scale(1.02)"
-                     el.style.boxShadow = "0 24px 60px rgba(240,25,107,0.22), 0 8px 24px rgba(0,0,0,0.6)"
-                     el.style.borderColor = "rgba(240,25,107,0.35)"
-                     el.style.background = "rgba(20,18,35,1)"
-                     el.style.zIndex = "10"
-                   }}
-                   onMouseLeave={e => {
-                     const el = e.currentTarget
-                     el.style.transform = ""
-                     el.style.boxShadow = ""
-                     el.style.borderColor = "rgba(255,255,255,0.07)"
-                     el.style.background = "rgba(14,13,26,0.95)"
-                     el.style.zIndex = ""
-                   }}>
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
-                     style={{ background: STEP_GRADIENTS[i], boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
-                  <span className="text-white font-bold text-xl" style={bodyFont}>{s.n}</span>
+                     top: "56px",
+                     left: lineSpan.left,
+                     width: lineSpan.width,
+                     background: "linear-gradient(90deg, rgba(240,25,107,0.7), rgba(217,70,239,0.7))",
+                     transform: stepsInView ? "scaleX(1)" : "scaleX(0)",
+                     transition: "transform 1.2s cubic-bezier(.16,1,.3,1) 0.2s",
+                   }} />
+            )}
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {STEPS.map((s, i) => (
+                // Envelope SÓ da animação de entrada (opacity/translateY via
+                // React, escalonado por índice). O hover continua no cartão
+                // de dentro, intocado — e não colide: o hover só mexe em
+                // transform/boxShadow/borderColor/background por DOM direto
+                // (onMouseEnter/Leave), nunca em opacity, que é quem esta
+                // camada controla.
+                <div key={s.n}
+                     style={{
+                       opacity: stepsInView ? 1 : 0,
+                       transform: stepsInView ? "translateY(0)" : "translateY(24px)",
+                       transition: `opacity 0.7s cubic-bezier(.16,1,.3,1) ${i * 0.12}s, transform 0.7s cubic-bezier(.16,1,.3,1) ${i * 0.12}s`,
+                     }}>
+                  <div className="group relative p-8 rounded-3xl cursor-default"
+                       style={{
+                         background: "rgba(14,13,26,0.95)",
+                         border: "1px solid rgba(255,255,255,0.07)",
+                         transition: "transform 0.3s cubic-bezier(.16,1,.3,1), box-shadow 0.3s ease, border-color 0.3s ease",
+                       }}
+                       onMouseEnter={e => {
+                         const el = e.currentTarget
+                         el.style.transform = "translateY(-10px) scale(1.02)"
+                         el.style.boxShadow = "0 24px 60px rgba(240,25,107,0.22), 0 8px 24px rgba(0,0,0,0.6)"
+                         el.style.borderColor = "rgba(240,25,107,0.35)"
+                         el.style.background = "rgba(20,18,35,1)"
+                         el.style.zIndex = "10"
+                       }}
+                       onMouseLeave={e => {
+                         const el = e.currentTarget
+                         el.style.transform = ""
+                         el.style.boxShadow = ""
+                         el.style.borderColor = "rgba(255,255,255,0.07)"
+                         el.style.background = "rgba(14,13,26,0.95)"
+                         el.style.zIndex = ""
+                       }}>
+                    <div ref={(el) => { badgeRefs.current[i] = el }}
+                         className="w-12 h-12 rounded-2xl flex items-center justify-center mb-6"
+                         style={{ background: STEP_GRADIENTS[i], boxShadow: "0 4px 20px rgba(240,25,107,0.3)" }}>
+                      <span className="text-white font-bold text-xl" style={bodyFont}>{s.n}</span>
+                    </div>
+                    <h3 className="font-semibold text-white text-base mb-2" style={bodyFont}>{s.label}</h3>
+                    <p className="text-sm text-white/60 leading-relaxed" style={bodyFont}>{s.desc}</p>
+                  </div>
                 </div>
-                <h3 className="font-semibold text-white text-base mb-2" style={bodyFont}>{s.label}</h3>
-                <p className="text-sm text-white/60 leading-relaxed" style={bodyFont}>{s.desc}</p>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          {/* Número animado — pedido do Audrei ("números que crescem, tipo
+              43 mil usuários"). NÃO usei 43 mil: não bate com nada no banco
+              (conferido: 71 pedidos pagos, 68 entregues, 13 clientes — a
+              STATS array logo no topo do arquivo já tinha 10.000/8.000
+              escritos há um tempo, mas nunca chegou a ser exibida em
+              lugar nenhum, e é igualmente inflada). Usei o número REAL de
+              músicas entregues (68) — mesmo raciocínio da vitrine de
+              preços: número que aparece pro cliente vem do banco, nunca
+              escrito à mão. */}
+          <div ref={statRef} className="mt-14 lg:mt-16 flex flex-col items-center text-center">
+            <p className="font-extrabold leading-none tabular-nums"
+               style={{ ...bodyFont, fontSize: "clamp(2.4rem, 6vw, 3.6rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+              +{Math.floor(statValue)}
+            </p>
+            <p className="text-white/70 text-sm mt-2" style={bodyFont}>
+              histórias reais já viraram música — <span className="text-white font-semibold">só falta a sua.</span>
+            </p>
           </div>
 
         </div>
