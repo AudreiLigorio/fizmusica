@@ -762,9 +762,6 @@ export default function Home() {
               é uma experiência completa.
             </span>
           </h2>
-          <p className="text-white/90 font-medium mb-5" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
-            Tudo incluso:
-          </p>
           <div className="space-y-4">
             {[
               "A música é exclusiva e perfeita",
