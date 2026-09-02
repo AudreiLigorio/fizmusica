@@ -576,7 +576,101 @@ export default function Home() {
           CARROSSEL
       ═══════════════════════════════════════════ */}
       <section className="max-w-6xl mx-auto px-6 py-8 lg:py-16">
+
+        {/* Título dos banners (pedido do Audrei) — mesmo padrão dos outros:
+            DM Sans extrabold em caixa alta, 1ª linha branca e 2ª no degradê
+            rosa→roxo. A frase é bem mais longa que a de "Em apenas alguns
+            passos", então o clamp é menor: no tamanho dos outros títulos a
+            1ª linha quebraria em três e o bloco viraria uma parede de texto
+            em cima do carrossel. `text-wrap: balance` distribui a quebra em
+            vez de deixar uma órfã pendurada. */}
+        <div className="mb-8 lg:mb-12">
+          <h2 className="font-extrabold uppercase leading-[1.02] tracking-tight" style={{ ...bodyFont, textWrap: "balance" }}>
+            <span className="block text-white/90" style={{ fontSize: "clamp(1.4rem, 2.6vw, 2.1rem)" }}>
+              As músicas podem ser criadas para homenagens ou composição.
+            </span>
+            <span className="block" style={{ fontSize: "clamp(1.4rem, 2.6vw, 2.1rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+              É do seu jeito e como você quiser.
+            </span>
+          </h2>
+        </div>
+
         <FizMusicaCarousel />
+      </section>
+
+      {/* ═══════════════════════════════════════════
+          POR QUE NOS ESCOLHER
+      ═══════════════════════════════════════════ */}
+      {/* border-t, nao border-y: a secao seguinte ("Em apenas alguns
+          passos") ja tem borda no topo, e com border-y as duas somavam 2px
+          de divisoria — o dobro do resto da pagina. */}
+      <section className="border-t border-white/[0.05] py-14 lg:py-28" style={{ background: "rgba(255,255,255,0.015)" }}>
+        <div className="max-w-6xl mx-auto px-6">
+
+          {/* Selo "Diferenciais" removido e texto trocado (pedido do
+              Audrei) — mesma lógica de fonte dos outros títulos: DM Sans
+              extrabold em caixa alta, 2ª linha no degradê rosa→roxo.
+              Copy mudou de foco: de "por que nos escolher" (comparação com
+              concorrente) pra um chamado direto a quem quer compor, virar
+              profissional e divulgar o próprio trabalho — por isso o CTA
+              logo abaixo aponta pro wizard, não é só um título decorativo. */}
+          {/* Texto + imagem lado a lado no desktop. Antes o texto ficava
+              sozinho numa coluna e a imagem vinha embaixo, ocupando a linha
+              inteira — funcionava porque a arte era paisagem (1400x846). A
+              arte nova é RETRATO (1024x1536): na largura do container ela
+              passaria de 1600px de altura, uma parede que empurraria os
+              cards pra fora da tela. Em duas colunas ela fica com ~520px
+              de largura e altura de gente. No mobile empilha, com teto de
+              largura pra não virar rolagem infinita. */}
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+            <div className="max-w-2xl">
+              <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight mb-6" style={bodyFont}>
+                <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
+                  Chegou a hora de você
+                </span>
+                <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                  sair da mesmice.
+                </span>
+              </h2>
+              <p className="text-white/60 leading-relaxed mb-7" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
+                Coloque a sua criatividade em prática. Aqui, o que importa é o destaque real entre pessoas comuns.
+              </p>
+              <button
+                onClick={() => { track("cta_criar", "por_que_escolher"); router.push("/criar") }}
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
+                style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
+              >
+                Quero criar minha música
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Imagem de impacto (troca pedida pelo Audrei — substitui a arte
+                das duas portas). WebP q78, 218KB: comparei o bilhete "CRIE /
+                COMPONHA / HOMENAGEIE" contra o PNG original com zoom 2x e o
+                texto pequeno continua igual, então não vale pagar os 293KB
+                do q86.
+
+                `sizes` com o teto real da coluna (~520px = metade do
+                container de 1104px menos o gap), não "100vw" — sem o teto o
+                Next pede a maior variante em qualquer tela larga mesmo a
+                imagem nunca desenhando mais que isso. Já errei isso duas
+                vezes nesta home (colagem do hero e a arte anterior daqui). */}
+            <div className="rounded-3xl overflow-hidden w-full max-w-[26rem] mx-auto lg:max-w-none">
+              <Image
+                src="/images/ideia-vira-hit.webp"
+                alt="Rapaz de fones sentado no chão compondo no notebook, cercado de violão, microfone e anotações; ao lado, uma porta aberta revela um palco lotado e os ícones do TikTok, Instagram e YouTube — aqui sua ideia vira hit e pode parar na Rede"
+                width={1024}
+                height={1536}
+                sizes="(min-width: 1024px) 520px, (min-width: 640px) 416px, calc(100vw - 48px)"
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+
+        </div>
       </section>
 
       {/* ═══════════════════════════════════════════
@@ -740,78 +834,6 @@ export default function Home() {
 
         <ExperienceVideo />
 
-      </section>
-
-      {/* ═══════════════════════════════════════════
-          POR QUE NOS ESCOLHER
-      ═══════════════════════════════════════════ */}
-      <section className="border-y border-white/[0.05] py-14 lg:py-28" style={{ background: "rgba(255,255,255,0.015)" }}>
-        <div className="max-w-6xl mx-auto px-6">
-
-          {/* Selo "Diferenciais" removido e texto trocado (pedido do
-              Audrei) — mesma lógica de fonte dos outros títulos: DM Sans
-              extrabold em caixa alta, 2ª linha no degradê rosa→roxo.
-              Copy mudou de foco: de "por que nos escolher" (comparação com
-              concorrente) pra um chamado direto a quem quer compor, virar
-              profissional e divulgar o próprio trabalho — por isso o CTA
-              logo abaixo aponta pro wizard, não é só um título decorativo. */}
-          {/* Texto + imagem lado a lado no desktop. Antes o texto ficava
-              sozinho numa coluna e a imagem vinha embaixo, ocupando a linha
-              inteira — funcionava porque a arte era paisagem (1400x846). A
-              arte nova é RETRATO (1024x1536): na largura do container ela
-              passaria de 1600px de altura, uma parede que empurraria os
-              cards pra fora da tela. Em duas colunas ela fica com ~520px
-              de largura e altura de gente. No mobile empilha, com teto de
-              largura pra não virar rolagem infinita. */}
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-            <div className="max-w-2xl">
-              <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight mb-6" style={bodyFont}>
-                <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
-                  Chegou a hora de você
-                </span>
-                <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
-                  sair da mesmice.
-                </span>
-              </h2>
-              <p className="text-white/60 leading-relaxed mb-7" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
-                Coloque a sua criatividade em prática. Aqui, o que importa é o destaque real entre pessoas comuns.
-              </p>
-              <button
-                onClick={() => { track("cta_criar", "por_que_escolher"); router.push("/criar") }}
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
-                style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
-              >
-                Quero criar minha música
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m9 6 6 6-6 6" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Imagem de impacto (troca pedida pelo Audrei — substitui a arte
-                das duas portas). WebP q78, 218KB: comparei o bilhete "CRIE /
-                COMPONHA / HOMENAGEIE" contra o PNG original com zoom 2x e o
-                texto pequeno continua igual, então não vale pagar os 293KB
-                do q86.
-
-                `sizes` com o teto real da coluna (~520px = metade do
-                container de 1104px menos o gap), não "100vw" — sem o teto o
-                Next pede a maior variante em qualquer tela larga mesmo a
-                imagem nunca desenhando mais que isso. Já errei isso duas
-                vezes nesta home (colagem do hero e a arte anterior daqui). */}
-            <div className="rounded-3xl overflow-hidden w-full max-w-[26rem] mx-auto lg:max-w-none">
-              <Image
-                src="/images/ideia-vira-hit.webp"
-                alt="Rapaz de fones sentado no chão compondo no notebook, cercado de violão, microfone e anotações; ao lado, uma porta aberta revela um palco lotado e os ícones do TikTok, Instagram e YouTube — aqui sua ideia vira hit e pode parar na Rede"
-                width={1024}
-                height={1536}
-                sizes="(min-width: 1024px) 520px, (min-width: 640px) 416px, calc(100vw - 48px)"
-                className="w-full h-auto"
-              />
-            </div>
-          </div>
-
-        </div>
       </section>
 
       {/* ═══════════════════════════════════════════
