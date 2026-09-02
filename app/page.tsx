@@ -411,15 +411,23 @@ export default function Home() {
           PLAYER DE EXEMPLOS — abaixo do hero
       ═══════════════════════════════════════════ */}
       <section className="max-w-3xl mx-auto px-6 py-14 lg:py-20">
+        {/* Mesma lógica do cabeçalho de exemplos em vídeo (pedido do
+            Audrei): selo removido, título passa da serifada (Cormorant)
+            pra DM Sans extrabold em caixa alta, quebrado em duas linhas
+            com a 2ª no degradê rosa→roxo. Sem vírgula natural pra quebrar
+            desta vez ("Ouça como ficam as músicas" é uma frase corrida),
+            então a quebra fica entre verbo+advérbio e o objeto — mesmo
+            equilíbrio de peso das duas linhas dos outros títulos. */}
         <div className="text-center mb-8">
-          <span className="inline-block text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-4"
-                style={{ background: "rgba(240,25,107,0.12)", color: "#ff6b9d", letterSpacing: "0.12em" }}>
-            🎧 exemplos
-          </span>
-          <h2 className="font-light text-white/90 leading-tight" style={{ ...displayFont, fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)" }}>
-            Ouça como ficam as músicas
+          <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight" style={bodyFont}>
+            <span className="block text-white/90" style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.5rem)" }}>
+              Ouça como ficam
+            </span>
+            <span className="block" style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.5rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+              as músicas
+            </span>
           </h2>
-          <p className="text-white/50 text-sm mt-2" style={bodyFont}>
+          <p className="text-white/50 text-sm mt-3" style={bodyFont}>
             Músicas reais já entregues — a sua será única e personalizada.
           </p>
         </div>
