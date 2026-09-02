@@ -790,16 +790,42 @@ export default function Home() {
       <section className="border-y border-white/[0.05] py-14 lg:py-28" style={{ background: "rgba(255,255,255,0.015)" }}>
         <div className="max-w-6xl mx-auto px-6">
 
-          <div className="mb-16 max-w-xl">
-            <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ ...bodyFont, color: "#f0196b" }}>
-              Diferenciais
-            </p>
-            <h2 className="font-light text-white/90 leading-tight"
-                style={{ ...displayFont, fontSize: "clamp(2rem, 3.5vw, 3rem)" }}>
-              Por que escolher<br />
-              <em style={{ color: "#f0196b" }}>a Fiz Música?</em>
+          {/* Selo "Diferenciais" removido e texto trocado (pedido do
+              Audrei) — mesma lógica de fonte dos outros títulos: DM Sans
+              extrabold em caixa alta, 2ª linha no degradê rosa→roxo.
+              Copy mudou de foco: de "por que nos escolher" (comparação com
+              concorrente) pra um chamado direto a quem quer compor, virar
+              profissional e divulgar o próprio trabalho — por isso o CTA
+              logo abaixo aponta pro wizard, não é só um título decorativo. */}
+          <div className="mb-12 max-w-2xl">
+            <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight mb-6" style={bodyFont}>
+              <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
+                Chegou a hora de você
+              </span>
+              <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                sair da mesmice.
+              </span>
             </h2>
+            <p className="text-white/60 leading-relaxed mb-7" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
+              Coloque a sua criatividade em prática. Aqui, o que importa é o destaque real entre pessoas comuns.
+            </p>
+            <button
+              onClick={() => { track("cta_criar", "por_que_escolher"); router.push("/criar") }}
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
+              style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
+            >
+              Quero criar minha música
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </button>
           </div>
+
+          {/* ESPAÇO RESERVADO pra imagem de impacto ("print 2" — as duas
+              portas: "só alguns podem criar" vs. "bem-vindo à sua música").
+              Não entrou ainda: o arquivo não caiu em Downloads como nas
+              vezes anteriores desta sessão, e sem o arquivo real não dá
+              pra otimizar (WebP, tamanho) nem posicionar direito. */}
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {WHY.map((w) => (
