@@ -673,7 +673,22 @@ export default function Home() {
                        transform: stepsInView ? "translateY(0)" : "translateY(24px)",
                        transition: `opacity 0.7s cubic-bezier(.16,1,.3,1) ${i * 0.12}s, transform 0.7s cubic-bezier(.16,1,.3,1) ${i * 0.12}s`,
                      }}>
-                  <div className="group relative p-8 rounded-3xl cursor-default"
+                  <div className="group relative h-full p-8 rounded-3xl cursor-default"
+                       // `h-full`: a descrição do passo 3 ficou mais longa
+                       // ("Preencha de acordo com o que você escolheu — capa,
+                       // fotos, QR Code.") e passou a quebrar em mais linhas
+                       // que as outras — sem isso, a CAIXA (fundo/borda) de
+                       // cada cartão só tinha a altura do próprio texto, e a
+                       // fileira ficava com alturas desiguais mesmo o grid
+                       // já esticando o envelope-pai por igual (esticar o pai
+                       // não estica o filho sozinho).
+                       // Pedido do Audrei: o número animado (+68) sai de baixo
+                       // da grade e entra DENTRO do cartão 4 — é aqui, em
+                       // "pronto em minutos", que faz sentido reforçar que
+                       // outras pessoas já terminaram rápido. `ref={statRef}`
+                       // só no cartão 4: é ele quem dispara a contagem ao
+                       // entrar na tela, os outros três não mexem nisso.
+                       ref={i === 3 ? statRef : undefined}
                        style={{
                          background: "rgba(14,13,26,0.95)",
                          border: "1px solid rgba(255,255,255,0.07)",
@@ -701,30 +716,26 @@ export default function Home() {
                       <span className="text-white font-bold text-xl" style={bodyFont}>{s.n}</span>
                     </div>
                     <h3 className="font-semibold text-white text-base mb-2" style={bodyFont}>{s.label}</h3>
-                    <p className="text-sm text-white/60 leading-relaxed" style={bodyFont}>{s.desc}</p>
+                    {i === 3 ? (
+                      // Número REAL de músicas entregues (banco, 2026-09-02),
+                      // não os "43 mil" pedidos nem os 10.000/8.000 que já
+                      // estavam soltos (e nunca exibidos) na STATS array lá
+                      // em cima — mesmo raciocínio da vitrine de preços:
+                      // número que o cliente vê vem do banco, não é digitado.
+                      <p className="text-sm text-white/60 leading-relaxed" style={bodyFont}>
+                        <span className="font-extrabold tabular-nums"
+                              style={{ background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                          +{Math.floor(statValue)}
+                        </span>{" "}
+                        histórias já viraram música — sem complicação.
+                      </p>
+                    ) : (
+                      <p className="text-sm text-white/60 leading-relaxed" style={bodyFont}>{s.desc}</p>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* Número animado — pedido do Audrei ("números que crescem, tipo
-              43 mil usuários"). NÃO usei 43 mil: não bate com nada no banco
-              (conferido: 71 pedidos pagos, 68 entregues, 13 clientes — a
-              STATS array logo no topo do arquivo já tinha 10.000/8.000
-              escritos há um tempo, mas nunca chegou a ser exibida em
-              lugar nenhum, e é igualmente inflada). Usei o número REAL de
-              músicas entregues (68) — mesmo raciocínio da vitrine de
-              preços: número que aparece pro cliente vem do banco, nunca
-              escrito à mão. */}
-          <div ref={statRef} className="mt-14 lg:mt-16 flex flex-col items-center text-center">
-            <p className="font-extrabold leading-none tabular-nums"
-               style={{ ...bodyFont, fontSize: "clamp(2.4rem, 6vw, 3.6rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
-              +{Math.floor(statValue)}
-            </p>
-            <p className="text-white/70 text-sm mt-2" style={bodyFont}>
-              histórias reais já viraram música — <span className="text-white font-semibold">só falta a sua.</span>
-            </p>
           </div>
 
         </div>
@@ -736,13 +747,17 @@ export default function Home() {
       <section className="max-w-6xl mx-auto px-6 py-14 lg:py-28 grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
 
         <div>
-          <p className="text-xs tracking-[0.3em] uppercase mb-6" style={{ ...bodyFont, color: "#f0196b" }}>
-            A experiência
-          </p>
-          <h2 className="font-light leading-tight mb-8 text-white/90"
-              style={{ ...displayFont, fontSize: "clamp(2rem, 3.5vw, 3rem)" }}>
-            Muito mais do que uma música,{" "}
-            <em style={{ color: "#f0196b" }}>é uma experiência completa.</em>
+          {/* Mesma lógica dos outros títulos (pedido do Audrei): selo "A
+              experiência" removido, fonte passa da serifada (Cormorant)
+              pra DM Sans extrabold em caixa alta, trecho de destaque no
+              degradê rosa→roxo em vez do rosa chapado do <em>. */}
+          <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight mb-8" style={bodyFont}>
+            <span className="block text-white/90" style={{ fontSize: "clamp(1.7rem, 3vw, 2.6rem)" }}>
+              Muito mais do que uma música,
+            </span>
+            <span className="block" style={{ fontSize: "clamp(1.7rem, 3vw, 2.6rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+              é uma experiência completa.
+            </span>
           </h2>
           <p className="text-white/90 font-medium mb-5" style={{ ...bodyFont, fontSize: "1.0625rem" }}>
             Tudo incluso:
