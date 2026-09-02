@@ -860,23 +860,28 @@ export default function Home() {
             <div className="grid lg:grid-cols-2">
 
               {/* left */}
+              {/* Selo "O que nos torna únicos" removido e título trocado da
+                  serifada (Cormorant) itálica para DM Sans extrabold caixa
+                  alta com a 2ª linha em degradê — mesmo padrão já aplicado
+                  em Como funciona / A Experiência / Por que escolher /
+                  exemplos em vídeo e áudio (pedido do Audrei). Este era o
+                  último título da home ainda no estilo antigo. */}
               <div className="p-7 lg:p-14 flex flex-col justify-center space-y-6 lg:space-y-8">
-                <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full w-fit text-sm font-medium"
-                     style={{ ...bodyFont, background: "rgba(240,25,107,0.1)", border: "1px solid rgba(240,25,107,0.25)", color: "#ff6b9d" }}>
-                  <span className="w-2 h-2 rounded-full animate-pulse-ring shrink-0" style={{ background: "#f0196b" }} />
-                  O que nos torna únicos
-                </div>
-
-                <h2 className="font-light leading-tight text-white/90"
-                    style={{ ...displayFont, fontSize: "clamp(2.2rem, 4vw, 3.5rem)" }}>
-                  Mais que músicas,{" "}
-                  <em style={{ color: "#f0196b" }}>
+                <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight" style={bodyFont}>
+                  <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
+                    Mais que músicas,
+                  </span>
+                  <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
                     criamos emoções que ficam para sempre.
-                  </em>
+                  </span>
                 </h2>
 
+                {/* Texto trocado (pedido do Audrei): saiu a comparação com
+                    concorrentes ("enquanto outras plataformas..."), entrou o
+                    ritmo de lançamentos — reforça o selo que saiu daqui em
+                    cima ("o que nos torna únicos") dentro do próprio texto. */}
                 <p className="text-sm text-white/60 leading-relaxed max-w-md" style={bodyFont}>
-                  Enquanto outras plataformas apenas geram músicas, nós criamos experiências emocionais completas feitas para tocar o coração de quem recebe.
+                  Lançamos novas funcionalidades o tempo todo, porque é um prazer oferecer uma plataforma completa para você criar e se emocionar. É isso que nos torna únicos.
                 </p>
 
               </div>
@@ -934,14 +939,17 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 grid lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] gap-10 lg:gap-16">
 
           {/* Coluna esquerda — fixa: título + suporte */}
+          {/* Selo "Dúvidas frequentes" removido e título trocado pro mesmo
+              padrão dos outros (pedido do Audrei): DM Sans extrabold caixa
+              alta, 2ª linha em degradê rosa→roxo. */}
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ ...bodyFont, color: "#f0196b" }}>
-              Dúvidas frequentes
-            </p>
-            <h2 className="font-light text-white/90 leading-tight"
-                style={{ ...displayFont, fontSize: "clamp(2rem, 3.5vw, 3rem)" }}>
-              Tudo que você precisa saber<br />
-              <em style={{ color: "#f0196b" }}>antes de emocionar alguém.</em>
+            <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight" style={bodyFont}>
+              <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
+                Tudo que você precisa saber
+              </span>
+              <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                antes de emocionar alguém.
+              </span>
             </h2>
 
             {/* Card de suporte */}
