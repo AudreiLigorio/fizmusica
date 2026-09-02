@@ -219,7 +219,13 @@ export default function ProdutosCarrossel() {
                   key={p.id}
                   produto={p}
                   cor={CORES[i % CORES.length]}
-                  onClick={() => { track("cta_produto", "carrossel_produtos"); router.push("/produtos") }}
+                  // Leva pro WIZARD levando o plano escolhido, não direto
+                  // pra /produtos. O pedido nasce no fim do wizard e todo o
+                  // resto depende do `orderId` dele: caindo em /produtos sem
+                  // pedido, a tela abria normal e o botão "Ir para pagamento"
+                  // ficava ATIVO sem fazer nada ao clicar — beco sem saída
+                  // silencioso justo no botão de compra.
+                  onClick={() => { track("cta_produto", "carrossel_produtos"); router.push(`/criar?produto=${encodeURIComponent(p.id)}`) }}
                 />
               ))}
         </div>

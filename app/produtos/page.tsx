@@ -126,10 +126,26 @@ function ProdutosContent() {
 
   const isPhysical = selected?.category === "DIGITAL_PHYSICAL"
 
+  // Plano que a pessoa já escolheu na vitrine da home, repassado pelo wizard.
+  // Aqui ele só PRÉ-SELECIONA: a tela continua sendo a de escolha, com o
+  // comparativo à vista e o cupom disponível, porque entre clicar na home e
+  // chegar aqui passaram vários minutos e várias telas — e é aqui que quem
+  // pegou o plano de entrada costuma subir de plano.
+  const planoDaHome = searchParams.get("produto")
+
   useEffect(() => {
     fetch("/api/produtos")
       .then((r) => r.json())
-      .then((d) => { setProducts(d.products ?? []); setLoading(false) })
+      .then((d) => {
+        const lista: Product[] = d.products ?? []
+        setProducts(lista)
+        // Se o plano veio da home, abre com ele marcado. Ignora em silêncio
+        // quando não bate com nada: um plano desativado no admin depois do
+        // clique não pode travar a tela — a pessoa escolhe outro normalmente.
+        const escolhido = planoDaHome ? lista.find((x) => x.id === planoDaHome) : null
+        if (escolhido) handleSelectProduct(escolhido)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
     fetch("/api/coupons/active")
       .then((r) => r.json())
@@ -193,7 +209,17 @@ function ProdutosContent() {
   }
 
   async function handleContinuar() {
-    if (!selected || !orderId) return
+    if (!selected) return
+
+    // Sem pedido criado não há pra onde seguir: o checkout inteiro é montado
+    // em cima do `orderId`. Antes esta função simplesmente retornava aqui, com
+    // o botão "Ir para pagamento" ATIVO na tela — a pessoa clicava e não
+    // acontecia nada, sem aviso nenhum, justo no botão de compra. Agora manda
+    // pro wizard levando o plano escolhido, que é onde o pedido nasce.
+    if (!orderId) {
+      router.push(`/criar?produto=${encodeURIComponent(selected.id)}`)
+      return
+    }
 
     // Produto físico: salva dados de envio antes de seguir
     if (isPhysical) {

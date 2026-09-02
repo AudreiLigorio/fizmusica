@@ -738,7 +738,14 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       // Pedido criado: vai direto escolher o produto. As fotos entram depois do
       // pagamento, na área do cliente — pedir foto antes de pagar alongava a
       // contratação e deixava imagem de terceiro em pedido que nunca converteu.
-      router.push(`/produtos?orderId=${finalOrderId}`)
+      //
+      // `?produto=` é repassado quando a pessoa entrou clicando num plano da
+      // vitrine da home: ela JÁ escolheu, e /produtos usa isso pra abrir com o
+      // plano marcado em vez de pedir a mesma decisão de novo. Segue passando
+      // por /produtos de propósito (e não direto pro checkout) porque é lá que
+      // moram o cupom e o endereço dos planos com item físico.
+      const planoEscolhido = searchParams.get("produto")
+      router.push(`/produtos?orderId=${finalOrderId}${planoEscolhido ? `&produto=${encodeURIComponent(planoEscolhido)}` : ""}`)
     } catch {
       setError("Falha de conexão. Verifique sua internet.")
       setSubmitting(false)
