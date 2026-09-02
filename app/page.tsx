@@ -847,40 +847,6 @@ export default function Home() {
                   Enquanto outras plataformas apenas geram músicas, nós criamos experiências emocionais completas feitas para tocar o coração de quem recebe.
                 </p>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    {
-                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
-                      title: "Experiência emocional guiada",
-                      grad: "linear-gradient(135deg,#f0196b,#d946ef)",
-                    },
-                    {
-                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>,
-                      title: "Letras feitas para sua história",
-                      grad: "linear-gradient(135deg,#d946ef,#f0196b)",
-                    },
-                    {
-                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>,
-                      title: "Player exclusivo com música, foto e letra.",
-                      grad: "linear-gradient(135deg,#f0196b,#d946ef)",
-                    },
-                    {
-                      icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>,
-                      title: "Presente inesquecível",
-                      grad: "linear-gradient(135deg,#d946ef,#f0196b)",
-                    },
-                  ].map((b) => (
-                    <div key={b.title}
-                         className="p-4 rounded-2xl flex items-start gap-3 transition-all duration-200"
-                         style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white mt-0.5"
-                           style={{ background: b.grad }}>
-                        {b.icon}
-                      </div>
-                      <p className="text-xs text-white/65 leading-snug pt-1" style={bodyFont}>{b.title}</p>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               {/* right */}
