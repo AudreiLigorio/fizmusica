@@ -566,14 +566,17 @@ export default function Home() {
       <section className="py-14 lg:py-28 border-y border-white/[0.05]">
         <div className="max-w-6xl mx-auto px-6">
 
+          {/* Mesma lógica dos outros títulos (pedido do Audrei): selo
+              removido, fonte passa da serifada (Cormorant) pra DM Sans
+              extrabold em caixa alta, 2ª linha no degradê rosa→roxo. */}
           <div className="mb-16">
-            <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ ...bodyFont, color: "#f0196b" }}>
-              Processo
-            </p>
-            <h2 className="font-light text-white/90 leading-tight"
-                style={{ ...displayFont, fontSize: "clamp(2.2rem, 4vw, 3.5rem)" }}>
-              Em apenas alguns passos,<br />
-              <em style={{ color: "#f0196b" }}>sua história vira uma surpresa inesquecível.</em>
+            <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight" style={bodyFont}>
+              <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
+                Em apenas alguns passos,
+              </span>
+              <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                sua ideia vira realidade.
+              </span>
             </h2>
           </div>
 
