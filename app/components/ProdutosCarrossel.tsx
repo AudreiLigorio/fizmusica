@@ -23,15 +23,25 @@ type Produto = {
   featured?: boolean
 }
 
-// Paleta por posição, seguindo o print: roxo, laranja, azul, verde. Fica
-// fora do banco de propósito — é decisão visual desta tela, não atributo do
-// produto. Se um dia entrar um 5º plano, ele reaproveita a primeira cor em
-// vez de aparecer sem cor nenhuma.
+// Paleta por posição: branco, laranja, azul, verde, magenta. Fica fora do
+// banco de propósito — é decisão visual desta tela, não atributo do produto.
+//
+// A primeira era roxa e virou BRANCA a pedido do Audrei: o botão "Começar
+// agora" da carta gratuita, logo à esquerda, também é roxo, e as duas
+// apareciam coladas repetindo a mesma cor.
+//
+// São 5 porque hoje existem 5 planos: com 4 o quinto voltava pro índice 0 e
+// repetia a cor do primeiro — que é justamente o que se quer evitar. Se
+// entrar um 6º, ele reaproveita a primeira em vez de ficar sem cor.
+//
+// `precoTexto` existe por causa do branco: a etiqueta de preço pinta o texto
+// SOBRE `forte`, e branco no branco desapareceria.
 const CORES = [
-  { forte: "#a855f7", suave: "rgba(168,85,247,0.18)", borda: "rgba(168,85,247,0.35)" },
-  { forte: "#f59e0b", suave: "rgba(245,158,11,0.18)", borda: "rgba(245,158,11,0.35)" },
-  { forte: "#3b82f6", suave: "rgba(59,130,246,0.18)", borda: "rgba(59,130,246,0.35)" },
-  { forte: "#22c55e", suave: "rgba(34,197,94,0.18)", borda: "rgba(34,197,94,0.35)" },
+  { forte: "#ffffff", suave: "rgba(255,255,255,0.10)", borda: "rgba(255,255,255,0.28)", precoTexto: "#0d0b16" },
+  { forte: "#f59e0b", suave: "rgba(245,158,11,0.18)", borda: "rgba(245,158,11,0.35)", precoTexto: "#ffffff" },
+  { forte: "#3b82f6", suave: "rgba(59,130,246,0.18)", borda: "rgba(59,130,246,0.35)", precoTexto: "#ffffff" },
+  { forte: "#22c55e", suave: "rgba(34,197,94,0.18)", borda: "rgba(34,197,94,0.35)", precoTexto: "#ffffff" },
+  { forte: "#d946ef", suave: "rgba(217,70,239,0.18)", borda: "rgba(217,70,239,0.35)", precoTexto: "#ffffff" },
 ]
 
 const S = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
@@ -334,8 +344,8 @@ function CartaProduto({ produto, cor, onClick }: {
         ))}
       </ul>
 
-      <span className="mt-4 self-start px-4 py-2 rounded-xl text-base font-extrabold text-white"
-            style={{ background: cor.forte }}>
+      <span className="mt-4 self-start px-4 py-2 rounded-xl text-base font-extrabold"
+            style={{ background: cor.forte, color: cor.precoTexto }}>
         R$ {brl(produto.price)}
       </span>
     </button>
