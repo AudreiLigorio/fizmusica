@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase"
+import { urlsAssinadasDoAudio } from "@/lib/audioUrl"
 import ProductionList from "./ProductionList"
 
 export const dynamic = "force-dynamic"
@@ -38,8 +39,31 @@ async function getQueue() {
   return { orders, error }
 }
 
+// O bucket `songs` é PRIVADO (proteção contra download da música do cliente),
+// então a URL guardada em sunoTracks[].audioUrl não abre mais sozinha — os
+// players do admin mostravam "Erro". O cliente não passa por aqui: /api/orders
+// troca a URL por /api/audio, que checa credencial a cada play.
+//
+// Aqui o admin já foi autenticado pelo layout, então assinar direto é legítimo
+// e evita uma rota extra. Uma chamada só para a fila inteira (ver
+// urlsAssinadasDoAudio) — assinar faixa a faixa seriam ~140 idas ao Supabase.
+async function comAudioAssinado(orders: any[]) {
+  const todas = orders.flatMap((o) => (Array.isArray(o.sunoTracks) ? o.sunoTracks : []))
+  if (todas.length === 0) return orders
+
+  const assinadas = await urlsAssinadasDoAudio(createServerClient(), todas.map((t: any) => t?.audioUrl))
+  if (assinadas.size === 0) return orders
+
+  return orders.map((o) =>
+    Array.isArray(o.sunoTracks)
+      ? { ...o, sunoTracks: o.sunoTracks.map((t: any) => ({ ...t, audioUrl: assinadas.get(t?.audioUrl) ?? t?.audioUrl })) }
+      : o,
+  )
+}
+
 export default async function AdminProducao() {
   const { orders, error } = await getQueue()
+  const fila = await comAudioAssinado(orders)
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl">
@@ -52,7 +76,7 @@ export default async function AdminProducao() {
         </div>
       )}
 
-      <ProductionList orders={orders as any} />
+      <ProductionList orders={fila as any} />
     </div>
   )
 }

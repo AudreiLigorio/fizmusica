@@ -46,3 +46,40 @@ export async function urlAssinadaDoAudio(
   }
   return data?.signedUrl ?? null
 }
+
+// Versão em LOTE. Existe por causa da fila de produção do admin: são ~70
+// pedidos, cada um com até 2 versões — assinar uma a uma seriam ~140 idas
+// ao Supabase antes da página renderizar. `createSignedUrls` resolve tudo
+// numa chamada só.
+//
+// Devolve um mapa {urlOriginal -> urlAssinada}. Quem não conseguir assinar
+// fica de fora do mapa: a tela decide o que fazer (hoje, cai no link antigo
+// e o player mostra erro — melhor que a página inteira quebrar).
+export async function urlsAssinadasDoAudio(
+  supabase: DB,
+  urlsPublicas: (string | null | undefined)[],
+): Promise<Map<string, string>> {
+  const mapa = new Map<string, string>()
+  const pares = urlsPublicas
+    .filter((u): u is string => !!u)
+    .map((u) => ({ url: u, caminho: caminhoNoBucket(u) }))
+    .filter((p): p is { url: string; caminho: string } => !!p.caminho)
+
+  if (pares.length === 0) return mapa
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET_SONGS)
+    .createSignedUrls(pares.map((p) => p.caminho), VALIDADE_URL_SEGUNDOS)
+
+  if (error) {
+    console.error("[audioUrl] falha ao assinar em lote", error.message)
+    return mapa
+  }
+
+  // A resposta volta na MESMA ordem da entrada, então o índice liga cada
+  // assinatura de volta à URL original.
+  data?.forEach((item, i) => {
+    if (item.signedUrl && pares[i]) mapa.set(pares[i].url, item.signedUrl)
+  })
+  return mapa
+}

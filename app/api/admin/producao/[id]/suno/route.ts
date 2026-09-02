@@ -7,6 +7,7 @@ import { ingestSunoResult } from "@/lib/suno/ingest"
 import { handleSunoFailure } from "@/lib/suno/failure"
 import { notifyMusicReady } from "@/lib/suno/notify"
 import { logOrderEvent } from "@/lib/orderEvents"
+import { urlsAssinadasDoAudio } from "@/lib/audioUrl"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -23,7 +24,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const supabase = createServerClient()
   const { data } = await supabase
     .from("orders").select("sunoStatus, sunoTracks, sunoError").eq("id", id).single()
-  return NextResponse.json(data ?? {})
+  if (!data) return NextResponse.json({})
+
+  // Mesmo motivo do server component da fila: o bucket songs é privado, a URL
+  // salva não abre sozinha. Assina antes de devolver pro painel.
+  const faixas = Array.isArray(data.sunoTracks) ? data.sunoTracks : []
+  if (faixas.length > 0) {
+    const assinadas = await urlsAssinadasDoAudio(supabase, faixas.map((t: any) => t?.audioUrl))
+    data.sunoTracks = faixas.map((t: any) => ({ ...t, audioUrl: assinadas.get(t?.audioUrl) ?? t?.audioUrl }))
+  }
+  return NextResponse.json(data)
 }
 
 // Ações do admin sobre a geração Suno.
