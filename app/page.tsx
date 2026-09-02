@@ -530,7 +530,7 @@ export default function Home() {
                 </span>
               </p>
               <p className="text-white/60 text-sm mt-2 max-w-sm mx-auto sm:mx-0 lg:mx-auto" style={bodyFont}>
-                Explore a Rede Fiz Música: histórias reais que outros clientes escolheram publicar. Curta, favorite e monte sua playlist.
+                Explore a Rede Fiz Música: histórias reais que outros clientes escolheram publicar, e também música de quem quer compor e criar na prática. Curta, favorite e monte sua playlist.
               </p>
             </div>
 
