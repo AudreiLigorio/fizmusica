@@ -149,46 +149,17 @@ export default function ProdutosCarrossel() {
     <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
 
       {/* ── Cabeçalho ─────────────────────────────────────────── */}
-      <div className="lg:flex lg:items-end lg:justify-between lg:gap-8 mb-7 lg:mb-9">
-        <div className="max-w-xl">
-          <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight"
-              style={{ fontSize: "clamp(1.6rem, 4.4vw, 2.6rem)" }}>
-            <span className="block text-white">Músicas que contam</span>
-            <span className="block" style={{ background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
-              histórias inesquecíveis
-            </span>
-          </h2>
-          <p className="text-sm text-white/60 mt-3">
-            Escolha o produto ideal para cada momento e transforme emoção em música.
-          </p>
-        </div>
-
-        <div className="flex flex-col items-start lg:items-end gap-3 mt-6 lg:mt-0 shrink-0">
-          {/* Faixa de preço calculada dos produtos REAIS. Escrita à mão ela
-              viraria mentira no dia em que um plano mudasse de valor. */}
-          {menor !== null && maior !== null && (
-            <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-white/15 bg-white/[0.04]">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" style={{ color: "#ff3d84" }} {...S}>
-                <path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" /><circle cx="7.5" cy="7.5" r="1.3" />
-              </svg>
-              <span className="text-[11px] uppercase tracking-[0.14em] text-white/50 leading-tight">
-                Produtos transparentes
-                <span className="block text-sm tracking-normal normal-case text-white/90 font-semibold">
-                  de R$ {brl(menor)} a R$ {brl(maior)}
-                </span>
-              </span>
-            </div>
-          )}
-
-          <button
-            onClick={() => { track("cta_criar", "carrossel_produtos"); router.push("/criar") }}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
-            style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
-          >
-            Crie agora a trilha sonora da sua história!
-            <svg viewBox="0 0 24 24" className="w-4 h-4" {...S} strokeWidth={2.2}><path d="m9 6 6 6-6 6" /></svg>
-          </button>
-        </div>
+      <div className="mb-7 lg:mb-9">
+        <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight"
+            style={{ fontSize: "clamp(1.6rem, 4.4vw, 2.6rem)" }}>
+          <span className="block text-white">Músicas que contam</span>
+          <span className="block" style={{ background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+            histórias inesquecíveis
+          </span>
+        </h2>
+        <p className="text-sm text-white/60 mt-3">
+          Escolha o produto ideal para cada momento e transforme emoção em música.
+        </p>
       </div>
 
       {/* ── Carrossel ─────────────────────────────────────────── */}
@@ -229,6 +200,37 @@ export default function ProdutosCarrossel() {
                 />
               ))}
         </div>
+      </div>
+
+      {/* Faixa de preço + CTA final. Pedido do Audrei: sair do cabeçalho
+          (onde disputava atenção com o título antes de a pessoa ver os
+          planos) e virar o fechamento — depois de ver os preços reais e
+          comparar os planos é que faz sentido pedir a decisão. */}
+      <div className="flex flex-col items-center gap-3 mt-9 lg:mt-11 text-center">
+        {/* Faixa calculada dos produtos REAIS. Escrita à mão ela viraria
+            mentira no dia em que um plano mudasse de valor. */}
+        {menor !== null && maior !== null && (
+          <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl border border-white/15 bg-white/[0.04]">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0" style={{ color: "#ff3d84" }} {...S}>
+              <path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" /><circle cx="7.5" cy="7.5" r="1.3" />
+            </svg>
+            <span className="text-[11px] uppercase tracking-[0.14em] text-white/50 leading-tight">
+              Produtos transparentes
+              <span className="block text-sm tracking-normal normal-case text-white/90 font-semibold">
+                de R$ {brl(menor)} a R$ {brl(maior)}
+              </span>
+            </span>
+          </div>
+        )}
+
+        <button
+          onClick={() => { track("cta_criar", "carrossel_produtos"); router.push("/criar") }}
+          className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
+          style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
+        >
+          Crie agora a trilha sonora da sua história!
+          <svg viewBox="0 0 24 24" className="w-4 h-4" {...S} strokeWidth={2.2}><path d="m9 6 6 6-6 6" /></svg>
+        </button>
       </div>
     </div>
   )
