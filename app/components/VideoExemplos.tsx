@@ -28,8 +28,7 @@ const EXEMPLOS: Exemplo[] = [
   { slug: "orelha",  nome: "Orelha",  musica: "Estrela da Praia Brava",  ocasiao: "Homenagem Pet",   duracao: "4:28", grad: "linear-gradient(160deg,#241a33 0%,#6d5a94 48%,#d9b8d0 100%)" },
 ]
 
-const DISPLAY = { fontFamily: "'Cormorant Garamond', Georgia, serif" }
-const BODY    = { fontFamily: "'DM Sans', system-ui, sans-serif" }
+const BODY = { fontFamily: "'DM Sans', system-ui, sans-serif" }
 
 export default function VideoExemplos() {
   const trackRef = useRef<HTMLUListElement>(null)
@@ -46,17 +45,23 @@ export default function VideoExemplos() {
 
   return (
     <div style={BODY}>
-      {/* Cabeçalho */}
+      {/* Cabeçalho. Mesma fonte da vitrine de produtos (pedido do Audrei):
+          DM Sans extrabold em caixa alta, quebrado na vírgula com a segunda
+          linha no degradê rosa→roxo — igual ao título "Músicas que contam /
+          histórias inesquecíveis" logo acima na página. Antes era a
+          serifada (Cormorant) leve, com o selo "🎬 exemplos em vídeo" em
+          cima; o selo saiu junto (pedido do Audrei). */}
       <div className="text-center mb-8">
-        <span className="inline-block text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-4"
-              style={{ background: "rgba(217,70,239,0.12)", color: "#e9a0f5", letterSpacing: "0.12em" }}>
-          🎬 exemplos em vídeo
-        </span>
-        <h2 className="font-light text-white/90 leading-tight" style={{ ...DISPLAY, fontSize: "clamp(1.8rem, 3.5vw, 2.6rem)" }}>
-          A experiência pronta, na tela de quem recebe
+        <h2 className="font-extrabold uppercase leading-[0.98] tracking-tight" style={BODY}>
+          <span className="block text-white/90" style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.5rem)" }}>
+            A experiência pronta,
+          </span>
+          <span className="block" style={{ fontSize: "clamp(1.7rem, 3.4vw, 2.5rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+            na tela de quem recebe
+          </span>
         </h2>
-        <p className="text-white/50 text-sm mt-2">
-          Toque para ver como cada música chega — direto no celular.
+        <p className="text-white/50 text-sm mt-3">
+          Toque para ver como cada música pode ser apresentado no celular. Além disso, você tem a opção de publicar a música na Rede.
         </p>
       </div>
 
