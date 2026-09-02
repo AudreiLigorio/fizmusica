@@ -389,7 +389,9 @@ function buildClientEmail(order: OrderEmailData): string {
     subtitle: "Sua música personalizada está a caminho",
     body:
       para(`Olá, ${strong(order.nome)}! ❤️`) +
-      para("Recebemos seu pedido com sucesso. Falta só finalizar o pagamento para nossa equipe começar a produção.") +
+      // "Nossa equipe" sugeria produção manual — a geração é automática assim
+      // que o pagamento confirma, sem ninguém do lado de cá acionando nada.
+      para("Recebemos seu pedido com sucesso. Falta só finalizar o pagamento para a produção da sua música começar.") +
       `<div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:14px 18px;margin:18px 0">
         <p style="margin:0 0 4px;font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.06em">Número do pedido</p>
         <p style="margin:0;font-size:18px;font-weight:bold;color:#ec4899;font-family:monospace">#${order.orderId.slice(0, 8).toUpperCase()}</p>
