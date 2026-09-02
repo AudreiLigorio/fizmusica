@@ -120,6 +120,12 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   // é como a pessoa quer ser chamada.
   const [contaEmail, setContaEmail] = useState<string | null>(null)
   const [orderId, setOrderId] = useState<string | null>(null)
+  // Plano que a pessoa já escolheu na vitrine da home (veio em ?produto=).
+  // Guardado em ESTADO, não lido do `searchParams` na hora de submeter: o
+  // botão "Trocar" precisa poder cancelar a escolha, e limpar a URL por
+  // `history.replaceState` (pra não custar uma ida ao servidor) não atualiza
+  // o hook — o envio ainda levaria o plano que a pessoa acabou de tirar.
+  const [planoPre, setPlanoPre] = useState<{ id: string; name: string; price: number } | null>(null)
   const [error, setError] = useState("")
   const [questionStep, setQuestionStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -200,6 +206,25 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   }, [initialOccasions])
 
   // Ao montar: verifica ?sessao=UUID (link de e-mail de recuperação) ou localStorage
+  // Busca nome e preço do plano pré-escolhido só quando ele existe: quem entra
+  // pelo caminho normal (Criar música) não paga por essa requisição.
+  useEffect(() => {
+    const id = searchParams.get("produto")
+    if (!id) return
+    let vivo = true
+    fetch("/api/produtos")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!vivo) return
+        const p = (d.products ?? []).find((x: { id: string }) => x.id === id)
+        // Plano desativado no admin entre o clique e agora: ignora em silêncio.
+        // A pessoa segue o wizard e escolhe normalmente no fim.
+        if (p) setPlanoPre({ id: p.id, name: p.name, price: p.price })
+      })
+      .catch(() => {})
+    return () => { vivo = false }
+  }, [searchParams])
+
   useEffect(() => {
     // Fluxo e-mail → pagamento → "Voltar": vem com ?orderId. Reconstrói o wizard a
     // partir do PEDIDO (não do localStorage, que some no in-app browser do mobile).
@@ -744,8 +769,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       // plano marcado em vez de pedir a mesma decisão de novo. Segue passando
       // por /produtos de propósito (e não direto pro checkout) porque é lá que
       // moram o cupom e o endereço dos planos com item físico.
-      const planoEscolhido = searchParams.get("produto")
-      router.push(`/produtos?orderId=${finalOrderId}${planoEscolhido ? `&produto=${encodeURIComponent(planoEscolhido)}` : ""}`)
+      router.push(`/produtos?orderId=${finalOrderId}${planoPre ? `&produto=${encodeURIComponent(planoPre.id)}` : ""}`)
     } catch {
       setError("Falha de conexão. Verifique sua internet.")
       setSubmitting(false)
@@ -816,6 +840,46 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         {/* ── Área de conteúdo ── */}
         <div ref={contentRef} className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12" style={{ width: "100%", boxSizing: "border-box" }}>
+
+            {/* ── Plano escolhido na home ──
+                Aparece em TODOS os passos: quem clicou num plano na vitrine
+                passa vários minutos preenchendo o briefing e, sem isso, não
+                tem nenhum sinal de que a escolha sobreviveu — chega no fim
+                achando que vai ter que escolher de novo.
+
+                "Trocar" não manda pra lugar nenhum: só cancela a
+                pré-seleção. A tela de planos vem no fim do wizard de
+                qualquer forma, com o comparativo à vista. */}
+            {planoPre && (
+              <div className="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" style={{ color: "#22c55e" }}
+                     fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m5 12 5 5L20 7" />
+                </svg>
+                <p className="text-xs text-white/70 leading-snug flex-1 min-w-0">
+                  Plano escolhido:{" "}
+                  <span className="font-semibold text-white">{planoPre.name}</span>
+                  <span className="text-white/50"> — R$ {planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPlanoPre(null)
+                    // `history.replaceState` em vez de `router.replace`: com
+                    // staleTimes dynamic=0 o replace busca o RSC no servidor e
+                    // o wizard inteiro pisca no meio do preenchimento.
+                    try {
+                      const u = new URL(window.location.href)
+                      u.searchParams.delete("produto")
+                      window.history.replaceState(null, "", u.toString())
+                    } catch {}
+                  }}
+                  className="shrink-0 text-xs font-semibold text-white/50 hover:text-white underline underline-offset-2 transition-colors"
+                >
+                  Trocar
+                </button>
+              </div>
+            )}
 
             {/* ── Banner de retomada ── */}
             {resumeBanner && (
