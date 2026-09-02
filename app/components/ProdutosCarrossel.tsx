@@ -65,16 +65,23 @@ function iconeDoPlano(p: Produto) {
   )
 }
 
-// Uma linha curta dizendo o que vem no plano. Montada dos MESMOS campos que
-// a /produtos usa pra listar recursos, pra vitrine e página de venda nunca
-// prometerem coisas diferentes.
-function resumo(p: Produto): string {
-  const partes = ["Música"]
-  if ((p.photo_limit ?? 0) > 0) partes.push(`${p.photo_limit} fotos sincronizadas`)
-  else if (p.feat_lyrics_sync) partes.push("letra sincronizada")
-  if (p.feat_qrcode) partes.push("QR Code para presentear")
-  else if (p.feat_revision) partes.push("ajustes inclusos")
-  return partes.join(" + ")
+// Itens que TODO plano entrega. Ficam no código porque não existem como
+// campo no banco — não há coluna de "capa" nem de "2ª versão", e inventar
+// uma só pra marcar `true` em todos os planos seria dado morto.
+const BENEFICIOS_DE_TODOS = ["Música personalizada", "Capa exclusiva", "Segunda versão grátis"]
+const BENEFICIOS_FINAIS   = ["Publicar na Rede Fiz Música", "Criar playlist"]
+
+// O que vem no plano, na ordem que o Audrei passou. Os itens do MEIO saem
+// dos campos do produto (os mesmos que a /produtos usa pra montar os chips),
+// nunca de lista fixa por nome: preso ao nome, mudar um plano no admin
+// deixaria a home prometendo o que o checkout não entrega.
+function beneficios(p: Produto): string[] {
+  const meio: string[] = []
+  if (p.feat_lyrics_sync) meio.push("Letra sincronizada")
+  if ((p.photo_limit ?? 0) > 0) meio.push(`Retrospectiva com ${p.photo_limit} fotos sincronizadas`)
+  if (p.feat_qrcode) meio.push("Cartão com QR Code para presentear")
+  if (p.feat_revision) meio.push("Ajustes inclusos")
+  return [...BENEFICIOS_DE_TODOS, ...meio, ...BENEFICIOS_FINAIS]
 }
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -309,7 +316,23 @@ function CartaProduto({ produto, cor, onClick }: {
         {produto.name}
       </h3>
 
-      <p className="mt-2 text-xs text-white/60 leading-snug grow">{resumo(produto)}</p>
+      {/* Lista de benefícios (pedido do Audrei), no lugar da linha única
+          "Música + X + Y". `grow` empurra o preço pro rodapé: as cartas
+          esticam todas na altura da mais longa, então sem isso o preço de
+          cada uma pararia numa altura diferente. */}
+      <ul className="mt-3 space-y-1.5 grow">
+        {beneficios(produto).map((b) => (
+          // `items-start` + `shrink-0`: nesta largura os itens longos quebram
+          // em duas linhas, e sem isso o check escorregaria pro meio do texto.
+          <li key={b} className="flex items-start gap-1.5 text-[11px] text-white/65 leading-snug">
+            <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px]" aria-hidden="true"
+                 fill="none" stroke={cor.forte} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+              <path d="m5 12 5 5L20 7" />
+            </svg>
+            {b}
+          </li>
+        ))}
+      </ul>
 
       <span className="mt-4 self-start px-4 py-2 rounded-xl text-base font-extrabold text-white"
             style={{ background: cor.forte }}>
