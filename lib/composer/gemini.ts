@@ -32,6 +32,31 @@ type LyricsOpts = {
   model: string
   location: string
   userContent: string
+  /**
+   * Deixa o modelo "pensar" antes de escrever.
+   *
+   * Medido em 2026-09-03, no mesmo pedido e no mesmo modelo:
+   *   pensando  -> 1º trecho entre 8,6s e 48,4s; total de 9,7s a 74,4s
+   *   sem pensar-> 1º trecho ~1s; total entre 2,9s e 4,3s
+   *
+   * O pensamento acontece ANTES de sair qualquer texto, então além de lento
+   * ele deixa a tela parada. Pior: as rotas de letra têm maxDuration=60, e
+   * duas das cinco medições passaram disso — a função morria no meio, o
+   * stream quebrava e o cliente via "Não consegui gerar agora". Foi
+   * exatamente o que aconteceu com o pedido c693957d.
+   *
+   * Escrever letra é geração criativa guiada por um prompt de 6.700
+   * caracteres, não raciocínio em etapas — o pensamento cobra caro e entrega
+   * pouco aqui. Por isso o padrão do STREAM (só letra pro cliente) é não
+   * pensar. Os agentes de conteúdo, que fazem tarefa de planejamento, seguem
+   * pensando: não mexi neles sem evidência de que melhora ou piora.
+   */
+  pensar?: boolean
+}
+
+// `thinkingBudget: 0` desliga; ausente = o padrão do modelo (ligado).
+function configDePensamento(pensar: boolean | undefined) {
+  return pensar ? {} : { thinkingConfig: { thinkingBudget: 0 } }
 }
 
 // Gera a letra completa (sem streaming).
@@ -42,6 +67,9 @@ export async function generateLyrics(opts: LyricsOpts): Promise<string> {
     model: opts.model,
     contents: opts.userContent,
     config: {
+      // Padrão TRUE aqui: esta versão é a que os agentes de conteúdo usam, e
+      // eles fazem planejamento. Quem quer velocidade pede `pensar: false`.
+      ...configDePensamento(opts.pensar ?? true),
       systemInstruction: opts.systemPrompt,
       temperature: 0.9,
     },
@@ -60,6 +88,9 @@ export async function generateLyricsStream(opts: LyricsOpts): Promise<AsyncItera
     model: opts.model,
     contents: opts.userContent,
     config: {
+      // Padrão FALSE: os dois únicos consumidores do stream são as rotas de
+      // letra do cliente, que esperam na tela e morrem em 60s.
+      ...configDePensamento(opts.pensar ?? false),
       systemInstruction: opts.systemPrompt,
       temperature: 0.9,
     },

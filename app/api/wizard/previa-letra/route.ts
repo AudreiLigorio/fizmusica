@@ -101,6 +101,11 @@ export async function POST(req: NextRequest) {
         model: settings.model,
         location: settings.location,
         userContent: contexto,
+        // Sem pensar: aqui é o visitante esperando ANTES de comprar, a etapa
+        // mais cara de perder. Pensando, a geração ia de 9,7s a 74,4s e batia
+        // no timeout desta rota; sem pensar fica em 3-4s. Ver a medição em
+        // lib/composer/gemini.ts.
+        pensar: false,
       }),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("timeout")), TIMEOUT_MS)
