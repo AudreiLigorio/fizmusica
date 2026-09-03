@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createOrder, triggerN8nWebhook } from "@/app/services/orderService"
 import { sendOrderConfirmationEmail, sendOrderNotificationEmail } from "@/app/services/emailService"
+import { criarTokenAudio } from "@/lib/audioToken"
 import { createOrderSchema } from "@/lib/validators/order"
 import { createServerClient } from "@/lib/supabase"
 import { extractClientIp, lookupState } from "@/lib/geoip"
@@ -117,16 +118,20 @@ export async function GET(req: NextRequest) {
       musicStatus: sunoStatus ?? null,
       // Cada versão também vai pela rota guardada — o cliente ouve as duas
       // pra escolher, e antes o link cru de ambas ia pro navegador.
+      // `k` é a credencial do dono viajando na URL. Sem ela, música que não
+      // está na Rede (pedido em produção, ou cliente que não autorizou
+      // publicação) não tocava: o <audio> não manda header Authorization, e
+      // era só por ele que /api/audio reconhecia o dono. Ver lib/audioToken.
       tracks: sunoTracks
         ? sunoTracks.map((t: { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }) => ({
             ...t,
-            audioUrl: `/api/audio?o=${o.id}&t=${encodeURIComponent(t.audioId)}`,
+            audioUrl: `/api/audio?o=${o.id}&t=${encodeURIComponent(t.audioId)}&k=${criarTokenAudio(o.id)}`,
           }))
         : null,
       slug:       music?.slug ?? null,
       // Rota guardada, não o link do arquivo (ver /api/audio). Música
       // não publicada só toca pro dono, autenticado.
-      mp3Url:     music?.mp3Url ? `/api/audio?o=${o.id}` : null,
+      mp3Url:     music?.mp3Url ? `/api/audio?o=${o.id}&k=${criarTokenAudio(o.id)}` : null,
       // Nome escolhido pelo cliente ao aprovar a letra. A prateleira usa este
       // em vez do title cru do Suno, que costuma ser o nome do homenageado.
       musicName:  music?.musicName ?? null,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
 import { urlAssinadaDoAudio } from "@/lib/audioUrl"
+import { tokenAudioValido } from "@/lib/audioToken"
 
 export const dynamic = "force-dynamic"
 
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
   const slug = sp.get("slug")?.trim() || null
   const orderId = sp.get("o")?.trim() || null
   const audioId = sp.get("t")?.trim() || null
+  const chave = sp.get("k")?.trim() || null
 
   const supabase = createServerClient()
 
@@ -81,8 +83,16 @@ export async function GET(req: NextRequest) {
 
   // ── Caminho 3: o dono ─────────────────────────────────────────────────
   // Música não publicada só toca pra quem é dono dela.
-  const user = naRede ? null : await getUserFromAuth(req)
-  const dono = !!user && !!order.userId && order.userId === user.id
+  //
+  // Duas provas aceitas, e a ordem importa. A do TOKEN vem primeiro porque é
+  // a que funciona no caso real: um <audio src="..."> não manda header
+  // nenhum, então o Bearer só chega quando é código JS que busca a URL. O
+  // token é emitido por /api/orders, que já confere quem está pedindo.
+  //
+  // O header continua aceito pra não quebrar quem chama a rota por fetch.
+  const porToken = !naRede && tokenAudioValido(chave, orderId)
+  const user = naRede || porToken ? null : await getUserFromAuth(req)
+  const dono = porToken || (!!user && !!order.userId && order.userId === user.id)
   if (!naRede && !dono) return negar()
 
   // Faixa específica (o cliente recebe 2 versões do Suno) ou a principal.
