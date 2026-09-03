@@ -848,26 +848,38 @@ function MinhaMusicaContent() {
                 <div className="space-y-4 mb-2">
                   {heroOrders.map((order) => {
                     if (order.paymentStatus !== "PAID") {
-                      const hasProduct = !!order.productId && !!order.products?.price
-                      const href = hasProduct
-                        ? `/checkout?orderId=${order.id}&productId=${order.productId}&productName=${encodeURIComponent(order.products!.name)}&price=${order.products!.price}`
-                        : `/produtos?orderId=${order.id}`
+                      // Sem CTA de compra aqui (pedido do Audrei: "tirar esse
+                      // botão de escolher produto durante a composição,
+                      // totalmente errado"). Estes cartões ficam empilhados
+                      // junto com o pedido PAGO que está em composição, e um
+                      // botão rosa de comprar no meio disso parecia um passo
+                      // da composição em vez de outro pedido, parado, esperando
+                      // pagamento.
+                      //
+                      // O cartão CONTINUA na tela, e não some: pedido não pago
+                      // e não abandonado não aparece em nenhum outro lugar
+                      // (a prateleira "Pendentes" só recebe os abandonados),
+                      // então apagá-lo esconderia um pedido de verdade. Agora
+                      // ele abre os detalhes, onde o "Finalizar pagamento"
+                      // segue disponível — a retomada continua a um toque,
+                      // só deixa de gritar no meio da composição.
                       return (
-                        <div key={order.id} className="rounded-2xl border border-white/8 bg-white/[0.02] p-4 flex items-center justify-between gap-3">
+                        <button
+                          key={order.id}
+                          type="button"
+                          onClick={() => setOpenDetailOrderId(order.id)}
+                          className="w-full text-left rounded-2xl border border-white/8 bg-white/[0.02] p-4 flex items-center justify-between gap-3 hover:border-white/20 transition-colors"
+                        >
                           <div className="min-w-0">
                             <p className="font-medium text-sm text-white/85 truncate">{order.subcategory}</p>
-                            <p className="text-[11px] text-white/40">
+                            <p className="text-[11px] text-white/40 truncate">
                               {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
                             </p>
                           </div>
-                          <a
-                            href={href}
-                            className="shrink-0 text-center text-xs font-semibold px-4 py-2.5 rounded-xl text-white transition-all hover:brightness-110"
-                            style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
-                          >
-                            {hasProduct ? "Finalizar pagamento →" : "Escolher produto →"}
-                          </a>
-                        </div>
+                          <span className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/10 text-white/55">
+                            💳 Pendente
+                          </span>
+                        </button>
                       )
                     }
                     return (
