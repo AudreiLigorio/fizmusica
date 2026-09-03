@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
+import { urlParaBaixar } from "@/lib/mediaUrl"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
 import { createVideoJob, syncVideoIngredients, type VideoRecipe } from "@/lib/content/video-ingredients"
 import { trocarCena, trocarNarracao, trocarMusica, sincronizarMusicaNova } from "@/lib/content/video-partes"
@@ -243,7 +244,12 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const faltando: string[] = []
   for (const url of [...job.scene_image_urls, job.narration_url, job.song_url].filter(Boolean) as string[]) {
-    const r = await fetch(url, { method: "HEAD" }).catch(() => null)
+    // Assina antes de conferir: `song_url` pode ser a música de um pedido, que
+    // mora no bucket privado `songs`. Sem isto o HEAD volta 400 e a rota
+    // acusava "faltam ingredientes no storage" — mandando investigar o worker
+    // quando o arquivo estava lá, só fechado.
+    const alvo = (await urlParaBaixar(supabase, url)) ?? url
+    const r = await fetch(alvo, { method: "HEAD" }).catch(() => null)
     if (!r?.ok) faltando.push(url.split("/").pop() ?? url)
   }
   if (faltando.length) {

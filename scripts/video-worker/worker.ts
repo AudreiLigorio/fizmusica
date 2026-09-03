@@ -10,6 +10,7 @@
 // e já executa `createClient(...)` antes de qualquer linha deste arquivo
 // rodar — confirmado na prática (é exatamente esse bug que isso evita).
 import path from "path"
+import { urlParaBaixar } from "@/lib/mediaUrl"
 import fs from "fs/promises"
 import os from "os"
 import { execFile } from "child_process"
@@ -37,8 +38,13 @@ const CANVAS: Record<Platform, { w: number; h: number; handle: string; cta: stri
   youtube:   { w: 1920, h: 1080, handle: "@Fizmusica10", cta: "Link na descrição" },
 }
 
-async function download(url: string, dest: string) {
-  const res = await fetch(url)
+// `supabase` entra aqui porque a URL pode apontar pra bucket FECHADO — a
+// música de um pedido (`song_url`) mora no `songs`, que é privado. Sem
+// assinar, o fetch volta 400 e a montagem morre dizendo que faltam
+// ingredientes no storage.
+async function download(supabase: ReturnType<typeof createServerClient>, url: string, dest: string) {
+  const alvo = (await urlParaBaixar(supabase, url)) ?? url
+  const res = await fetch(alvo)
   if (!res.ok) throw new Error(`Falha ao baixar ${url}: HTTP ${res.status}`)
   await fs.writeFile(dest, Buffer.from(await res.arrayBuffer()))
 }
@@ -56,9 +62,9 @@ async function processJob(supabase: ReturnType<typeof createServerClient>, job: 
 
     // 1. Baixa ingredientes. A narração, quando existe, é uma faixa à parte:
     // song_url passa a ser a música de FUNDO (pode nem existir).
-    await Promise.all(sceneUrls.map((url, i) => download(url, path.join(tmp, `scene-${i + 1}.png`))))
-    if (job.narration_url) await download(job.narration_url, path.join(tmp, "narracao.wav"))
-    if (job.song_url) await download(job.song_url, path.join(tmp, "song.mp3"))
+    await Promise.all(sceneUrls.map((url, i) => download(supabase, url, path.join(tmp, `scene-${i + 1}.png`))))
+    if (job.narration_url) await download(supabase, job.narration_url, path.join(tmp, "narracao.wav"))
+    if (job.song_url) await download(supabase, job.song_url, path.join(tmp, "song.mp3"))
 
     // 2. Ken Burns por cena
     const sceneClips: string[] = []

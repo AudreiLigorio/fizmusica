@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
+import { urlAssinadaDoAudio } from "@/lib/audioUrl"
 
 type Params = Promise<{ id: string }>
 
@@ -15,7 +16,14 @@ export async function GET(_req: NextRequest, { params }: { params: Params }) {
     .maybeSingle()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ music: data })
+
+  // `mp3UrlAssinada` vai SEPARADA de propósito. O bucket songs é privado e a
+  // URL gravada não abre mais, mas `mp3Url` é campo EDITÁVEL do formulário e
+  // volta no POST: se a assinada ocupasse o lugar dele, o admin salvaria a
+  // URL temporária por cima da definitiva e a música morreria em 30 min.
+  // Uma toca, a outra é o dado.
+  const mp3UrlAssinada = data?.mp3Url ? await urlAssinadaDoAudio(supabase, data.mp3Url) : null
+  return NextResponse.json({ music: data ? { ...data, mp3UrlAssinada } : data })
 }
 
 // POST — salva/atualiza dados da música produzida

@@ -1,4 +1,6 @@
 import { createServerClient } from "@/lib/supabase"
+import { urlAssinadaDoAudio } from "@/lib/audioUrl"
+import { urlsAssinadas, BUCKET_FOTOS } from "@/lib/mediaUrl"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import PublicMusicPlayer from "@/app/m/[slug]/PublicMusicPlayer"
@@ -32,7 +34,17 @@ export default async function ProducaoPreview({ params }: { params: Promise<{ or
     .order("is_cover", { ascending: false })
     .order("sort_order", { ascending: true })
 
-  const photos = (photoRows ?? []).map((p) => p.url as string)
+  // Os buckets songs e order-photos são PRIVADOS: as URLs gravadas não abrem
+  // mais sozinhas, e a prévia do admin ficava sem áudio e com as fotos
+  // quebradas. Aqui é assinado no servidor porque o admin já passou pelo
+  // layout autenticado — a prévia é a tela onde ele confere o que o cliente
+  // vai receber, então tem que mostrar exatamente a mesma coisa.
+  //
+  // O player público de verdade (/m/{slug}) não passa por aqui: ele usa as
+  // rotas guardadas /api/audio e /api/foto, cuja credencial é o slug.
+  const fotosAssinadas = await urlsAssinadas(supabase, BUCKET_FOTOS, (photoRows ?? []).map((p) => p.url as string))
+  const photos = (photoRows ?? []).map((p) => fotosAssinadas.get(p.url as string) ?? (p.url as string))
+  const mp3Tocavel = music?.mp3Url ? (await urlAssinadaDoAudio(supabase, music.mp3Url)) ?? music.mp3Url : ""
   const photoEffect = (order.photo_effect ?? "slide") as "slide" | "fade" | "cards" | "coverflow"
 
   // A prévia serve pra conferir o que o CLIENTE vai ver — então respeita os
@@ -58,7 +70,7 @@ export default async function ProducaoPreview({ params }: { params: Promise<{ or
             ? (music?.lyrics ?? null)
             : (music?.lyrics?.trim() || (music?.lyricsLrc ? lrcToPlainLyrics(music.lyricsLrc) : null)),
           lyricsLrc:   features.letraSincronizada ? (music?.lyricsLrc ?? null) : null,
-          mp3Url:      music?.mp3Url ?? "",
+          mp3Url:      mp3Tocavel,
           imageUrl:    music?.imageUrl ?? null,
           photos: features.fotos > 0 ? photos : [],
           photoEffect,

@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase"
+import { urlsAssinadas, BUCKET_FOTOS } from "@/lib/mediaUrl"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { fmtDateTimeBR } from "@/lib/date"
@@ -50,10 +51,19 @@ export default async function AdminPedidoDetalhe({ params }: { params: Promise<{
 
   const answers = [...(order.order_answers ?? [])].sort((a: { position: number }, b: { position: number }) => a.position - b.position)
   const payment = order.payments?.[0] ?? null
-  const photos = [...(order.order_photos ?? [])].sort(
+  // O bucket order-photos é PRIVADO: a URL gravada na linha não abre mais
+  // sozinha e as miniaturas do admin apareciam quebradas. Assinado aqui, no
+  // servidor, porque o admin já passou pelo layout autenticado — não faz
+  // sentido mandá-lo pela /api/foto, cuja credencial é o slug público ou o
+  // token do painel do cliente. Uma chamada só pra todas as fotos.
+  const supabase = createServerClient()
+  const fotosCruas = [...(order.order_photos ?? [])].sort(
     (a: { is_cover: boolean; sort_order: number }, b: { is_cover: boolean; sort_order: number }) =>
       Number(b.is_cover) - Number(a.is_cover) || a.sort_order - b.sort_order
   )
+  type FotoRow = { id: string; url: string; is_cover: boolean; sort_order: number }
+  const assinadas = await urlsAssinadas(supabase, BUCKET_FOTOS, fotosCruas.map((f: FotoRow) => f.url))
+  const photos: FotoRow[] = fotosCruas.map((f: FotoRow) => ({ ...f, url: assinadas.get(f.url) ?? f.url }))
   const events = [...(order.order_events ?? [])].sort(
     (a: { created_at: string }, b: { created_at: string }) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()

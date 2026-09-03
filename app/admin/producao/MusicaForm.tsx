@@ -5,6 +5,8 @@ import { QRCodeSVG } from "qrcode.react"
 
 type MusicData = {
   mp3Url: string | null
+  // Só pra tocar. NUNCA vai no POST — ver o comentário na rota GET.
+  mp3UrlAssinada?: string | null
   imageUrl: string | null
   lyrics: string | null
   musicName: string | null
@@ -32,6 +34,7 @@ export default function MusicaForm({
   const [lyrics, setLyrics]         = useState("")
   const [lyricsLrc, setLyricsLrc]   = useState("")
   const [mp3Url, setMp3Url]         = useState("")
+  const [mp3Tocavel, setMp3Tocavel] = useState("")
   const [imageUrl, setImageUrl]     = useState("")
   const [uploading, setUploading]     = useState(false)
   const [uploadingImg, setUploadingImg] = useState(false)
@@ -124,6 +127,7 @@ export default function MusicaForm({
       setLyrics(d.music.lyrics || lyricsDraft || "")
       setLyricsLrc(d.music.lyricsLrc ?? "")
       setMp3Url(d.music.mp3Url ?? "")
+      setMp3Tocavel(d.music.mp3UrlAssinada ?? d.music.mp3Url ?? "")
       setImageUrl(d.music.imageUrl ?? "")
       if (d.music.slug) setPublicUrl(`${baseUrl}/m/${d.music.slug}`)
     } else if (lyricsDraft) {
@@ -265,7 +269,7 @@ export default function MusicaForm({
   return (
     <>
     {/* AUDIO oculto para o tap */}
-    <audio ref={tapAudio} src={mp3Url || undefined} preload="auto" />
+    <audio ref={tapAudio} src={mp3Tocavel || undefined} preload="auto" />
 
     {/* MODAL DE SUCESSO NA ENTREGA */}
     {deliveredUrl && (
@@ -454,7 +458,7 @@ export default function MusicaForm({
 
             {mp3Url ? (
               <div className="space-y-2">
-                <audio ref={audioRef} controls src={mp3Url} className="w-full h-10" />
+                <audio ref={audioRef} controls src={mp3Tocavel} className="w-full h-10" />
                 <p className="text-xs text-gray-500 break-all">{mp3Url}</p>
                 <button
                   onClick={() => { setMp3Url(""); if (fileRef.current) fileRef.current.value = "" }}
