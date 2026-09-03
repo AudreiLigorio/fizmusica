@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
+import { idDeSessao } from "@/lib/track"
 import { useCatalogo } from "./CatalogoContext"
 import { useToast } from "./ToastContext"
 import AddToPlaylistModal from "./AddToPlaylistModal"
@@ -157,6 +158,19 @@ export default function MiniPlayer() {
         loop={repeat}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onTimeUpdate}
+        // Conta a reprodução quando o áudio COMEÇA de fato, não no clique.
+        // O <audio> de pré-carregamento nunca dispara isto (é mudo e nunca
+        // recebe play), então a fila não infla o ranking com música que
+        // ninguém chegou a ouvir. Repetição da mesma sessão é descartada no
+        // banco. Falha aqui é ignorada de propósito: contagem não pode
+        // atrapalhar quem está ouvindo.
+        onPlay={() => {
+          fetch("/api/musicas/play", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: track.id, sessao: idDeSessao() }),
+          }).catch(() => {})
+        }}
         // Ao terminar, emenda na próxima da fila em vez de fechar o player
         // (pedido do Audrei: "igual Spotify"). Com o repetir ligado este
         // evento nem dispara — o `loop` nativo reinicia a faixa antes disso,

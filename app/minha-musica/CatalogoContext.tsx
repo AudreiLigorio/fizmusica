@@ -28,6 +28,8 @@ export type CatalogItem = {
   lyrics?: string | null
   lyricsLrc?: string | null
   authorApelido: string | null
+  // Reproduções contadas (migração 057). Zero em tudo enquanto ela não roda.
+  plays?: number
   favorited: boolean
   createdAt: string
 }
@@ -41,6 +43,9 @@ export type Facetas = {
 
 type Ctx = {
   items: CatalogItem[] | null
+  // Ranking da Rede inteira — não acompanha busca, filtro nem página, por
+  // isso vive separado de `items`.
+  top10: CatalogItem[]
   total: number
   temMais: boolean
   carregando: boolean
@@ -56,7 +61,7 @@ type Ctx = {
 const VAZIO: Facetas = { ocasioes: [], estilos: [] }
 
 const CatalogoCtx = createContext<Ctx>({
-  items: null, total: 0, temMais: false, carregando: false, facetas: VAZIO,
+  items: null, top10: [], total: 0, temMais: false, carregando: false, facetas: VAZIO,
   busca: "", filtro: null,
   setBusca: () => {}, setFiltro: () => {}, carregarMais: () => {}, alternarFavorito: () => {},
 })
@@ -65,6 +70,7 @@ const POR_PAGINA = 40
 
 export function CatalogoProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
+  const [top10, setTop10] = useState<CatalogItem[]>([])
   const [total, setTotal] = useState(0)
   const [temMais, setTemMais] = useState(false)
   const [carregando, setCarregando] = useState(false)
@@ -99,6 +105,9 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
     if (id !== consultaAtual.current) return // chegou tarde, já há consulta mais nova
 
     setItems((prev) => (desde === 0 ? (d.items ?? []) : [...(prev ?? []), ...(d.items ?? [])]))
+    // Só na primeira página: o ranking é o mesmo em todas, e sobrescrever a
+    // cada "mostrar mais" faria a lista piscar sem motivo.
+    if (desde === 0) setTop10(d.top10 ?? [])
     setTotal(d.total ?? 0)
     setTemMais(!!d.temMais)
     setFacetas(d.facetas ?? VAZIO)
@@ -126,7 +135,7 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CatalogoCtx.Provider value={{
-      items, total, temMais, carregando, facetas, busca, filtro,
+      items, top10, total, temMais, carregando, facetas, busca, filtro,
       setBusca, setFiltro, carregarMais, alternarFavorito,
     }}>
       {children}

@@ -76,6 +76,13 @@ type ItemBase = {
   // que SÓ pode ser usado quando quem pede é o próprio dono do pedido.
   apelidoPublico: string | null
   apelidoProprio: string | null
+  // Reproduções (migração 057). `plays` é o total de sempre — é o número que
+  // aparece no cartão. `playsRecentes` é a janela de 30 dias, usada só pelo
+  // Top 10: ranking por total de sempre congela nos primeiros publicados
+  // conforme o catálogo cresce, e deixa de refletir o que as pessoas estão
+  // ouvindo AGORA.
+  plays: number
+  playsRecentes: number
   createdAt: string
 }
 
@@ -163,6 +170,20 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
     if (p.mostrar_apelido) apelidoPublico[p.user_id as string] = nome
   }
 
+  // Contagem de reproduções: uma chamada agregada pro banco inteiro, não uma
+  // consulta por música. Entra no mesmo cache de 60s do catálogo, então o
+  // ranking acompanha a realidade com no máximo um minuto de atraso.
+  //
+  // Tolera a migração 057 ainda não ter rodado: sem a função, tudo fica em
+  // zero e a Rede segue funcionando — o Top 10 é que não aparece.
+  type PlayRow = { orderId: string; total: number; recentes: number }
+  const { data: contagens, error: erroPlays } = await supabase.rpc("contagem_plays")
+  if (erroPlays) console.warn("[catalog] contagem_plays indisponível:", erroPlays.message)
+  const playsPorPedido: Record<string, { total: number; recentes: number }> = {}
+  for (const c of (contagens as PlayRow[] | null) ?? []) {
+    playsPorPedido[c.orderId] = { total: Number(c.total) || 0, recentes: Number(c.recentes) || 0 }
+  }
+
   const ids = (orders ?? []).map((o) => o.id)
   type MusicRow = { orderId: string; slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean | null }
   const gm = await porLotesDeIds<MusicRow>(ids, (lote) =>
@@ -200,6 +221,8 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
         audioUrl,
         apelidoPublico: dono ? apelidoPublico[dono] ?? null : null,
         apelidoProprio: dono ? apelidoProprio[dono] ?? null : null,
+        plays: playsPorPedido[o.id]?.total ?? 0,
+        playsRecentes: playsPorPedido[o.id]?.recentes ?? 0,
         createdAt: o.createdAt as string,
       }
     })
@@ -295,6 +318,7 @@ export async function GET(req: NextRequest) {
       // busca em /api/catalog/letra quando vai tocar.
       // Apelido próprio só sai pro próprio dono; pros outros vale o opt-in.
       authorApelido: publico ? null : (proprio ? b.apelidoProprio : b.apelidoPublico),
+      plays: b.plays,
       favorited: favoriteSet.has(b.orderId),
       createdAt: b.createdAt,
     }
@@ -353,9 +377,35 @@ export async function GET(req: NextRequest) {
   const inicio = Math.max(0, Number(sp.get("desde")) || 0)
   const pagina = ordenados.slice(inicio, inicio + limite)
 
+  // ── Top 10 mais ouvidas ───────────────────────────────────────────────
+  //
+  // Calculado sobre a Rede INTEIRA, não sobre a página nem sobre os filtros:
+  // é um ranking, não um recorte do que está na tela. Por isso sai daqui e
+  // não do `filtrados`.
+  //
+  // Ordena pela janela de 30 dias, com o total de sempre como desempate.
+  // Ranking por total puro congelaria: quem publicou primeiro acumula pra
+  // sempre e as músicas novas nunca alcançam, por mais que estejam bombando.
+  // A janela é o que faz o "dinâmico conforme a realidade" ser verdade.
+  //
+  // Música com zero reprodução fica FORA — um Top 10 preenchido com zeros
+  // seria uma lista arbitrária fingindo ser ranking. No começo ele vem com
+  // menos de 10, ou vazio, e isso é honesto: ninguém ouviu ainda.
+  const indicePorId = new Map(deOutros.map((b) => [b.orderId, b]))
+  const top10 = items
+    .filter((i) => (indicePorId.get(i.orderId)?.plays ?? 0) > 0)
+    .sort((a, b) => {
+      const A = indicePorId.get(a.orderId)
+      const B = indicePorId.get(b.orderId)
+      return (B?.playsRecentes ?? 0) - (A?.playsRecentes ?? 0)
+          || (B?.plays ?? 0) - (A?.plays ?? 0)
+    })
+    .slice(0, 10)
+
   return NextResponse.json(
     {
       items: pagina,
+      top10,
       total: ordenados.length,
       // `temMais` explícito em vez de deixar o cliente calcular: ele não
       // precisa saber como a página foi cortada pra decidir se pede mais.

@@ -19,7 +19,7 @@ type Origem = {
   referrer?: string
 }
 
-function sessao(): string {
+export function idDeSessao(): string {
   try {
     let s = localStorage.getItem(CHAVE_SESSAO)
     if (!s) {
@@ -59,7 +59,7 @@ function origem(): Origem {
 export function track(evento: string, detalhe?: string) {
   try {
     const corpo = JSON.stringify({
-      sessao: sessao(),
+      sessao: idDeSessao(),
       evento,
       detalhe,
       caminho: window.location.pathname,

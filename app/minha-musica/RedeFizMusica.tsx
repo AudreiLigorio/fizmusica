@@ -18,8 +18,15 @@ import { useCatalogo } from "./CatalogoContext"
 // capa gerada pelo Suno, tudo vindo direto do banco (nada fixo).
 type Playlist = { id: string; nome: string; track_order_ids: string[] }
 
+// Contagem de reproduções em formato curto. Acima de mil, "1,2 mil" — o
+// cartão tem 128px e "1247 plays" empurraria o resto pra fora.
+function formatarPlays(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace(".", ",").replace(",0", "")} mil`
+  return String(n)
+}
+
 export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { onPlaylistsChanged?: () => void; onPrecisaLogin?: () => void }) {
-  const { items, alternarFavorito, temMais, carregando, carregarMais, total } = useCatalogo()
+  const { items, top10, alternarFavorito, temMais, carregando, carregarMais, total } = useCatalogo()
   const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
@@ -154,6 +161,56 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
       </div>
       <p className="text-xs text-white/50 mb-4">Escute músicas publicadas por outros usuários</p>
 
+      {/* ── Top 10 mais ouvidas ──────────────────────────────────────
+          Ranking real, vindo da contagem de reproduções (migração 057),
+          não uma seleção editorial. Fica ESCONDIDO enquanto ninguém
+          ouviu nada: uma lista numerada cheia de zeros passaria a
+          impressão de ranking sem ser um.
+          Lista numerada em vez da grade de capas porque a posição é a
+          informação principal aqui — numa raia de capas iguais às de
+          baixo, o "1º lugar" se perde. */}
+      {top10.length > 0 && (
+        <div className="mb-5 pb-5 border-b border-white/5">
+          {/* Rótulo FIXO em "Top 10": é o nome da seção, não a contagem.
+              Interpolar o tamanho da lista produzia "Top 1 mais ouvidas"
+              enquanto só uma música tinha reprodução. */}
+          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">
+            🔥 Top 10 mais ouvidas
+          </p>
+          <div className="grid sm:grid-cols-2 gap-x-6">
+            {top10.map((it, i) => {
+              const isPlaying = nowPlaying?.id === it.orderId && playing
+              return (
+                <button
+                  key={it.orderId}
+                  type="button"
+                  onClick={() => playOuPausa(paraFaixa(it), top10.map(paraFaixa))}
+                  className="w-full flex items-center gap-3 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
+                >
+                  {/* Tabular pra 1 e 10 ficarem alinhados na coluna */}
+                  <span className={`w-5 text-center text-sm font-bold tabular-nums shrink-0 ${i < 3 ? "text-fuchsia-400" : "text-white/30"}`}>
+                    {i + 1}
+                  </span>
+                  <div
+                    className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-cover bg-center"
+                    style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
+                  >
+                    {isPlaying && <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-xs">❚❚</div>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs font-medium truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
+                    <p className="text-[11px] text-white/35 truncate">{it.occasion}</p>
+                  </div>
+                  <span className="text-[11px] text-white/40 tabular-nums shrink-0">
+                    {formatarPlays(it.plays ?? 0)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {favoritados.length > 0 && (
         <div className="mb-5 pb-5 border-b border-white/5">
           <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">❤️ Favoritas — toque no + para adicionar a uma playlist</p>
@@ -233,7 +290,21 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   "Mostrar meu apelido na Rede" (opt-in separado do
                   consentimento de publicação). Nulo na maioria dos cards, e
                   isso é o esperado — não é falta de dado. */}
-              <p className="text-[11px] text-white/40 truncate">{it.occasion}</p>
+              {/* Ocasião e reproduções na MESMA linha: o cartão tem 128px
+                  e cada linha nova empurra a grade inteira pra baixo. A
+                  contagem é curta e alinha à direita, então cabe sem
+                  disputar espaço com a ocasião, que trunca.
+                  Sem reprodução nenhuma o número não aparece — "0" em toda
+                  a grade seria ruído, não informação. */}
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-[11px] text-white/40 truncate flex-1 min-w-0">{it.occasion}</p>
+                {(it.plays ?? 0) > 0 && (
+                  <span className="text-[11px] text-white/30 tabular-nums shrink-0"
+                        title={`${it.plays} reproduç${it.plays === 1 ? "ão" : "ões"}`}>
+                    ▶ {formatarPlays(it.plays ?? 0)}
+                  </span>
+                )}
+              </div>
               {/* Sem apelido o cartão ficava com essa linha VAZIA, e a
                   ausência lia como defeito ("não vi o nome de quem
                   publicou" — Audrei, 2026-09-02). Hoje é o esperado: só 1
