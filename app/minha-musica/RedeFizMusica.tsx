@@ -159,7 +159,18 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Rede Fiz Música</h2>
         <InfoTooltip text="Explore músicas de outros usuários, comente, curta e divirta-se." />
       </div>
-      <p className="text-xs text-white/50 mb-4">Escute músicas publicadas por outros usuários</p>
+      {/* A CONTAGEM DESTA seção fica aqui, e não só na pílula.
+          A pílula "Todas · N" soma as duas seções da aba (a Rede + a
+          biblioteca do cliente) e mora logo acima desta — então o número
+          dela lia como se fosse da Rede: dizia 68 e a raia mostrava 23,
+          que são as de OUTRAS pessoas (as outras 45 são do próprio cliente
+          e aparecem na prateleira dele, mais abaixo). Relatado pelo Audrei
+          como "não tem paginação e não cria outra raia". Com cada seção
+          declarando o seu total, 23 + 45 = 68 fecha na tela. */}
+      <p className="text-xs text-white/50 mb-4">
+        Escute músicas publicadas por outros usuários
+        {total > 0 && <span className="text-white/35"> · {total} {total === 1 ? "música" : "músicas"}</span>}
+      </p>
 
       {/* ── Top 10 mais ouvidas ──────────────────────────────────────
           Ranking real, vindo da contagem de reproduções (migração 057),

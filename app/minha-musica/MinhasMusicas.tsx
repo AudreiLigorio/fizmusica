@@ -119,10 +119,15 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
           lugar e a Rede como complemento. A versão anterior falava só da Rede
           e, sem querer, ensinava que a playlist é pra colecionar música dos
           outros — o oposto do que o produto quer. */}
+      {/* Contagem desta seção, pelo mesmo motivo da Rede: a pílula
+          "Todas · N" soma as duas e ficava parecendo o total de uma só. */}
       <p className="text-xs text-white/50 mb-4">
         {semMusicaPropria
           ? "Aqui ficam as músicas que você criar — e você ainda pode juntar as da Rede tocando no +. Faça a sua música, monte a sua playlist."
           : "Suas músicas ficam aqui. Toque no + para juntar também as da Rede e montar a playlist do seu jeito."}
+        {!semMusicaPropria && tracks.length > 0 && (
+          <span className="text-white/35"> · {tracks.length} {tracks.length === 1 ? "música" : "músicas"}</span>
+        )}
       </p>
 
       <div className={`flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0 ${semMusicaPropria ? "" : "mb-5"}`}>
