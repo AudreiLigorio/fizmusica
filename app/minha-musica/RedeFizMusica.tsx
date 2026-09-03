@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { CatalogItem } from "./CatalogoContext"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
@@ -107,7 +107,32 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
   // Este componente só existe no modo NAVEGAÇÃO (ver AbaMusicas): com busca
   // ou filtro ativo a tela troca pela lista de resultados. Então aqui não há
   // mais filtragem — os itens vêm prontos do servidor, já paginados.
+  // Scroll infinito. `carregando` entra na dependência pra não disparar duas
+  // páginas ao mesmo tempo enquanto a primeira ainda está vindo.
+  const sentinelaRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const alvo = sentinelaRef.current
+    if (!alvo || !temMais || carregando) return
+    const obs = new IntersectionObserver(
+      (entradas) => { if (entradas[0]?.isIntersecting) carregarMais() },
+      { rootMargin: "400px" },
+    )
+    obs.observe(alvo)
+    return () => obs.disconnect()
+  }, [temMais, carregando, carregarMais])
+
   const itensBusca = items ?? []
+
+  // Converte um item da Rede na faixa que o player entende. Existe porque a
+  // mesma conversão era repetida nos dois cartões (favoritos e grade) e
+  // agora precisa servir também pra montar a FILA — sem ela, a fila e a
+  // faixa clicada poderiam divergir num campo e o "próxima" pularia errado.
+  const paraFaixa = (it: (typeof itensBusca)[number]) => ({
+    id: it.orderId, title: it.title, occasion: it.occasion,
+    audioUrl: it.audioUrl, imageUrl: it.imageUrl,
+    lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null,
+    apelido: it.authorApelido,
+  })
 
   if (!items || items.length === 0) return null
 
@@ -143,7 +168,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   >
                     <button
                       type="button"
-                      onClick={() => playOuPausa({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null, apelido: it.authorApelido })}
+                      onClick={() => playOuPausa(paraFaixa(it), favoritados.map(paraFaixa))}
                       className="absolute inset-0 flex items-center justify-center text-2xl"
                     >
                       {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
@@ -175,7 +200,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
               <div className="relative w-32 h-32 rounded-xl overflow-hidden">
                 <button
                   type="button"
-                  onClick={() => playOuPausa({ id: it.orderId, title: it.title, occasion: it.occasion, audioUrl: it.audioUrl, imageUrl: it.imageUrl, lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null, apelido: it.authorApelido })}
+                  onClick={() => playOuPausa(paraFaixa(it), visiveis.map(paraFaixa))}
                   className="block w-full h-full"
                 >
                   <div className="w-full h-full bg-cover bg-center" style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }} />
@@ -209,18 +234,36 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   consentimento de publicação). Nulo na maioria dos cards, e
                   isso é o esperado — não é falta de dado. */}
               <p className="text-[11px] text-white/40 truncate">{it.occasion}</p>
-              {it.authorApelido && (
-                <p className="text-[11px] text-white/55 truncate" title={it.authorApelido}>
-                  {it.authorApelido}
-                </p>
-              )}
+              {/* Sem apelido o cartão ficava com essa linha VAZIA, e a
+                  ausência lia como defeito ("não vi o nome de quem
+                  publicou" — Audrei, 2026-09-02). Hoje é o esperado: só 1
+                  perfil no sistema inteiro preencheu apelido e ligou o
+                  opt-in, e as músicas desse perfil são justamente as que a
+                  Rede esconde de quem é o dono delas.
+                  O rótulo neutro torna o estado legível SEM revelar
+                  identidade — publication_consent autoriza publicar a obra,
+                  não expor quem encomendou. */}
+              <p className={`text-[11px] truncate ${it.authorApelido ? "text-white/55" : "text-white/25 italic"}`}
+                 title={it.authorApelido ?? "Este autor não escolheu aparecer na Rede"}>
+                {it.authorApelido ?? "Membro da Rede"}
+              </p>
             </div>
           )
         })}
       </div>
 
-      {/* Paginação: a Rede vem em páginas de 40 do servidor. Sem este botão o
-          cliente veria só as 40 primeiras e não teria como chegar no resto. */}
+      {/* Paginação. A Rede vem em páginas de 40 do servidor.
+          O botão sozinho não bastava: no celular são 40 cartões de rolagem
+          até chegar nele, e o Audrei relatou "não estou vendo paginação no
+          mobile e nem todas as músicas aparecem" — ele nunca chegou ao fim
+          da lista. Agora a próxima página entra sozinha quando a sentinela
+          abaixo se aproxima da tela (400px antes, pra a lista já estar
+          pronta quando o dedo chegar lá).
+          O botão CONTINUA como alternativa: se o observer não disparar
+          (aba em segundo plano, navegador antigo, alguém que rola muito
+          rápido), ainda dá pra pedir a próxima página no clique. */}
+      <div ref={sentinelaRef} aria-hidden="true" className="h-px" />
+
       {temMais && (
         <div className="flex justify-center mt-5">
           <button

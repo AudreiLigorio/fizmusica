@@ -137,7 +137,16 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
                 <button
                   type="button"
                   disabled={!t.audioUrl}
-                  onClick={() => t.audioUrl && playOuPausa({ id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc, apelido: meuApelido })}
+                  onClick={() => t.audioUrl && playOuPausa(
+                    { id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc, apelido: meuApelido },
+                    // Fila = a biblioteca inteira, sem as que ainda não têm
+                    // áudio (pedido em produção): elas travariam a emenda.
+                    tracks.filter((x) => x.audioUrl).map((x) => ({
+                      id: x.id, title: x.title, occasion: x.occasion,
+                      audioUrl: x.audioUrl as string, imageUrl: x.imageUrl,
+                      lyrics: x.lyrics, lyricsLrc: x.lyricsLrc, apelido: meuApelido,
+                    })),
+                  )}
                   className="absolute inset-0 flex items-center justify-center text-2xl disabled:cursor-default"
                 >
                   {!t.imageUrl && "▶"}

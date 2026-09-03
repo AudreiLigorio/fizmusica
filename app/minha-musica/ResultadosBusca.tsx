@@ -109,10 +109,17 @@ export default function ResultadosBusca({
             <button
               key={l.id}
               type="button"
-              onClick={() => playOuPausa({
-                id: l.id, title: l.title, occasion: l.occasion, audioUrl: l.audioUrl,
-                imageUrl: l.imageUrl, lyrics: l.lyrics, lyricsLrc: l.lyricsLrc, apelido: l.apelido,
-              })}
+              onClick={() => playOuPausa(
+                {
+                  id: l.id, title: l.title, occasion: l.occasion, audioUrl: l.audioUrl,
+                  imageUrl: l.imageUrl, lyrics: l.lyrics, lyricsLrc: l.lyricsLrc, apelido: l.apelido,
+                },
+                // Fila = o resultado da busca, na ordem em que está na tela.
+                linhas.map((x) => ({
+                  id: x.id, title: x.title, occasion: x.occasion, audioUrl: x.audioUrl,
+                  imageUrl: x.imageUrl, lyrics: x.lyrics, lyricsLrc: x.lyricsLrc, apelido: x.apelido,
+                })),
+              )}
               className="w-full flex items-center gap-3.5 px-1 py-2 rounded-xl hover:bg-white/[0.04] transition-colors text-left"
             >
               {/* Gradiente SEMPRE por baixo da foto (duas camadas de

@@ -117,7 +117,16 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                       )}
                       <button
                         type="button"
-                        onClick={() => playOuPausa({ id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null, apelido: t.apelido })}
+                        onClick={() => playOuPausa(
+                          { id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null, apelido: t.apelido },
+                          // Fila = a playlist aberta, na ordem em que ela
+                          // aparece — é o que a pessoa montou.
+                          pl.tracks.map((x) => ({
+                            id: x.orderId, title: x.title, occasion: x.occasion,
+                            audioUrl: x.audioUrl, imageUrl: x.imageUrl,
+                            lyrics: null, lyricsLrc: null, apelido: x.apelido,
+                          })),
+                        )}
                         className="absolute inset-0"
                         aria-label={isPlaying ? "Pausar" : "Tocar"}
                       >

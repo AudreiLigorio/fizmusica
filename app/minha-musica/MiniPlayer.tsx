@@ -20,6 +20,22 @@ function IconRepeat() {
     </svg>
   )
 }
+function IconProxima() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true" fill="currentColor">
+      <path d="M6 5.3c0-.8.9-1.3 1.5-.9l8.4 5.7c.6.4.6 1.3 0 1.7l-8.4 5.7c-.6.4-1.5 0-1.5-.9Z" />
+      <rect x="16.6" y="4.5" width="2.2" height="15" rx="1.1" />
+    </svg>
+  )
+}
+function IconAnterior() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true" fill="currentColor">
+      <path d="M18 5.3c0-.8-.9-1.3-1.5-.9L8.1 10.1c-.6.4-.6 1.3 0 1.7l8.4 5.7c.6.4 1.5 0 1.5-.9Z" />
+      <rect x="5.2" y="4.5" width="2.2" height="15" rx="1.1" />
+    </svg>
+  )
+}
 function IconPlay({ size = "w-4 h-4" }: { size?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={`${size} translate-x-[1px]`} aria-hidden="true" fill="currentColor">
@@ -58,7 +74,7 @@ function fmt(s: number): string {
 }
 
 export default function MiniPlayer() {
-  const { track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef, toggle, toggleRepeat, seek, close, openFull, closeFull, onTimeUpdate } = usePlayer()
+  const { track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef, proximaTrack, temProxima, temAnterior, proxima, anterior, toggle, toggleRepeat, seek, openFull, closeFull, onTimeUpdate } = usePlayer()
   const activeLineRef = useRef<HTMLParagraphElement>(null)
 
   // Ações do player aberto: as MESMAS do card (favoritar e adicionar à
@@ -141,8 +157,25 @@ export default function MiniPlayer() {
         loop={repeat}
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onTimeUpdate}
-        onEnded={close}
+        // Ao terminar, emenda na próxima da fila em vez de fechar o player
+        // (pedido do Audrei: "igual Spotify"). Com o repetir ligado este
+        // evento nem dispara — o `loop` nativo reinicia a faixa antes disso,
+        // que é justamente a exceção que ele pediu. Sem próxima, `proxima()`
+        // cai no close() e o player some como antes.
+        onEnded={proxima}
       />
+
+      {/* Pré-carrega a PRÓXIMA faixa enquanto a atual toca.
+          Sem isto a emenda herdaria o caminho inteiro do play: /api/audio
+          consulta o banco, assina a URL e só então redireciona — mediram-se
+          1,7s até o primeiro byte antes de otimizar. Aqui esse custo é pago
+          durante a música anterior, então a troca é imediata.
+          `preload="auto"` só baixa; quem toca continua sendo o <audio> de
+          cima, e este é trocado assim que a faixa vira. */}
+      {proximaTrack && !repeat && (
+        // eslint-disable-next-line jsx-a11y/media-has-caption
+        <audio key={proximaTrack.id} src={proximaTrack.audioUrl} preload="auto" muted />
+      )}
 
       {/* barra fixa — só dentro de /minha-musica. Cor sólida via style (não
           a classe utilitária bg-[...]/opacidade) pra não depender de
@@ -197,12 +230,30 @@ export default function MiniPlayer() {
             <IconRepeat />
           </button>
           <button
+            onClick={anterior}
+            disabled={!temAnterior}
+            aria-label="Música anterior"
+            title="Anterior"
+            className="w-8 h-8 rounded-full items-center justify-center shrink-0 text-white/45 hover:text-white/85 disabled:opacity-25 disabled:hover:text-white/45 transition-colors hidden sm:flex"
+          >
+            <IconAnterior />
+          </button>
+          <button
             onClick={toggle}
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white"
             style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
             aria-label={playing ? "Pausar" : "Tocar"}
           >
             {playing ? <IconPause /> : <IconPlay />}
+          </button>
+          <button
+            onClick={proxima}
+            disabled={!temProxima}
+            aria-label="Próxima música"
+            title="Próxima"
+            className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white/45 hover:text-white/85 disabled:opacity-25 disabled:hover:text-white/45 transition-colors"
+          >
+            <IconProxima />
           </button>
         </div>
       </div>

@@ -58,11 +58,19 @@ export async function GET(req: NextRequest) {
 
   if (!orderId) return negar()
 
-  const { data: order } = await supabase
-    .from("orders")
-    .select("id, userId, status, publication_consent, sunoTracks")
-    .eq("id", orderId)
-    .maybeSingle()
+  // As duas consultas em PARALELO. Eram sequenciais e cada uma custa ~300ms
+  // (medido) — em série, meio segundo antes de sequer começar a assinar. A
+  // de generated_music não depende do resultado da de orders: se a
+  // autorização falhar, o resultado dela é simplesmente descartado.
+  const [{ data: order }, { data: gm }] = await Promise.all([
+    supabase
+      .from("orders")
+      .select("id, userId, status, publication_consent, sunoTracks")
+      .eq("id", orderId)
+      .maybeSingle(),
+    supabase
+      .from("generated_music").select("mp3Url").eq("orderId", orderId).maybeSingle(),
+  ])
   if (!order) return negar()
 
   // ── Caminho 2: música da Rede ─────────────────────────────────────────
@@ -78,9 +86,6 @@ export async function GET(req: NextRequest) {
   if (!naRede && !dono) return negar()
 
   // Faixa específica (o cliente recebe 2 versões do Suno) ou a principal.
-  const { data: gm } = await supabase
-    .from("generated_music").select("mp3Url").eq("orderId", orderId).maybeSingle()
-
   type Track = { audioId?: string; audioUrl?: string }
   const tracks = (order.sunoTracks as Track[] | null) ?? []
   const alvo = audioId

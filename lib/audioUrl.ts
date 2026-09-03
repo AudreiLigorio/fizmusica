@@ -23,6 +23,28 @@ export function caminhoNoBucket(url: string | null | undefined): string | null {
   return m ? decodeURIComponent(m[1]) : null
 }
 
+// Cache das assinaturas, em memória.
+//
+// Fechar o bucket cobrou seu preço: cada play virou 2 consultas ao banco +
+// 1 chamada de assinatura ao Supabase, ~300ms cada, em série — o Audrei
+// sentiu como "delay" na Rede. Medido em 2026-09-02: 1,7-1,9s até o
+// primeiro byte do MP3, contra o link direto de antes.
+//
+// A assinatura de um mesmo arquivo é sempre equivalente: mesmo caminho,
+// mesma validade. Então não há motivo pra pedir outra a cada play — a mesma
+// URL serve enquanto não estiver perto de vencer.
+//
+// Isto NÃO enfraquece a proteção: quem pode ouvir continua sendo decidido a
+// cada requisição, no banco, sem cache. O que se reaproveita é só a
+// assinatura de um arquivo que a requisição JÁ foi autorizada a ouvir.
+//
+// A margem existe porque a URL entregue agora ainda precisa durar a música
+// inteira: guardamos por 20 min uma assinatura de 30, então a mais velha
+// que alguém recebe ainda tem 10 min de vida — cobre uma faixa de 4 min com
+// folga, inclusive arrastando a barra de progresso.
+const VALIDADE_CACHE_MS = 20 * 60 * 1000
+const cacheAssinaturas = new Map<string, { url: string; em: number }>()
+
 // URL assinada e temporária para um arquivo do bucket songs.
 //
 // Existe porque o bucket era PÚBLICO e o endereço do MP3, permanente: bastava
@@ -37,6 +59,10 @@ export async function urlAssinadaDoAudio(
     ? caminhoNoBucket(urlPublicaOuCaminho)
     : (urlPublicaOuCaminho ?? null)
   if (!caminho) return null
+
+  const guardada = cacheAssinaturas.get(caminho)
+  if (guardada && Date.now() - guardada.em < VALIDADE_CACHE_MS) return guardada.url
+
   const { data, error } = await supabase.storage
     .from(BUCKET_SONGS)
     .createSignedUrl(caminho, VALIDADE_URL_SEGUNDOS)
@@ -44,7 +70,9 @@ export async function urlAssinadaDoAudio(
     console.error("[audioUrl] falha ao assinar", caminho, error.message)
     return null
   }
-  return data?.signedUrl ?? null
+  const url = data?.signedUrl ?? null
+  if (url) cacheAssinaturas.set(caminho, { url, em: Date.now() })
+  return url
 }
 
 // Versão em LOTE. Existe por causa da fila de produção do admin: são ~70

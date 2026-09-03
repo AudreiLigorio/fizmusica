@@ -45,9 +45,19 @@ type PlayerState = {
   fullOpen: boolean
   repeat: boolean
   audioRef: React.RefObject<HTMLAudioElement | null>
-  playTrack: (t: PlayableTrack) => void
+  // Fila de reprodução. Quem chama o play manda a lista que a pessoa está
+  // vendo (a Rede, a playlist, a biblioteca) — é ela que define o que vem
+  // depois, igual a um app de streaming: você toca a 3ª faixa de uma lista e
+  // ela segue da 4ª em diante, não volta pro começo nem para.
+  fila: PlayableTrack[]
+  proximaTrack: PlayableTrack | null
+  temProxima: boolean
+  temAnterior: boolean
+  proxima: () => void
+  anterior: () => void
+  playTrack: (t: PlayableTrack, fila?: PlayableTrack[]) => void
   // Clique na capa: pausa/retoma se for a faixa atual, troca se for outra.
-  playOuPausa: (t: PlayableTrack) => void
+  playOuPausa: (t: PlayableTrack, fila?: PlayableTrack[]) => void
   toggle: () => void
   toggleRepeat: () => void
   seek: (t: number) => void
@@ -72,12 +82,17 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   // Repetir: usa o `loop` nativo do <audio>, então a faixa reinicia sem
   // passar pelo onEnded (que é quem fecha o player no fim normal).
   const [repeat, setRepeat] = useState(false)
+  const [fila, setFila] = useState<PlayableTrack[]>([])
 
   const lrcLines = track?.lyricsLrc ? parseLrc(track.lyricsLrc) : null
   const plainLines = (track?.lyrics ?? "").split("\n").map((l) => l.trim()).filter((l) => l && !/^\[.*\]$/.test(l))
   const lines = lrcLines ? lrcLines.map((l) => l.text) : plainLines
 
-  const playTrack = useCallback((t: PlayableTrack) => {
+  const playTrack = useCallback((t: PlayableTrack, novaFila?: PlayableTrack[]) => {
+    // A fila só é trocada quando quem chamou mandou uma. Assim o "próxima"
+    // disparado pelo fim de uma faixa reaproveita a fila que já estava lá em
+    // vez de zerá-la — senão a segunda música da lista seria sempre a última.
+    if (novaFila) setFila(novaFila)
     setTrack(t)
     setActiveLine(0)
     setProgress(0)
@@ -129,9 +144,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   // Fica aqui, e não em cada cartão, porque eram cinco lugares repetindo a
   // mesma chamada — corrigir um a um deixaria o próximo a ser criado errado
   // de novo.
-  const playOuPausa = useCallback((t: PlayableTrack) => {
+  const playOuPausa = useCallback((t: PlayableTrack, novaFila?: PlayableTrack[]) => {
     if (track?.id === t.id) { toggle(); return }
-    playTrack(t)
+    playTrack(t, novaFila)
   }, [track?.id, toggle, playTrack])
 
   const seek = useCallback((t: number) => {
@@ -141,12 +156,34 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setProgress(t)
   }, [])
 
+  // Índice calculado na hora a partir do id, não guardado em estado: a fila
+  // pode crescer (a Rede pagina, "mostrar mais" acrescenta itens) e um índice
+  // guardado apontaria pro lugar errado depois disso.
+  const indice = track ? fila.findIndex((f) => f.id === track.id) : -1
+  const proximaTrack = indice >= 0 && indice + 1 < fila.length ? fila[indice + 1] : null
+  const anteriorTrack = indice > 0 ? fila[indice - 1] : null
+
   const close = useCallback(() => {
     audioRef.current?.pause()
     setTrack(null)
     setPlaying(false)
     setFullOpen(false)
   }, [])
+
+  const proxima = useCallback(() => {
+    if (proximaTrack) playTrack(proximaTrack)
+    else close()
+  }, [proximaTrack, playTrack, close])
+
+  const anterior = useCallback(() => {
+    // Igual aos apps de streaming: no começo da faixa volta pra anterior;
+    // depois disso, "anterior" reinicia a atual.
+    const audio = audioRef.current
+    if (audio && audio.currentTime > 3) { audio.currentTime = 0; setProgress(0); return }
+    if (anteriorTrack) playTrack(anteriorTrack)
+    else if (audio) { audio.currentTime = 0; setProgress(0) }
+  }, [anteriorTrack, playTrack])
+
 
   const onTimeUpdate = useCallback(() => {
     const audio = audioRef.current
@@ -166,6 +203,8 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
 
   const value: PlayerState = {
     track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef,
+    fila, proximaTrack, temProxima: !!proximaTrack, temAnterior: indice > 0,
+    proxima, anterior,
     playTrack, playOuPausa, toggle, seek, close,
     toggleRepeat: () => setRepeat((r) => !r),
     openFull: () => setFullOpen(true),
