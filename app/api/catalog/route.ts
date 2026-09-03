@@ -82,29 +82,78 @@ type ItemBase = {
 const TTL_MS = 60_000
 let cache: { em: number; itens: ItemBase[] } | null = null
 
+// ── Crescimento do catálogo ───────────────────────────────────────────────
+//
+// O PostgREST desta instância corta em 1000 linhas SEM avisar: `site_events`
+// tem 28.592 e uma consulta sem `.limit()` devolve exatamente 1000, sem erro
+// (medido em 2026-09-02). Toda consulta daqui cresce junto com o catálogo,
+// então na música 1001 a Rede simplesmente pararia de mostrar as novas — e
+// nada no log denunciaria.
+const PAGINA_POSTGREST = 1000
+
+// Uma tabela inteira, em páginas. Para quando o lote vier menor que a página
+// (não existe próxima), então gasta uma consulta a mais só quando o total é
+// múltiplo exato de 1000.
+async function todasAsLinhas<T>(
+  buscarFaixa: (de: number, ate: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<{ linhas: T[]; erro?: string }> {
+  const linhas: T[] = []
+  for (let de = 0; ; de += PAGINA_POSTGREST) {
+    const { data, error } = await buscarFaixa(de, de + PAGINA_POSTGREST - 1)
+    if (error) return { linhas, erro: error.message }
+    const lote = data ?? []
+    linhas.push(...lote)
+    if (lote.length < PAGINA_POSTGREST) return { linhas }
+  }
+}
+
+// `.in(...)` com muitos ids tem um segundo teto, diferente: o filtro viaja na
+// URL, que estoura bem antes das 1000 linhas. Por isso os ids vão em lotes
+// menores, e os lotes em paralelo.
+const LOTE_IDS = 200
+
+async function porLotesDeIds<T>(
+  ids: string[],
+  buscar: (lote: string[]) => PromiseLike<{ data: T[] | null }>,
+): Promise<T[]> {
+  const lotes: string[][] = []
+  for (let i = 0; i < ids.length; i += LOTE_IDS) lotes.push(ids.slice(i, i + LOTE_IDS))
+  const respostas = await Promise.all(lotes.map((l) => buscar(l)))
+  return respostas.flatMap((r) => r.data ?? [])
+}
+
 async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
   if (cache && Date.now() - cache.em < TTL_MS) return { itens: cache.itens }
 
   const supabase = createServerClient()
-  const { data: orders, error } = await supabase
-    .from("orders")
-    // Sem join com products: ele só existia pra decidir se a letra vinha
-    // sincronizada, e a letra saiu daqui (vai por /api/catalog/letra, que
-    // aplica a mesma trava). Uma tabela a menos na consulta mais cara da tela.
-    .select("id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId")
-    .eq("publication_consent", true)
-    .eq("status", "DELIVERED")
+  type OrderRow = { id: string; context: string | null; subcategory: string; musicalStyle: string | null; sunoTracks: unknown; createdAt: string; userId: string | null }
+  const { linhas: orders, erro: error } = await todasAsLinhas<OrderRow>((de, ate) =>
+    supabase
+      .from("orders")
+      // Sem join com products: ele só existia pra decidir se a letra vinha
+      // sincronizada, e a letra saiu daqui (vai por /api/catalog/letra, que
+      // aplica a mesma trava). Uma tabela a menos na consulta mais cara da tela.
+      .select("id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId")
+      .eq("publication_consent", true)
+      .eq("status", "DELIVERED")
+      // Ordem estável: sem ORDER BY o Postgres não garante a mesma sequência
+      // entre páginas, e uma linha podia vir duas vezes ou nenhuma.
+      .order("createdAt", { ascending: true })
+      .order("id", { ascending: true })
+      .range(de, ate),
+  )
 
-  if (error) return { itens: [], erro: error.message }
+  if (error) return { itens: [], erro: error }
 
   // Apelido do autor: opt-in separado do publication_consent (que só cobre a
   // música) — mostrar_apelido default false, então maioria dos pedidos não
   // tem dono identificável (userId nulo, checkout sem conta) nem apelido
   // preenchido, e isso é o esperado, não um bug.
   const ownerIds = [...new Set((orders ?? []).map((o) => o.userId).filter(Boolean))] as string[]
-  const { data: perfis } = ownerIds.length
-    ? await supabase.from("profiles").select("user_id, apelido, mostrar_apelido").in("user_id", ownerIds)
-    : { data: [] }
+  type PerfilRow = { user_id: string; apelido: string | null; mostrar_apelido: boolean | null }
+  const perfis = await porLotesDeIds<PerfilRow>(ownerIds, (lote) =>
+    supabase.from("profiles").select("user_id, apelido, mostrar_apelido").in("user_id", lote),
+  )
   const apelidoPublico: Record<string, string> = {}
   const apelidoProprio: Record<string, string> = {}
   for (const p of perfis ?? []) {
@@ -115,9 +164,10 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
   }
 
   const ids = (orders ?? []).map((o) => o.id)
-  const { data: gm } = ids.length
-    ? await supabase.from("generated_music").select("orderId, slug, mp3Url, musicName, musicNameConfirmed").in("orderId", ids)
-    : { data: [] }
+  type MusicRow = { orderId: string; slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean | null }
+  const gm = await porLotesDeIds<MusicRow>(ids, (lote) =>
+    supabase.from("generated_music").select("orderId, slug, mp3Url, musicName, musicNameConfirmed").in("orderId", lote),
+  )
   const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean }> = {}
   for (const g of gm ?? []) musicByOrder[g.orderId as string] = {
     slug: g.slug ?? null,

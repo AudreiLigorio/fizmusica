@@ -43,7 +43,30 @@ export function caminhoNoBucket(url: string | null | undefined): string | null {
 // que alguém recebe ainda tem 10 min de vida — cobre uma faixa de 4 min com
 // folga, inclusive arrastando a barra de progresso.
 const VALIDADE_CACHE_MS = 20 * 60 * 1000
+
+// TETO. Sem ele o Map cresce junto com o catálogo e nunca devolve memória:
+// entradas vencidas continuam ocupando lugar porque a validade só era
+// conferida na LEITURA daquela chave específica — uma música tocada uma vez
+// ficaria guardada pra sempre na instância. Com 68 músicas não se nota; é
+// exatamente o tipo de coisa que só aparece quando o catálogo cresce.
+const MAX_ASSINATURAS = 500
 const cacheAssinaturas = new Map<string, { url: string; em: number }>()
+
+// Chamada só quando o cache está cheio, não a cada play.
+// Primeiro joga fora o que venceu; se ainda estiver cheio (muita música
+// tocando ao mesmo tempo), descarta as mais antigas. O Map do JS preserva a
+// ordem de inserção, então as primeiras chaves são as mais velhas.
+function abrirEspaco() {
+  const agora = Date.now()
+  for (const [chave, valor] of cacheAssinaturas) {
+    if (agora - valor.em >= VALIDADE_CACHE_MS) cacheAssinaturas.delete(chave)
+  }
+  while (cacheAssinaturas.size >= MAX_ASSINATURAS) {
+    const maisAntiga = cacheAssinaturas.keys().next().value
+    if (maisAntiga === undefined) break
+    cacheAssinaturas.delete(maisAntiga)
+  }
+}
 
 // URL assinada e temporária para um arquivo do bucket songs.
 //
@@ -71,7 +94,10 @@ export async function urlAssinadaDoAudio(
     return null
   }
   const url = data?.signedUrl ?? null
-  if (url) cacheAssinaturas.set(caminho, { url, em: Date.now() })
+  if (url) {
+    if (cacheAssinaturas.size >= MAX_ASSINATURAS) abrirEspaco()
+    cacheAssinaturas.set(caminho, { url, em: Date.now() })
+  }
   return url
 }
 
