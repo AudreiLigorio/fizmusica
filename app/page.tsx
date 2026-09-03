@@ -658,16 +658,28 @@ export default function Home() {
             </div>
 
             {/* Imagem de impacto (troca pedida pelo Audrei — substitui a arte
-                das duas portas). WebP q78, 218KB: comparei o bilhete "CRIE /
-                COMPONHA / HOMENAGEIE" contra o PNG original com zoom 2x e o
-                texto pequeno continua igual, então não vale pagar os 293KB
-                do q86.
+                das duas portas). Trocada de novo (pedido do Audrei): a
+                versão original vinha num retângulo preto opaco, que contra
+                o fundo #07060d da página desenhava uma "caixa" com halo
+                âmbar visível nos quatro cantos. Esta tem canal alpha real
+                (conferido em Python: não é o xadrez-pintado que já causou
+                artefato nesta mesma sessão) — os cantos ficam transparentes
+                e o resto opaco, então a arte se dissolve no fundo da página
+                em vez de flutuar dentro de uma caixa. Ainda não é um recorte
+                isolando só a pessoa: o preto imediatamente ao redor dele
+                (a "cena") continua opaco, só as bordas externas somem.
+
+                WebP q78 com alpha, 362KB (218KB a versão anterior sem
+                canal alpha — a transparência cobra esse preço, mas o ganho
+                visual é real, não só estético: testei lado a lado sobre a
+                cor de fundo real da seção). Legibilidade do bilhete "CRIE /
+                COMPONHA / HOMENAGEIE" idêntica ao PNG original em zoom 2x.
 
                 `sizes` com o teto real da coluna (~520px = metade do
                 container de 1104px menos o gap), não "100vw" — sem o teto o
                 Next pede a maior variante em qualquer tela larga mesmo a
                 imagem nunca desenhando mais que isso. Já errei isso duas
-                vezes nesta home (colagem do hero e a arte anterior daqui). */}
+                vezes nesta home antes de acertar aqui. */}
             <div className="order-1 lg:order-none rounded-3xl overflow-hidden w-full max-w-[26rem] mx-auto lg:max-w-none">
               <Image
                 src="/images/ideia-vira-hit.webp"
