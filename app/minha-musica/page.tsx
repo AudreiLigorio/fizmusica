@@ -1057,8 +1057,24 @@ function MinhaMusicaContent() {
                           {abandonado ? "💳 Pendente" : delivered ? "✓ Entregue" : "🎵 Em produção"}
                         </span>
                       </div>
-                      <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">{order.subcategory}</p>
-                      <p className="text-[11px] text-white/40 truncate">{order.products?.name}</p>
+                      {/* TÍTULO da música primeiro (pedido do Audrei). Antes a
+                          capinha mostrava a ocasião, e como várias músicas
+                          nascem da mesma ocasião a prateleira virava três
+                          "Já tenho a composiç…" seguidos — nada distinguia
+                          uma da outra.
+                          O título é o nome que o próprio cliente escolheu ao
+                          aprovar a letra. Sem ele (entrega antiga, ou pedido
+                          em que o nome não foi definido), cai pra ocasião,
+                          que é o que havia antes.
+                          Na 2ª linha entra a ocasião, não mais o plano: ela
+                          diz mais sobre a música, e o plano continua visível
+                          no cartão que abre ao tocar. */}
+                      <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">
+                        {order.musicName?.trim() || order.subcategory}
+                      </p>
+                      <p className="text-[11px] text-white/40 truncate">
+                        {order.musicName?.trim() ? order.subcategory : order.products?.name}
+                      </p>
                     </button>
                   )
                 }
