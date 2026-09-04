@@ -414,6 +414,17 @@ export async function GET(req: NextRequest) {
       items: pagina,
       top10,
       total: ordenados.length,
+      // Quantas músicas a busca encontrou ANTES do filtro de ocasião/estilo.
+      //
+      // É este o número da pílula "Todas": ele promete o que a pessoa vai
+      // ver se limpar o filtro. Usar `total` ali estava errado — com um
+      // filtro ativo ele já vinha reduzido, e a tela exibia "Todas · 5" ao
+      // lado de "Já tenho a composição da Letra · 22". Uma pílula prometendo
+      // MENOS que uma faceta individual, o que é impossível de entender.
+      //
+      // Mesma base das facetas (`porBusca`), então os números da barra
+      // inteira passam a conversar entre si.
+      totalDaBusca: porBusca.length,
       // `temMais` explícito em vez de deixar o cliente calcular: ele não
       // precisa saber como a página foi cortada pra decidir se pede mais.
       temMais: inicio + pagina.length < ordenados.length,

@@ -49,6 +49,9 @@ type Ctx = {
   top10: CatalogItem[]
   total: number
   temMais: boolean
+  // Total da BUSCA, sem o filtro de ocasião/estilo — é o que a pílula
+  // "Todas" promete. Ver /api/catalog.
+  totalDaBusca: number
   carregando: boolean
   facetas: Facetas
   busca: string
@@ -62,7 +65,7 @@ type Ctx = {
 const VAZIO: Facetas = { ocasioes: [], estilos: [] }
 
 const CatalogoCtx = createContext<Ctx>({
-  items: null, top10: [], total: 0, temMais: false, carregando: false, facetas: VAZIO,
+  items: null, top10: [], total: 0, totalDaBusca: 0, temMais: false, carregando: false, facetas: VAZIO,
   busca: "", filtro: null,
   setBusca: () => {}, setFiltro: () => {}, carregarMais: () => {}, alternarFavorito: () => {},
 })
@@ -74,6 +77,7 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
   const [top10, setTop10] = useState<CatalogItem[]>([])
   const [total, setTotal] = useState(0)
   const [temMais, setTemMais] = useState(false)
+  const [totalDaBusca, setTotalDaBusca] = useState(0)
   const [carregando, setCarregando] = useState(false)
   const [facetas, setFacetas] = useState<Facetas>(VAZIO)
   const [busca, setBusca] = useState("")
@@ -110,6 +114,7 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
     // cada "mostrar mais" faria a lista piscar sem motivo.
     if (desde === 0) setTop10(d.top10 ?? [])
     setTotal(d.total ?? 0)
+    setTotalDaBusca(d.totalDaBusca ?? d.total ?? 0)
     setTemMais(!!d.temMais)
     setFacetas(d.facetas ?? VAZIO)
     setCarregando(false)
@@ -136,7 +141,7 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CatalogoCtx.Provider value={{
-      items, top10, total, temMais, carregando, facetas, busca, filtro,
+      items, top10, total, totalDaBusca, temMais, carregando, facetas, busca, filtro,
       setBusca, setFiltro, carregarMais, alternarFavorito,
     }}>
       {children}

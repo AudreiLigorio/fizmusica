@@ -17,7 +17,7 @@ import { combina } from "@/lib/busca"
 // outro, erro que já aconteceu uma vez (ver 78faf4d). Às facetas somam-se as
 // músicas do próprio cliente, que a Rede não conhece.
 export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[] }) {
-  const { facetas, filtro, setFiltro, busca, total } = useCatalogo()
+  const { facetas, filtro, setFiltro, busca, totalDaBusca } = useCatalogo()
 
   // As do cliente são poucas e estão todas carregadas — contar na tela aqui
   // não custa nada, e sem isso a pílula ignoraria a biblioteca dele.
@@ -35,7 +35,10 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
   const estilos = somar(facetas.estilos, (t) =>
     (t.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean))
 
-  const totalGeral = total + minhasNaBusca.length
+  // `totalDaBusca` e não `total`: a pílula "Todas" promete o que aparece ao
+  // LIMPAR o filtro, então não pode já vir reduzida por ele. Com `total` a
+  // barra exibia "Todas · 5" ao lado de "Já tenho a composição da Letra · 22".
+  const totalGeral = totalDaBusca + minhasNaBusca.length
 
   if (ocasioes.length === 0) return null
 
