@@ -207,13 +207,36 @@ function MinhaMusicaContent() {
 
   async function recarregarEMostrarPedidos() {
     await loadOrders()
-    // Espera o React repintar com a lista nova antes de rolar; sem isso o
-    // scroll acontece na altura ANTIGA e erra o alvo.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() =>
-        pedidosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
-      ),
-    )
+
+    // Rolagem INSTANTÂNEA, não suave — e repetida.
+    //
+    // A versão suave falhava justamente nestes momentos. Ela anima por
+    // centenas de milissegundos, e é exatamente nesse intervalo que o
+    // cartão colapsa (o fluxo da letra vira "em produção", ou o portão do
+    // termo vira capinha). A página encurta no meio da animação, o
+    // navegador corta o scroll no ponto em que estava, e a pessoa para num
+    // lugar qualquer — foi o que o Audrei viu duas vezes.
+    //
+    // Instantânea não tem janela pra ser interrompida. E como a altura
+    // ainda muda depois (players montando, imagens carregando), a posição
+    // é reafirmada mais duas vezes: só corrige se tiver saído do lugar, e
+    // para de insistir se a pessoa rolou por conta própria.
+    const irParaOTopo = () => {
+      const el = pedidosRef.current
+      if (!el) return
+      const y = el.getBoundingClientRect().top
+      // Já está no lugar (a margem do cabeçalho fixo é 5rem = 80px).
+      if (Math.abs(y - 80) < 24) return
+      el.scrollIntoView({ behavior: "auto", block: "start" })
+    }
+
+    requestAnimationFrame(() => requestAnimationFrame(irParaOTopo))
+    const t1 = setTimeout(irParaOTopo, 150)
+    const t2 = setTimeout(irParaOTopo, 500)
+    // Se a pessoa rolar de propósito, para de insistir.
+    const desiste = () => { clearTimeout(t1); clearTimeout(t2) }
+    window.addEventListener("wheel", desiste, { once: true, passive: true })
+    window.addEventListener("touchmove", desiste, { once: true, passive: true })
   }
 
   async function acceptDeliveryTerm(orderId: string) {
