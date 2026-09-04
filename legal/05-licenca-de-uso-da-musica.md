@@ -1,6 +1,6 @@
 # Termo de Licença, Direitos Autorais e Utilização de Histórias
 
-Última atualização: Junho de 2026
+Última atualização: Setembro de 2026
 
 ## 1. Aceitação
 
@@ -62,6 +62,8 @@ Sem autorização expressa da Fiz Música, o Cliente **não** poderá:
 A Fiz Música poderá, a seu exclusivo critério: publicar, licenciar, distribuir, comercializar e disponibilizar a obra em plataformas digitais; integrá-la em playlists e catálogos musicais; licenciá-la para artistas, gravadoras e produtoras; utilizá-la em projetos audiovisuais e publicidade, **inteira ou em trechos e sincronizada com imagens**; e criar versões, remixes, adaptações ou obras derivadas.
 
 O uso da obra em peça publicitária que **identifique** o Cliente ou o homenageado segue dependendo da Autorização de Publicação (documento 07), conforme a fronteira do item 10.
+
+**Rede Fiz Música.** Apesar da amplitude deste item, a Fiz Música **não publica** a obra do Cliente na Rede Fiz Música — o catálogo interno onde outros usuários ouvem — **sem a autorização específica** do documento 07. Essa autorização é opcional, é pedida separadamente e o Cliente pode retirá-la sozinho a qualquer momento, com efeito em até 1 minuto. Na prática, a publicação na Rede é decisão do Cliente, não da Fiz Música.
 
 ## 10. Utilização de Nomes e Elementos Identificáveis
 

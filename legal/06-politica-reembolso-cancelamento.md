@@ -1,6 +1,6 @@
 # Política de Reembolso e Cancelamento — Fiz Música
 
-Última atualização: Junho de 2026
+Última atualização: Setembro de 2026
 
 A música personalizada é um **produto sob encomenda, individual e exclusivo**, produzido especialmente para o Cliente. Por isso, esta Política detalha as regras de cancelamento e reembolso, em harmonia com o Código de Defesa do Consumidor (CDC).
 
@@ -36,11 +36,15 @@ Eventuais ajustes estão sujeitos à **política de revisões** descrita nos Ter
 
 Em caso de falha de produção atribuível à Fiz Música ou impossibilidade de entrega, o Cliente terá direito a **refazimento do serviço** ou **reembolso**, conforme o caso.
 
-## 7. Processamento do Reembolso
+## 7. Efeito sobre o Programa de Fidelidade
+
+Os **discos** creditados por um pedido reembolsado ou cancelado são **estornados** da conta do Cliente, com o correspondente ajuste de nível. Descontos já aplicados em outros pedidos, esses, permanecem válidos.
+
+## 8. Processamento do Reembolso
 
 Reembolsos aprovados são processados pelo **mesmo meio de pagamento** utilizado na compra, por intermédio do provedor de pagamento (ex.: Mercado Pago), nos prazos por ele praticados.
 
-## 8. Como solicitar
+## 9. Como solicitar
 
 As solicitações de cancelamento ou reembolso devem ser enviadas para **contato@fizmusica.com.br**, informando o **número do pedido** (ex.: #XXXXXXXX) e o e-mail utilizado na compra.
 

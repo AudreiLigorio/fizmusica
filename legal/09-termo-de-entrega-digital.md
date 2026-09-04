@@ -1,6 +1,6 @@
 # Termo de Entrega Digital — Acesso, Download e Compartilhamento
 
-Última atualização: Julho de 2026
+Última atualização: Setembro de 2026
 
 ## 1. Acesso ao Pedido e à Área do Cliente
 
@@ -27,19 +27,37 @@ Após o download, **o Cliente é responsável pela guarda, armazenamento e prese
 
 ## 3. Player e QR Code
 
-A música é disponibilizada em uma **página digital (player)** acessível por link e por **QR Code**, com letra sincronizada e fotos (quando cadastradas). A audição no player **não exige login nem senha**. O QR Code pode ser impresso e compartilhado pelo Cliente.
+A música é disponibilizada em uma **página digital (player)** acessível por link e por **QR Code**, com letra sincronizada e fotos (conforme o plano contratado e quando cadastradas). A audição no player **não exige login nem senha**. O QR Code pode ser impresso e compartilhado pelo Cliente.
 
-## 4. Link Compartilhável
+## 4. Link de Compartilhamento
 
-A Fiz Música poderá disponibilizar ao Cliente um **link compartilhável** para acesso à música. O compartilhamento é **facultativo** e realizado exclusivamente sob responsabilidade do Cliente.
+Cada música entregue recebe um endereço próprio (`fizmusica.com.br/m/...`), **único e imprevisível**, gerado aleatoriamente e sem relação com o número do pedido.
 
-Qualquer pessoa que receba o link poderá acessar o conteúdo. O Cliente reconhece que a Fiz Música **não possui controle** sobre a distribuição do link após o compartilhamento.
+O compartilhamento é **facultativo** e feito exclusivamente pelo Cliente — a Fiz Música não divulga esse endereço nem o expõe na Rede Fiz Música.
 
-## 5. Expiração do Link
+**Atenção — o que o link mostra.** Quem abrir o link vê a página completa da música: áudio, letra e **as fotos que o Cliente cadastrou no player**. Esse é o propósito do link. Por isso ele funciona como uma chave:
 
-Os links compartilháveis possuem **prazo de validade** determinado pela Fiz Música. Após a expiração, o link poderá ser automaticamente desativado, removido ou substituído, independentemente de aviso prévio. A eventual renovação ou reativação ficará sujeita às políticas vigentes da plataforma.
+- Quem recebe o link pode repassá-lo a outras pessoas;
+- A Fiz Música **não tem controle** sobre a distribuição do link depois de compartilhado;
+- A decisão de com quem compartilhar, e o cuidado com essa distribuição, são **do Cliente**.
 
-## 6. Limitação de Responsabilidade
+Quem quiser que a música seja ouvida **sem** expor as fotos pode publicá-la na [Rede Fiz Música](07-autorizacao-de-publicacao.md), onde as fotos não aparecem — apenas a capa gerada automaticamente.
+
+## 5. Prazo de Disponibilidade do Link
+
+O link público tem prazo de disponibilidade de **90 dias** contados da publicação da música. Encerrado o prazo, o link é desativado e **as fotos do pedido são excluídas** junto com ele.
+
+O **arquivo MP3 e a letra não são apagados**: eles são objeto da licença contratada e continuam acessíveis ao Cliente na Área do Cliente. Recomendamos, ainda assim, que o Cliente **baixe e guarde** o seu arquivo — ver a seção 2.
+
+O prazo vigente é o indicado neste documento e na Área do Cliente, e pode ser alterado para pedidos futuros.
+
+## 6. Aceite e Autorização de Publicação
+
+Este Termo é apresentado quando a música fica pronta e o seu **aceite é obrigatório** para liberar o acesso ao áudio, ao download e ao compartilhamento.
+
+Na mesma tela é apresentada, em **caixa separada e desmarcada por padrão**, a [Autorização de Publicação](07-autorizacao-de-publicacao.md) na Rede Fiz Música. São dois aceites **independentes**: aceitar este Termo **não** publica a música, e recusar a publicação **não** impede a entrega. O Cliente pode aceitar um sem o outro, e mudar de ideia depois na Área do Cliente.
+
+## 7. Limitação de Responsabilidade
 
 A Fiz Música não será responsável por:
 - Compartilhamentos realizados pelo Cliente;

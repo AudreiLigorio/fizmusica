@@ -1,8 +1,8 @@
 # Consentimento para Tratamento de Dados Pessoais (Checkout / Formulário)
 
-Última atualização: Junho de 2026
+Última atualização: Setembro de 2026
 
-Texto a ser exibido no **wizard / checkout**, com caixa de marcação obrigatória antes de finalizar o pedido.
+Este documento reúne **todos** os pontos em que a plataforma pede consentimento, o que cada um cobre e onde se revoga. Cada consentimento é coletado em **caixa própria**, nunca agrupado com outro.
 
 ---
 
@@ -16,7 +16,31 @@ Texto a ser exibido no **wizard / checkout**, com caixa de marcação obrigatór
 
 ## Texto opcional (fotos)
 
-> ☐ Autorizo o uso das fotos que eu enviar **exclusivamente para exibição no player da minha música**. Estou ciente de que posso removê-las a qualquer momento na minha área. Caso as fotos incluam crianças ou adolescentes, declaro ter o consentimento dos pais ou responsáveis.
+> ☐ Autorizo o uso das fotos que eu enviar **exclusivamente para exibição no player da minha música**. Estou ciente de que quem receber o link da minha música verá essas fotos, e de que posso removê-las a qualquer momento na minha área. Caso as fotos incluam crianças ou adolescentes, declaro ter o consentimento dos pais ou responsáveis.
+
+---
+
+## Consentimentos posteriores à compra
+
+### Entrega da música (obrigatório para liberar o acesso)
+
+> ☐ Li e aceito o [Termo de Entrega Digital](09-termo-de-entrega-digital.md) e entendo que o **compartilhamento da música é de minha responsabilidade**.
+
+### Publicação na Rede Fiz Música (opcional — caixa separada, desmarcada)
+
+> ☐ Autorizo a Fiz Música a divulgar **minha música e a letra** na Rede Fiz Música, que podem conter nomes e a história real como parte do conteúdo. **Não divulgamos quem encomendou a música**, e as fotos que enviei **não aparecem na Rede** — só a capa gerada automaticamente. Posso revogar quando quiser, e a revogação impede novas exibições (o que terceiros já tenham salvo foge do nosso controle).
+
+Apresentado **na mesma tela** do Termo de Entrega, mas como aceite **independente**: aceitar a entrega não publica a música, e recusar a publicação não impede a entrega.
+
+### Exibir o apelido na Rede (opcional)
+
+> ☐ Mostrar meu apelido nas músicas que eu publicar na Rede Fiz Música.
+
+Desligado por padrão. É separado da autorização de publicação: aquela cobre a **obra**, esta cobre a **identificação do autor**.
+
+### Lembretes de datas especiais (opcional)
+
+Ao cadastrar uma data, o Cliente autoriza o envio de lembretes por e-mail sobre **aquela data**. Remover a data interrompe os lembretes.
 
 ---
 
@@ -31,4 +55,13 @@ Texto a ser exibido no **wizard / checkout**, com caixa de marcação obrigatór
 
 ## Revogação do consentimento
 
-O titular pode **revogar** os consentimentos específicos (ex.: uso de fotos) a qualquer momento, sem afetar a execução do contrato já contratado, pelo canal **privacidade@fizmusica.com.br** ou removendo as fotos na própria Área do Cliente. A revogação não afeta tratamentos baseados em outras bases legais (execução de contrato, obrigação legal) nem materiais já publicados antes da solicitação, quando houver impossibilidade técnica/legal de remoção imediata.
+Todos os consentimentos específicos são **revogáveis pelo próprio titular**, sem precisar solicitar a ninguém:
+
+| Consentimento | Onde se revoga | Efeito |
+|---|---|---|
+| Fotos no player | Removendo as fotos na Área do Cliente | Imediato |
+| Publicação na Rede | Desmarcando na Área do Cliente | Até 1 minuto: sai da Rede, do ranking e das playlists de terceiros |
+| Apelido na Rede | Desligando no perfil | Até 1 minuto |
+| Lembretes | Removendo a data | Imediato |
+
+Também é possível solicitar pelo canal **privacidade@fizmusica.com.br**. A revogação não afeta tratamentos baseados em outras bases legais (execução de contrato, obrigação legal) nem materiais já publicados antes da solicitação, quando houver impossibilidade técnica/legal de remoção imediata.

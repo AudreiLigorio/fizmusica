@@ -1,6 +1,6 @@
 # Política de Cookies — Fiz Música
 
-Última atualização: Junho de 2026
+Última atualização: Setembro de 2026
 
 Esta Política explica como a Fiz Música utiliza cookies e tecnologias semelhantes. Faz parte integrante da [Política de Privacidade](02-politica-de-privacidade.md).
 
@@ -13,6 +13,7 @@ Cookies são pequenos arquivos armazenados no seu dispositivo quando você acess
 | Tipo | Finalidade | Exemplos |
 |---|---|---|
 | **Essenciais** | Necessários ao funcionamento e à segurança | Sessão de login da Área do Cliente (autenticação sem senha); cookie de autenticação do painel administrativo |
+| **Identificador anônimo de sessão** | Guardado no navegador (localStorage) para ligar os passos de uma mesma visita, atribuir a origem da visita e evitar contar a mesma reprodução de música várias vezes | `fizmusica_anon`, `fizmusica_origem` |
 | **De pagamento** | Processar o pagamento com segurança e antifraude | Scripts/cookies do **Mercado Pago** (Checkout) |
 | **De desempenho/estatística** (se aplicável) | Entender o uso e melhorar a experiência | Ferramentas de analytics, quando ativadas |
 

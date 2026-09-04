@@ -2,10 +2,21 @@
 
 import { useState } from "react"
 
+// FAQ da home.
+//
+// Revisada em 2026-09-04 junto com os documentos legais. Duas regras que
+// vieram dessa revisão e valem para qualquer texto novo aqui:
+//
+// 1. NÃO prometer recurso que varia por plano como se fosse de todos. Fotos,
+//    QR Code e revisão dependem do produto contratado — a versão anterior
+//    dizia "no digital você recebe ... suas fotos ... e um QR Code", o que
+//    não vale para o plano de entrada.
+// 2. NÃO dizer "nossa equipe" para etapa automatizada. A produção é online e
+//    imediata; falar em equipe cria expectativa de uma pessoa avaliando.
 const FAQS: { q: string; a: string }[] = [
   {
     q: "O que é a Fiz Música?",
-    a: "É uma plataforma que transforma a sua história em uma música 100% personalizada, com fotos, QR Code para impressão, opção de compartilhamento e muito mais. Você conta com uma plataforma completa, onde você mesmo personaliza tudo do seu jeito, sem depender de terceiros.",
+    a: "É uma plataforma que transforma a sua história em uma música 100% personalizada, com página exclusiva para ouvir, opção de compartilhar e muito mais. Você mesmo personaliza tudo do seu jeito, sem depender de terceiros.",
   },
   {
     q: "Como eu crio a minha música?",
@@ -13,7 +24,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "O que vem no produto digital?",
-    a: "No digital você recebe: o arquivo da música em MP3 para baixar, uma página exclusiva (player) com a letra sincronizada e suas fotos, e um QR Code para compartilhar e fazer a surpresa. Tudo fica disponível na sua área, sempre que quiser.",
+    a: "Em todos os planos você recebe a música personalizada, uma página exclusiva (player) para ouvir com a letra acompanhando, a capa criada automaticamente, o arquivo MP3 para baixar e um link para compartilhar. Fotos no player, QR Code e revisão variam conforme o plano — a página de produtos mostra exatamente o que cada um inclui antes de você pagar.",
   },
   {
     q: "Posso editar a letra antes de a música ser produzida?",
@@ -21,19 +32,43 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Posso colocar fotos na música?",
-    a: "Pode! Você adiciona fotos que aparecem no player enquanto a música toca, criando um clipe emocional — a quantidade varia de acordo com o produto escolhido. As fotos são opcionais, mas deixam a experiência muito mais especial.",
+    a: "Depende do plano: alguns incluem fotos no player, com limites diferentes, e outros não incluem. Quando o seu plano tem fotos, elas aparecem enquanto a música toca, criando um clipe emocional. Você adiciona, troca e remove quando quiser na sua área.",
   },
   {
     q: "Quanto tempo leva para ficar pronta?",
-    a: "Assim que você aprova a letra, a produção começa automaticamente e costuma ficar pronta em poucos minutos. Avisamos por e-mail quando a sua música estiver disponível. Assim que ficar pronta, você terá acesso ao player exclusivo, QR Code para impressão, download do MP3, edição das fotos e tudo pronto para surpreender.",
+    a: "Assim que você aprova a letra, a produção começa automaticamente e costuma ficar pronta em poucos minutos. Avisamos por e-mail quando estiver disponível. Aí você já pode ouvir, baixar e compartilhar.",
   },
   {
     q: "Como eu recebo e baixo a música?",
-    a: "Tudo acontece na sua área (você entra sem senha, com Google ou e-mail). Lá você ouve, baixa o MP3, gera o QR Code e compartilha o link. Não enviamos a música anexada por e-mail — o acesso fica seguro e sempre à mão na sua conta.",
+    a: "Tudo acontece na sua área (você entra sem senha, com Google ou e-mail). Lá você ouve, baixa o MP3 e compartilha o link. Não enviamos a música anexada por e-mail — o acesso fica seguro e sempre à mão na sua conta.",
   },
   {
     q: "E se eu não gostar do resultado?",
-    a: "Você pode pedir uma revisão direto na sua área, contando o que gostaria de mudar. Nossa equipe avalia e gera uma nova versão. Queremos que você se emocione de verdade com o resultado.",
+    a: "Nos planos que incluem revisão, você pede direto na sua área contando o que gostaria de mudar, e uma nova versão é gerada. Confira na página de produtos se o plano escolhido inclui revisão.",
+  },
+  {
+    q: "Quem pode ouvir a minha música?",
+    a: "Por padrão, só você. A música fica privada na sua área. Ela só chega a outras pessoas de duas formas, e as duas dependem de você: compartilhando o seu link exclusivo com quem quiser, ou publicando na Rede Fiz Música.",
+  },
+  {
+    q: "O que é a Rede Fiz Música?",
+    a: "É um espaço dentro da plataforma onde você pode ouvir músicas que outros clientes escolheram publicar — e publicar as suas, se quiser. Dá para favoritar, montar playlists e ver o ranking das mais ouvidas. Publicar é opcional, e você pode retirar a sua música de lá quando quiser, sozinho.",
+  },
+  {
+    q: "Se eu publicar na Rede, minhas fotos aparecem?",
+    a: "Não. Na Rede aparece a música, a letra, a ocasião e a capa criada automaticamente — nunca as suas fotos, e nunca o seu nome. As fotos só aparecem para quem você mesmo enviar o seu link exclusivo. Seu apelido só aparece se você ligar essa opção separadamente no perfil.",
+  },
+  {
+    q: "Por quanto tempo o link fica disponível?",
+    a: "O link público da música fica no ar por 90 dias, e as fotos são removidas junto com ele no fim desse prazo. O arquivo MP3 e a letra não são apagados: seguem disponíveis na sua área. Mesmo assim, vale baixar e guardar o seu arquivo.",
+  },
+  {
+    q: "Como funcionam os discos e o programa de fidelidade?",
+    a: "A cada compra você acumula discos na sua Carreira, e eles vão subindo o seu nível de cantor — de Cantor de Chuveiro a Popstar. Quanto maior o nível, maior o desconto nos próximos produtos digitais. Indicar amigos que compram também rende discos.",
+  },
+  {
+    q: "Vocês avisam quando uma data especial está chegando?",
+    a: "Se você quiser. Você cadastra as datas que importam para você (aniversários, namoro, o que for) e mandamos um lembrete por e-mail com antecedência, para dar tempo de preparar a música. Pode remover a data quando quiser.",
   },
   {
     q: "Quais as formas de pagamento?",

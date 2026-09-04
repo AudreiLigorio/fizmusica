@@ -1,6 +1,6 @@
 # Política de Privacidade — Fiz Música
 
-Última atualização: Julho de 2026
+Última atualização: Setembro de 2026
 
 ## 1. Apresentação
 
@@ -22,6 +22,15 @@ Fiz Música é uma plataforma digital dedicada à criação de músicas personal
 
 **Dados de pagamento:** os pagamentos são processados por provedores especializados (ex.: Mercado Pago). A Fiz Música **não armazena** números completos de cartões de crédito ou informações bancárias sensíveis — guarda apenas identificadores da transação (ex.: id do pagamento).
 
+**Dados de uso da plataforma (Área do Cliente):**
+
+- **Apelido**, quando preenchido pelo Cliente no seu perfil, e a escolha de exibi-lo ou não na Rede Fiz Música;
+- **Favoritos e playlists** criados pelo Cliente;
+- **Reproduções de músicas publicadas**: registramos que uma reprodução ocorreu, com um identificador anônimo de sessão (gerado no próprio navegador, sem vínculo com o cadastro) e a data/hora, para contar quantas vezes cada música publicada foi ouvida e montar o ranking das mais ouvidas. Não registramos **quem** ouviu o quê;
+- **Datas especiais** cadastradas voluntariamente pelo Cliente (nome da pessoa, ocasião e dia) para receber lembretes;
+- **Programa de fidelidade**: histórico de concessão e uso dos "discos", vinculado à conta;
+- **Indicações**: o código de indicação do Cliente e o registro de que um convite foi compartilhado e, se for o caso, convertido em pedido.
+
 ## 4. Finalidades do Tratamento
 
 - Criar as músicas personalizadas contratadas;
@@ -32,11 +41,25 @@ Fiz Música é uma plataforma digital dedicada à criação de músicas personal
 - Realizar atendimento ao cliente;
 - Cumprir obrigações legais e regulatórias;
 - Garantir segurança e prevenção a fraudes;
-- Gerar estatísticas agregadas sobre a origem geográfica dos pedidos (estimativa de estado via IP), para análise de negócio.
+- Gerar estatísticas agregadas sobre a origem geográfica dos pedidos (estimativa de estado via IP), para análise de negócio;
+- Operar a **Rede Fiz Música** (catálogo de músicas publicadas), incluindo busca, filtros, favoritos, playlists e a contagem de reproduções que compõe o ranking das mais ouvidas — **somente** para músicas cujo autor concedeu a [Autorização de Publicação](07-autorizacao-de-publicacao.md);
+- Enviar **lembretes de datas especiais** cadastradas pelo próprio Cliente;
+- Operar o **programa de fidelidade** ("Minha Carreira") e o **programa de indicação**, calculando níveis e descontos.
 
 ## 5. Bases Legais
 
-O tratamento poderá ocorrer com fundamento em: execução de contrato; cumprimento de obrigação legal; exercício regular de direitos; legítimo interesse; e consentimento do titular, quando aplicável (ex.: fotos enviadas e autorizações de uso).
+O tratamento poderá ocorrer com fundamento em: execução de contrato; cumprimento de obrigação legal; exercício regular de direitos; legítimo interesse; e consentimento do titular, quando aplicável.
+
+Tratamentos que dependem de **consentimento específico**, cada um coletado em separado e revogável de forma independente:
+
+| Tratamento | Consentimento | Onde se revoga |
+|---|---|---|
+| Fotos exibidas no player da própria música | No envio das fotos | Removendo as fotos na Área do Cliente |
+| Publicação da música e da letra na Rede Fiz Música e em marketing | Caixa própria, desmarcada por padrão, apresentada junto ao Termo de Entrega | Desmarcando na Área do Cliente |
+| Exibição do apelido do autor na Rede | Opção "Mostrar meu apelido na Rede", desligada por padrão | Desligando no perfil |
+| Lembretes de datas especiais | Ao cadastrar a data | Removendo a data na Área do Cliente |
+
+Recusar qualquer um deles **não impede** a contratação nem a entrega da música.
 
 ## 6. Compartilhamento de Dados (Operadores)
 
@@ -69,7 +92,11 @@ Para criar a **letra** e a **música**, a Fiz Música utiliza **ferramentas de i
 
 ## 8. Músicas, Letras e Conteúdos Gerados
 
-Por padrão, as músicas permanecem privadas e acessíveis apenas ao cliente autenticado. Caso o usuário gere um link compartilhável, a música poderá ser acessada por terceiros que possuam o link. Essa disponibilização ocorre somente por ação do próprio usuário ao gerar o link, sob sua responsabilidade.
+Por padrão, as músicas permanecem **privadas**. Existem duas — e apenas duas — formas de uma música se tornar acessível a outras pessoas, ambas dependentes de ação do Cliente:
+
+**a) Link de compartilhamento do próprio Cliente.** Cada música entregue tem um endereço próprio (`/m/...`), único e imprevisível, que o Cliente compartilha com quem quiser. Quem tiver o link acessa a página da música — **inclusive as fotos** que o Cliente cadastrou no player. Essa é a finalidade do link, e a distribuição dele é responsabilidade do Cliente. A Fiz Música não divulga esse link e não o expõe na Rede.
+
+**b) Rede Fiz Música.** Somente se o Cliente conceder a [Autorização de Publicação](07-autorizacao-de-publicacao.md). Nesse caso, outras pessoas cadastradas podem ouvir a música, favoritá-la e incluí-la em playlists. **As fotos do Cliente não são exibidas na Rede** — apenas a capa gerada automaticamente pela IA. A autorização é revogável a qualquer momento pelo próprio Cliente, com efeito em até 1 minuto.
 
 ## 9. Uso de Músicas para Divulgação
 
@@ -97,10 +124,19 @@ Para **pedidos não concluídos (sem pagamento)**, aplicamos os seguintes prazos
 
 | Tipo de dado | Prazo de retenção | Observação |
 |---|---|---|
-| **Fotos enviadas** (inclusive de terceiros/homenageados) | **Até 7 dias** após a criação do pedido não pago | Como a finalidade (produzir a música) não se concretizou, as imagens são excluídas em definitivo dos nossos servidores e do armazenamento. |
-| **Cadastro do lead** (nome, e-mail, telefone e respostas do pedido) | **Até 60 dias** após a criação do pedido não pago | Mantido com base no legítimo interesse para eventual retomada/recuperação da compra; depois, excluído ou anonimizado. |
+| **Fotos enviadas** (inclusive de terceiros/homenageados) | **15 dias** após a criação do pedido não pago | Como a finalidade (produzir a música) não se concretizou, as imagens são excluídas em definitivo dos nossos servidores e do armazenamento. |
+| **Cadastro do lead** (nome, e-mail, telefone e respostas do pedido) | **15 dias** após a criação do pedido não pago | Mantido com base no legítimo interesse para eventual retomada da compra; depois, excluído. |
 
-Para **pedidos pagos**, os dados de transação e os necessários ao cumprimento de obrigações fiscais e de defesa do consumidor são mantidos pelos prazos legais aplicáveis (em regra, até 5 anos). As fotos enviadas podem ser removidas pelo próprio cliente, a qualquer momento, em sua área. O titular pode, ainda, solicitar a eliminação antecipada de seus dados pelos canais indicados nesta Política, ressalvadas as hipóteses de guarda obrigatória.
+Para **pedidos pagos**:
+
+| Tipo de dado | Prazo | Observação |
+|---|---|---|
+| **Link público da música** (`/m/...`) e **fotos** exibidas nele | **90 dias** após a publicação | Encerrado o prazo de disponibilidade, o link é desativado e as **fotos do pedido são excluídas** junto. O arquivo MP3 e a letra **não** são apagados — eles são objeto da licença contratada e permanecem acessíveis ao Cliente na Área do Cliente. |
+| **Dados de transação** e os necessários a obrigações fiscais e de defesa do consumidor | Prazos legais aplicáveis (em regra, até 5 anos) | — |
+
+As fotos enviadas podem ser removidas pelo próprio Cliente, a qualquer momento, em sua área. O titular pode, ainda, solicitar a eliminação antecipada de seus dados pelos canais indicados nesta Política, ressalvadas as hipóteses de guarda obrigatória.
+
+> Os prazos acima são os efetivamente praticados pela plataforma e podem ser ajustados; a versão vigente estará sempre neste documento.
 
 ## 11. Segurança das Informações
 
