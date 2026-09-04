@@ -396,8 +396,28 @@ function MinhaMusicaContent() {
   const heroOrders = orders
     .filter((o) => precisaAcao(o))
     .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
+
+  // EM PRODUÇÃO: pago, letra aprovada, música ainda não entregue.
+  //
+  // Antes caía na prateleira e virava capinha (a regra era "quem não precisa
+  // de ação vira capinha"). Só que assim, no instante em que o cliente aprova
+  // a letra, a tela dele encolhe: some o stepper, some o aviso de que a
+  // música está sendo feita, e sobra um quadradinho — justo na hora em que
+  // ele está mais ansioso e sem nada pra fazer além de esperar.
+  //
+  // Pedido do Audrei: manter o cliente na visão de gestão enquanto aguarda.
+  // Agora segue como cartão inteiro, com o stepper mostrando onde está.
+  // Não entra em "Precisa de você" porque NÃO precisa dele — tem cabeçalho
+  // próprio.
+  //
+  // Efeito colateral bom: esses pedidos apareciam como capinha "🎵 Em
+  // produção" debaixo do cabeçalho "ENTREGUES", que era simplesmente falso.
+  const emProducaoOrders = orders
+    .filter((o) => o.paymentStatus === "PAID" && !precisaAcao(o) && o.status !== "DELIVERED")
+    .sort((a, b) => dbTime(b.createdAt) - dbTime(a.createdAt))
+
   const shelfOrders = orders
-    .filter((o) => (o.paymentStatus === "PAID" && !precisaAcao(o)) || (o.paymentStatus !== "PAID" && o.status === "ABANDONED"))
+    .filter((o) => (o.paymentStatus === "PAID" && !precisaAcao(o) && o.status === "DELIVERED") || (o.paymentStatus !== "PAID" && o.status === "ABANDONED"))
     .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
 
   // "Minhas músicas" não é dado novo — é derivado dos mesmos pedidos entregues
@@ -837,7 +857,11 @@ function MinhaMusicaContent() {
 
               {heroOrders.length > 0 ? (
                 <p className="text-[10.5px] uppercase tracking-wide font-bold text-fuchsia-300 mb-2.5 flex items-center gap-1.5">🔥 Precisa de você</p>
-              ) : shelfOrders.length > 0 ? (
+              ) : emProducaoOrders.length === 0 && shelfOrders.length > 0 ? (
+                // Só quando NÃO há nada em produção: com uma música sendo
+                // feita, "tudo em dia" competia com o cartão logo abaixo que
+                // diz "estamos produzindo" — dois recados sobre o mesmo
+                // estado, um deles dizendo que não há nada acontecendo.
                 <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-green-500/8 border border-green-500/20 mb-1">
                   <span className="text-lg">✅</span>
                   <p className="text-xs font-semibold text-green-300">Tudo em dia — nada pendente no momento.</p>
@@ -889,6 +913,27 @@ function MinhaMusicaContent() {
                     )
                   })}
                 </div>
+              )}
+
+              {/* EM PRODUÇÃO — cartão inteiro, não capinha (pedido do Audrei:
+                  "manter o cliente sempre nessa tela de gestão"). Cabeçalho
+                  próprio porque estes NÃO precisam de ação: o cliente já fez
+                  a parte dele e está esperando. O conteúdo é o mesmo detalhe
+                  de sempre, então o stepper mostra em que etapa a música
+                  está. */}
+              {emProducaoOrders.length > 0 && (
+                <>
+                  <p className="text-[10.5px] uppercase tracking-wide font-bold text-fuchsia-300/80 mb-2.5 mt-4 flex items-center gap-1.5">
+                    🎵 Em produção
+                  </p>
+                  <div className="space-y-4 mb-2">
+                    {emProducaoOrders.map((order) => (
+                      <div key={order.id} className="rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
+                        <div className="p-6">{renderOrderDetail(order)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
 
               {(() => {
