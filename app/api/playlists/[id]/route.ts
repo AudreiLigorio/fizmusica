@@ -35,7 +35,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const ids: string[] = pl.track_order_ids ?? []
   if (ids.length === 0) return NextResponse.json({ playlist: pl, tracks: [] })
 
-  const { data: orders } = await supabase.from("orders").select("id, subcategory, sunoTracks, userId").in("id", ids)
+  // `status` e `publication_consent` entram na consulta porque a REVOGAÇÃO
+  // precisa valer aqui também: quando o dono desmarca "autorizo a divulgação",
+  // a música tem que sair de TODO lugar público — inclusive da playlist que
+  // um estranho já tinha montado com ela.
+  //
+  // Sem isso a faixa continuava listada (título, ocasião, capa) na playlist
+  // dos outros. O áudio já não tocava (/api/audio confere o consentimento a
+  // cada play e devolvia 404), mas a entrada ficava lá — o que é pior que
+  // sumir: parece defeito e ainda mantém a música exposta na vitrine de
+  // alguém depois de ela ter sido retirada do ar.
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("id, subcategory, sunoTracks, userId, status, publication_consent")
+    .in("id", ids)
   const { data: gm } = await supabase.from("generated_music").select("orderId, mp3Url, musicName, musicNameConfirmed").in("orderId", ids)
   const musicByOrder: Record<string, { mp3Url: string | null; musicName: string | null; confirmado: boolean }> = {}
   for (const g of gm ?? []) musicByOrder[g.orderId as string] = {
@@ -57,17 +70,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   type Track = { audioUrl: string; imageUrl: string | null }
-  const byId: Record<string, { subcategory: string; sunoTracks: Track[] | null; userId: string | null }> = {}
+  const byId: Record<string, { subcategory: string; sunoTracks: Track[] | null; userId: string | null; naRede: boolean }> = {}
   for (const o of orders ?? []) byId[o.id] = {
     subcategory: o.subcategory,
     sunoTracks: (o.sunoTracks as Track[] | null) ?? null,
     userId: (o.userId as string | null) ?? null,
+    // Mesma regra de /api/audio, pra tela e som nunca discordarem sobre o
+    // que está publicado.
+    naRede: o.status === "DELIVERED" && o.publication_consent === true,
   }
 
   const tracks = ids
     .map((orderId) => {
       const o = byId[orderId]
       if (!o) return null
+      // Fora da Rede só aparece pra quem é dono: a playlist do cliente pode
+      // conter músicas dele, e essas continuam mesmo sem publicação — ele não
+      // precisa de autorização pra ouvir a própria.
+      const dono = !!o.userId && o.userId === user.id
+      if (!o.naRede && !dono) return null
       const music = musicByOrder[orderId]
       const principal = o.sunoTracks?.find((t) => t.audioUrl === music?.mp3Url) ?? o.sunoTracks?.[0]
       // Entrega antiga (manual) não tem sunoTracks — o áudio está só no
