@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 import { supabase } from "@/lib/supabase"
@@ -192,6 +192,30 @@ function MinhaMusicaContent() {
   // juntar o ACEITE criaria um problema.
   const [pubChecked, setPubChecked] = useState<Record<string, boolean>>({})
 
+  // Depois de uma ação que muda DRASTICAMENTE o tamanho do card (aprovar a
+  // letra, escolher a versão, aceitar o termo), só recarregar não basta: a
+  // rolagem fica onde estava, mas o conteúdo daquele ponto sumiu.
+  //
+  // Aprovar a letra é o caso extremo — o fluxo inteiro (letra, fotos, botão)
+  // colapsa num cartão curto de "em produção". O Audrei aprovou e foi parar
+  // no rodapé da página, em "Indique amigos", sem ver que tinha dado certo.
+  //
+  // Por isso a seção de pedidos volta pro campo de visão. `block: "start"`
+  // e não `scrollTo(0,0)`: o alvo é o topo da LISTA, não o topo absoluto —
+  // assim o cabeçalho "Meus pedidos" aparece junto e dá contexto.
+  const pedidosRef = useRef<HTMLDivElement>(null)
+
+  async function recarregarEMostrarPedidos() {
+    await loadOrders()
+    // Espera o React repintar com a lista nova antes de rolar; sem isso o
+    // scroll acontece na altura ANTIGA e erra o alvo.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        pedidosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      ),
+    )
+  }
+
   async function acceptDeliveryTerm(orderId: string) {
     setAcceptingTerm(orderId)
     const { data: { session } } = await supabase.auth.getSession()
@@ -211,7 +235,7 @@ function MinhaMusicaContent() {
     }
 
     setAcceptingTerm(null)
-    if (res.ok) await loadOrders()
+    if (res.ok) await recarregarEMostrarPedidos()
   }
 
   const [linkPrompt, setLinkPrompt] = useState<{ code: string; maskedEmail: string } | null>(null)
@@ -551,13 +575,13 @@ function MinhaMusicaContent() {
             photoToken={order.photo_token}
             isRevision={order.is_revision}
             temFotos={(order.features ?? TUDO).fotos > 0}
-            onApproved={loadOrders}
+            onApproved={recarregarEMostrarPedidos}
           />
         )}
 
         {/* ESCOLHER VERSÃO — versões liberadas, cliente ainda não escolheu */}
         {escolhaPendente && (
-          <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={loadOrders} />
+          <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={recarregarEMostrarPedidos} />
         )}
 
         {/* EM PRODUÇÃO (sem ação): card pulsante. Fotos já foram travadas na aprovação. */}
@@ -891,7 +915,9 @@ function MinhaMusicaContent() {
               <div className="max-w-sm mx-auto mt-10 text-left">{blocoVincular}</div>
             </div>
           ) : (
-            <div className="mb-9">
+            <div className="mb-9" ref={pedidosRef} style={{ scrollMarginTop: "5rem" }}>
+              {/* `scrollMarginTop` por causa do cabeçalho fixo: sem ele o
+                  título "Meus pedidos" para EMBAIXO da barra do topo. */}
               {/* Sem card/borda — título grande e em negrito separa a seção,
                   mesma lógica das telas de música. */}
               <div className="flex items-center gap-2.5 mb-1">
