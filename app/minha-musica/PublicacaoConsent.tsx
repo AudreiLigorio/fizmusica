@@ -41,9 +41,19 @@ export default function PublicacaoConsent({
         <span className="text-lg shrink-0">💜</span>
         <div className="min-w-0">
           <p className="text-fuchsia-200 font-semibold text-sm">Quer ajudar mais pessoas a se emocionarem? <span className="text-white/40 font-normal">(opcional)</span></p>
+          {/* Mesmo texto do portão da entrega (page.tsx) — os dois pedem a
+              MESMA autorização, e dizer diferente em cada lugar é o tipo de
+              divergência que aparece numa contestação.
+              Duas correções de conteúdo:
+              - "nem usamos suas fotos" virou "as fotos não aparecem na Rede":
+                a primeira era falsa, porque o link /m/{slug} que o próprio
+                cliente compartilha MOSTRA as fotos — e isso é escolha dele.
+              - o limite da revogação passou a ser explícito: ela impede
+                novas exibições, não recupera o que alguém já salvou. */}
           <p className="text-white/55 text-xs leading-relaxed mt-1">
-            Você pode autorizar a Fiz Música a divulgar <strong className="text-white/80">a sua música e a letra</strong> (que podem conter nomes e a história real como parte do conteúdo).
-            <strong className="text-white/80"> Nunca divulgamos quem encomendou</strong> a música, nem usamos suas fotos. Você pode revogar quando quiser.{" "}
+            Você pode autorizar a Fiz Música a divulgar <strong className="text-white/80">a sua música e a letra</strong> na Rede Fiz Música (que podem conter nomes e a história real como parte do conteúdo).
+            <strong className="text-white/80"> Nunca divulgamos quem encomendou</strong> a música, e as suas fotos não aparecem na Rede — só a capa gerada automaticamente.
+            Você pode revogar quando quiser: a revogação impede novas exibições, mas o que terceiros já tenham salvo foge do nosso controle.{" "}
             <a href="/legal/autorizacao-de-publicacao" className="text-fuchsia-300 underline">Ler o termo</a>.
           </p>
 

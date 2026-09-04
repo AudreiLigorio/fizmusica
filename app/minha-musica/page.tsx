@@ -181,13 +181,35 @@ function MinhaMusicaContent() {
   // sem ação pendente vira capinha no carrossel, detalhes abrem aqui.
   const [openDetailOrderId, setOpenDetailOrderId] = useState<string | null>(null)
 
+  // Autorização de publicação marcada no MESMO portão da entrega.
+  //
+  // Estado separado do `termChecked` de propósito: são dois aceites, não um.
+  // O termo de entrega é OBRIGATÓRIO (sem ele o cliente não ouve o que
+  // pagou); a publicação é OPCIONAL. Fundir os dois num clique só faria o
+  // opcional deixar de ser livre — a pessoa teria que autorizar a divulgação
+  // pra receber o produto, e consentimento assim não vale (LGPD pede
+  // específico e granular). Juntar o MOMENTO resolve a vida do cliente;
+  // juntar o ACEITE criaria um problema.
+  const [pubChecked, setPubChecked] = useState<Record<string, boolean>>({})
+
   async function acceptDeliveryTerm(orderId: string) {
     setAcceptingTerm(orderId)
     const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch(`/api/orders/${orderId}/aceitar-entrega`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
-    })
+    const auth = { Authorization: `Bearer ${session?.access_token ?? ""}` }
+
+    const res = await fetch(`/api/orders/${orderId}/aceitar-entrega`, { method: "POST", headers: auth })
+
+    // Publicação só é enviada se a pessoa marcou. Vai DEPOIS e em separado:
+    // se esta falhar, a música é liberada do mesmo jeito — a entrega não pode
+    // ficar refém de um opt-in opcional.
+    if (res.ok && pubChecked[orderId]) {
+      await fetch(`/api/orders/${orderId}/publicacao`, {
+        method: "POST",
+        headers: { ...auth, "Content-Type": "application/json" },
+        body: JSON.stringify({ consent: true }),
+      }).catch(() => {})
+    }
+
     setAcceptingTerm(null)
     if (res.ok) await loadOrders()
   }
@@ -606,6 +628,29 @@ function MinhaMusicaContent() {
                 Li e aceito o{" "}
                 <a href="/legal/entrega-digital" className="text-pink-400 underline">Termo de Entrega Digital</a>
                 {" "}e entendo que o <strong className="text-white/80">compartilhamento da música é de minha responsabilidade</strong>.
+              </span>
+            </label>
+            {/* Segundo aceite, OPCIONAL — no mesmo momento, em caixa própria.
+                Antes só aparecia depois, escondido no fim do card da música
+                entregue, e quase ninguém chegava lá: 52 dos pedidos estavam
+                publicados sem registro de aceite nenhum, herdados do default
+                antigo da coluna. Aqui o cliente resolve tudo de uma vez e
+                fica prova de que ele escolheu. */}
+            <label className="flex items-start gap-2 cursor-pointer mb-3 rounded-lg border border-fuchsia-500/20 bg-fuchsia-500/[0.06] p-2.5">
+              <input
+                type="checkbox"
+                checked={!!pubChecked[order.id]}
+                onChange={(e) => setPubChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
+                className="w-4 h-4 mt-0.5 accent-fuchsia-500 shrink-0"
+              />
+              <span className="text-xs text-white/60 leading-relaxed">
+                <strong className="text-fuchsia-200">Opcional:</strong> autorizo a Fiz Música a divulgar{" "}
+                <strong className="text-white/80">minha música e a letra</strong> na Rede Fiz Música, que podem conter
+                nomes e a história real como parte do conteúdo.{" "}
+                <strong className="text-white/80">Não divulgamos quem encomendou a música</strong>, e as fotos que
+                enviei não aparecem na Rede — só a capa gerada automaticamente. Posso revogar quando quiser, e a
+                revogação impede novas exibições (o que terceiros já tenham salvo foge do nosso controle).{" "}
+                <a href="/legal/autorizacao-de-publicacao" className="text-fuchsia-300 underline">Ler o termo</a>.
               </span>
             </label>
             <button
