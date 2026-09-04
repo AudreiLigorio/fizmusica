@@ -17,7 +17,9 @@ A divulgação compreende a Obra por inteiro, **trechos** (por exemplo, um recor
 ### 2.1. O que esta autorização NÃO abrange
 
 - **As fotos enviadas pelo Cliente.** Elas não são publicadas na Rede Fiz Música nem usadas em peças de divulgação. A imagem que acompanha a Obra na Rede é a **capa gerada automaticamente** pela própria ferramenta de inteligência artificial no momento da produção — não é foto de pessoa alguma.
-- **A identidade de quem encomendou.** Nome, e-mail, telefone e demais dados cadastrais do Cliente não são exibidos.
+- **Os dados cadastrais do Cliente.** Nome completo, e-mail, telefone e endereço nunca são exibidos.
+
+> **Sobre a identificação do autor:** o **apelido** do Cliente **pode** aparecer junto às músicas que ele publica na Rede — mas somente se ele ativar, por conta própria, a opção "Mostrar meu apelido na Rede" no seu perfil. Essa opção vem **desligada**, é independente desta autorização e pode ser desligada a qualquer momento. Com ela desligada, a Obra aparece na Rede sem qualquer identificação do autor.
 - **Depoimentos** do Cliente.
 - **O nome do homenageado** como rótulo público da Obra. Quando o título gerado pela IA contém nome próprio, a plataforma exibe um título neutro derivado da ocasião (ex.: "Uma canção de Dia dos Pais") no lugar dele.
 
@@ -48,7 +50,7 @@ Portfólio institucional; site oficial; perfis oficiais em redes sociais; materi
 
 **Autorizo a divulgação da Música e da Letra**
 
-> Autorizo a Fiz Música a divulgar a música e a letra criadas para mim — na Rede Fiz Música e em seus canais e materiais de marketing —, por inteiro ou em trechos, inclusive sincronizadas com imagens. Reconheço que a Obra pode conter **nomes e a história real** como parte do seu conteúdo. A Fiz Música **não divulgará a identidade de quem encomendou** a música, **as fotos que enviei não aparecem na Rede** (apenas a capa gerada automaticamente) e **não exporá depoimentos** sem autorização específica e separada.
+> Autorizo a Fiz Música a divulgar a música e a letra criadas para mim — na Rede Fiz Música e em seus canais e materiais de marketing —, por inteiro ou em trechos, inclusive sincronizadas com imagens. Reconheço que a Obra pode conter **nomes e a história real** como parte do seu conteúdo. **As fotos que enviei não aparecem na Rede** (apenas a capa gerada automaticamente), meus **dados cadastrais** não são exibidos, e **depoimentos** não são usados sem autorização específica e separada. Posso **revogar esta autorização a qualquer momento**.
 >
 > ( ) Sim ( ) Não
 

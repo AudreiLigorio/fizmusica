@@ -52,8 +52,8 @@ export default function PublicacaoConsent({
                 novas exibições, não recupera o que alguém já salvou. */}
           <p className="text-white/55 text-xs leading-relaxed mt-1">
             Você pode autorizar a Fiz Música a divulgar <strong className="text-white/80">a sua música e a letra</strong> na Rede Fiz Música (que podem conter nomes e a história real como parte do conteúdo).
-            <strong className="text-white/80"> Nunca divulgamos quem encomendou</strong> a música, e as suas fotos não aparecem na Rede — só a capa gerada automaticamente.
-            Você pode revogar quando quiser: a revogação impede novas exibições, mas o que terceiros já tenham salvo foge do nosso controle.{" "}
+            <strong className="text-white/80"> As suas fotos não aparecem na Rede</strong> — só a capa gerada automaticamente.
+            Você pode revogar quando quiser.{" "}
             <a href="/legal/autorizacao-de-publicacao" className="text-fuchsia-300 underline">Ler o termo</a>.
           </p>
 

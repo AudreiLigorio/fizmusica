@@ -671,9 +671,8 @@ function MinhaMusicaContent() {
                 <strong className="text-fuchsia-200">Opcional:</strong> autorizo a Fiz Música a divulgar{" "}
                 <strong className="text-white/80">minha música e a letra</strong> na Rede Fiz Música, que podem conter
                 nomes e a história real como parte do conteúdo.{" "}
-                <strong className="text-white/80">Não divulgamos quem encomendou a música</strong>, e as fotos que
-                enviei não aparecem na Rede — só a capa gerada automaticamente. Posso revogar quando quiser, e a
-                revogação impede novas exibições (o que terceiros já tenham salvo foge do nosso controle).{" "}
+                <strong className="text-white/80">As fotos que enviei não aparecem na Rede</strong> — só a capa gerada
+                automaticamente. Posso revogar quando quiser.{" "}
                 <a href="/legal/autorizacao-de-publicacao" className="text-fuchsia-300 underline">Ler o termo</a>.
               </span>
             </label>
