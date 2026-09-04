@@ -201,7 +201,7 @@ export default function LetraPanel({
     return (
       <div className="rounded-xl border border-green-500/25 bg-green-500/8 px-4 py-3 mb-4">
         <p className="text-green-300 text-sm font-semibold">✅ Letra aprovada</p>
-        <p className="text-green-400/70 text-xs">Sua letra está salva. Em breve nosso time começa a produção da música.</p>
+        <p className="text-green-400/70 text-xs">Sua letra está salva. A produção da sua música começa agora.</p>
       </div>
     )
   }
@@ -241,8 +241,17 @@ export default function LetraPanel({
     <div className="rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-5 mb-4">
       <div className="mb-4">
         <p className="text-fuchsia-200 font-semibold flex items-center gap-2">🎼 Sua letra</p>
+        {/* A explicação dos colchetes passou a ser necessária quando o
+            compositor virou obrigado a marcar a estrutura: antes eles
+            apareciam de vez em quando, agora aparecem SEMPRE, e sem uma
+            linha explicando parecem defeito no meio de uma homenagem.
+            Os players já removem essas linhas, então elas nunca são
+            exibidas na música pronta nem cantadas. */}
         <p className="text-white/50 text-xs mt-0.5">
           Gere a letra, ajuste o que quiser e aprove antes da produção da música.
+        </p>
+        <p className="text-white/35 text-[11px] mt-1">
+          As marcações entre colchetes — <span className="text-white/50">[Refrão]</span>, <span className="text-white/50">[Ponte]</span> — organizam a música e <strong className="text-white/50">não são cantadas</strong>. Pode deixá-las como estão.
         </p>
       </div>
 
