@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { gerarSlugMusica } from "@/lib/musicSlug"
 import { createServerClient } from "@/lib/supabase"
 import { sendMusicDeliveryEmail } from "@/app/services/emailService"
 import { notifyN8nMusicDelivered } from "@/lib/n8n/events"
@@ -8,11 +9,6 @@ import crypto from "crypto"
 
 type Params = Promise<{ id: string }>
 
-function generateSlug(orderId: string): string {
-  const short = orderId.replace(/-/g, "").slice(0, 8)
-  const rand  = Math.random().toString(36).slice(2, 6)
-  return `${short}${rand}`
-}
 
 export async function POST(_req: NextRequest, { params }: { params: Params }) {
   try {
@@ -44,7 +40,7 @@ export async function POST(_req: NextRequest, { params }: { params: Params }) {
   // Gera slug se ainda não existe + marca data de publicação (base do prazo de retenção)
   let slug = music.slug as string | null
   if (!slug) {
-    slug = generateSlug(id)
+    slug = gerarSlugMusica()
     const { error: slugError } = await supabase
       .from("generated_music")
       .update({ slug, publishedAt: new Date().toISOString() })

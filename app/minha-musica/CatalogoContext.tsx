@@ -17,7 +17,8 @@ import { supabase } from "@/lib/supabase"
 
 export type CatalogItem = {
   orderId: string
-  slug?: string
+  // Sem `slug` de propósito: a Rede não distribui mais o link /m/{slug},
+  // que é a porta das fotos do cliente. Ver /api/catalog.
   title: string
   occasion: string
   musicalStyle: string | null

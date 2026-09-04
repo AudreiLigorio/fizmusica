@@ -35,12 +35,20 @@ async function getUserFromAuth(req: NextRequest) {
 // Visitante SEM conta também acessa — a Rede é área de descoberta. Mas a
 // resposta anônima é cortada, e cada corte tem motivo:
 //
-// - `slug`: é a chave de /m/{slug}, página que MOSTRA AS FOTOS do cliente.
-//   Entregá-lo a estranho seria dar o caminho pras fotos de quem autorizou
-//   só "a música e a letra". Basta abrir o inspetor e copiar. O termo de
-//   publicação exclui reuso de fotos, então isso não é rigor extra, é o que
-//   está escrito. O link /m/slug em si continua legítimo: é o que o PRÓPRIO
-//   cliente compartilha, e o termo diz que isso é controlado por ele.
+// - `slug`: NINGUÉM recebe aqui — nem logado. Ele é a chave de /m/{slug},
+//   página que MOSTRA AS FOTOS do cliente: medido em 2026-09-04, abrir uma
+//   dessas páginas sem conta nenhuma serviu 26 fotos, e a foto em si abriu
+//   com 200. Antes o corte era só pro anônimo, mas o cadastro é aberto:
+//   bastava criar conta, ler o slug na resposta desta rota e chegar nas
+//   fotos de 60 pedidos (230 fotos). O termo autoriza divulgar "a música e
+//   a letra", não as fotos.
+//
+//   O link /m/{slug} continua exatamente como era e MOSTRA as fotos: ele é
+//   o que o PRÓPRIO cliente compartilha, único e conhecido só por ele, e o
+//   termo diz que essa divulgação é controlada por ele (decisão do Audrei,
+//   2026-09-04). O que não pode é a Rede distribuir esse link.
+//
+//   Nada no cliente consumia este campo — conferido antes de remover.
 // - `authorApelido`: o termo exclui "qualquer exposição que identifique o
 //   Cliente (autor do pedido)". Decisão do Audrei: apelido fora da área
 //   pública.
@@ -298,8 +306,7 @@ export async function GET(req: NextRequest) {
     const proprio = !!b.ownerId && b.ownerId === user?.id
     return {
       orderId: b.orderId,
-      // Anônimo não recebe o slug — ver o comentário no topo.
-      ...(publico ? {} : { slug: b.slug }),
+      // Sem slug pra ninguém — ver o comentário no topo.
       // Nome real quando o cliente confirmou — ou sempre, se a música é dele
       // (a trava do confirmado existe pra não expor título de terceiro).
       title: b.musicName?.trim() && (b.musicNameConfirmed || proprio)

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { gerarSlugMusica } from "@/lib/musicSlug"
 import crypto from "crypto"
 import { createServerClient } from "@/lib/supabase"
 import { getTimestampedLyrics } from "@/lib/suno/client"
@@ -8,11 +9,6 @@ import { logOrderEvent } from "@/lib/orderEvents"
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
 
-function generateSlug(orderId: string): string {
-  const short = orderId.replace(/-/g, "").slice(0, 8)
-  const rand = Math.random().toString(36).slice(2, 6)
-  return `${short}${rand}`
-}
 
 // Cliente escolhe uma das versões geradas. Grava a faixa como oficial, gera o LRC
 // sincronizado dela e finaliza o pedido (slug + DELIVERED). Sem e-mail (já está na área).
@@ -48,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Slug do player (gera se ainda não houver)
   const { data: music } = await supabase
     .from("generated_music").select("slug, publishedAt").eq("orderId", id).maybeSingle()
-  const slug = (music?.slug as string | null) ?? generateSlug(id)
+  const slug = (music?.slug as string | null) ?? gerarSlugMusica()
 
   const { error: gmErr } = await supabase.from("generated_music").upsert({
     orderId: id,
