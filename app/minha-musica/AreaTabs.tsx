@@ -1,7 +1,5 @@
 "use client"
 
-import { useEffect } from "react"
-import { usePlayer } from "./PlayerContext"
 
 // Navegação da área do cliente. Ícones desenhados aqui mesmo (traço único,
 // grade de 24) em vez de emoji: emoji vem da fonte do sistema, tem peso
@@ -166,10 +164,18 @@ export function TabsDesktop({ aba, onAba, onCriar }: { aba: Aba; onAba: (a: Aba)
 //
 // Precisa ser filho do PlayerProvider (quem renderiza o provider não enxerga
 // o contexto dele), por isso mora aqui e é montado junto do MiniPlayer.
-export function FecharPlayerForaDeMusicas({ aba }: { aba: Aba }) {
-  const { close } = usePlayer()
-  useEffect(() => {
-    if (aba !== "musicas") close()
-  }, [aba, close])
+// Mantido só para não quebrar import antigo — hoje não faz nada.
+//
+// Ele fechava o player em toda aba que não fosse "Músicas". A intenção era
+// não deixar som tocando fora do contexto, mas na prática cortava a música
+// no meio quando a pessoa ia ver os pedidos ou a carreira — que é
+// exatamente quando ela quer continuar ouvindo (pedido do Audrei).
+//
+// O player já vive FORA das abas (MiniPlayer é irmão delas em page.tsx),
+// então trocar de aba não desmonta o <audio>: basta parar de fechá-lo.
+//
+// Sair da área continua parando o som, e sem precisar de código: "Criar"
+// é router.push("/criar"), que desmonta o PlayerProvider inteiro.
+export function FecharPlayerForaDeMusicas(_: { aba: Aba }) {
   return null
 }

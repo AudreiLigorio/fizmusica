@@ -141,6 +141,58 @@ export default function MiniPlayer() {
     activeLineRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
   }, [activeLine])
 
+  // ── Media Session: som que sobrevive à tela bloqueada ──────────────────
+  //
+  // Sem isto o navegador trata o <audio> como som qualquer de página e o
+  // sistema suspende quando o celular bloqueia — foi o que o Audrei
+  // relatou. Declarando a sessão de mídia, o SO passa a tratar como
+  // reprodução de verdade: mantém tocando em segundo plano e ainda mostra
+  // capa, título e controles na tela de bloqueio e nos fones.
+  //
+  // Os controles apontam pros MESMOS callbacks dos botões da tela, então
+  // pular pela tela de bloqueio anda na mesma fila e respeita o repetir.
+  useEffect(() => {
+    const ms = typeof navigator !== "undefined" ? navigator.mediaSession : undefined
+    if (!ms || !track) return
+
+    ms.metadata = new MediaMetadata({
+      title: track.title,
+      // Sem apelido, usa a ocasião: melhor que deixar em branco na tela de
+      // bloqueio, que é onde a pessoa vê isso sem contexto nenhum.
+      artist: track.apelido ?? track.occasion ?? "Fiz Música",
+      album: "Fiz Música",
+      artwork: track.imageUrl
+        ? [{ src: track.imageUrl, sizes: "512x512", type: "image/jpeg" }]
+        : [],
+    })
+
+    const acoes: [MediaSessionAction, (() => void) | null][] = [
+      ["play", () => toggle()],
+      ["pause", () => toggle()],
+      ["nexttrack", temProxima ? () => proxima() : null],
+      ["previoustrack", temAnterior ? () => anterior() : null],
+    ]
+    for (const [nome, fn] of acoes) {
+      // Navegador antigo pode não conhecer a ação; ignorar é melhor que
+      // derrubar o player inteiro por causa de um botão.
+      try { ms.setActionHandler(nome, fn) } catch { /* sem essa ação */ }
+    }
+
+    return () => {
+      for (const [nome] of acoes) {
+        try { ms.setActionHandler(nome, null) } catch { /* idem */ }
+      }
+    }
+  }, [track, toggle, proxima, anterior, temProxima, temAnterior])
+
+  // Estado separado do metadata: só isto muda a cada play/pause, e refazer
+  // o MediaMetadata a cada toque faria a capa piscar na tela de bloqueio.
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.mediaSession) {
+      navigator.mediaSession.playbackState = playing ? "playing" : "paused"
+    }
+  }, [playing])
+
   if (!track) return null
 
   // Música sem nome próprio cai no derivado "Uma canção de {ocasião}" — aí a
