@@ -96,8 +96,15 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
     setTrack(t)
     setActiveLine(0)
     setProgress(0)
-    // Só troca o src depois do state — o próximo render já aponta o <audio> pra cá.
-    requestAnimationFrame(() => { audioRef.current?.play().catch(() => {}) })
+    // Quem chama o play() é um efeito no MiniPlayer, não daqui.
+    //
+    // Antes era `requestAnimationFrame`, e isso quebrava exatamente no caso
+    // que mais importa: com a TELA BLOQUEADA o navegador congela o rAF. A
+    // faixa terminava, `onEnded` disparava, o <audio> trocava de src — e o
+    // play() agendado nunca rodava. A música parava no fim da primeira.
+    //
+    // `useEffect` roda mesmo com a página escondida, então a emenda funciona
+    // com o celular no bolso, que é onde ela precisa funcionar.
     setPlaying(true)
 
     // Letra sob demanda: a listagem parou de mandar `lyrics`/`lyricsLrc`

@@ -141,6 +141,21 @@ export default function MiniPlayer() {
     activeLineRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
   }, [activeLine])
 
+  // Dá play em cada faixa NOVA — inclusive quando a fila emenda sozinha com
+  // a tela bloqueada. Um efeito, e não requestAnimationFrame, justamente
+  // porque o rAF congela com a página escondida (ver PlayerContext).
+  //
+  // A trava por id garante um play por faixa: sem ela, qualquer re-render do
+  // player (progresso, letra chegando) reiniciaria a música do zero.
+  const ultimaTocada = useRef<string | null>(null)
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !track) return
+    if (ultimaTocada.current === track.id) return
+    ultimaTocada.current = track.id
+    audio.play().catch(() => { /* bloqueado pelo navegador: o botão resolve */ })
+  }, [track, audioRef])
+
   // ── Media Session: som que sobrevive à tela bloqueada ──────────────────
   //
   // Sem isto o navegador trata o <audio> como som qualquer de página e o
