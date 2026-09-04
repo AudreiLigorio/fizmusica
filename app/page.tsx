@@ -637,7 +637,13 @@ export default function Home() {
                 <span className="block text-white/90" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)" }}>
                   Chegou a hora de você
                 </span>
-                <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                {/* Amarelo, não o rosa/roxo dos outros títulos: esta seção
+                    fica colada na arte "AQUI SUA IDEIA VIRA HIT", e o degradê
+                    da marca brigava com o letreiro amarelo dela.
+                    Os três tons saíram da PRÓPRIA imagem — amostrei os pixels
+                    do letreiro (15,3% da arte) e peguei o claro, o médio e o
+                    escuro do degradê: #f6b440 → #f8ab08 → #e98811. */}
+                <span className="block" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", background: "linear-gradient(90deg,#f6b440,#f8ab08 55%,#e98811)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
                   sair da mesmice.
                 </span>
               </h2>
@@ -647,8 +653,11 @@ export default function Home() {
              </div>
               <button
                 onClick={() => { track("cta_criar", "por_que_escolher"); router.push("/criar") }}
-                className="order-2 lg:order-none justify-self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
-                style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
+                // Texto ESCURO, não branco: medido, branco sobre este amarelo
+                // dá 1,9:1 de contraste — reprova em qualquer critério de
+                // legibilidade. O quase-preto da página dá 10,4:1.
+                className="order-2 lg:order-none justify-self-start inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 active:scale-[0.97]"
+                style={{ background: "linear-gradient(135deg,#f6b440,#f8ab08 55%,#e98811)", color: "#1a1205", boxShadow: "0 8px 26px rgba(248,171,8,0.30)" }}
               >
                 Quero criar minha música
                 <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
