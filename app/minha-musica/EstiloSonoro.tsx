@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { blocosDoEstilo, inserirBloco, removerBloco, temBloco } from "@/lib/blocosEstrutura"
 
 // Card "Como sua música vai soar" — última conferência antes de gerar.
 //
@@ -20,9 +21,19 @@ import { useEffect, useState } from "react"
 export default function EstiloSonoro({
   orderId,
   disabled,
+  estiloMusical,
+  letra,
+  onLetra,
 }: {
   orderId: string
   disabled?: boolean
+  // Define QUAIS blocos aparecem: só os medidos para este gênero.
+  estiloMusical?: string | null
+  // A letra é a FONTE DA VERDADE dos blocos: a caixa marcada é só o reflexo
+  // de a marcação estar no texto. Assim quem digita `[Solo de Guitarra]` na
+  // mão vê a caixa marcar sozinha, e não existem dois estados pra divergir.
+  letra?: string
+  onLetra?: (nova: string) => void
 }) {
   const [estilo, setEstilo] = useState("")
   const [carregando, setCarregando] = useState(true)
@@ -59,6 +70,9 @@ export default function EstiloSonoro({
     )
   }
   if (!estilo) return null
+
+  const blocos = blocosDoEstilo(estiloMusical)
+  const podeBlocos = blocos.length > 0 && !!letra && !!onLetra && !disabled
 
   return (
     <div className="rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] p-3 mb-3">
@@ -104,6 +118,38 @@ export default function EstiloSonoro({
           <p className="text-[10px] text-white/35 mt-1.5">
             Foi assim que entendemos o seu pedido. {salvo ? "Confirmado por você." : "Pode ajustar antes de gerar."}
           </p>
+
+          {/* Blocos: só os que foram MEDIDOS neste gênero (ver
+              lib/blocosEstrutura.ts). Gênero sem bloco aprovado não mostra
+              nada — melhor do que oferecer algo que não acontece. */}
+          {podeBlocos && (
+            <div className="mt-3 pt-3 border-t border-white/10">
+              <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">Incluir na música</p>
+              <div className="flex flex-wrap gap-1.5">
+                {blocos.map((b) => {
+                  const ativo = temBloco(letra!, b.tag)
+                  return (
+                    <button
+                      key={b.tag}
+                      type="button"
+                      title={b.ajuda}
+                      onClick={() => onLetra!(ativo ? removerBloco(letra!, b.tag) : inserirBloco(letra!, b.tag))}
+                      className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium border transition-colors ${
+                        ativo
+                          ? "border-fuchsia-400/60 bg-fuchsia-500/20 text-fuchsia-100"
+                          : "border-white/12 text-white/50 hover:text-white/80 hover:border-white/25"
+                      }`}
+                    >
+                      {ativo ? "✓ " : "+ "}{b.label}
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-white/30 mt-1.5">
+                Aparece como marcação na letra, e não é cantado.
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>

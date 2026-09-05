@@ -598,6 +598,7 @@ function MinhaMusicaContent() {
             photoToken={order.photo_token}
             isRevision={order.is_revision}
             temFotos={(order.features ?? TUDO).fotos > 0}
+            estiloMusical={order.musicalStyle}
             onApproved={recarregarEMostrarPedidos}
           />
         )}

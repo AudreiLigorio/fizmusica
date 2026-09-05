@@ -57,11 +57,19 @@ export default function LetraPanel({
   onApproved,
   flowMode,
   onState,
+  onEditor,
 }: {
   orderId: string
   onApproved?: () => void
   flowMode?: boolean
   onState?: (s: { lyrics: string; canApprove: boolean }) => void
+  // Entrega o setter da letra pra quem monta este painel.
+  //
+  // Existe por causa dos blocos de estrutura: marcar "solo de guitarra"
+  // precisa ESCREVER na letra, e a letra mora aqui. Sem essa ponte, o card
+  // teria uma cópia própria do texto e as duas divergiriam — o cliente veria
+  // uma letra na tela e outra seria enviada pra geração.
+  onEditor?: (api: { setText: (t: string) => void }) => void
 }) {
   const [state, setState]   = useState<State | null>(null)
   const [text, setText]     = useState("")
@@ -69,6 +77,10 @@ export default function LetraPanel({
   const [instrucao, setInstrucao] = useState("")
   const [titulo, setTitulo] = useState("")
   const [loading, setLoading] = useState(true)
+
+  // Uma vez só: `setText` é estável (vem do useState), então não recria a
+  // ponte a cada render.
+  useEffect(() => { onEditor?.({ setText }) }, [onEditor])
   const [busy, setBusy]     = useState<Busy>(null)
   const [error, setError]   = useState("")
   const [confirmCfg, setConfirmCfg] = useState<{ title: string; message: string; confirmLabel: string; resolve: (v: boolean) => void } | null>(null)

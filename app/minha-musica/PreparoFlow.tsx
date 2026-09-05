@@ -14,6 +14,7 @@ export default function PreparoFlow({
   photoToken,
   isRevision,
   temFotos = true,
+  estiloMusical,
   onApproved,
 }: {
   orderId: string
@@ -21,6 +22,8 @@ export default function PreparoFlow({
   isRevision?: boolean
   // Plano sem fotos pula o passo inteiro: Letra → Aprovar.
   temFotos?: boolean
+  // Define quais blocos de estrutura aparecem (só os medidos no gênero).
+  estiloMusical?: string | null
   onApproved?: () => void
 }) {
   const [letra, setLetra] = useState<{ lyrics: string; canApprove: boolean }>({ lyrics: "", canApprove: false })
@@ -28,6 +31,8 @@ export default function PreparoFlow({
   const [photosConfirmed, setPhotosConfirmed] = useState(false)
   const [approving, setApproving] = useState(false)
   const [titulo, setTitulo] = useState("")
+  // Ponte com o editor da letra — os blocos de estrutura escrevem nela.
+  const [editorLetra, setEditorLetra] = useState<{ setText: (t: string) => void } | null>(null)
 
   async function approveAndGenerate() {
     setApproving(true)
@@ -92,7 +97,7 @@ export default function PreparoFlow({
       </div>
 
       {/* PASSO 1 — letra (gerar/editar/revisar) */}
-      <LetraPanel orderId={orderId} flowMode onState={setLetra} />
+      <LetraPanel orderId={orderId} flowMode onState={setLetra} onEditor={setEditorLetra} />
 
       {/* Avança para fotos (ou direto pra aprovação, em plano sem fotos) */}
       {!showFotos && !photosConfirmed && (
@@ -155,7 +160,16 @@ export default function PreparoFlow({
 
           {/* Sonoridade logo abaixo do título e ACIMA do botão: é a última
               coisa que o cliente lê antes de uma ação irreversível. */}
-          <EstiloSonoro orderId={orderId} disabled={approving} />
+          <EstiloSonoro
+            orderId={orderId}
+            disabled={approving}
+            estiloMusical={estiloMusical}
+            letra={letra.lyrics}
+            // Escreve no editor de verdade: a letra do painel acima muda na
+            // hora, e é ela que vai pra geração. Sem isso o card teria uma
+            // cópia e as duas divergiriam.
+            onLetra={(nova) => editorLetra?.setText(nova)}
+          />
 
           <div className="flex flex-wrap gap-2">
             {temFotos && (
