@@ -46,7 +46,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, paymentStatus, lyricsApproved, lyricsDraft, musicalStyle, voiceType, emotion, honoreeName, nome, subcategory, sunoStatus, sunoTracks, sunoTaskId, revision_note")
+    .select("id, paymentStatus, lyricsApproved, lyricsDraft, musicalStyle, voiceType, emotion, honoreeName, nome, subcategory, sunoStatus, sunoTracks, sunoTaskId, revision_note, style_confirmed")
     .eq("id", id)
     .single()
 

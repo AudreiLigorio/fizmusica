@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import LetraPanel from "./LetraPanel"
+import EstiloSonoro from "./EstiloSonoro"
 import FotosPanel from "./FotosPanel"
 import TituloMusica from "./TituloMusica"
 
@@ -151,6 +152,10 @@ export default function PreparoFlow({
               disabled={approving}
             />
           </div>
+
+          {/* Sonoridade logo abaixo do título e ACIMA do botão: é a última
+              coisa que o cliente lê antes de uma ação irreversível. */}
+          <EstiloSonoro orderId={orderId} disabled={approving} />
 
           <div className="flex flex-wrap gap-2">
             {temFotos && (

@@ -20,6 +20,9 @@ type OrderForGen = {
   nome?: string | null
   subcategory?: string | null
   revision_note?: string | null
+  // Estilo que o CLIENTE aprovou no card "Como sua música vai soar".
+  // Tem precedência sobre a extração automática — ver o uso abaixo.
+  style_confirmed?: string | null
 }
 
 // Host canônico p/ o webhook: o apex faz 308→www e webhook não segue redirect em POST.
@@ -41,7 +44,18 @@ export async function triggerSunoGeneration(
   if (!order.lyricsDraft?.trim()) throw new Error("Sem letra para gerar a música.")
   const settings = await getComposerSettings()
   try {
-    const style = await buildSunoStyle(order, { avoid: opts?.avoid })
+    // O que o cliente confirmou vence a extração automática.
+    //
+    // Importa no "gerar novamente" e na revisão: sem isto, a segunda versão
+    // sairia com um estilo reextraído do zero, diferente do que ele viu e
+    // aprovou na tela. Ele leria como defeito, não como variação.
+    //
+    // A exceção é o retry por termo bloqueado (`avoid`): aí é justamente o
+    // texto que precisa ser reescrito sem a palavra que o Suno recusou.
+    const confirmado = order.style_confirmed?.trim()
+    const style = confirmado && !opts?.avoid
+      ? confirmado
+      : await buildSunoStyle(order, { avoid: opts?.avoid })
     const taskId = await generateMusic({
       prompt: order.lyricsDraft,
       style: style || "Pop",
