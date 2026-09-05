@@ -20,6 +20,9 @@ export interface CreateOrderDTO {
   musicalStyle: string
   voiceType: string
   emotion: string
+  // Referência livre ("tipo Legião Urbana"). Opcional. Nunca vai ao Suno
+  // como está — é traduzida em características sonoras. Ver migração 060.
+  styleReference?: string
 
   // Respostas dinâmicas
   answers: AnswerDTO[]

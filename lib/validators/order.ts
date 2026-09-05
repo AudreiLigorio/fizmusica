@@ -19,6 +19,16 @@ export const createOrderSchema = z.object({
   emotion:      z.string().min(1, "Emoção obrigatória"),
   answers:      z.array(answerSchema).min(1, "Respostas obrigatórias"),
   honoreeName:  z.string().optional(),
+  // Referência musical livre ("tipo Legião Urbana"). OPCIONAL — o wizard
+  // funciona sem ela, e a maioria dos pedidos não terá.
+  //
+  // Precisa estar declarada aqui: o Zod DESCARTA campo não declarado, então
+  // sem esta linha a referência chegava e era jogada fora em silêncio, sem
+  // erro nenhum — o pedido salvava com style_reference nulo e o cliente
+  // nunca saberia que o que digitou não foi usado.
+  //
+  // Teto de 120 pra bater com o maxLength do campo na tela.
+  styleReference: z.string().max(120).optional(),
   // Sessão do wizard: usada só pra reaproveitar a letra da prévia como rascunho
   // inicial do pedido, e apenas se a assinatura do conteúdo ainda bater.
   sessionId:    z.string().optional(),

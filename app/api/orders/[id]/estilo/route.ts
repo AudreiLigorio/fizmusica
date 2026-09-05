@@ -7,7 +7,7 @@ export const maxDuration = 30
 
 type Params = Promise<{ id: string }>
 
-const CAMPOS = "id, paymentStatus, lyricsApproved, musicalStyle, emotion, voiceType, subcategory, honoreeName, nome, revision_note, style_confirmed"
+const CAMPOS = "id, paymentStatus, lyricsApproved, musicalStyle, emotion, voiceType, subcategory, honoreeName, nome, revision_note, style_confirmed, style_reference"
 
 // Estilo sonoro do pedido — o que o card "Como sua música vai soar" mostra.
 //

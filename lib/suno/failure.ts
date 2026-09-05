@@ -21,7 +21,7 @@ function parseBlockedTerm(msg: string): string | undefined {
 export async function handleSunoFailure(supabase: DB, orderId: string, taskId: string): Promise<void> {
   const { data: order } = await supabase
     .from("orders")
-    .select("id, sunoError, lyricsDraft, musicalStyle, voiceType, emotion, honoreeName, nome, subcategory, revision_note, style_confirmed")
+    .select("id, sunoError, lyricsDraft, musicalStyle, voiceType, emotion, honoreeName, nome, subcategory, revision_note, style_confirmed, style_reference")
     .eq("id", orderId)
     .single()
   if (!order) return

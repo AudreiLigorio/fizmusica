@@ -10,6 +10,7 @@ type OrderForStyle = {
   nome?: string | null
   subcategory?: string | null
   revision_note?: string | null
+  style_reference?: string | null
 }
 
 // Remove ocorrências (case-insensitive) de um termo do estilo — usado quando o Suno

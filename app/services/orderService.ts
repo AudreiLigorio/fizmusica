@@ -16,6 +16,7 @@ export async function createOrder(data: CreateOrderDTO, customerIp?: string | nu
       musicalStyle: data.musicalStyle,
       voiceType: data.voiceType,
       emotion: data.emotion,
+      style_reference: data.styleReference?.trim() || null,
       honoreeName: data.honoreeName ?? null,
       terms_accepted_at: data.termsAccepted ? new Date().toISOString() : null,
       terms_version: data.termsAccepted ? (data.termsVersion ?? "2026-06") : null,

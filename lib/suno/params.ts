@@ -8,6 +8,7 @@ type OrderForSuno = {
   nome?: string | null
   subcategory?: string | null
   revision_note?: string | null   // instrução do cliente, em pedidos de revisão
+  style_reference?: string | null // referência livre do wizard ("tipo Legião Urbana")
 }
 
 // Voz: o wizard usa "Masculina"/"Feminina". Em revisão, a instrução do cliente
@@ -27,8 +28,16 @@ export function mapVocalGender(order: OrderForSuno): "m" | "f" | undefined {
 // (ex: "mais lenta") para o Suno aplicar o ajuste pedido.
 export function buildStyle(order: OrderForSuno): string {
   const base = [order.musicalStyle, order.emotion].map((s) => (s ?? "").trim()).filter(Boolean).join(", ")
+  // A referência do cliente entra AQUI, não no prompt do Suno: este texto é
+  // a entrada do tradutor (buildSunoStyle), que converte "tipo Legião
+  // Urbana" em características sonoras e joga o nome fora. Mandar o nome
+  // direto faria o Suno recusar a geração inteira.
+  const ref = (order.style_reference ?? "").trim()
+  const partes = [base]
+  if (ref) partes.push(`Referência do cliente: ${ref}`)
   const note = (order.revision_note ?? "").trim()
-  return note ? [base, `Ajustes pedidos: ${note}`].filter(Boolean).join(". ") : base
+  if (note) partes.push(`Ajustes pedidos: ${note}`)
+  return partes.filter(Boolean).join(". ")
 }
 
 // Título: nome do homenageado ou ocasião como fallback.

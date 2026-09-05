@@ -106,6 +106,10 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [selectedSubcategory, setSelectedSubcategory] = useState("")
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [musicalStyle, setMusicalStyle] = useState("")
+  // Referência livre. Opcional de propósito: a maioria não sabe nomear um
+  // gênero, mas sabe dizer "tipo Legião Urbana" — pra essa pessoa o campo é
+  // MAIS fácil que a lista. Quem não quiser, ignora e nada muda.
+  const [styleReference, setStyleReference] = useState("")
   const [voiceType, setVoiceType] = useState("")
   const [emotion, setEmotion] = useState("")
   const [nome, setNome] = useState("")
@@ -709,6 +713,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       musicalStyle,
       voiceType,
       emotion,
+      styleReference: styleReference.trim() || undefined,
       honoreeName: honoreeName.trim() || undefined,
       // Serve só pra reaproveitar a letra da prévia como rascunho do pedido, e
       // apenas se a assinatura do conteúdo ainda bater com o que foi contratado.
@@ -1274,6 +1279,26 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div>
+                {/* Referência do cliente — entre o estilo e a emoção, que é
+                    onde ela pertence: é o mesmo assunto (como a música soa).
+                    NÃO substitui a lista de gêneros: o `musicalStyle` é o
+                    dado estruturado que alimenta as facetas de busca da Rede
+                    ("🎶 Pagode · 5"). Trocar um pelo outro derrubaria os
+                    filtros do catálogo. */}
+                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>
+                  Alguma referência? <span className="text-white/35 normal-case tracking-normal font-normal">(opcional)</span>
+                </h2>
+                <input
+                  value={styleReference}
+                  onChange={(e) => setStyleReference(e.target.value)}
+                  maxLength={120}
+                  placeholder="ex.: tipo Legião Urbana, com o peso do Foo Fighters"
+                  className="w-full rounded-xl px-3 py-2.5 border border-white/10 bg-black/30 text-sm text-white placeholder:text-white/25 outline-none focus:border-pink-500/60 transition-colors mb-1"
+                />
+                <p className="text-[11px] text-white/35 mb-5">
+                  Uma música ou banda que lembre o que você imagina. Usamos só a <strong className="text-white/50">sonoridade</strong> como inspiração — a sua música é original.
+                </p>
+
                 <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Emoção da música</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
                   {[

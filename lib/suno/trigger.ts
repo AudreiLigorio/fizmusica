@@ -20,6 +20,7 @@ type OrderForGen = {
   nome?: string | null
   subcategory?: string | null
   revision_note?: string | null
+  style_reference?: string | null
   // Estilo que o CLIENTE aprovou no card "Como sua música vai soar".
   // Tem precedência sobre a extração automática — ver o uso abaixo.
   style_confirmed?: string | null
