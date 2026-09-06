@@ -96,7 +96,7 @@ Por padrão, as músicas permanecem **privadas**. Existem duas — e apenas duas
 
 **a) Link de compartilhamento do próprio Cliente.** Cada música entregue tem um endereço próprio (`/m/...`), único e imprevisível, que o Cliente compartilha com quem quiser. Quem tiver o link acessa a página da música — **inclusive as fotos** que o Cliente cadastrou no player. Essa é a finalidade do link, e a distribuição dele é responsabilidade do Cliente. A Fiz Música não divulga esse link e não o expõe na Rede.
 
-**b) Rede Fiz Música.** Somente se o Cliente conceder a [Autorização de Publicação](07-autorizacao-de-publicacao.md). Nesse caso, outras pessoas cadastradas podem ouvir a música, favoritá-la e incluí-la em playlists. **As fotos do Cliente não são exibidas na Rede** — apenas a capa gerada automaticamente pela IA. A autorização é revogável a qualquer momento pelo próprio Cliente, com efeito em até 1 minuto.
+**b) Rede Fiz Música.** Somente se o Cliente conceder a [Autorização de Publicação](07-autorizacao-de-publicacao.md). Nesse caso, qualquer visitante — **com ou sem conta** — pode ouvir a música; favoritar e incluir em playlists exige conta. A música publicada passa a ter um **endereço público próprio**, que pode ser aberto sem conta e **compartilhado fora da plataforma**, e cuja pré-visualização em aplicativos de mensagem exibe o **título e a capa gerada automaticamente**. **As fotos do Cliente não são exibidas na Rede nem nessa página** — apenas a capa gerada pela IA. A autorização é revogável a qualquer momento pelo próprio Cliente, com efeito em até 1 minuto, e a revogação **desativa também esse endereço público**.
 
 ## 9. Uso de Músicas para Divulgação
 

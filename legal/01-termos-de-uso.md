@@ -81,16 +81,17 @@ Por padrão, as músicas produzidas permanecem **privadas**. Existem duas formas
 
 **a) Link de compartilhamento.** Cada música entregue tem um endereço próprio e imprevisível, que o Cliente compartilha com quem quiser (inclusive por WhatsApp ou QR Code). Quem tiver o link acessa a página da música, **incluindo as fotos** cadastradas no player. A guarda e a distribuição do link são responsabilidade do Cliente, que reconhece que a Fiz Música não tem controle sobre a circulação do link depois de compartilhado.
 
-**b) Rede Fiz Música.** Catálogo dentro da plataforma onde pessoas cadastradas ouvem músicas publicadas por outros clientes. A publicação **depende de autorização expressa e opcional** do Cliente, é revogável a qualquer momento por ele mesmo, e **não expõe as fotos** enviadas — apenas a capa gerada automaticamente. Ver a [Autorização de Publicação](07-autorizacao-de-publicacao.md).
+**b) Rede Fiz Música.** Catálogo dentro da plataforma onde qualquer visitante, com ou sem conta, ouve músicas publicadas por outros clientes. A publicação **depende de autorização expressa e opcional** do Cliente, é revogável a qualquer momento por ele mesmo, e **não expõe as fotos** enviadas — apenas a capa gerada automaticamente. Ver a [Autorização de Publicação](07-autorizacao-de-publicacao.md).
 
 ## 12. Rede Fiz Música
 
-A **Rede Fiz Música** é um catálogo, dentro da plataforma, onde pessoas cadastradas podem ouvir músicas que outros clientes escolheram publicar.
+A **Rede Fiz Música** é um catálogo, dentro da plataforma, onde qualquer visitante — **com ou sem conta** — pode ouvir músicas que outros clientes escolheram publicar.
 
 - **Publicar é opcional e reversível.** Só entra na Rede a música cujo autor autorizou expressamente, e ele pode retirá-la a qualquer momento, sozinho, pela Área do Cliente.
 - **O que aparece:** a música, a letra, a ocasião, o estilo musical e a capa gerada automaticamente. **As fotos enviadas pelo Cliente não aparecem na Rede.**
 - **O que não aparece:** a identidade de quem encomendou. O apelido do autor só é exibido se ele ativar essa opção separadamente no perfil.
-- **Interações:** ouvir, favoritar e incluir em playlists pessoais. A plataforma conta as reproduções de cada música publicada e exibe um ranking das mais ouvidas.
+- **Interações:** ouvir (sem conta) e favoritar ou incluir em playlists pessoais (com conta). A plataforma conta as reproduções de cada música publicada e exibe um ranking das mais ouvidas.
+- **Endereço público por música:** cada música publicada ganha uma página própria, aberta a qualquer pessoa e compartilhável fora da plataforma, com capa, título, ocasião, letra e reproduções — **sem fotos**. Retirar a música da Rede desativa essa página junto.
 - **Uso permitido:** ouvir na plataforma. Baixar, copiar, redistribuir ou explorar comercialmente música de outro cliente é **vedado** e sujeita o usuário às medidas da seção 18.
 
 A Fiz Música pode remover da Rede, a qualquer tempo e sem aviso prévio, conteúdo que viole estes Termos, a legislação ou direitos de terceiros.

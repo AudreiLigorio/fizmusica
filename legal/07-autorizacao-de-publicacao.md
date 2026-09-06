@@ -29,12 +29,16 @@ A divulgação compreende a Obra por inteiro, **trechos** (por exemplo, um recor
 
 ### 3.1. Rede Fiz Música
 
-A **Rede Fiz Música** é um catálogo dentro da plataforma onde pessoas cadastradas podem ouvir músicas publicadas por outros clientes. Autorizando a divulgação, a Obra passa a integrar esse catálogo, e outros usuários poderão:
+A **Rede Fiz Música** é um catálogo, dentro da plataforma, onde qualquer visitante — **com ou sem conta** — pode ouvir músicas publicadas por outros clientes. Autorizando a divulgação, a Obra passa a integrar esse catálogo, e quem acessar poderá:
 
 - **Ouvir** a Obra e acompanhar a letra;
-- **Favoritar** a Obra e **incluí-la em playlists** pessoais dentro da plataforma;
+- **Favoritar** a Obra e **incluí-la em playlists** pessoais dentro da plataforma (isto exige conta);
 - Ver a **ocasião** e o **estilo musical** da Obra;
 - Ver a **capa gerada automaticamente**.
+
+**Endereço público próprio.** Cada Obra publicada passa a ter um **endereço na internet próprio**, que qualquer pessoa pode abrir sem conta e **compartilhar livremente fora da plataforma** — por mensagem, rede social ou qualquer outro meio. Essa página mostra a capa, o título, a ocasião, o estilo, a letra, o número de reproduções e o apelido do autor **quando** ele tiver ativado essa opção. **Não mostra fotos** enviadas pelo Cliente, em nenhuma hipótese, nem seus dados cadastrais.
+
+**Pré-visualização em redes sociais.** Quando esse endereço é compartilhado, o aplicativo de destino (WhatsApp, redes sociais e similares) costuma exibir uma **pré-visualização com o título da Obra e a capa gerada automaticamente**. Esse comportamento é do aplicativo de quem recebe o link, e não da Fiz Música.
 
 A plataforma registra o **número de reproduções** de cada Obra publicada, exibido junto a ela e usado para compor um **ranking das mais ouvidas**. Essa contagem é agregada e não identifica quem ouviu.
 
@@ -77,6 +81,7 @@ O Cliente pode revogar esta autorização **a qualquer momento e por conta próp
 **Efeito da revogação.** Em até 1 (um) minuto, a Obra:
 
 - Sai da Rede Fiz Música e deixa de aparecer em buscas e no ranking;
+- **Tem o seu endereço público desativado**: o link que porventura já tenha sido compartilhado deixa de abrir, e o áudio deixa de ser servido por ele;
 - Deixa de tocar para outras pessoas, inclusive nas playlists de terceiros que já a tivessem incluído;
 - Deixa de ter a letra exibida publicamente;
 - Deixa de acumular novas reproduções.

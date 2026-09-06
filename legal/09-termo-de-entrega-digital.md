@@ -41,7 +41,7 @@ O compartilhamento é **facultativo** e feito exclusivamente pelo Cliente — a 
 - A Fiz Música **não tem controle** sobre a distribuição do link depois de compartilhado;
 - A decisão de com quem compartilhar, e o cuidado com essa distribuição, são **do Cliente**.
 
-Quem quiser que a música seja ouvida **sem** expor as fotos pode publicá-la na [Rede Fiz Música](07-autorizacao-de-publicacao.md), onde as fotos não aparecem — apenas a capa gerada automaticamente.
+Quem quiser que a música seja ouvida **sem** expor as fotos pode publicá-la na [Rede Fiz Música](07-autorizacao-de-publicacao.md): a música publicada ganha um endereço público próprio, também compartilhável, onde as fotos **não** aparecem — apenas a capa gerada automaticamente.
 
 ## 5. Prazo de Disponibilidade do Link
 

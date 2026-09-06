@@ -52,11 +52,11 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "O que é a Rede Fiz Música?",
-    a: "É um espaço dentro da plataforma onde você pode ouvir músicas que outros clientes escolheram publicar — e publicar as suas, se quiser. Dá para favoritar, montar playlists e ver o ranking das mais ouvidas. Publicar é opcional, e você pode retirar a sua música de lá quando quiser, sozinho.",
+    a: "É um espaço onde você pode ouvir músicas que outros clientes escolheram publicar — e publicar as suas, se quiser. Ouvir não exige conta; favoritar e montar playlists sim. Tem ranking das mais ouvidas. Cada música publicada ganha uma página própria, que qualquer pessoa pode abrir e compartilhar. Publicar é opcional, e você pode retirar a sua música de lá quando quiser, sozinho — a página sai do ar junto.",
   },
   {
     q: "Se eu publicar na Rede, minhas fotos aparecem?",
-    a: "Não. Na Rede aparece a música, a letra, a ocasião e a capa criada automaticamente — nunca as suas fotos. Elas só aparecem para quem você mesmo enviar o seu link exclusivo. Seus dados de cadastro (nome, e-mail, telefone) também não aparecem. Se quiser assinar as suas músicas, existe uma opção separada no perfil para mostrar o seu apelido na Rede — ela vem desligada, e você liga só se quiser.",
+    a: "Não. Na Rede — e também na página que outras pessoas podem compartilhar — aparece a música, a letra, a ocasião e a capa criada automaticamente, nunca as suas fotos. Elas só aparecem para quem você mesmo enviar o seu link exclusivo. Seus dados de cadastro (nome, e-mail, telefone) também não aparecem. Se quiser assinar as suas músicas, existe uma opção separada no perfil para mostrar o seu apelido na Rede — ela vem desligada, e você liga só se quiser.",
   },
   {
     q: "Por quanto tempo o link fica disponível?",

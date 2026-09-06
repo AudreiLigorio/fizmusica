@@ -53,6 +53,10 @@ export default function PublicacaoConsent({
           <p className="text-white/55 text-xs leading-relaxed mt-1">
             Você pode autorizar a Fiz Música a divulgar <strong className="text-white/80">a sua música e a letra</strong> na Rede Fiz Música (que podem conter nomes e a história real como parte do conteúdo).
             <strong className="text-white/80"> As suas fotos não aparecem na Rede</strong> — só a capa gerada automaticamente.
+            {/* O endereço público entra AQUI, e não só no termo: é o ponto em
+                que a consequência da autorização sai da plataforma. A partir
+                dele a música circula por qualquer canal, sem conta. */}
+            {" "}Ela ganha um <strong className="text-white/80">endereço público</strong> que qualquer pessoa pode abrir e compartilhar.
             Você pode revogar quando quiser.{" "}
             <a href="/legal/autorizacao-de-publicacao" className="text-fuchsia-300 underline">Ler o termo</a>.
           </p>

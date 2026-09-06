@@ -28,11 +28,13 @@ Este documento reúne **todos** os pontos em que a plataforma pede consentimento
 
 ### Publicação na Rede Fiz Música (opcional — caixa separada, desmarcada)
 
-> ☐ Autorizo a Fiz Música a divulgar **minha música e a letra** na Rede Fiz Música, que podem conter nomes e a história real como parte do conteúdo. As fotos que enviei **não aparecem na Rede** — só a capa gerada automaticamente. Posso revogar quando quiser.
+> ☐ Autorizo a Fiz Música a divulgar **minha música e a letra** na Rede Fiz Música, que podem conter nomes e a história real como parte do conteúdo. Ela ganha um **endereço público** que qualquer pessoa pode abrir e compartilhar. As fotos que enviei **não aparecem na Rede** — só a capa gerada automaticamente. Posso revogar quando quiser.
 
 O texto da caixa **não** afirma que o autor fica anônimo: quem ativa "Mostrar meu apelido na Rede" passa a ser identificado pelo apelido nas músicas que publica. Prometer anonimato aqui contradiria a outra opção.
 
 O texto também não repete que o compartilhamento é responsabilidade do Cliente — isso já está no Termo de Entrega, aceito na mesma tela, logo acima.
+
+A menção ao **endereço público** está na caixa, e não só no termo, porque é o ponto em que a consequência da autorização sai da plataforma: a partir dele a obra pode circular por qualquer canal, sem conta. Consentimento sobre algo que atravessa essa fronteira precisa ser dado com a informação à vista.
 
 Apresentado **na mesma tela** do Termo de Entrega, mas como aceite **independente**: aceitar a entrega não publica a música, e recusar a publicação não impede a entrega.
 
