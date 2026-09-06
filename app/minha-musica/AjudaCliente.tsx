@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 // Ajuda de cada aba da área do cliente.
 //
 // Duas decisões de formato, tomadas com o Audrei:
@@ -108,18 +110,48 @@ const POR_ABA: Record<AbaAjuda, { titulo: string; itens: Item[] }> = {
 export default function AjudaCliente({ aba }: { aba: AbaAjuda }) {
   const { titulo, itens } = POR_ABA[aba]
 
+  // UM clique abre a lista INTEIRA — não é sanfona por pergunta.
+  //
+  // As duas coisas que o formato precisa resolver puxavam em direções
+  // opostas: quem tem dúvida não devia clicar sete vezes pra descobrir qual
+  // resposta é a dele; e quem não tem dúvida nenhuma não devia rolar meia
+  // tela de respostas até o fim da página. Um interruptor só para o bloco
+  // atende os dois.
+  //
+  // Fechado por padrão, com a CONTAGEM no cabeçalho: ajuda escondida é ajuda
+  // que ninguém encontra, e o número é o que denuncia que há conteúdo ali.
+  const [aberto, setAberto] = useState(false)
+
   return (
     <div className="mt-10 border-t border-white/10 pt-8">
-      <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg">💡</span>
-        <h2 className="text-xl font-semibold text-white">{titulo}</h2>
-      </div>
-      <p className="text-xs text-white/40 mb-4">O essencial desta tela, em uma linha cada.</p>
+      <button
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        className="w-full flex items-center gap-3 text-left group"
+      >
+        <span className="text-lg shrink-0">💡</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-xl font-semibold text-white group-hover:text-fuchsia-200 transition-colors">{titulo}</span>
+          <span className="block text-xs text-white/40">
+            {aberto ? "O essencial desta tela, em uma linha cada." : `${itens.length} respostas rápidas`}
+          </span>
+        </span>
+        <span
+          className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center border border-white/15 text-white/50 group-hover:text-white group-hover:border-white/35 transition-all"
+          style={{ transform: aberto ? "rotate(180deg)" : "none" }}
+          aria-hidden="true"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </span>
+      </button>
 
-      {/* Duas colunas no desktop: aberta, a lista fica alta demais numa
-          coluna só. `break-inside` impede que um item seja partido ao meio
-          entre as colunas. */}
-      <div className="sm:columns-2 sm:gap-5">
+      {!aberto ? null : (
+      /* Duas colunas no desktop: aberta, a lista fica alta demais numa
+         coluna só. `break-inside` impede que um item seja partido ao meio
+         entre as colunas. */
+      <div className="sm:columns-2 sm:gap-5 mt-4">
         {itens.map((item) => (
           <div
             key={item.q}
@@ -130,6 +162,7 @@ export default function AjudaCliente({ aba }: { aba: AbaAjuda }) {
           </div>
         ))}
       </div>
+      )}
     </div>
   )
 }
