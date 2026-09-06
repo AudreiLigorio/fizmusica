@@ -91,6 +91,22 @@ export default function MiniPlayer() {
   const [escolhendoPlaylist, setEscolhendoPlaylist] = useState(false)
   const [criandoPlaylist, setCriandoPlaylist] = useState(false)
 
+  // Bottom sheet da letra, mesmo mecanismo do player do pedido: fechado
+  // mostra os controles; aberto, a letra ocupa a tela. Volta a fechar
+  // sempre que o player cheio some, senão ele reabriria já expandido na
+  // próxima música.
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const sheetTouchY = useRef<number | null>(null)
+  useEffect(() => { if (!fullOpen) setSheetOpen(false) }, [fullOpen])
+  function onSheetTouchStart(e: React.TouchEvent) { sheetTouchY.current = e.touches[0].clientY }
+  function onSheetTouchEnd(e: React.TouchEvent) {
+    if (sheetTouchY.current === null) return
+    const dy = e.changedTouches[0].clientY - sheetTouchY.current
+    if (dy < -30) setSheetOpen(true)
+    else if (dy > 30) setSheetOpen(false)
+    sheetTouchY.current = null
+  }
+
   async function authHeaders() {
     const { data: { session } } = await supabase.auth.getSession()
     return { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" }
@@ -137,9 +153,42 @@ export default function MiniPlayer() {
 
   // Mesmo mecanismo real (PublicMusicPlayer.tsx): scrollIntoView na linha
   // ativa dentro do próprio container, nunca a página inteira.
+  //
+  // `fullOpen`/`sheetOpen` nas dependências CONSERTAM um bug: antes só
+  // `activeLine` entrava, então quem abria o player no meio da música
+  // (a linha ativa já estava definida, não mudava) via a caixa parada no
+  // topo — 64px de padding e as primeiras linhas a 25% de opacidade atrás
+  // da máscara. Lia como "a letra não carregou", mas ela estava lá, fora
+  // de vista. Era o caso do print: música de 38 linhas sincronizadas, aos
+  // 1:38, caixa aparentemente vazia.
+  //
+  // Instantâneo na primeira vez (pular 30 linhas com animação fica
+  // esquisito) e suave depois, que é o acompanhamento normal da música.
+  //
+  // NÃO usar scrollIntoView aqui, por mais natural que pareça: ele rola
+  // TODOS os ancestrais roláveis até a linha aparecer — e `overflow-hidden`
+  // não impede rolagem por script, só a do dedo. Como a letra mora dentro
+  // do sheet, que está deslocado pra baixo, o navegador "consertava" isso
+  // rolando a camada inteira 530px pra cima: a capa, o título e o botão de
+  // voltar sumiam da tela. Medido, não suposto.
+  //
+  // Rolar o scrollTop da própria caixa não toca em mais nada.
+  const jaRolou = useRef(false)
+  const caixaLetraRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    activeLineRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-  }, [activeLine])
+    if (!fullOpen) { jaRolou.current = false; return }
+    const t = setTimeout(() => {
+      const caixa = caixaLetraRef.current
+      const linha = activeLineRef.current
+      if (!caixa || !linha) return
+      const c = caixa.getBoundingClientRect()
+      const l = linha.getBoundingClientRect()
+      const alvo = caixa.scrollTop + (l.top - c.top) - (c.height / 2 - l.height / 2)
+      caixa.scrollTo({ top: alvo, behavior: jaRolou.current ? "smooth" : "auto" })
+      jaRolou.current = true
+    }, 60)
+    return () => clearTimeout(t)
+  }, [activeLine, fullOpen, sheetOpen])
 
   // Dá play em cada faixa NOVA — inclusive quando a fila emenda sozinha com
   // a tela bloqueada. Um efeito, e não requestAnimationFrame, justamente
@@ -339,73 +388,194 @@ export default function MiniPlayer() {
         </div>
       </div>
 
-      {/* player cheio */}
+      {/* ===================== PLAYER CHEIO =====================
+          Mesmo molde do player do pedido (/m/[slug]): chevron de voltar no
+          canto, capa no meio, bottom sheet com a letra.
+
+          A premissa que muda: LÁ o fundo são as fotos do cliente. Aqui não
+          há fotos — a música é de outra pessoa e o slug (a chave das fotos)
+          não sai da API de propósito. Então o fundo é a PRÓPRIA CAPA
+          borrada, que é o que os streamings fazem quando não existe vídeo:
+          dá imersão sem inventar conteúdo que não temos.
+
+          O layout antigo era uma coluna rígida sem rolagem, e a caixa da
+          letra era o único item que encolhia — numa tela de ~683px ela
+          absorvia toda a sobra e virava uma faixa vazia. Aqui a letra mora
+          no sheet, que tem rolagem própria: ela não disputa altura com
+          mais nada. */}
       {fullOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center px-6 pt-6 pb-8 text-white" style={{ background: "linear-gradient(180deg, #1f1830, #0b0812)" }}>
-          {/* Puxador horizontal no lugar do "▾" — estilo Spotify. Continua
-              sendo um CLIQUE que fecha (não é gesto de arrastar): a área de
-              toque é generosa pra não virar alvo difícil no celular. */}
+        <div className="fixed inset-0 z-50 text-white overflow-hidden" style={{ background: "#0b0812" }}>
+          {/* Fundo ambiente. `scale` esconde as bordas que o blur deixa
+              translúcidas; sem ele aparece uma moldura clara na volta. */}
+          {track.imageUrl && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${track.imageUrl})`,
+                backgroundSize: "cover", backgroundPosition: "center",
+                filter: "blur(44px) saturate(1.5)", transform: "scale(1.25)", opacity: 0.55,
+              }}
+            />
+          )}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(180deg, rgba(11,8,18,.45) 0%, rgba(11,8,18,.72) 42%, #0b0812 100%)" }}
+          />
+
+          {/* Voltar. Aqui ele FECHA a camada e a música segue tocando na
+              barra de baixo — não é navegação, ao contrário do player do
+              pedido, que sai da página. Mesmo gesto, mesma posição. */}
           <button
             onClick={closeFull}
             aria-label="Fechar player"
-            className="w-full max-w-md flex justify-center py-2 -mt-2 mb-4 group"
+            className="absolute top-8 left-4 z-30 w-10 h-10 rounded-full flex items-center justify-center bg-black/35 backdrop-blur text-white/85 hover:text-white hover:bg-black/55 transition-colors"
           >
-            <span className="w-10 h-1 rounded-full bg-white/25 group-hover:bg-white/50 transition-colors" />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
           </button>
 
-          <div className="w-full max-w-md flex items-center justify-center mb-6">
-            <span className="text-[11px] uppercase tracking-wide text-white/40 font-bold">Tocando agora</span>
+          {/* Capa e identificação. `bottom-[168px]` reserva a altura do sheet
+              fechado e `justify-center` centraliza no que sobra, então esta
+              área nunca estoura: em tela curta a capa encolhe (aspect-ratio
+              com maxHeight) em vez de espremer o vizinho. */}
+          <div className="absolute inset-x-0 top-0 bottom-[168px] z-10 flex flex-col items-center justify-center px-8 text-center">
+            <span className="text-[11px] uppercase tracking-wide text-white/40 font-bold mb-5">Tocando agora</span>
+
+            <div
+              className="rounded-2xl bg-cover bg-center border border-white/10 shadow-2xl mb-5"
+              style={{
+                width: "min(62vw, 250px)", aspectRatio: "1", maxHeight: "36dvh",
+                ...(track.imageUrl
+                  ? { backgroundImage: `url(${track.imageUrl})` }
+                  : { background: "linear-gradient(135deg,#3a1440,#7a1f5c)" }),
+              }}
+            />
+
+            <h2 className="text-lg font-semibold max-w-sm" style={{ textWrap: "balance" }}>{track.title}</h2>
+            <p className="text-sm text-white/40 mt-1 max-w-sm truncate">
+              {[subtitulo, track.apelido].filter(Boolean).join(" · ") || " "}
+            </p>
+
+            {/* Favoritar e playlist ficam FORA do sheet de propósito: são as
+                ações próprias da Rede e têm que estar a um toque, sem obrigar
+                a abrir a letra. O coração só existe em música da Rede — na
+                sua própria não há o que favoritar (o motor nem registra). */}
+            <div className="flex items-center gap-3 mt-5">
+              {naRede && (
+                <button
+                  onClick={favoritar}
+                  aria-label={naRede.favorited ? "Remover dos favoritos" : "Favoritar"}
+                  className={`w-11 h-11 shrink-0 rounded-full border flex items-center justify-center transition-colors ${
+                    naRede.favorited
+                      ? "border-transparent bg-pink-500/15 text-pink-400"
+                      : "border-white/15 bg-black/20 text-white/60 hover:text-white hover:border-white/35"
+                  }`}
+                >
+                  <IconCoracao cheio={naRede.favorited} />
+                </button>
+              )}
+              <button
+                onClick={abrirAdicionar}
+                aria-label="Adicionar esta música a uma playlist"
+                className="w-11 h-11 shrink-0 rounded-full border border-white/15 bg-black/20 text-white/60 hover:text-white hover:border-white/35 flex items-center justify-center transition-colors"
+              >
+                <IconMais />
+              </button>
+            </div>
           </div>
 
+          {/* ===================== BOTTOM SHEET — a letra =====================
+              Fechado mostra 168px: puxador, controles e progresso. Aberto, a
+              letra toma a tela. Rolagem só na área da letra (`flex-1
+              min-h-0 overflow-y-auto`), o resto é fixo. */}
           <div
-            className="rounded-2xl mb-5 flex-none bg-cover bg-center border border-white/10"
+            className="absolute left-0 right-0 bottom-0 z-20 h-[86dvh] rounded-t-3xl border-t border-white/10 transition-transform duration-300 ease-out flex flex-col"
             style={{
-              width: "min(62vw, 260px)", height: "min(62vw, 260px)",
-              ...(track.imageUrl ? { backgroundImage: `url(${track.imageUrl})` } : { background: "linear-gradient(135deg,#3a1440,#7a1f5c)" }),
+              background: "linear-gradient(180deg, rgba(22,12,32,0.92) 0%, rgba(10,9,18,0.985) 40%)",
+              backdropFilter: "blur(18px)",
+              transform: sheetOpen ? "translateY(0)" : "translateY(calc(100% - 168px))",
             }}
-          />
-          <h2 className="text-center text-lg font-semibold mb-1 max-w-sm" style={{ textWrap: "balance" }}>{track.title}</h2>
-          <p className="text-sm text-white/40 mb-4">
-            {[subtitulo, track.apelido].filter(Boolean).join(" · ") || " "}
-          </p>
+            onTouchStart={onSheetTouchStart}
+            onTouchEnd={onSheetTouchEnd}
+          >
+            {/* O sheet é largo (vai de ponta a ponta), mas o CONTEÚDO não
+                pode ser: num monitor de 1280px a barra de progresso e a
+                letra atravessavam a tela inteira. Uma coluna só, centrada. */}
+            <div className="w-full max-w-2xl mx-auto flex flex-col flex-1 min-h-0">
+            <button
+              onClick={() => setSheetOpen((v) => !v)}
+              aria-label={sheetOpen ? "Fechar letra" : "Abrir letra"}
+              className="w-full pt-3 pb-1 flex flex-col items-center shrink-0"
+            >
+              <span className="w-10 h-1.5 rounded-full bg-white/40" />
+              <span className="text-[11px] text-white/50 mt-1.5">
+                {sheetOpen ? "arraste para baixo" : "arraste para cima"}
+              </span>
+            </button>
 
-          {/* Favoritar e adicionar à playlist — as mesmas ações do card, pra
-              quem já está ouvindo não precisar voltar pra lista.
-              O coração SÓ aparece em música da Rede: na sua própria não há o
-              que favoritar (o motor nem registra), e botão sem função gera
-              mais dúvida do que a posição variar entre uma faixa e outra. */}
-          <div className="flex items-center gap-3 mb-5 shrink-0">
-            {naRede && (
+            {/* Controles. Repetir e anterior/próxima moram aqui porque a
+                Rede toca em FILA — o player do pedido não tem fila e por
+                isso não tem esses botões. */}
+            <div className="shrink-0 flex items-center justify-center gap-5 px-6 py-2">
               <button
-                onClick={favoritar}
-                aria-label={naRede.favorited ? "Remover dos favoritos" : "Favoritar"}
-                className={`w-11 h-11 shrink-0 rounded-full border flex items-center justify-center transition-colors ${
-                  naRede.favorited
-                    ? "border-transparent bg-pink-500/15 text-pink-400"
-                    : "border-white/15 text-white/60 hover:text-white hover:border-white/35"
+                onClick={toggleRepeat}
+                aria-label={repeat ? "Desativar repetir" : "Repetir música"}
+                aria-pressed={repeat}
+                className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors ${
+                  repeat ? "border-fuchsia-400/60 bg-fuchsia-500/20 text-fuchsia-200" : "border-white/15 text-white/45 hover:text-white/80"
                 }`}
               >
-                <IconCoracao cheio={naRede.favorited} />
+                <IconRepeat />
               </button>
-            )}
-            <button
-              onClick={abrirAdicionar}
-              aria-label="Adicionar esta música a uma playlist"
-              className="w-11 h-11 shrink-0 rounded-full border border-white/15 text-white/60 hover:text-white hover:border-white/35 flex items-center justify-center transition-colors"
-            >
-              <IconMais />
-            </button>
-          </div>
-
-          {lines.length > 0 && (
-            <>
-              {/* Selo "🎤 Letra sincronizada" removido a pedido do Audrei —
-                  a letra rolando já mostra que é sincronizada. */}
-              <div
-                className="w-full max-w-md h-[130px] min-h-0 overflow-y-auto mb-5 px-2"
-                style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)" }}
+              <button
+                onClick={anterior}
+                disabled={!temAnterior}
+                aria-label="Música anterior"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white/55 hover:text-white disabled:opacity-25 transition-colors"
               >
-                <div className="flex flex-col gap-3 text-center py-16">
+                <IconAnterior />
+              </button>
+              <button
+                onClick={toggle}
+                className="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center shrink-0"
+                aria-label={playing ? "Pausar" : "Tocar"}
+              >
+                {playing ? <IconPause size="w-6 h-6" /> : <IconPlay size="w-6 h-6" />}
+              </button>
+              <button
+                onClick={proxima}
+                disabled={!temProxima}
+                aria-label="Próxima música"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white/55 hover:text-white disabled:opacity-25 transition-colors"
+              >
+                <IconProxima />
+              </button>
+              <span className="w-9 h-9" aria-hidden="true" />
+            </div>
+
+            <div className="shrink-0 flex items-center gap-3 px-6 pt-1">
+              <span className="text-[11px] text-white/40 font-mono shrink-0">{fmt(progress)}</span>
+              <input
+                type="range" min={0} max={duration || 0} step={0.1} value={progress}
+                onChange={(e) => seek(Number(e.target.value))}
+                aria-label="Posição da música"
+                className="flex-1 accent-pink-500 h-1 cursor-pointer"
+              />
+              <span className="text-[11px] text-white/40 font-mono shrink-0">{fmt(duration)}</span>
+            </div>
+
+            {/* Letra — a ÚNICA área que rola. */}
+            <div
+              ref={caixaLetraRef}
+              className="flex-1 min-h-0 overflow-y-auto px-6 py-4"
+              style={{ maskImage: "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)" }}
+            >
+              {lines.length > 0 ? (
+                <div className="flex flex-col gap-3 text-center py-10">
                   {lines.map((line, i) => {
                     const isActive = i === activeLine
                     const isNear = Math.abs(i - activeLine) <= 1
@@ -426,27 +596,30 @@ export default function MiniPlayer() {
                     )
                   })}
                 </div>
-              </div>
-            </>
-          )}
+              ) : (
+                // 10% do catálogo não tem letra publicada. Dizer isso é melhor
+                // do que uma área vazia, que lia como falha de carregamento.
+                <p className="text-center text-sm text-white/30 py-10">
+                  Esta música não tem letra publicada.
+                </p>
+              )}
+            </div>
 
-          <div className="w-full max-w-md flex items-center gap-3 mb-6">
-            <span className="text-[11px] text-white/40 font-mono shrink-0">{fmt(progress)}</span>
-            <input
-              type="range" min={0} max={duration || 0} step={0.1} value={progress}
-              onChange={(e) => seek(Number(e.target.value))}
-              className="flex-1 accent-pink-500 h-1 cursor-pointer"
-            />
-            <span className="text-[11px] text-white/40 font-mono shrink-0">{fmt(duration)}</span>
+            {/* Rodapé fixo. */}
+            <div
+              className="shrink-0 px-6 pt-3 border-t border-white/10"
+              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+            >
+              <a
+                href="/criar"
+                className="block text-center py-3 rounded-xl text-sm font-bold text-white transition-all hover:brightness-110"
+                style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+              >
+                Criar a minha música
+              </a>
+            </div>
+            </div>
           </div>
-
-          <button
-            onClick={toggle}
-            className="w-16 h-16 rounded-full bg-white text-black flex items-center justify-center"
-            aria-label={playing ? "Pausar" : "Tocar"}
-          >
-            {playing ? <IconPause size="w-7 h-7" /> : <IconPlay size="w-7 h-7" />}
-          </button>
         </div>
       )}
 
