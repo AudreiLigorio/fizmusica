@@ -25,19 +25,44 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
     return { Authorization: `Bearer ${session?.access_token ?? ""}` }
   }
 
+  // Erro visto em produção (Sentry, 06/09): `TypeError: Failed to fetch`
+  // aqui dentro. O `.json().catch()` protegia a LEITURA da resposta, mas o
+  // `fetch` em si não estava protegido — e é ele que rejeita quando a rede
+  // cai, a pessoa troca de aba no meio ou sai um deploy durante a chamada.
+  // Como `carregar()` roda solto num useEffect, a rejeição não tinha quem a
+  // pegasse e virava erro não tratado.
+  //
+  // O `Promise.all` era o segundo problema, mais grave que o primeiro: UMA
+  // playlist que falhasse derrubava TODAS. Como a tela esconde a seção
+  // enquanto `playlists` é null, o cliente perdia a prateleira inteira por
+  // causa de uma requisição — e sem nenhuma mensagem, porque some em
+  // silêncio. `allSettled` isola: a que falhou entra vazia, as outras
+  // aparecem.
   async function carregar() {
-    const headers = await authHeaders()
-    const listRes = await fetch("/api/playlists", { headers })
-    const listData = await listRes.json().catch(() => ({}))
-    const lista: { id: string; nome: string }[] = listData.playlists ?? []
-    const detalhes = await Promise.all(
-      lista.map(async (pl) => {
-        const res = await fetch(`/api/playlists/${pl.id}`, { headers })
-        const d = await res.json().catch(() => ({}))
-        return { id: pl.id, nome: pl.nome, tracks: d.tracks ?? [] } as PlaylistFull
-      })
-    )
-    setPlaylists(detalhes)
+    try {
+      const headers = await authHeaders()
+      const listRes = await fetch("/api/playlists", { headers })
+      const listData = await listRes.json().catch(() => ({}))
+      const lista: { id: string; nome: string }[] = listData.playlists ?? []
+
+      const resultados = await Promise.allSettled(
+        lista.map(async (pl) => {
+          const res = await fetch(`/api/playlists/${pl.id}`, { headers })
+          const d = await res.json().catch(() => ({}))
+          return { id: pl.id, nome: pl.nome, tracks: d.tracks ?? [] } as PlaylistFull
+        })
+      )
+      setPlaylists(
+        resultados.map((r, i) =>
+          r.status === "fulfilled" ? r.value : { id: lista[i].id, nome: lista[i].nome, tracks: [] },
+        ),
+      )
+    } catch {
+      // Lista vazia, não null: null mantém a seção escondida pra sempre e a
+      // tela fica sem explicar nada. Vazia deixa o resto da aba funcionar, e
+      // a próxima montagem tenta de novo.
+      setPlaylists([])
+    }
   }
 
   useEffect(() => { carregar() }, [version]) // eslint-disable-line react-hooks/exhaustive-deps

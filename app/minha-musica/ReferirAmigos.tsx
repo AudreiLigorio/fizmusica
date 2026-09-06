@@ -16,13 +16,19 @@ export default function ReferirAmigos() {
     return { Authorization: `Bearer ${session?.access_token ?? ""}` }
   }
 
+  // Protegido porque roda na montagem — mesmo padrão do erro visto no
+  // Sentry em MinhasPlaylists.
   async function carregar() {
-    const headers = await authHeaders()
-    // Garante que o código existe (get-or-create) antes de puxar o funil.
-    await fetch("/api/referral/code", { headers })
-    const res = await fetch("/api/referral/funil", { headers })
-    const d = await res.json().catch(() => ({}))
-    setFunil(d)
+    try {
+      const headers = await authHeaders()
+      // Garante que o código existe (get-or-create) antes de puxar o funil.
+      await fetch("/api/referral/code", { headers })
+      const res = await fetch("/api/referral/funil", { headers })
+      const d = await res.json().catch(() => ({}))
+      setFunil(d)
+    } catch {
+      /* sem funil: o painel mostra o estado vazio em vez de quebrar */
+    }
   }
 
   useEffect(() => { carregar() }, [])

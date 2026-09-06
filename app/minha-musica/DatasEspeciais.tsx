@@ -36,13 +36,21 @@ export default function DatasEspeciais() {
   const [data, setData] = useState("")
   const [saving, setSaving] = useState(false)
 
+  // O `.json().catch()` protege a LEITURA da resposta, não o `fetch`. É o
+  // fetch que rejeita quando a rede cai, a pessoa troca de aba no meio ou sai
+  // um deploy durante a chamada — e como isto roda solto num useEffect, a
+  // rejeição virava erro não tratado (visto no Sentry em MinhasPlaylists).
   async function load() {
-    const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch("/api/special-dates", {
-      headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
-    })
-    const d = await res.json().catch(() => ({}))
-    setDates(d.dates ?? [])
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch("/api/special-dates", {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      })
+      const d = await res.json().catch(() => ({}))
+      setDates(d.dates ?? [])
+    } catch {
+      setDates([])
+    }
   }
 
   useEffect(() => { load() }, [])

@@ -18,7 +18,11 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
   const [cropSrc, setCropSrc]   = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // try/catch em volta do fetch: sem ele, uma falha de rede deixava
+  // `loading` preso em true pra sempre — a tela ficava carregando sem nunca
+  // dizer o que houve. Ver o `finally`.
   async function load() {
+    try {
     const res = await fetch(`/api/pedido/${token}/fotos`)
     if (!res.ok) { setLoading(false); return }
     const data = await res.json()
@@ -27,7 +31,11 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
     // valor real (não "ainda não chegou") — checagem truthy travava no
     // DEFAULT_MAX e mostrava "1/10" pra um produto que não tem fotos.
     if (data.photoLimit != null) setMax(data.photoLimit)
-    setLoading(false)
+    } catch {
+      /* rede caiu: segue sem fotos em vez de derrubar a tela */
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [token])

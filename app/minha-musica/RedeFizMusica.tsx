@@ -46,13 +46,20 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
     return { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" }
   }
 
+  // Protegido porque roda na montagem: falha de rede aqui virava erro não
+  // tratado (visto no Sentry em MinhasPlaylists, mesmo padrão).
   async function carregarPlaylists() {
-    const headers = await authHeaders()
-    const res = await fetch("/api/playlists", { headers })
-    const d = await res.json().catch(() => ({}))
-    const lista: Playlist[] = d.playlists ?? []
-    setPlaylists(lista)
-    return lista
+    try {
+      const headers = await authHeaders()
+      const res = await fetch("/api/playlists", { headers })
+      const d = await res.json().catch(() => ({}))
+      const lista: Playlist[] = d.playlists ?? []
+      setPlaylists(lista)
+      return lista
+    } catch {
+      setPlaylists([])
+      return [] as Playlist[]
+    }
   }
 
   useEffect(() => { carregarPlaylists() }, []) // eslint-disable-line react-hooks/exhaustive-deps
