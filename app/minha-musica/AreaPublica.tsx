@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/app/components/Header"
 import MiniPlayer from "./MiniPlayer"
+import AjudaCliente from "./AjudaCliente"
 import { PlayerProvider } from "./PlayerContext"
 import { ToastProvider } from "./ToastContext"
 import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "./AreaTabs"
@@ -97,6 +98,14 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
                   </p>
                 </div>
               </AbaMusicas>
+
+              {/* A MESMA ajuda da Rede do cliente logado, não uma versão
+                  reduzida: a Rede é a mesma tela pros dois, e manter dois
+                  textos faria um deles envelhecer. Ouvir, buscar e
+                  compartilhar funcionam sem conta; favoritar e playlist
+                  chamam o login ao serem tocados, então a ajuda descrevendo
+                  os dois é honesta — e vira convite. */}
+              <AjudaCliente aba="musicas" />
             </>
           )}
 

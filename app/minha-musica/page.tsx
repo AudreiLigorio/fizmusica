@@ -1236,9 +1236,6 @@ function MinhaMusicaContent() {
 
           <CarreiraPainel nome={firstName ?? ""} email={user.email ?? ""} />
 
-          {/* Ajuda — regras desta tela */}
-          <AjudaCliente />
-
           {blocoVincular}
           </>}
 
@@ -1263,6 +1260,14 @@ function MinhaMusicaContent() {
             <ReferirAmigos />
             <DatasEspeciais />
           </div>
+
+          {/* Ajuda da aba atual, sempre por último: quem precisa dela já
+              tentou resolver na tela primeiro. Um componente só, escolhendo
+              o conteúdo pela aba — três componentes separados vira três
+              lugares pra uma regra mudar e duas ficarem desatualizadas, que
+              foi exatamente o que aconteceu entre esta ajuda e a FAQ da home
+              ("nossa equipe avalia" numa, proibido na outra). */}
+          {aba !== "home" && <AjudaCliente aba={aba} />}
         </section>
 
         <Footer />

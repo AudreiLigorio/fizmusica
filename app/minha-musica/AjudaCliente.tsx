@@ -1,92 +1,134 @@
 "use client"
 
-import { useState } from "react"
+// Ajuda de cada aba da área do cliente.
+//
+// Duas decisões de formato, tomadas com o Audrei:
+//
+// 1. SEM sanfona. As respostas cabem em duas linhas, e ler seis respostas
+//    curtas é mais rápido do que clicar seis vezes pra descobrir se alguma
+//    delas é a sua. Sanfona só faz sentido na home, que tem mais itens.
+//
+// 2. Entra a pergunta que evita ERRO IRREVERSÍVEL ou perda de dinheiro;
+//    curiosidade fica de fora. "Aprovar a letra não tem volta" entra e vem
+//    primeiro; "como troco a foto do perfil" não entra, porque o botão já
+//    diz. Por isso são 4 a 7 itens por aba, e não os 20 que caberiam.
+//
+// Regra de escrita: a PRIMEIRA frase já responde. Detalhe vem depois, e só
+// se existir. Nada de "nossa equipe" para etapa automatizada, e nada de
+// prometer recurso que varia por produto como se fosse de todos — as duas
+// armadilhas que a FAQ da home já tinha corrigido e esta tela ainda repetia.
 
-const ITENS: { q: string; a: string }[] = [
-  {
-    q: "Como eu “valido” a minha música?",
-    a: "Você valida aprovando a LETRA. Depois de pagar, gere a letra, ajuste o que quiser e clique em “Aprovar e gerar minha música”. É essa aprovação que inicia a produção. ⚠️ Atenção: ao aprovar, a música é gerada automaticamente e, a partir daí, nada pode ser alterado — nem a letra, nem as fotos.",
-  },
-  {
-    q: "Quantas vezes posso revisar a letra antes de aprovar?",
-    a: "A primeira letra é gerada gratuitamente e você ainda tem até 3 revisões com a IA (é só descrever o ajuste e pedir). Depois que as revisões acabarem, você ainda pode editar o texto à mão e aprovar do jeito que quiser.",
-  },
-  {
-    q: "Como adiciono fotos? Quantas posso colocar?",
-    a: "No passo de fotos, você adiciona imagens que aparecem no player enquanto a música toca (como um clipe) — a quantidade varia de acordo com o produto escolhido. As fotos são opcionais — se não quiser, é só pular. Você pode trocar ou remover as fotos até aprovar a letra; depois disso elas ficam travadas.",
-  },
-  {
-    q: "A imagem de capa sou eu que escolho?",
-    a: "Não. A capa é uma imagem criada automaticamente para a sua música. As fotos que você envia aparecem no carrossel durante a reprodução, junto da letra — não como capa.",
-  },
-  {
-    q: "O que acontece depois que eu aprovo a letra?",
-    a: "A produção começa na hora. Quando a música fica pronta, você recebe duas versões para ouvir. Você fica com as duas e escolhe qual será a principal (a que vai no player e no QR Code). Pode trocar a principal quando quiser.",
-  },
-  {
-    q: "Não gostei da música. Posso pedir revisão?",
-    a: "Pode. Na música entregue, use o botão “Não gostei dessa versão”. Você conta o que gostaria de mudar, nossa equipe avalia e o pedido reabre para você ajustar a letra/fotos e gerar uma nova versão.",
-  },
-  {
-    q: "Como ouço, baixo e compartilho?",
-    a: "Tudo acontece aqui na sua área. Quando a música é liberada, você aceita o Termo de Entrega e libera o acesso para ouvir, baixar o MP3 e gerar o QR Code para fazer a surpresa e compartilhar o link.",
-  },
-  {
-    q: "Por que minha música ainda não começou?",
-    a: "Ela só entra em produção depois que você aprova a letra. Se o pedido está parado em “Aprovar letra”, é porque falta esse passo — assim que aprovar, começamos e avisamos por e-mail quando ficar pronta.",
-  },
-  {
-    q: "Por que alguns pedidos aparecem grandes no topo e outros só como capinha?",
-    a: "No topo ficam só os pedidos que precisam de uma ação sua agora — finalizar pagamento, aprovar letra, escolher versão ou aceitar o termo de entrega. O resto (em produção ou já entregue) vira uma capinha no carrossel — clique nela pra ver os detalhes.",
-  },
-]
+type Item = { q: string; a: string }
+export type AbaAjuda = "pedidos" | "musicas" | "carreira"
 
-export default function AjudaCliente() {
-  const [open, setOpen] = useState<number | null>(null)
+const POR_ABA: Record<AbaAjuda, { titulo: string; itens: Item[] }> = {
+  pedidos: {
+    titulo: "Dúvidas sobre o seu pedido",
+    itens: [
+      {
+        q: "Como aprovo a letra?",
+        a: "Gere a letra, ajuste o que quiser e toque em “Aprovar e gerar minha música”. Atenção: a aprovação não tem volta — a produção começa na hora e nem a letra nem as fotos mudam depois. Se o seu pedido está parado, é esse o passo que falta.",
+      },
+      {
+        q: "Quantas vezes posso mudar a letra?",
+        a: "A primeira sai de graça e você tem mais 3 revisões com a IA — é só descrever o ajuste. Acabando as revisões, ainda dá pra editar o texto à mão antes de aprovar.",
+      },
+      {
+        q: "Como coloco fotos?",
+        a: "No passo de fotos, antes de aprovar a letra. Elas aparecem no player enquanto a música toca. São opcionais, a quantidade depende do produto, e depois da aprovação ficam travadas.",
+      },
+      {
+        q: "Recebi duas versões. E agora?",
+        a: "As duas são suas. Você escolhe a principal — é a que vai no player, no link e no QR Code. Dá pra trocar quando quiser.",
+      },
+      {
+        q: "Não gostei. Posso pedir outra?",
+        a: "Use “Não gostei dessa versão”, conte o que gostaria de mudar e o pedido reabre pra você ajustar letra e fotos. A revisão depende do produto contratado.",
+      },
+      {
+        q: "Como ouço, baixo e compartilho?",
+        a: "Aceite o Termo de Entrega e libera tudo de uma vez: player, download do MP3, link pra mandar pra quem quiser e QR Code, quando o seu produto inclui.",
+      },
+      {
+        q: "Publicar na Rede é obrigatório?",
+        a: "Não, é opcional e reversível. Publicando, outras pessoas ouvem a música e a letra, e ela ganha um endereço público. As suas fotos nunca aparecem — só a capa. Dá pra desmarcar quando quiser.",
+      },
+    ],
+  },
+
+  musicas: {
+    titulo: "Dúvidas sobre a Rede Fiz Música",
+    itens: [
+      {
+        q: "Como escuto?",
+        a: "Toque na capa. O player fica embaixo e continua tocando quando você troca de aba — inclusive com a tela do celular bloqueada. Toque nele pra abrir a letra.",
+      },
+      {
+        q: "Como favorito?",
+        a: "No coração do cartão. Ela sobe pra prateleira ❤️ Favoritas, no topo, e sai da grade pra não repetir. Pra desfavoritar, é o coração dela lá em cima.",
+      },
+      {
+        q: "Como monto uma playlist?",
+        a: "No + do cartão. Se você ainda não tem nenhuma playlist, ele cria a primeira; se já tem, você escolhe em qual a música entra.",
+      },
+      {
+        q: "Como acho uma música?",
+        a: "Pela busca — nome, ocasião ou estilo — ou pelas pílulas logo abaixo dela. O Top 10 mostra as mais ouvidas do momento, e o resto da lista muda de ordem a cada visita.",
+      },
+      {
+        q: "Posso mandar uma música pra alguém?",
+        a: "Pode. Abra o player cheio e use link ou WhatsApp: quem receber abre sem precisar de conta. Nenhuma foto aparece nessa página — nem as suas, nem as de quem publicou.",
+      },
+    ],
+  },
+
+  carreira: {
+    titulo: "Dúvidas sobre a sua carreira",
+    itens: [
+      {
+        q: "Como ganho discos?",
+        a: "Comprando música e indicando amigos. Na indicação, o disco entra quando o amigo compra — não no clique no link.",
+      },
+      {
+        q: "Pra que serve subir de nível?",
+        a: "A barra no topo mostra quanto falta. Cada nível novo aumenta o desconto nas suas próximas músicas, e o seu personagem muda junto.",
+      },
+      {
+        q: "Meu nome aparece nas músicas que publico?",
+        a: "Só se você quiser: preencha o apelido e ligue “Mostrar meu apelido na Rede”, que vem desligada. É uma escolha separada de autorizar a publicação da música.",
+      },
+      {
+        q: "Como funcionam os lembretes de datas?",
+        a: "Cadastre aniversários e datas importantes aqui nesta aba, e a gente te avisa com antecedência pra dar tempo de preparar a música.",
+      },
+    ],
+  },
+}
+
+export default function AjudaCliente({ aba }: { aba: AbaAjuda }) {
+  const { titulo, itens } = POR_ABA[aba]
 
   return (
     <div className="mt-10 border-t border-white/10 pt-8">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">💡</span>
-        <h2 className="text-lg font-semibold text-white">Dúvidas sobre esta tela</h2>
+        <h2 className="text-xl font-semibold text-white">{titulo}</h2>
       </div>
-      <div className="space-y-2.5">
-        {ITENS.map((item, i) => {
-          const isOpen = open === i
-          return (
-            <div
-              key={i}
-              className="rounded-2xl overflow-hidden transition-colors"
-              style={{
-                background: isOpen ? "rgba(240,25,107,0.05)" : "rgba(255,255,255,0.03)",
-                border: `1px solid ${isOpen ? "rgba(240,25,107,0.25)" : "rgba(255,255,255,0.08)"}`,
-              }}
-            >
-              <button
-                onClick={() => setOpen(isOpen ? null : i)}
-                className="w-full flex items-center justify-between gap-4 text-left px-4 py-3.5"
-              >
-                <span className="font-medium text-white text-sm leading-snug">{item.q}</span>
-                <span
-                  className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-transform duration-300"
-                  style={{
-                    background: isOpen ? "#f0196b" : "rgba(255,255,255,0.06)",
-                    transform: isOpen ? "rotate(45deg)" : "none",
-                  }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isOpen ? "#fff" : "rgba(255,255,255,0.6)"} strokeWidth="2.4" strokeLinecap="round">
-                    <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                </span>
-              </button>
-              <div className="grid transition-all duration-300 ease-out" style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}>
-                <div className="overflow-hidden">
-                  <p className="px-4 pb-4 text-[13px] text-white/60 leading-relaxed whitespace-pre-line">{item.a}</p>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+      <p className="text-xs text-white/40 mb-4">O essencial desta tela, em uma linha cada.</p>
+
+      {/* Duas colunas no desktop: aberta, a lista fica alta demais numa
+          coluna só. `break-inside` impede que um item seja partido ao meio
+          entre as colunas. */}
+      <div className="sm:columns-2 sm:gap-5">
+        {itens.map((item) => (
+          <div
+            key={item.q}
+            className="mb-2.5 break-inside-avoid rounded-2xl px-4 py-3 border border-white/[0.07] bg-white/[0.03]"
+          >
+            <p className="font-semibold text-white text-sm leading-snug">{item.q}</p>
+            <p className="text-[13px] text-white/55 leading-relaxed mt-1">{item.a}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
