@@ -196,8 +196,15 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
           {/* Rótulo FIXO em "Top 10": é o nome da seção, não a contagem.
               Interpolar o tamanho da lista produzia "Top 1 mais ouvidas"
               enquanto só uma música tinha reprodução. */}
-          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">
-            🔥 Top 10 mais ouvidas
+          {/* Mais destaque que o rótulo vizinho das Favoritas (10px, branco
+              a 30%), e sem emoji — pedido do Audrei. O ranking é a única
+              coisa desta tela que sai de dado real, então merece hierarquia
+              própria em vez de parecer mais um subtítulo.
+              Duas cores: "Top 10" no roxo da marca puxa o olho para o
+              número, e "mais ouvidas" em branco carrega a leitura. */}
+          <p className="text-sm font-extrabold uppercase tracking-wider mb-2.5">
+            <span style={{ color: "#d946ef" }}>Top 10</span>{" "}
+            <span className="text-white/90">mais ouvidas</span>
           </p>
           <div className="grid sm:grid-cols-2 gap-x-6">
             {top10.map((it, i) => {
