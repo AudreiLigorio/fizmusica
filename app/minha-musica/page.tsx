@@ -306,6 +306,28 @@ function MinhaMusicaContent() {
   // Endereço mudando por fora (Voltar/Avançar do navegador, link direto).
   useEffect(() => { setAba(abaDaUrl) }, [abaDaUrl])
 
+  // Selo "Na Rede": tirar é DOIS toques, não um. Não é modal — o primeiro
+  // toque troca o rótulo pra "Tirar?" e o segundo confirma; some sozinho em
+  // 3s se a pessoa não seguir. Num selo de 128px, um window.confirm seria
+  // desproporcional e um modal, exagero.
+  const [confirmandoSaida, setConfirmandoSaida] = useState<string | null>(null)
+  const [saindoDaRede, setSaindoDaRede] = useState<string | null>(null)
+
+  async function tirarDaRede(orderId: string) {
+    setSaindoDaRede(orderId)
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch(`/api/orders/${orderId}/publicacao`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token ?? ""}` },
+      body: JSON.stringify({ consent: false }),
+    }).catch(() => {})
+    setSaindoDaRede(null)
+    setConfirmandoSaida(null)
+    // Recarrega em vez de mexer no estado local: o selo some porque o dado
+    // mudou de verdade, não porque a tela fingiu que mudou.
+    await loadOrders()
+  }
+
   function irPara(a: Aba) {
     // "Home" é a landing, não uma seção daqui — sai da área do cliente.
     if (a === "home") { router.push("/"); return }
@@ -1076,11 +1098,20 @@ function MinhaMusicaContent() {
                   const delivered = order.status === "DELIVERED"
                   const abandonado = order.paymentStatus !== "PAID"
                   const principal = order.tracks?.find((t) => t.audioUrl === order.mp3Url) ?? order.tracks?.[0]
+                  // Selo SÓ quando a música ESTÁ na Rede.
+                  //
+                  // Mostrar também o "não publicada" encheria a prateleira de
+                  // etiqueta cinza — publicar é opt-in e vem desligado, então
+                  // a maioria cairia nesse estado. Uma fileira de negativas lê
+                  // como aviso de erro e como cobrança. Estado positivo ganha
+                  // selo; o padrão não ganha nada.
+                  const naRede = !!order.publication_consent
+                  const confirmando = confirmandoSaida === order.id
                   return (
+                    <div key={order.id} className={`relative shrink-0 w-32 group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}>
                     <button
-                      key={order.id}
                       onClick={() => setOpenDetailOrderId(order.id)}
-                      className={`shrink-0 w-32 text-left group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}
+                      className="w-full text-left"
                     >
                       <div
                         className="relative w-32 h-32 rounded-xl flex items-center justify-center text-2xl bg-cover bg-center"
@@ -1112,6 +1143,39 @@ function MinhaMusicaContent() {
                         {order.musicName?.trim() ? order.subcategory : order.products?.name}
                       </p>
                     </button>
+
+                    {/* Botão IRMÃO da capinha, não filho: botão dentro de
+                        botão é HTML inválido e o clique de dentro dispararia
+                        o de fora.
+
+                        Só SAIR mora aqui. Publicar continua no cartão, com a
+                        caixa e o link do termo — os documentos afirmam que o
+                        consentimento é "livre, informado e inequívoco" e
+                        coletado "em caixa própria e separada"; conceder num
+                        toque de etiqueta contradiz isso. Revogar é o
+                        contrário: o termo promete que o cliente tira "a
+                        qualquer momento e por conta própria". Facilitar a
+                        saída é obrigação; facilitar a entrada é risco. */}
+                    {naRede && (
+                      <button
+                        onClick={() => {
+                          if (confirmando) { tirarDaRede(order.id); return }
+                          setConfirmandoSaida(order.id)
+                          setTimeout(() => setConfirmandoSaida((a) => (a === order.id ? null : a)), 3000)
+                        }}
+                        disabled={saindoDaRede === order.id}
+                        title={confirmando ? "Toque de novo pra tirar da Rede" : "Publicada na Rede Fiz Música — toque pra tirar"}
+                        aria-label={confirmando ? "Confirmar: tirar da Rede Fiz Música" : "Publicada na Rede Fiz Música. Tocar para tirar"}
+                        className={`absolute top-1.5 right-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur transition-colors disabled:opacity-50 ${
+                          confirmando
+                            ? "bg-red-500/90 text-white"
+                            : "bg-black/55 text-fuchsia-200 hover:bg-black/75"
+                        }`}
+                      >
+                        {saindoDaRede === order.id ? "…" : confirmando ? "Tirar?" : "♫ Na Rede"}
+                      </button>
+                    )}
+                    </div>
                   )
                 }
 
