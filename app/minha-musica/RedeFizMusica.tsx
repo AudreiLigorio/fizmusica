@@ -116,17 +116,28 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
   // mais filtragem — os itens vêm prontos do servidor, já paginados.
   // Scroll infinito. `carregando` entra na dependência pra não disparar duas
   // páginas ao mesmo tempo enquanto a primeira ainda está vindo.
+  // Teto de 3 linhas na WEB. No mobile a grade já é uma raia horizontal
+  // (overflow-x-auto), então lá o problema não existe e nada muda.
+  //
+  // Sem o teto, 97 músicas viravam 14 linhas — ~2.856px, mais de 3 telas de
+  // rolagem antes de a playlist do cliente aparecer. Ela ficava inalcançável
+  // na prática.
+  const [verTudo, setVerTudo] = useState(false)
+
   const sentinelaRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const alvo = sentinelaRef.current
     if (!alvo || !temMais || carregando) return
+    // Recolhido, carregar mais é trabalho jogado fora: os itens novos
+    // entrariam num container que não os mostra.
+    if (!verTudo && typeof window !== "undefined" && window.innerWidth >= 640) return
     const obs = new IntersectionObserver(
       (entradas) => { if (entradas[0]?.isIntersecting) carregarMais() },
       { rootMargin: "400px" },
     )
     obs.observe(alvo)
     return () => obs.disconnect()
-  }, [temMais, carregando, carregarMais])
+  }, [temMais, carregando, carregarMais, verTudo])
 
   const itensBusca = items ?? []
 
@@ -260,6 +271,11 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
 
       {/* Pílulas movidas pra FiltrosMusica, logo abaixo da busca. */}
 
+      {/* `max-h` só a partir de sm: no mobile a raia é horizontal e não tem
+          altura pra limitar. 3 linhas = 3x(128 da capa + ~62 de texto) mais
+          os vãos. Todas as linhas de texto têm `truncate`, então a altura da
+          linha é uniforme e o corte cai sempre entre linhas. */}
+      <div className={`relative ${verTudo ? "" : "sm:max-h-[38rem] sm:overflow-hidden"}`}>
       <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
         {visiveis.map((it) => {
           const isPlaying = nowPlaying?.id === it.orderId && playing
@@ -333,6 +349,28 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
           )
         })}
       </div>
+      {/* Degradê no corte: sem ele a linha seguinte fica cortada e parece
+          bug, em vez de "tem mais coisa aqui".
+          Altura CURTA (28px) de propósito: medido, o teto deixa 3 linhas
+          inteiras e ~11px da quarta. Um degradê de 64px cobriria também o
+          rodapé da 3ª linha, apagando o nome do autor de cartões que estão
+          inteiros na tela. */}
+      {!verTudo && (
+        <div className="hidden sm:block pointer-events-none absolute inset-x-0 bottom-0 h-7"
+             style={{ background: "linear-gradient(to bottom, transparent, #07060d)" }} />
+      )}
+      </div>
+
+      {!verTudo && (
+        <div className="hidden sm:flex justify-center mt-3">
+          <button
+            onClick={() => setVerTudo(true)}
+            className="px-5 py-2 rounded-full text-xs font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 transition-colors"
+          >
+            Ver todas as músicas ({total})
+          </button>
+        </div>
+      )}
 
       {/* Paginação. A Rede vem em páginas de 40 do servidor.
           O botão sozinho não bastava: no celular são 40 cartões de rolagem
