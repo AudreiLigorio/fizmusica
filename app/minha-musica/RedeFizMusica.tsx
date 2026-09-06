@@ -166,7 +166,27 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
   // as pílulas moram junto da busca (FiltrosMusica). Por isso aqui não há
   // mais agrupamento nem estado de filtro — a raia mostra o catálogo inteiro.
   const favoritados = itensBusca.filter((it) => it.favorited)
-  const visiveis = itensBusca
+  // Favoritada NÃO repete na grade: ela já tem lugar próprio na prateleira
+  // de cima, e ver o mesmo cartão duas vezes na mesma tela fazia a Rede
+  // parecer menor do que é. O que sobra já vem embaralhado do servidor, então
+  // o espaço liberado é preenchido por outras músicas.
+  //
+  // Isto obriga a prateleira de Favoritas a ter o coração: sem ela na grade,
+  // era o único lugar de onde dava pra desfavoritar — e não tinha o botão.
+  const visiveis = itensBusca.filter((it) => !it.favorited)
+
+  // As duas raias do mobile, montadas AQUI e a partir da posição em
+  // `itensBusca` (a lista completa), não da posição em `visiveis`.
+  //
+  // A diferença importa: favoritar remove um cartão de `visiveis`, e se a
+  // raia viesse do índice filtrado, todos os cartões seguintes trocariam de
+  // linha no mesmo instante — a Rede inteira dava um pulo a cada coração.
+  // A posição em `itensBusca` não muda quando o favorito liga ou desliga, e
+  // a paginação só acrescenta no fim.
+  const raias = [
+    itensBusca.filter((it, i) => i % 2 === 0 && !it.favorited),
+    itensBusca.filter((it, i) => i % 2 === 1 && !it.favorited),
+  ]
 
   return (
     <div className="mb-9">
@@ -266,11 +286,22 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                     >
                       {isPlaying && <div className="absolute inset-0 bg-black/35 rounded-xl flex items-center justify-center text-xl">❚❚</div>}
                     </button>
+                    {/* Desfavoritar mora AQUI porque a grade abaixo deixou de
+                        mostrar o que já é favorito — sem este botão, favoritar
+                        viraria caminho sem volta. */}
+                    <button
+                      type="button"
+                      onClick={() => favoritar(it.orderId)}
+                      aria-label="Remover dos favoritos"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs hover:scale-110 transition-transform"
+                    >
+                      ❤️
+                    </button>
                     <button
                       type="button"
                       onClick={() => abrirAdicionar(it.orderId)}
                       aria-label="Adicionar à playlist"
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 transition-transform"
+                      className="absolute top-1.5 right-8 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 transition-transform"
                     >
                       +
                     </button>
@@ -290,16 +321,27 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
           os vãos. Todas as linhas de texto têm `truncate`, então a altura da
           linha é uniforme e o corte cai sempre entre linhas. */}
       <div className={`relative ${verTudo ? "" : "sm:max-h-[38rem] sm:overflow-hidden"}`}>
-      {/* MOBILE: grade de 2 LINHAS que rola pro lado. `grid-flow-col` enche
-          coluna a coluna (1º em cima, 2º embaixo, 3º em cima…), que é como
-          as prateleiras de streaming se comportam. Antes era raia de 1
-          linha: metade da altura útil desperdiçada e o dobro de arrasto pra
-          ver o mesmo tanto de música.
-          `items-start` porque a linha do grid esticaria os cartões todos à
-          altura do mais alto; na web volta ao `stretch` de sempre.
-          WEB (sm+): `flex-wrap` como já era, com o teto de 3 linhas. */}
-      <div className="grid grid-rows-2 grid-flow-col auto-cols-[8rem] items-start gap-3.5 overflow-x-auto sm:flex sm:flex-wrap sm:items-stretch sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
-        {visiveis.map((it) => {
+      {/* MOBILE: DUAS raias que rolam pro lado de FORMA INDEPENDENTE.
+          Antes era uma grade `grid-flow-col` de 2 linhas: dava as duas
+          linhas, mas as duas andavam grudadas num arrasto só, e o Audrei
+          achou ruim de usar. Duas raias separadas mantêm as duas linhas e
+          devolvem o controle de cada uma.
+
+          A divisão é por PARIDADE do índice na lista completa (ver
+          `raias`, acima), não pela metade: a Rede pagina e acrescenta
+          itens no fim, e cortar ao meio faria os cartões pularem de linha
+          a cada página carregada.
+
+          `sm:contents` some com as duas raias no desktop — os cartões
+          viram filhos diretos do container, que volta a ser o `flex-wrap`
+          de sempre com o teto de 3 linhas. */}
+      <div className="flex flex-col gap-3.5 sm:flex-row sm:flex-wrap sm:gap-3.5 pb-2">
+        {raias.map((raia, n) => (
+          <div
+            key={n}
+            className="flex gap-3.5 overflow-x-auto -mx-5 px-5 sm:contents"
+          >
+            {raia.map((it) => {
           const isPlaying = nowPlaying?.id === it.orderId && playing
           return (
             <div key={it.orderId} className="shrink-0 w-32">
@@ -369,8 +411,11 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
               </p>
             </div>
           )
-        })}
+            })}
+          </div>
+        ))}
       </div>
+
       {/* Degradê no corte: sem ele a linha seguinte fica cortada e parece
           bug, em vez de "tem mais coisa aqui".
           Altura CURTA (28px) de propósito: medido, o teto deixa 3 linhas
