@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
 import { idDeSessao } from "@/lib/track"
+import { extrairCorDaCapa, tom, type CorDaCapa } from "@/lib/corDaCapa"
 import { useCatalogo } from "./CatalogoContext"
 import { useToast } from "./ToastContext"
 import AddToPlaylistModal from "./AddToPlaylistModal"
@@ -97,6 +98,31 @@ export default function MiniPlayer() {
   // próxima música.
   const [sheetOpen, setSheetOpen] = useState(false)
   const [copiado, setCopiado] = useState(false)
+
+  // Cor da capa. Ela dá SÓ o matiz — a luminosidade de cada camada é fixa
+  // aqui embaixo, pra que capa clara não produza fundo claro com texto
+  // branco. Capa cinza (ou faixa sem capa) devolve null e tudo cai nos
+  // valores da marca.
+  const [cor, setCor] = useState<CorDaCapa | null>(null)
+  useEffect(() => {
+    const capa = track?.imageUrl
+    if (!capa) { setCor(null); return }
+    let vivo = true
+    extrairCorDaCapa(capa).then((c) => { if (vivo) setCor(c) })
+    return () => { vivo = false }
+  }, [track?.imageUrl])
+
+  // As três camadas, do mais escuro ao mais claro.
+  //
+  // O problema não era a tela ser escura — era não haver DEGRAU entre as
+  // superfícies. O sheet ia até rgba(10,9,18,.985) sobre um fundo #0b0812:
+  // a mesma cor, separada só por uma borda de 1px. Aqui o fundo fica em 5,5%
+  // de luz e o sheet começa em 19% — diferença que o olho lê como duas
+  // superfícies, e não como um preto só.
+  const FUNDO = tom(cor, 0.055) ?? "#0b0812"
+  const SHEET_TOPO = tom(cor, 0.19) ?? "rgba(30,18,42,0.94)"
+  const SHEET_BASE = tom(cor, 0.115) ?? "rgba(18,14,28,0.985)"
+  const BARRA = tom(cor, 0.145) ?? "#130e1c"
   const sheetTouchY = useRef<number | null>(null)
   useEffect(() => { if (!fullOpen) setSheetOpen(false) }, [fullOpen])
   function onSheetTouchStart(e: React.TouchEvent) { sheetTouchY.current = e.touches[0].clientY }
@@ -322,7 +348,12 @@ export default function MiniPlayer() {
           some no fundo escuro. Mesma armadilha dos modais em portal. */}
       <div
         className="fixed left-0 right-0 bottom-[var(--fm-tabbar)] sm:bottom-0 z-40 border-t border-white/10 px-4 py-2.5 text-white"
-        style={{ background: "#130e1c", backdropFilter: "blur(14px)", ["--fm-tabbar" as string]: "calc(4.15rem + env(safe-area-inset-bottom))" }}
+        // A barra é o que mais se confundia com o preto do site — ela vive
+        // por cima dele o tempo todo. Tingida e mais clara, passa a ser uma
+        // superfície, não uma faixa do fundo. `transition` porque aqui é cor
+        // sólida e a troca de faixa animaria (nos degradês ela salta, junto
+        // com a capa de fundo, que já saltava antes).
+        style={{ background: BARRA, transition: "background-color 500ms ease", backdropFilter: "blur(14px)", ["--fm-tabbar" as string]: "calc(4.15rem + env(safe-area-inset-bottom))" }}
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
           <button onClick={openFull} className="flex items-center gap-3 flex-1 min-w-0 text-left">
@@ -405,7 +436,7 @@ export default function MiniPlayer() {
           no sheet, que tem rolagem própria: ela não disputa altura com
           mais nada. */}
       {fullOpen && (
-        <div className="fixed inset-0 z-50 text-white overflow-hidden" style={{ background: "#0b0812" }}>
+        <div className="fixed inset-0 z-50 text-white overflow-hidden" style={{ background: FUNDO, transition: "background-color 500ms ease" }}>
           {/* Fundo ambiente. `scale` esconde as bordas que o blur deixa
               translúcidas; sem ele aparece uma moldura clara na volta. */}
           {track.imageUrl && (
@@ -422,7 +453,11 @@ export default function MiniPlayer() {
           <div
             aria-hidden="true"
             className="absolute inset-0"
-            style={{ background: "linear-gradient(180deg, rgba(11,8,18,.45) 0%, rgba(11,8,18,.72) 42%, #0b0812 100%)" }}
+            // O degradê termina no FUNDO tingido, não em #0b0812. Antes ele
+            // apagava a cor da capa a partir de 42% da altura — ela só
+            // existia no topo, onde a capa nítida já estava. Agora a cor
+            // atravessa a tela inteira.
+            style={{ background: `linear-gradient(180deg, rgba(11,8,18,.40) 0%, rgba(11,8,18,.62) 42%, ${FUNDO} 100%)` }}
           />
 
           {/* Voltar. Aqui ele FECHA a camada e a música segue tocando na
@@ -496,7 +531,7 @@ export default function MiniPlayer() {
           <div
             className="absolute left-0 right-0 bottom-0 z-20 h-[86dvh] rounded-t-3xl border-t border-white/10 transition-transform duration-300 ease-out flex flex-col"
             style={{
-              background: "linear-gradient(180deg, rgba(22,12,32,0.92) 0%, rgba(10,9,18,0.985) 40%)",
+              background: `linear-gradient(180deg, ${SHEET_TOPO} 0%, ${SHEET_BASE} 45%)`,
               backdropFilter: "blur(18px)",
               transform: sheetOpen ? "translateY(0)" : "translateY(calc(100% - 168px))",
             }}
