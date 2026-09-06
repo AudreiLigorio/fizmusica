@@ -786,6 +786,41 @@ function MinhaMusicaContent() {
           <PublicacaoConsent orderId={order.id} initial={!!order.publication_consent} />
         )}
 
+        {/* Convite a indicar, no pico emocional: a música acabou de ficar
+            pronta e a pessoa está ouvindo. UMA LINHA, não o bloco inteiro —
+            o bloco de indicação mora só na Carreira agora, e repetir ele
+            aqui era o que fazia todo mundo aprender a pular.
+
+            Fica FORA do bloco da entrega legada de propósito: entrega tem
+            dois caminhos (VersoesEntregues do Suno e a legada de 1 música),
+            e coisa que roda só num deles já quebrou aqui antes. A guarda é a
+            mesma da autorização acima, então vale para os dois. */}
+        {delivered && order.slug && termAccepted && (
+          <button
+            onClick={() => {
+              irPara("carreira")
+              // Instantâneo e reafirmado, pelo mesmo motivo documentado em
+              // `recarregarEMostrarPedidos`: trocar de aba remonta a tela
+              // inteira, a altura muda por centenas de ms (personagem,
+              // painel, ajuda) e um scroll suave é cortado no meio do
+              // caminho, largando a pessoa em lugar nenhum.
+              const ir = () => document
+                .getElementById("indicar-amigos")
+                ?.scrollIntoView({ behavior: "auto", block: "start" })
+              requestAnimationFrame(() => requestAnimationFrame(ir))
+              setTimeout(ir, 200)
+              setTimeout(ir, 600)
+            }}
+            className="w-full mt-3 flex items-center gap-2 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] px-3 py-2.5 text-left hover:border-fuchsia-400/40 hover:bg-fuchsia-500/[0.10] transition-colors group"
+          >
+            <span className="text-base shrink-0" aria-hidden="true">💜</span>
+            <span className="text-xs text-white/70 flex-1 min-w-0">
+              Gostou? <strong className="text-white/90">Indique um amigo</strong> e ganhe discos.
+            </span>
+            <span className="text-white/30 group-hover:text-fuchsia-300 transition-colors shrink-0">›</span>
+          </button>
+        )}
+
         {/* Detalhes do pedido — resumo do que foi preenchido */}
         <div className="mt-4 pt-3 border-t border-white/5">
           {openDetails[order.id] && <DetalhesPedido order={order} />}
@@ -1216,9 +1251,15 @@ function MinhaMusicaContent() {
               `hidden` em vez de não renderizar: some da tela onde não deve
               aparecer sem destruir o componente — que é justamente o que
               causava a busca repetida. */}
-          <div className={`lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start ${
-            aba === "musicas" && modoResultado ? "hidden" : ""
-          }`}>
+          <div
+            id="indicar-amigos"
+            // As classes de display só entram quando o bloco APARECE. Somar
+            // `hidden` a um `lg:grid` fixo não esconderia nada no desktop: a
+            // regra do `lg:` mora numa media query, que vence o `hidden` por
+            // vir depois na folha de estilo. Trocar o conjunto inteiro evita
+            // a disputa.
+            className={aba === "carreira" ? "lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start" : "hidden"}
+          >
             <ReferirAmigos />
             <DatasEspeciais />
           </div>
