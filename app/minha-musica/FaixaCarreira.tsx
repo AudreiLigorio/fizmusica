@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 
 // Faixa de carreira no topo da Rede Fiz Música.
 //
@@ -33,10 +34,21 @@ export default function FaixaCarreira({ onAbrirCarreira }: { onAbrirCarreira: ()
 
   useEffect(() => {
     let vivo = true
-    fetch("/api/carreira", { headers: { "Content-Type": "application/json" } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => { if (vivo && d?.nivel) setC(d) })
-      .catch(() => { /* sem carreira, a faixa simplesmente não aparece */ })
+    // O token É obrigatório: /api/carreira identifica o cliente pelo header
+    // Authorization, e SEM ele devolve a resposta pública (trilha dos níveis,
+    // sem `nivel`). A primeira versão desta faixa chamava sem token, então
+    // ela nunca aparecia — nem logado. Falhava em silêncio, porque a
+    // resposta era 200 e o componente só via que faltava `nivel`.
+    ;(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.access_token) return
+        const d = await fetch("/api/carreira", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }).then((r) => (r.ok ? r.json() : null))
+        if (vivo && d?.nivel) setC(d)
+      } catch { /* sem carreira, a faixa simplesmente não aparece */ }
+    })()
     return () => { vivo = false }
   }, [])
 
