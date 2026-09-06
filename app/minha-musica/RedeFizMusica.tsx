@@ -123,8 +123,8 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
   // mais filtragem — os itens vêm prontos do servidor, já paginados.
   // Scroll infinito. `carregando` entra na dependência pra não disparar duas
   // páginas ao mesmo tempo enquanto a primeira ainda está vindo.
-  // Teto de 3 linhas na WEB. No mobile a grade já é uma raia horizontal
-  // (overflow-x-auto), então lá o problema não existe e nada muda.
+  // Teto de 3 linhas na WEB. No mobile a grade rola pro lado (2 linhas em
+  // `overflow-x-auto`), então lá não há altura a limitar e nada muda.
   //
   // Sem o teto, 97 músicas viravam 14 linhas — ~2.856px, mais de 3 telas de
   // rolagem antes de a playlist do cliente aparecer. Ela ficava inalcançável
@@ -285,12 +285,20 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
 
       {/* Pílulas movidas pra FiltrosMusica, logo abaixo da busca. */}
 
-      {/* `max-h` só a partir de sm: no mobile a raia é horizontal e não tem
+      {/* `max-h` só a partir de sm: no mobile a grade é horizontal e não tem
           altura pra limitar. 3 linhas = 3x(128 da capa + ~62 de texto) mais
           os vãos. Todas as linhas de texto têm `truncate`, então a altura da
           linha é uniforme e o corte cai sempre entre linhas. */}
       <div className={`relative ${verTudo ? "" : "sm:max-h-[38rem] sm:overflow-hidden"}`}>
-      <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
+      {/* MOBILE: grade de 2 LINHAS que rola pro lado. `grid-flow-col` enche
+          coluna a coluna (1º em cima, 2º embaixo, 3º em cima…), que é como
+          as prateleiras de streaming se comportam. Antes era raia de 1
+          linha: metade da altura útil desperdiçada e o dobro de arrasto pra
+          ver o mesmo tanto de música.
+          `items-start` porque a linha do grid esticaria os cartões todos à
+          altura do mais alto; na web volta ao `stretch` de sempre.
+          WEB (sm+): `flex-wrap` como já era, com o teto de 3 linhas. */}
+      <div className="grid grid-rows-2 grid-flow-col auto-cols-[8rem] items-start gap-3.5 overflow-x-auto sm:flex sm:flex-wrap sm:items-stretch sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
         {visiveis.map((it) => {
           const isPlaying = nowPlaying?.id === it.orderId && playing
           return (
