@@ -5,6 +5,7 @@ import BuscaMusicas from "./BuscaMusicas"
 import FiltrosMusica from "./FiltrosMusica"
 import ResultadosBusca from "./ResultadosBusca"
 import RedeFizMusica from "./RedeFizMusica"
+import FaixaCarreira from "./FaixaCarreira"
 import { useCatalogo, casaFiltroCliente } from "./CatalogoContext"
 import { combina } from "@/lib/busca"
 import type { LibraryTrack } from "./MinhasMusicas"
@@ -26,6 +27,7 @@ export default function AbaMusicas({
   onPlaylistsChanged,
   onPrecisaLogin,
   onModoResultado,
+  onAbrirCarreira,
   children,
 }: {
   minhas?: LibraryTrack[]
@@ -37,6 +39,8 @@ export default function AbaMusicas({
   // busca — eles não podem ser filhos daqui, senão remontariam a cada troca
   // de aba e refariam as consultas.
   onModoResultado?: (v: boolean) => void
+  // Abre a aba Carreira. Vem de cima porque quem controla as abas é a página.
+  onAbrirCarreira?: () => void
   // O que vem DEPOIS da Rede no modo navegação — é a única parte que muda
   // entre as duas telas (biblioteca do cliente x convite pra criar conta).
   children?: React.ReactNode
@@ -72,6 +76,12 @@ export default function AbaMusicas({
         <ResultadosBusca minhas={minhas} meuApelido={meuApelido} />
       ) : (
         <>
+          {/* Faixa de carreira ANTES da Rede: é a primeira coisa da aba,
+              onde ela cumpre o papel de mostrar que existe uma progressão.
+              Só aparece pra quem tem conta — ela some sozinha se a API não
+              devolver carreira. */}
+          {onAbrirCarreira && <FaixaCarreira onAbrirCarreira={onAbrirCarreira} />}
+
           {/* Rede primeiro (pedido do Audrei): descoberta puxa mais que a
               própria biblioteca, que já é o conteúdo principal da aba
               Pedidos. Mesma ordem nas duas telas. */}

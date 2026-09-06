@@ -1181,6 +1181,7 @@ function MinhaMusicaContent() {
             meuApelido={meuApelido}
             onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)}
             onModoResultado={setModoResultado}
+            onAbrirCarreira={() => irPara("carreira")}
           >
             {/* Minhas músicas & playlists — auto-populado dos pedidos entregues.
                 As raias de playlist (uma por playlist, com as músicas já
