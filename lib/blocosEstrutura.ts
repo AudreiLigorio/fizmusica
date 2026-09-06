@@ -11,6 +11,7 @@
 //   Pagode     silêncio normal 6s   → Solo de Cavaquinho 25/22
 //   Sertanejo  silêncio normal 11s  → Solo de Viola 22/43
 //   MPB        silêncio normal 6s   → Solo de Piano 29/30 · Violão Solo 17/25 · Intro Instrumental 33/29
+//   Gospel     silêncio normal 4s   → Solo de Órgão 29/22 · Solo de Violino 40/22
 //
 // REPROVADOS, e por quê:
 //   Solo de Bateria      — o Suno abre o espaço mas preenche com o
@@ -23,9 +24,22 @@
 //                        — instáveis: funcionam numa versão e falham na outra.
 //   Quebra de Percussão, Intro no Pagode
 //                        — sem efeito medível.
+//   Coral (Gospel)       — a densidade harmônica CAIU no trecho marcado
+//                          (7,3 e 8,0 contra 12,8 do controle). Mais vozes
+//                          deveriam adensar; o dado aponta o contrário.
+//   Crescendo (Gospel)   — fez o OPOSTO do prometido: a energia DESCE no
+//                          terço final (inclinação −0,73 e −0,63) enquanto
+//                          no controle ela sobe (+0,18).
+//   Dueto (Sertanejo)    — densidade 11,1 e 13,8 contra 14,6 do controle do
+//                          mesmo estilo. Sem sinal de segunda voz.
+//   Sintetizador, Final Instrumental (Pop) — instável e sem efeito.
+//   Build, Quebra Instrumental (Eletrônica) — o CONTROLE do gênero já tem
+//                          31s de instrumental natural, então este método
+//                          não consegue julgar. Eletrônica exige outra
+//                          medição; não é "reprovado", é "não sei".
 //
-// Gospel e Pop ainda não têm bloco aprovado. Aparecer sem opção é melhor que
-// oferecer algo que não acontece.
+// Pop, Reggae e Eletrônica seguem sem bloco aprovado. Aparecer sem opção é
+// melhor que oferecer algo que não acontece.
 
 export type Bloco = { tag: string; label: string; ajuda: string }
 
@@ -40,6 +54,10 @@ const POR_ESTILO: { casa: RegExp; blocos: Bloco[] }[] = [
   ]},
   { casa: /sertanejo|caipira/i, blocos: [
     { tag: "Solo de Viola", label: "Solo de viola", ajuda: "um solo no meio da música" },
+  ]},
+  { casa: /gospel|worship/i, blocos: [
+    { tag: "Solo de Órgão",   label: "Solo de órgão",   ajuda: "um solo no meio da música" },
+    { tag: "Solo de Violino", label: "Solo de violino", ajuda: "um solo no meio da música" },
   ]},
   { casa: /mpb|bossa/i, blocos: [
     { tag: "Solo de Piano",      label: "Solo de piano",       ajuda: "um solo no meio da música" },
