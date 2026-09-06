@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { QRCodeSVG } from "qrcode.react"
 import PhotoCarousel from "./PhotoCarousel"
 
@@ -164,6 +165,44 @@ export default function PublicMusicPlayer({
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+
+  /* ───────────────────── voltar (estilo Spotify) ───────────────────── */
+
+  // Esta página tem DOIS públicos, e só um deles tem pra onde voltar:
+  //   - o cliente, que chegou de /minha-musica num link da mesma aba;
+  //   - quem recebeu o link no WhatsApp, pra quem esta página É o destino.
+  // Um "voltar" pro segundo caso jogaria a pessoa pra fora do site (ou pra
+  // lugar nenhum), então o botão só existe quando o referrer é nosso.
+  // Em efeito colateral bom: ninguém que ganhou a música vê um controle que
+  // não serve pra nada.
+  const router = useRouter()
+  const [podeVoltar, setPodeVoltar] = useState(false)
+  useEffect(() => {
+    try {
+      setPodeVoltar(document.referrer.startsWith(window.location.origin))
+    } catch { /* referrer bloqueado: sem botão, que é o estado seguro */ }
+  }, [])
+
+  function voltar() {
+    // Aberto em aba nova (ou histórico podado), back não tem pra onde ir.
+    if (window.history.length > 1) router.back()
+    else router.push("/minha-musica?aba=pedidos")
+  }
+
+  // Chevron pra BAIXO, como no Spotify: aqui ele fecha uma tela cheia e
+  // devolve a pessoa pra lista de onde ela veio, que é a mesma leitura.
+  const botaoVoltar = podeVoltar ? (
+    <button
+      onClick={voltar}
+      aria-label="Voltar"
+      className="absolute top-8 left-4 lg:top-6 lg:left-6 z-30 w-10 h-10 rounded-full flex items-center justify-center bg-black/35 backdrop-blur text-white/85 hover:text-white hover:bg-black/55 transition-colors"
+    >
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M6 9l6 6 6-6" />
+      </svg>
+    </button>
+  ) : null
 
   /* ───────────────────── blocos reutilizáveis ───────────────────── */
 
@@ -338,6 +377,8 @@ export default function PublicMusicPlayer({
     <div className="relative isolate min-h-[100dvh] bg-[#07060d] text-white overflow-hidden">
       <AnimatedBg />
 
+      {botaoVoltar}
+
       <audio
         ref={audioRef}
         src={music.mp3Url || undefined}
@@ -379,7 +420,9 @@ export default function PublicMusicPlayer({
         <div className="absolute inset-0 z-[5] pointer-events-none" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 30%, transparent 45%, rgba(0,0,0,0.85) 100%)" }} />
 
         {/* Topo — nome */}
-        <div className="relative z-10 pt-10 px-6">{titleBlock}</div>
+        {/* px maior quando o botão aparece: o nome é centralizado e um nome
+            longo passaria por baixo do chevron. */}
+        <div className={`relative z-10 pt-10 ${podeVoltar ? "px-16" : "px-6"}`}>{titleBlock}</div>
 
         {/* Bottom sheet */}
         <div
