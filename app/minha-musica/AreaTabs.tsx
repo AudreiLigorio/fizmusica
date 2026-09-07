@@ -10,6 +10,11 @@
 // Rede e quer entender o produto.
 export type Aba = "home" | "pedidos" | "musicas" | "carreira"
 
+// O rosa dos itens é #ff5c94, não o #f0196b da marca: sobre a barra o rosa da
+// marca dá contraste 3,98 — o mesmo do branco 40% que ele veio substituir, e
+// abaixo do mínimo de 4,5. Ele é cor de PREENCHIMENTO (funciona de fundo, com
+// branco por cima, como no "+"), não de texto sobre escuro. O gradiente segue
+// intacto onde ele é fundo.
 const S = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
 
 function IconHome() {
@@ -89,16 +94,16 @@ export function TabBarMobile({
   return (
     <nav
       aria-label="Seções da sua área"
-      className="sm:hidden fixed left-0 right-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/10 px-1 pt-2
-                 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-32 after:bg-[#130e1c]"
-      style={{ background: "#130e1c", paddingBottom: "calc(0.6rem + env(safe-area-inset-bottom))" }}
+      className="sm:hidden fixed left-0 right-0 bottom-0 z-40 grid grid-cols-5 border-t border-white/[0.14] px-1 pt-2
+                 after:content-[''] after:absolute after:left-0 after:right-0 after:top-full after:h-32 after:bg-[#241a33]"
+      style={{ background: "#241a33", paddingBottom: "calc(0.6rem + env(safe-area-inset-bottom))" }}
     >
       <TabBtn {...ABAS[0]} ativa={aba === ABAS[0].id} onClick={() => onAba(ABAS[0].id)} />
       <TabBtn {...ABAS[1]} ativa={aba === ABAS[1].id} onClick={() => onAba(ABAS[1].id)} />
 
       {/* "Criar" não é aba, é atalho pra outro fluxo — por isso o tratamento
           visual diferente, senão o cliente estranha o menu sumir lá dentro. */}
-      <button onClick={onCriar} className="flex flex-col items-center gap-1 text-[9px] font-medium text-white/40 hover:text-white/70 transition-colors">
+      <button onClick={onCriar} className="flex flex-col items-center gap-1 text-[10px] font-medium text-[#ff5c94] hover:text-white transition-colors">
         <span
           className="w-[34px] h-[34px] -mt-1 rounded-[11px] flex items-center justify-center text-white"
           style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 3px 12px rgba(240,25,107,.45)" }}
@@ -106,6 +111,7 @@ export function TabBarMobile({
           <IconCriar />
         </span>
         Criar
+        <Traco ativa={false} />
       </button>
 
       <TabBtn {...ABAS[2]} ativa={aba === ABAS[2].id} onClick={() => onAba(ABAS[2].id)} />
@@ -119,12 +125,21 @@ function TabBtn({ label, Icon, ativa, onClick }: { label: string; Icon: () => Re
     <button
       onClick={onClick}
       aria-current={ativa ? "page" : undefined}
-      className={`flex flex-col items-center gap-1 text-[9px] font-medium transition-colors ${ativa ? "text-white" : "text-white/40 hover:text-white/70"}`}
+      className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-colors ${ativa ? "text-white" : "text-[#ff5c94] hover:text-white"}`}
     >
       <Icon />
       {label}
+      <Traco ativa={ativa} />
     </button>
   )
+}
+
+// Com todos os itens em rosa, a cor deixa de dizer em que aba você está — o
+// traço é quem diz. Fica sempre no DOM (transparente quando inativo) pra as
+// cinco colunas terem a mesma altura; se ele só existisse no ativo, a barra
+// pularia a cada troca de aba.
+function Traco({ ativa }: { ativa: boolean }) {
+  return <span className={`h-[2px] w-[18px] rounded-full ${ativa ? "bg-[#ff5c94]" : "bg-transparent"}`} />
 }
 
 // No desktop as abas viram uma linha no topo da própria página. Não entram no
