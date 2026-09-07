@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { blocosMarcados, inserirBloco, semBlocos } from "@/lib/blocosEstrutura"
 import TituloMusica from "./TituloMusica"
 
 type State = {
@@ -112,7 +113,9 @@ export default function LetraPanel({
     if (!flowMode || !onState || !state) return
     const has = !!text.trim()
     const semRev = state.reprocessLeft <= 0
-    const edit = text.trim() !== lastAiText.trim()
+    // Compara SEM as marcações de bloco: marcar um solo é escolha de arranjo,
+    // não edição de verso — não pode exigir revisão da IA (ver semBlocos).
+    const edit = semBlocos(text) !== semBlocos(lastAiText)
     onState({ lyrics: text, canApprove: has && (!edit || semRev) })
   }, [text, lastAiText, state, flowMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -149,6 +152,10 @@ export default function LetraPanel({
       })
       if (!ok) return
     }
+    // A revisão reescreve a letra inteira e leva as marcações junto. Guardamos
+    // o que estava marcado pra devolver depois: o cliente escolheu um solo, não
+    // pediu pra cancelá-lo ao ajustar um verso.
+    const marcados = blocosMarcados(text)
     setBusy("reprocessar"); setError("")
     try {
       const res = await fetch(`/api/orders/${orderId}/letra/reprocessar`, {
@@ -167,7 +174,11 @@ export default function LetraPanel({
         setText(accumulated)
       })
       if (streamErr) { setError(friendlyError(streamErr)); return }
-      setLastAiText(accumulated.trim())
+      // `lastAiText` fica com a saída CRUA da IA e o texto com os blocos de
+      // volta — assim os dois continuam iguais aos olhos de `editado`.
+      const limpo = accumulated.trim()
+      setLastAiText(limpo)
+      if (marcados.length) setText(marcados.reduce((t, tag) => inserirBloco(t, tag), limpo))
       setInstrucao("")
       if (meta && state) {
         setState({ ...state, reprocessLeft: (meta.reprocessLeft as number) ?? state.reprocessLeft, reprocessUsed: (meta.reprocessUsed as number) ?? state.reprocessUsed })
@@ -220,7 +231,7 @@ export default function LetraPanel({
 
   const hasLyrics = !!text.trim()
   const semRevisoes = state.reprocessLeft <= 0
-  const editado = text.trim() !== lastAiText.trim()
+  const editado = semBlocos(text) !== semBlocos(lastAiText)
   const podeAprovar = !editado || semRevisoes
 
   return (

@@ -95,6 +95,25 @@ export function removerBloco(letra: string, tag: string): string {
     .trim()
 }
 
+// Todas as tags oferecidas, de todos os gêneros.
+const TODAS_AS_TAGS = POR_ESTILO.flatMap((x) => x.blocos.map((b) => b.tag))
+
+// A letra SEM as marcações de bloco — é assim que ela é comparada com a
+// última saída da IA. Marcar um solo não é "editar a letra": nenhum verso
+// muda, é escolha de arranjo. Sem essa normalização o botão de bloco derruba
+// o `canApprove`, e o cliente é mandado gastar uma das 3 revisões da IA pra
+// "consertar" o que ele acabou de escolher — e a revisão reescreve a letra e
+// leva a marcação junto, então a escolha dele some sem explicação.
+export function semBlocos(letra: string): string {
+  return TODAS_AS_TAGS.reduce((t, tag) => removerBloco(t, tag), letra)
+}
+
+// Quais blocos estão marcados agora — usado pra devolvê-los depois de uma
+// revisão da IA, que reescreve o texto inteiro.
+export function blocosMarcados(letra: string): string[] {
+  return TODAS_AS_TAGS.filter((tag) => temBloco(letra, tag))
+}
+
 export function temBloco(letra: string, tag: string): boolean {
   return new RegExp(`^\\[${tag}\\]$`, "mi").test(letra)
 }
