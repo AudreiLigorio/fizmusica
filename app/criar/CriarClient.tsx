@@ -123,6 +123,15 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   // Nome vem preenchido mas segue editável: o do cadastro (Google) nem sempre
   // é como a pessoa quer ser chamada.
   const [contaEmail, setContaEmail] = useState<string | null>(null)
+
+  // Logado, o e-mail da CONTA manda — inclusive sobre o que veio da sessão
+  // salva. `resumeSessionData` reescreve `email` com o que estava gravado, que
+  // pode ser vazio (sessão começada antes do login, ou lead pulado) e roda
+  // DEPOIS do efeito que lê a sessão do Supabase. O resultado era uma tela em
+  // que o e-mail aparece preenchido — porque o que se vê ali é o `contaEmail`,
+  // outro estado — e o "Continuar" reprovava um campo que o cliente não tem
+  // como corrigir: logado, não existe input de e-mail pra digitar.
+  const emailEfetivo = (contaEmail ?? email).trim()
   const [orderId, setOrderId] = useState<string | null>(null)
   // Plano que a pessoa já escolheu na vitrine da home (veio em ?produto=).
   // Guardado em ESTADO, não lido do `searchParams` na hora de submeter: o
@@ -171,7 +180,14 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     })()
   }, [])
 
-  useEffect(() => { if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }) }, [error])
+  // O contador existe porque a mensagem costuma se repetir: o cliente clica em
+  // "Continuar", lê nada e clica de novo. `setError("")` seguido de
+  // `setError(mesma)` no mesmo clique é batched — o estado final é igual ao
+  // anterior, React não re-renderiza e o efeito não roda, então o aviso não
+  // volta pra tela. Do segundo clique em diante o botão parecia morto.
+  const [errorSeq, setErrorSeq] = useState(0)
+  function mostrarErro(msg: string) { setError(msg); setErrorSeq((n) => n + 1) }
+  useEffect(() => { if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }) }, [error, errorSeq])
 
   // Session persistence
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -584,14 +600,14 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
 
     if (step === 1) {
       if (!selectedContext || !selectedSubcategory) {
-        setError("Selecione uma ocasião para continuar.")
+        mostrarErro("Selecione uma ocasião para continuar.")
         return
       }
     }
 
     if (step === 2) {
       if (!answers[currentQuestion] || answers[currentQuestion].trim().length < 3) {
-        setError("Responda a pergunta para continuar.")
+        mostrarErro("Responda a pergunta para continuar.")
         return
       }
 
@@ -607,28 +623,28 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
 
     if (step === 3) {
       if (!musicalStyle || !voiceType || !emotion) {
-        setError("Escolha todas as opções musicais.")
+        mostrarErro("Escolha todas as opções musicais.")
         return
       }
     }
 
     if (step === 4) {
-      if (!nome.trim() || !email.trim() || !whatsapp.trim()) {
-        setError("Preencha todos os seus dados.")
+      if (!nome.trim() || !emailEfetivo || !whatsapp.trim()) {
+        mostrarErro("Preencha todos os seus dados.")
         return
       }
       if (!honoreeName.trim()) {
-        setError("Informe para quem é essa música.")
+        mostrarErro("Informe para quem é essa música.")
         return
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(email)) {
-        setError("E-mail inválido.")
+      if (!emailRegex.test(emailEfetivo)) {
+        mostrarErro("E-mail inválido.")
         return
       }
       const whatsappRegex = /^\(\d{2}\) 9\d{4}-\d{4}$/
       if (!whatsappRegex.test(whatsapp)) {
-        setError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX.")
+        mostrarErro("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX.")
         return
       }
     }
@@ -699,14 +715,14 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const handleFinalizar = async () => {
     setError("")
     if (!termsAccepted) {
-      setError("Para continuar, aceite os Termos de Uso e a Política de Privacidade.")
+      mostrarErro("Para continuar, aceite os Termos de Uso e a Política de Privacidade.")
       return
     }
     setSubmitting(true)
 
     const payload: CreateOrderDTO = {
       nome,
-      email,
+      email: emailEfetivo,
       whatsapp,
       context: selectedContext,
       subcategory: selectedSubcategory,
@@ -776,7 +792,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       // moram o cupom e o endereço dos planos com item físico.
       router.push(`/produtos?orderId=${finalOrderId}${planoPre ? `&produto=${encodeURIComponent(planoPre.id)}` : ""}`)
     } catch {
-      setError("Falha de conexão. Verifique sua internet.")
+      mostrarErro("Falha de conexão. Verifique sua internet.")
       setSubmitting(false)
     }
   }
