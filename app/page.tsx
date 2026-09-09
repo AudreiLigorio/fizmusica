@@ -1003,54 +1003,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════
-          CTA FINAL
-      ═══════════════════════════════════════════ */}
-      <section className="max-w-4xl mx-auto px-6 py-14 lg:py-28 text-center">
-        <div className="relative overflow-hidden rounded-3xl p-8 lg:p-14"
-             style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,25,107,0.12)" }}>
-          <div className="pointer-events-none absolute inset-0"
-               style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(240,25,107,0.1) 0%, transparent 65%)" }} />
-
-          <div className="relative space-y-7">
-            <p className="text-xs tracking-[0.3em] uppercase" style={{ ...bodyFont, color: "#f0196b" }}>
-              Comece agora
-            </p>
-            <h2 className="font-light text-white/90 leading-tight"
-                style={{ ...displayFont, fontSize: "clamp(2.5rem, 5vw, 4.5rem)" }}>
-              Emocione agora<br />
-              <em style={{ color: "#f0196b" }}>quem você ama.</em>
-            </h2>
-            <p className="text-white/60 text-sm max-w-sm mx-auto leading-relaxed" style={bodyFont}>
-              Fácil, rápido e completamente personalizado. Será único e inesquecível.
-            </p>
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <button
-                onClick={() => { track("cta_criar", "home"); router.push("/criar") }}
-                className="text-white px-8 py-3.5 rounded-xl transition-all duration-200 hover:brightness-110 active:scale-[0.97] shadow-[0_6px_28px_rgba(240,25,107,0.4)]"
-                style={{
-                  ...bodyFont,
-                  background: "linear-gradient(135deg, #f0196b 0%, #d946ef 100%)",
-                  fontSize: "0.9375rem",
-                  fontWeight: 600,
-                  letterSpacing: "0.02em",
-                  boxShadow: "0 8px 32px rgba(240,25,107,0.4)",
-                }}
-              >
-                Criar minha música ❤️
-              </button>
-              <button
-                onClick={() => router.push("/quem-somos")}
-                className="px-8 py-3.5 rounded-xl text-sm font-medium text-white/60 hover:text-white transition-colors"
-                style={{ ...bodyFont, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
-              >
-                Quem somos →
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <Footer />
       <BarraHome />
     </div>
