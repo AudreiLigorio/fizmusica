@@ -22,6 +22,7 @@ type Exemplo = {
 }
 
 const EXEMPLOS: Exemplo[] = [
+  { slug: "kobra",   nome: "Kobra",   musica: "Cores de Amor e Esperança", ocasiao: "Homenagem a um amigo", duracao: "2:40", grad: "linear-gradient(155deg,#1b1630 0%,#c9a227 55%,#f0e0a8 100%)" },
   { slug: "pamela",  nome: "Pamela",  musica: "Meu Melhor Talento",     ocasiao: "Pedido de namoro", duracao: "0:40", grad: "linear-gradient(155deg,#3d1533 0%,#c8447a 55%,#f3b26e 100%)" },
   { slug: "eduardo", nome: "Eduardo", musica: "O Farol do Meu Mundo",   ocasiao: "Dia dos Pais",     duracao: "0:40", grad: "linear-gradient(155deg,#12222f 0%,#3c6b74 48%,#e3b579 100%)" },
   { slug: "familia", nome: "Família", musica: "A Doce Espera de Beatriz", ocasiao: "Chá revelação",  duracao: "0:40", grad: "linear-gradient(135deg,#f7bcd8 0%,#ddc9f4 52%,#a8d3f0 100%)" },
