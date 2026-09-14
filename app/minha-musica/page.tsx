@@ -477,7 +477,9 @@ function MinhaMusicaContent() {
 
   // Sem conta: a mesma casa, com as portas pessoais vazias. Antes daqui saía
   // um spinner infinito — o visitante batia numa tela travada.
-  if (!user) return <AreaPublica abaInicial={abaDaUrl} />
+  // O visitante cai noutro componente — e o player (e a travada) existem lá
+  // também, já que a Rede toca sem conta.
+  if (!user) return <><DiagToques /><AreaPublica abaInicial={abaDaUrl} /></>
 
   const firstName = (user.user_metadata?.full_name as string)?.split(" ")[0] || user.email?.split("@")[0]
 
@@ -909,7 +911,7 @@ function MinhaMusicaContent() {
       </div>
 
       {/* Diagnóstico temporário da travada pós-compartilhamento — só com ?diag=1 */}
-      {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("diag") === "1" && <DiagToques />}
+      <DiagToques />
 
       {/* Popup: vincular pedido recém-comprado com e-mail diferente */}
       {qrUrl && <QRModal url={qrUrl} onClose={() => setQrUrl(null)} />}

@@ -18,6 +18,14 @@ import { useEffect, useState } from "react"
 export default function DiagToques() {
   const [n, setN] = useState(0)
   const [alvo, setAlvo] = useState("—")
+  // Ligado DEPOIS da montagem, nunca durante a renderização: ler
+  // `window.location` no corpo do componente diverge do que o servidor
+  // desenhou, e o React descarta a diferença na hidratação — foi por isso que
+  // o painel não apareceu na primeira tentativa.
+  const [ligado, setLigado] = useState(false)
+  useEffect(() => {
+    setLigado(new URLSearchParams(window.location.search).get("diag") === "1")
+  }, [])
 
   useEffect(() => {
     function descreve(el: Element | null): string {
@@ -42,6 +50,8 @@ export default function DiagToques() {
       window.removeEventListener("pointerdown", onToque as EventListener, true)
     }
   }, [])
+
+  if (!ligado) return null
 
   return (
     <div className="pointer-events-none fixed top-0 left-0 right-0 z-[999] px-2 py-1 text-[10px] leading-tight"
