@@ -18,6 +18,10 @@ import { useEffect, useState } from "react"
 export default function DiagToques() {
   const [n, setN] = useState(0)
   const [alvo, setAlvo] = useState("—")
+  // Contadores separados por tipo: é isso que diz ONDE a sequência morre.
+  // Se `dn` sobe e `up`/`clk` ficam parados, o Safari está encerrando o toque
+  // com `cancel` — e nenhum botão que espere o soltar vai funcionar.
+  const [ev, setEv] = useState({ dn: 0, up: 0, cancel: 0, clk: 0 })
   // Ligado DEPOIS da montagem, nunca durante a renderização: ler
   // `window.location` no corpo do componente diverge do que o servidor
   // desenhou, e o React descarta a diferença na hidratação — foi por isso que
@@ -41,16 +45,26 @@ export default function DiagToques() {
       const p = "touches" in e ? e.touches[0] : e
       if (!p) return
       setN((x) => x + 1)
+      if (e.type === "pointerdown") setEv((x) => ({ ...x, dn: x.dn + 1 }))
       // `elementFromPoint` diz quem está POR CIMA naquele ponto — que pode
       // não ser o mesmo que recebeu o evento.
       setAlvo(`${descreve(e.target)} | topo: ${descreve(document.elementFromPoint(p.clientX, p.clientY))}`)
     }
+    const conta = (k: "dn" | "up" | "cancel" | "clk") => () => setEv((x) => ({ ...x, [k]: x[k] + 1 }))
+    const up = conta("up"), cancel = conta("cancel"), clk = conta("clk")
+
     // Fase de captura: pega o evento antes de qualquer `stopPropagation`.
     window.addEventListener("touchstart", onToque as EventListener, true)
     window.addEventListener("pointerdown", onToque as EventListener, true)
+    window.addEventListener("pointerup", up, true)
+    window.addEventListener("pointercancel", cancel, true)
+    window.addEventListener("click", clk, true)
     return () => {
       window.removeEventListener("touchstart", onToque as EventListener, true)
       window.removeEventListener("pointerdown", onToque as EventListener, true)
+      window.removeEventListener("pointerup", up, true)
+      window.removeEventListener("pointercancel", cancel, true)
+      window.removeEventListener("click", clk, true)
     }
   }, [])
 
@@ -59,7 +73,7 @@ export default function DiagToques() {
   return (
     <div className="pointer-events-none fixed top-0 left-0 right-0 z-[999] px-2 py-1 text-[10px] leading-tight"
          style={{ background: "rgba(0,0,0,0.85)", color: "#7CFC98", fontFamily: "monospace" }}>
-      toques: {n} · {alvo}
+      dn:{ev.dn || n} up:{ev.up} cancel:{ev.cancel} clk:{ev.clk} · {alvo}
     </div>
   )
 }

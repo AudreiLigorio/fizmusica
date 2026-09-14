@@ -173,7 +173,16 @@ export default function MiniPlayer() {
   const ultimoToque = useRef(0)
   function aoAcionar(fn: () => void) {
     return {
-      onPointerUp: (e: React.PointerEvent) => {
+      // DESCER o dedo, não soltar. O `pointerup` não vem: quando o Safari
+      // fica nesse estado ele encerra a sequência com `pointercancel`, e foi
+      // por isso que agir no `up` não resolveu nada — a primeira tentativa
+      // deste conserto falhou exatamente aqui. O único evento que o painel de
+      // diagnóstico provou que chega é o de descida.
+      //
+      // O risco de agir na descida é acionar sem querer ao começar um
+      // arrasto. Nestes botões ele é pequeno: são alvos redondos de 44px que
+      // não vivem dentro de lista rolável.
+      onPointerDown: (e: React.PointerEvent) => {
         if (e.pointerType === "mouse") return
         ultimoToque.current = Date.now()
         fn()
