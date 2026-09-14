@@ -14,6 +14,15 @@ export type PlayableTrack = {
   // o autor optou por mostrar (profiles.mostrar_apelido) ou é o próprio
   // cliente ouvindo a música dele.
   apelido?: string | null
+  // "Tem endereço público" — é o que decide se cabe compartilhar.
+  //
+  // Antes isso era deduzido procurando a faixa na lista carregada do
+  // catálogo, e a lista é PAGINADA de 40 em 40 e muda com busca e filtro:
+  // música vinda do Top 10, da busca ou da própria biblioteca não estava
+  // lá, e o botão de compartilhar simplesmente sumia ("hora aparece o botão
+  // de compartilhar e outras não" — Audrei, 2026-09-14). Agora a faixa sabe
+  // de si.
+  publico?: boolean
 }
 
 type LrcLine = { time: number; text: string }

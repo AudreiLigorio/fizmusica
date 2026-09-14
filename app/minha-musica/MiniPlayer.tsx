@@ -88,6 +88,10 @@ export default function MiniPlayer() {
   const { items, alternarFavorito } = useCatalogo()
   const { showToast } = useToast()
   const naRede = items?.find((i) => i.orderId === track?.id) ?? null
+  // Compartilhar depende de TER endereço público, não de a faixa estar na
+  // página do catálogo que por acaso foi carregada. O `naRede` segue valendo
+  // pro coração, que precisa do estado de favorito — esse sim mora na lista.
+  const publico = track?.publico ?? !!naRede
   const [playlists, setPlaylists] = useState<{ id: string; nome: string; track_order_ids: string[] }[] | null>(null)
   const [escolhendoPlaylist, setEscolhendoPlaylist] = useState(false)
   const [criandoPlaylist, setCriandoPlaylist] = useState(false)
@@ -640,7 +644,7 @@ export default function MiniPlayer() {
                   vai pro /rede/{id}, que toca sem conta, com um card montado
                   pela marca (ver opengraph-image.tsx).
                   NUNCA o /m/{slug} — aquele mostra as fotos do cliente. */}
-              {naRede && (
+              {publico && (
                 <button
                   {...aoAcionar(compartilhar)}
                   aria-label="Compartilhar esta música"
@@ -790,7 +794,7 @@ export default function MiniPlayer() {
               className="shrink-0 px-6 pt-3 border-t border-white/10 space-y-3"
               style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
             >
-              {naRede && (
+              {publico && (
                 <div className="flex items-center justify-center gap-3">
                   <button
                     onClick={async () => {

@@ -176,6 +176,9 @@ export type Unificada = {
 }
 
 type TrackDoCliente = {
+  // Vem de orders.publication_consent — a mesma trava que faz a música
+  // aparecer na Rede e dá endereço público a ela.
+  publico?: boolean
   id: string
   title: string
   occasion: string
@@ -196,7 +199,7 @@ export function mesclar(
     .map((t) => ({
       id: t.id, title: t.title, occasion: t.occasion, musicalStyle: t.musicalStyle,
       imageUrl: t.imageUrl, audioUrl: t.audioUrl as string, lyrics: t.lyrics,
-      lyricsLrc: t.lyricsLrc, apelido: meuApelido, minha: true,
+      lyricsLrc: t.lyricsLrc, apelido: meuApelido, minha: true, publico: !!t.publico,
     }))
 
   // Música sua publicada na Rede está nas duas listas — aparecer duas vezes
@@ -207,7 +210,7 @@ export function mesclar(
     .map((i) => ({
       id: i.orderId, title: i.title, occasion: i.occasion, musicalStyle: i.musicalStyle,
       imageUrl: i.imageUrl, audioUrl: i.audioUrl, lyrics: i.lyrics ?? null,
-      lyricsLrc: i.lyricsLrc ?? null, apelido: i.authorApelido, minha: false,
+      lyricsLrc: i.lyricsLrc ?? null, apelido: i.authorApelido, minha: false, publico: true,
     }))
 
   // As do cliente primeiro: quem procura algo que tem em casa espera achar o

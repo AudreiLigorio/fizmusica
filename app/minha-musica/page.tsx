@@ -536,6 +536,7 @@ function MinhaMusicaContent() {
         audioUrl: principal?.audioUrl ?? o.mp3Url ?? null,
         lyrics: o.lyrics ?? null,
         lyricsLrc: o.lyricsLrc ?? null,
+        publico: !!o.publication_consent,
       }
     })
 
