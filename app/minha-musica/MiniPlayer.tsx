@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { usePlayer } from "./PlayerContext"
+import { usePlayer, type PlayableTrack } from "./PlayerContext"
 import { idDeSessao } from "@/lib/track"
 import { extrairCorDaCapa, tom, type CorDaCapa } from "@/lib/corDaCapa"
 import { useCatalogo } from "./CatalogoContext"
@@ -76,7 +76,7 @@ function fmt(s: number): string {
 }
 
 export default function MiniPlayer() {
-  const { track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef, proximaTrack, temProxima, temAnterior, proxima, anterior, toggle, toggleRepeat, seek, openFull, closeFull, onTimeUpdate } = usePlayer()
+  const { track, playing, progress, duration, activeLine, lines, fullOpen, repeat, audioRef, proximaTrack, temProxima, temAnterior, proxima, anterior, toggle, toggleRepeat, seek, openFull, closeFull, onTimeUpdate, playTrack } = usePlayer()
   const activeLineRef = useRef<HTMLParagraphElement>(null)
 
   // Ações do player aberto: as MESMAS do card (favoritar e adicionar à
@@ -242,10 +242,39 @@ export default function MiniPlayer() {
   // bolso.
   const retomarAoVoltar = useRef(false)
 
+  // Plano B: a aba volta quebrada, então ela é refeita.
+  //
+  // Três tentativas antes desta falharam, e cada uma eliminou uma hipótese:
+  // agir no `pointerup` (não vem), agir na descida do dedo (não bastou),
+  // pausar a música pra aba suspender de verdade (não bastou). O que resta é
+  // aceitar o fato: depois do Instagram Direct, essa aba não recebe mais
+  // toque, e nada que a gente faça de dentro dela devolve isso.
+  //
+  // Então, ao voltar de um compartilhamento que REALMENTE saiu do navegador,
+  // a página recarrega e restaura faixa, posição e o player aberto. A música
+  // volta pausada — autoplay sem gesto é bloqueado, e mentir no botão seria
+  // pior que um toque a mais.
+  //
+  // O preço: isso também acontece no WhatsApp, onde não era preciso. É o
+  // preço de não ter como perguntar à página se ela ainda recebe toque.
+  const CHAVE_RETOMADA = "fizmusica_retomar_player"
+  const compartilhando = useRef(false)
+  const saiuDoApp = useRef(false)
+  const posicaoPendente = useRef<number | null>(null)
+
   useEffect(() => {
     if (!fullOpen) return
+    function aoSair() {
+      if (document.visibilityState === "hidden" && compartilhando.current) saiuDoApp.current = true
+    }
     function aoVoltar() {
       if (document.visibilityState !== "visible") return
+      if (compartilhando.current && saiuDoApp.current) {
+        compartilhando.current = false
+        saiuDoApp.current = false
+        window.location.reload()
+        return
+      }
       restaurarToques()
       if (retomarAoVoltar.current) {
         retomarAoVoltar.current = false
@@ -257,9 +286,11 @@ export default function MiniPlayer() {
       }
     }
     document.addEventListener("visibilitychange", aoVoltar)
+    document.addEventListener("visibilitychange", aoSair)
     window.addEventListener("pageshow", aoVoltar)
     return () => {
       document.removeEventListener("visibilitychange", aoVoltar)
+      document.removeEventListener("visibilitychange", aoSair)
       window.removeEventListener("pageshow", aoVoltar)
     }
     // `playing` e `toggle` entram nas dependências porque o `toggle` carrega o
@@ -276,6 +307,18 @@ export default function MiniPlayer() {
     const url = `${window.location.origin}/rede/${track.id}`
     const texto = `Ouve essa música que achei na Fiz Música: "${track.title}"`
     if (navigator.share) {
+      // Guardado ANTES da bandeja abrir: depois dela o código pode nem rodar
+      // de novo. A letra sai do pacote — é o campo mais pesado e volta
+      // sozinha pela rota da letra.
+      try {
+        sessionStorage.setItem(CHAVE_RETOMADA, JSON.stringify({
+          track: { ...track, lyrics: null, lyricsLrc: null },
+          posicao: audioRef.current?.currentTime ?? 0,
+          quando: Date.now(),
+        }))
+      } catch { /* sem sessionStorage: segue sem retomada */ }
+      compartilhando.current = true
+      saiuDoApp.current = false
       if (playing) {
         retomarAoVoltar.current = true
         toggle()
@@ -289,6 +332,10 @@ export default function MiniPlayer() {
         // Cancelar sem sair do Safari não dispara `visibilitychange`, então a
         // recuperação roda aqui também — inclusive devolver a música, que
         // senão ficaria pausada por um compartilhamento que nem aconteceu.
+        if (!saiuDoApp.current) {
+          compartilhando.current = false
+          try { sessionStorage.removeItem(CHAVE_RETOMADA) } catch {}
+        }
         restaurarToques()
         if (retomarAoVoltar.current && document.visibilityState === "visible") {
           retomarAoVoltar.current = false
@@ -371,6 +418,35 @@ export default function MiniPlayer() {
     }, 60)
     return () => clearTimeout(t)
   }, [activeLine, fullOpen, sheetOpen])
+
+  // Volta do compartilhamento: refaz o player de onde parou.
+  //
+  // Roda uma vez, na montagem. `playTrack` liga o `playing`, e logo em
+  // seguida `toggle()` desliga — o autoplay sem gesto seria recusado de
+  // qualquer jeito, e o botão mostrando "tocando" com a música parada é
+  // pior do que mostrar "tocar". A posição fica pendente e é aplicada
+  // quando o áudio souber a duração.
+  const jaRestaurou = useRef(false)
+  useEffect(() => {
+    if (jaRestaurou.current) return
+    jaRestaurou.current = true
+    let cru: string | null = null
+    try { cru = sessionStorage.getItem(CHAVE_RETOMADA) } catch { return }
+    if (!cru) return
+    try { sessionStorage.removeItem(CHAVE_RETOMADA) } catch {}
+    try {
+      const d = JSON.parse(cru) as { track: PlayableTrack; posicao: number; quando: number }
+      // Meia hora: acima disso a pessoa não está mais "voltando de um
+      // compartilhamento", e reabrir o player sozinho seria assombração.
+      if (!d?.track?.audioUrl || Date.now() - d.quando > 30 * 60 * 1000) return
+      posicaoPendente.current = d.posicao ?? 0
+      playTrack(d.track)
+      openFull()
+      // Fora do ciclo atual: `playTrack` só liga o `playing` no próximo
+      // render, e desligar antes disso não faria efeito nenhum.
+      setTimeout(() => { ultimaTocada.current = d.track.id; audioRef.current?.pause() }, 0)
+    } catch { /* pacote corrompido: abre normal */ }
+  }, [playTrack, openFull, audioRef])
 
   // Dá play em cada faixa NOVA — inclusive quando a fila emenda sozinha com
   // a tela bloqueada. Um efeito, e não requestAnimationFrame, justamente
@@ -455,7 +531,16 @@ export default function MiniPlayer() {
         src={track.audioUrl}
         loop={repeat}
         onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onTimeUpdate}
+        onLoadedMetadata={() => {
+          onTimeUpdate()
+          // Posição guardada antes do compartilhamento. Só dá pra aplicar
+          // aqui: antes de saber a duração, o navegador ignora `currentTime`.
+          const p = posicaoPendente.current
+          if (p == null) return
+          posicaoPendente.current = null
+          const audio = audioRef.current
+          if (audio && p > 0 && p < (audio.duration || 0)) audio.currentTime = p
+        }}
         // Conta a reprodução quando o áudio COMEÇA de fato, não no clique.
         // O <audio> de pré-carregamento nunca dispara isto (é mudo e nunca
         // recebe play), então a fila não infla o ranking com música que
