@@ -38,11 +38,11 @@ A menção ao **endereço público** está na caixa, e não só no termo, porque
 
 Apresentado **na mesma tela** do Termo de Entrega, mas como aceite **independente**: aceitar a entrega não publica a música, e recusar a publicação não impede a entrega.
 
-### Exibir o apelido na Rede (opcional)
+### Assinatura do autor na Rede
 
-> ☐ Mostrar meu apelido nas músicas que eu publicar na Rede Fiz Música.
+Ao autorizar a publicação, a música passa a aparecer **assinada com o apelido** do Cliente — preenchido com o **primeiro nome** da conta e exibido na tela **antes** do aceite. Pode ser trocado ou desligado a qualquer momento em Carreira → Meu apelido.
 
-Desligado por padrão. É separado da autorização de publicação: aquela cobre a **obra**, esta cobre a **identificação do autor**.
+Quem autorizou a publicação **antes de 14 de setembro de 2026** continua sem assinatura até ativá-la por conta própria, e quem já tinha escolhido um apelido mantém a própria escolha. Nenhum outro dado cadastral é exibido.
 
 ### Lembretes de datas especiais (opcional)
 

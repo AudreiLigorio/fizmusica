@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
+import { apelidoPadrao } from "@/lib/apelido"
 
 export const dynamic = "force-dynamic"
 
@@ -44,5 +45,32 @@ export async function POST(req: NextRequest, { params }: { params: Params }) {
     .eq("id", id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true, consent: !!consent })
+
+  // Assinatura do autor, a partir de 2026-09-14: quem autoriza a publicação
+  // passa a assinar a obra por padrão, com o primeiro nome da conta. Antes o
+  // padrão era o anonimato, e o termo prometia isso com todas as letras.
+  //
+  // A regra só toca em quem NUNCA escolheu apelido. Não é retroatividade
+  // disfarçada: quem já tem apelido gravado já decidiu — inclusive quem
+  // decidiu deixar desligado — e essa escolha manda sobre o padrão novo.
+  let assinatura: string | null = null
+  if (consent) {
+    const { data: perfil } = await supabase
+      .from("profiles").select("apelido, mostrar_apelido").eq("user_id", user.id).maybeSingle()
+
+    if (!perfil?.apelido) {
+      const nome = apelidoPadrao(user.user_metadata?.full_name as string | undefined, user.email)
+      if (nome) {
+        await supabase.from("profiles").upsert(
+          { user_id: user.id, apelido: nome, mostrar_apelido: true, updated_at: new Date().toISOString() },
+          { onConflict: "user_id" },
+        )
+        assinatura = nome
+      }
+    } else if (perfil.mostrar_apelido) {
+      assinatura = perfil.apelido
+    }
+  }
+
+  return NextResponse.json({ ok: true, consent: !!consent, assinatura })
 }

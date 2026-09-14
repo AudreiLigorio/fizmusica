@@ -160,10 +160,12 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
 
   if (error) return { itens: [], erro: error }
 
-  // Apelido do autor: opt-in separado do publication_consent (que só cobre a
-  // música) — mostrar_apelido default false, então maioria dos pedidos não
-  // tem dono identificável (userId nulo, checkout sem conta) nem apelido
-  // preenchido, e isso é o esperado, não um bug.
+  // Apelido do autor. Desde 2026-09-14 quem AUTORIZA a publicação já sai
+  // assinado (primeiro nome da conta, mostrado antes do aceite e desligável
+  // em Carreira) — ver legal/07. O acervo antigo segue anônimo de propósito:
+  // aquelas pessoas aceitaram um texto que prometia o contrário, e a regra
+  // nova não é retroativa. Então pedido sem apelido aqui é o esperado, não um
+  // bug — como também é o caso do checkout sem conta, que nem userId tem.
   const ownerIds = [...new Set((orders ?? []).map((o) => o.userId).filter(Boolean))] as string[]
   type PerfilRow = { user_id: string; apelido: string | null; mostrar_apelido: boolean | null }
   const perfis = await porLotesDeIds<PerfilRow>(ownerIds, (lote) =>

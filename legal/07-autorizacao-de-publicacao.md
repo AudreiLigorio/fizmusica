@@ -1,6 +1,6 @@
 # Termo de Autorização de Publicação e Uso de Conteúdo (Opcional)
 
-Última atualização: Setembro de 2026
+Última atualização: 14 de setembro de 2026
 
 ## 1. Objeto
 
@@ -19,7 +19,9 @@ A divulgação compreende a Obra por inteiro, **trechos** (por exemplo, um recor
 - **As fotos enviadas pelo Cliente.** Elas não são publicadas na Rede Fiz Música nem usadas em peças de divulgação. A imagem que acompanha a Obra na Rede é a **capa gerada automaticamente** pela própria ferramenta de inteligência artificial no momento da produção — não é foto de pessoa alguma.
 - **Os dados cadastrais do Cliente.** Nome completo, e-mail, telefone e endereço nunca são exibidos.
 
-> **Sobre a identificação do autor:** o **apelido** do Cliente **pode** aparecer junto às músicas que ele publica na Rede — mas somente se ele ativar, por conta própria, a opção "Mostrar meu apelido na Rede" no seu perfil. Essa opção vem **desligada**, é independente desta autorização e pode ser desligada a qualquer momento. Com ela desligada, a Obra aparece na Rede sem qualquer identificação do autor.
+> **Sobre a identificação do autor:** ao autorizar a publicação, a Obra passa a aparecer na Rede **assinada com o apelido** do Cliente. Esse apelido é preenchido automaticamente com o **primeiro nome** da conta (nunca o nome completo) e é mostrado ao Cliente **antes** do aceite, na própria tela de autorização. O Cliente pode **trocar o apelido** ou **desativar a assinatura** a qualquer momento, em Carreira → Meu apelido, e a Obra volta a aparecer sem identificação do autor. Nenhum outro dado cadastral é exibido.
+>
+> **Autorizações anteriores a 14 de setembro de 2026** seguem a regra vigente quando foram dadas: a assinatura permanece **desligada** até que o Cliente a ative por conta própria. O mesmo vale para quem já havia escolhido um apelido — a escolha dele prevalece sobre este padrão.
 - **Depoimentos** do Cliente.
 - **O nome do homenageado** como rótulo público da Obra. Quando o título gerado pela IA contém nome próprio, a plataforma exibe um título neutro derivado da ocasião (ex.: "Uma canção de Dia dos Pais") no lugar dele.
 

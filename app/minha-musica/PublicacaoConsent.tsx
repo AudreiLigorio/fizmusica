@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { apelidoPadrao } from "@/lib/apelido"
 
 // Opt-in OPCIONAL de divulgação da obra (música + letra) pela Fiz Música.
-// Livre e revogável. Desligado por padrão. Não divulga a identidade de quem encomendou.
+// Livre e revogável. Desde 2026-09-14 a obra sai ASSINADA com o apelido do
+// autor (primeiro nome da conta), mostrado antes do aceite e desligável em
+// Carreira. Antes disso o padrão era o anonimato — ver legal/07.
 export default function PublicacaoConsent({
   orderId,
   initial,
@@ -15,6 +18,31 @@ export default function PublicacaoConsent({
   const [consent, setConsent] = useState(initial)
   const [saving, setSaving] = useState(false)
   const [savedMsg, setSavedMsg] = useState("")
+  // A assinatura aparece ANTES do aceite, não depois: consentimento informado
+  // é saber o que vai acontecer no momento de decidir. Descobrir o próprio
+  // nome publicado depois do clique é o oposto disso.
+  const [assinatura, setAssinatura] = useState<string | null>(null)
+  const [recusouAssinar, setRecusouAssinar] = useState(false)
+
+  useEffect(() => {
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const u = session?.user
+      if (!u) return
+      const r = await fetch("/api/perfil", {
+        headers: { Authorization: `Bearer ${session?.access_token ?? ""}` },
+      }).then((x) => x.json()).catch(() => null)
+
+      // Apelido já escolhido manda sobre o padrão — inclusive quando a pessoa
+      // desligou a exibição. É a mesma regra que o servidor aplica ao salvar.
+      if (r?.apelido) {
+        setAssinatura(r.mostrarApelido ? r.apelido : null)
+        setRecusouAssinar(!r.mostrarApelido)
+        return
+      }
+      setAssinatura(apelidoPadrao(u.user_metadata?.full_name as string | undefined, u.email))
+    })()
+  }, [])
 
   async function save(next: boolean) {
     setSaving(true)
@@ -73,6 +101,18 @@ export default function PublicacaoConsent({
               Autorizo a divulgação da minha música e letra
             </span>
           </label>
+
+          {(assinatura || recusouAssinar) && (
+            <p className="text-[11px] text-white/45 mt-2 leading-relaxed">
+              {recusouAssinar ? (
+                <>Suas músicas aparecem <strong className="text-white/60">sem identificação do autor</strong> — foi o que você escolheu em Carreira.</>
+              ) : (
+                <>Vai aparecer assinada como <strong className="text-white/70">{assinatura}</strong>.{" "}
+                  <a href="/minha-musica?aba=carreira" className="text-fuchsia-300/80 underline">mudar ou esconder</a>
+                </>
+              )}
+            </p>
+          )}
 
           {savedMsg && <p className="text-xs text-fuchsia-300/80 mt-2">{savedMsg}</p>}
         </div>
