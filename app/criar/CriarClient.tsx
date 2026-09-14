@@ -152,6 +152,11 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const [dadosAbertos, setDadosAbertos] = useState(false)
   const [previaMsg, setPreviaMsg] = useState(0)
 
+  // A tela do passo 1 separa as duas portas; o banco continua com uma lista só.
+  const composicaoLivre = occasions.find((o) => o.label === "Composição Livre")
+  const temas = occasions.filter((o) => o.label !== "Composição Livre")
+  const temaAberto = temas.find((o) => o.label === selectedContext)
+
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
 
@@ -682,6 +687,12 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   /* ================================================= */
 
   function handleSubcategoryClick(sub: WizardSubcategory, contextLabel: string) {
+    // O contexto precisa entrar no ESTADO, não só na sessão salva: é dele que
+    // sai a lista de perguntas do passo 2. Antes dava certo por acidente — o
+    // clique na sanfona já tinha setado o contexto antes da subcategoria. Com
+    // a porta amarela, que vai direto da capa pro passo 2, esse clique deixou
+    // de existir e a tela caía em "Pergunta 1 de 0".
+    setSelectedContext(contextLabel)
     setSelectedSubcategory(sub.label)
     setQuestionStep(0)
     setAnswers({})
@@ -1079,91 +1090,120 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   Qual história você quer transformar em música?
                 </h1>
                 <p className="text-white/55 text-sm">
-                  Você pode criar música para celebrar, homenagear, emocionar, surpreender, se declarar, compor ou só contar uma história para transformar em música.
+                  Escolha por onde começar.
                 </p>
               </div>
 
-              <div className="space-y-2">
-                {occasions.length === 0 ? (
-                  [0, 1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="border border-white/10 bg-black/20 rounded-2xl px-4 py-3.5 animate-pulse">
-                      <div className="h-4 w-40 bg-white/10 rounded mb-2.5" />
+              {/* Duas portas, não uma lista de sete.
+                  A tela separa por INTENÇÃO: quem já compôs (e só precisa da
+                  música) de quem vem presentear (e precisa ser guiado). Antes,
+                  "Composição Livre" era o primeiro item de uma lista onde tudo
+                  pesava igual — o compositor tinha que garimpar a opção dele
+                  no meio de seis temas de homenagem.
+
+                  O amarelo é o mesmo da arte da home (amostrado dos pixels do
+                  letreiro), e o texto por cima dele é escuro: branco sobre
+                  esse amarelo dá 1,9:1 e reprova em legibilidade. */}
+              {occasions.length === 0 ? (
+                <div className="grid lg:grid-cols-2 gap-3">
+                  {[0, 1].map((i) => (
+                    <div key={i} className="border border-white/10 bg-black/20 rounded-2xl p-5 animate-pulse">
+                      <div className="h-4 w-40 bg-white/10 rounded mb-3" />
                       <div className="h-2.5 w-56 bg-white/5 rounded" />
                     </div>
-                  ))
-                ) : [...occasions].sort((a, b) => Number(b.label === "Composição Livre") - Number(a.label === "Composição Livre")).map((occasion) => (
-                  <div
-                    key={occasion.id}
-                    className={`border rounded-2xl overflow-hidden transition-all ${
-                      selectedContext === occasion.label
-                        ? "border-pink-500 bg-pink-500/5"
-                        : occasion.label === "Composição Livre"
-                          ? "border-pink-500/40 bg-pink-500/[0.04]"
-                          : "border-white/10 bg-black/20"
-                    }`}
-                  >
+                  ))}
+                </div>
+              ) : (
+                <div className="grid lg:grid-cols-2 gap-3 items-start">
+
+                  {/* ── Porta 1: quem já tem a letra ── */}
+                  {composicaoLivre && composicaoLivre.wizard_subcategories[0] && (
                     <button
-                      onClick={() =>
-                        setSelectedContext(
-                          selectedContext === occasion.label ? "" : occasion.label
-                        )
-                      }
-                      className="w-full px-4 py-3.5 flex items-start justify-between text-left gap-3"
+                      onClick={() => handleSubcategoryClick(composicaoLivre.wizard_subcategories[0], composicaoLivre.label)}
+                      className="text-left rounded-2xl p-5 transition-all hover:brightness-110 active:scale-[0.99]"
+                      style={{ background: "rgba(248,171,8,0.06)", border: "1px solid rgba(248,171,8,0.45)" }}
                     >
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-base font-semibold mb-1.5">
-                          {occasion.emoji} {occasion.label}
-                        </h2>
-                        {selectedContext !== occasion.label && (
-                          occasion.label === "Composição Livre" ? (
-                            <p className="text-[10px] leading-relaxed" style={{ color: "rgba(255,255,255,0.6)" }}>
-                              Componha a sua música do jeito que quiser, ou escreva uma história para virar música.
-                            </p>
-                          ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {occasion.wizard_subcategories.slice(0, 4).map((sub, i) => (
-                              <span key={sub.id} className="text-[10px]"
-                                style={{ color: "rgba(255,255,255,0.55)" }}>
-                                {sub.label}{i < Math.min(3, occasion.wizard_subcategories.length - 1) ? " ·" : ""}
-                              </span>
-                            ))}
-                            {occasion.wizard_subcategories.length > 4 && (
-                              <span className="text-[10px]"
-                                style={{ color: "rgba(240,25,107,0.55)" }}>
-                                +{occasion.wizard_subcategories.length - 4} mais
-                              </span>
-                            )}
-                          </div>
-                          )
-                        )}
-                      </div>
-                      <span className="text-lg text-pink-500 shrink-0 mt-0.5">
-                        {selectedContext === occasion.label ? "−" : "+"}
+                      <span className="inline-block text-[9px] uppercase tracking-[0.12em] rounded-full px-2.5 py-1 mb-3"
+                            style={{ color: "#f8ab08", border: "1px solid rgba(248,171,8,0.4)" }}>
+                        Para quem compõe
+                      </span>
+                      <h2 className="text-base font-semibold mb-1.5 flex items-center gap-2">
+                        <span>🎧</span>
+                        <span style={{ background: "linear-gradient(90deg,#f6b440,#f8ab08 55%,#e98811)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                          Quero fazer música
+                        </span>
+                      </h2>
+                      <p className="text-[11px] leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
+                        Cole a sua letra e escolha o estilo.
+                      </p>
+                      <span className="block text-center rounded-xl py-3 text-xs font-bold"
+                            style={{ background: "linear-gradient(135deg,#f6b440,#f8ab08 55%,#e98811)", color: "#1a1205" }}>
+                        Colar minha letra →
                       </span>
                     </button>
+                  )}
 
-                    {selectedContext === occasion.label && (
-                      <div className="px-4 pb-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                        {occasion.wizard_subcategories.map((sub) => (
-                          <button
-                            key={sub.id}
-                            onClick={() => handleSubcategoryClick(sub, occasion.label)}
-                            className={`rounded-2xl p-5 border transition-all text-left ${
-                              selectedSubcategory === sub.label
-                                ? "border-pink-500 bg-pink-500/10"
-                                : "border-white/10 bg-black/30 hover:border-pink-500"
-                            }`}
-                          >
-                            {sub.emoji} {sub.label}
-                          </button>
-                        ))}
+                  {/* ── Porta 2: homenagem, com os temas em quadrante ── */}
+                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,25,107,0.35)" }}>
+                    <span className="inline-block text-[9px] uppercase tracking-[0.12em] rounded-full px-2.5 py-1 mb-3"
+                          style={{ color: "#f0196b", border: "1px solid rgba(240,25,107,0.4)" }}>
+                      Para presentear
+                    </span>
+                    <h2 className="text-base font-semibold mb-1.5 flex items-center gap-2">
+                      <span>💝</span><span style={{ color: "#f0196b" }}>Quero homenagear alguém</span>
+                    </h2>
+
+                    {/* O tema escolhido TROCA o quadrante pela lista dele, em vez
+                        de expandir empurrando os outros pra baixo: mantém o
+                        alinhamento da grade e não cria um passo novo no funil. */}
+                    {temaAberto ? (
+                      <>
+                        <button
+                          onClick={() => setSelectedContext("")}
+                          className="text-[11px] text-white/45 hover:text-white/70 transition-colors mb-3"
+                        >
+                          ← todos os temas
+                        </button>
+                        <p className="text-xs font-medium text-white/70 mb-2">{temaAberto.emoji} {temaAberto.label}</p>
+                        <div className="grid gap-2">
+                          {temaAberto.wizard_subcategories.map((sub) => (
+                            <button
+                              key={sub.id}
+                              onClick={() => handleSubcategoryClick(sub, temaAberto.label)}
+                              className={`rounded-xl px-4 py-3 border text-left text-sm transition-all ${
+                                selectedSubcategory === sub.label
+                                  ? "border-pink-500 bg-pink-500/10"
+                                  : "border-white/10 bg-black/30 hover:border-pink-500"
+                              }`}
+                            >
+                              {sub.emoji} {sub.label}
+                            </button>
+                          ))}
                         </div>
-                      </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[11px] leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
+                          Escolha o tema. A gente faz as perguntas e escreve a letra com você.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {temas.map((occasion) => (
+                            <button
+                              key={occasion.id}
+                              onClick={() => setSelectedContext(occasion.label)}
+                              className="rounded-xl p-3 border border-white/10 bg-black/30 hover:border-pink-500/60 transition-all text-left"
+                            >
+                              <span className="block text-base leading-none mb-1.5">{occasion.emoji}</span>
+                              <span className="block text-[11px] text-white leading-snug">{occasion.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
                     )}
                   </div>
-                ))}
-              </div>
+
+                </div>
+              )}
             </div>
           )}
 
