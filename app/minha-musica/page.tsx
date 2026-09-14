@@ -1,6 +1,5 @@
 "use client"
 
-import DiagToques from "./DiagToques"
 import { useEffect, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
@@ -477,9 +476,7 @@ function MinhaMusicaContent() {
 
   // Sem conta: a mesma casa, com as portas pessoais vazias. Antes daqui saía
   // um spinner infinito — o visitante batia numa tela travada.
-  // O visitante cai noutro componente — e o player (e a travada) existem lá
-  // também, já que a Rede toca sem conta.
-  if (!user) return <><DiagToques /><AreaPublica abaInicial={abaDaUrl} /></>
+  if (!user) return <AreaPublica abaInicial={abaDaUrl} />
 
   const firstName = (user.user_metadata?.full_name as string)?.split(" ")[0] || user.email?.split("@")[0]
 
@@ -910,9 +907,6 @@ function MinhaMusicaContent() {
         <div className="absolute inset-0" style={{ background: "radial-gradient(55% 45% at 12% 6%, rgba(240,25,107,0.26) 0%, transparent 60%)" }} />
         <div className="absolute inset-0" style={{ background: "radial-gradient(55% 50% at 90% 96%, rgba(168,85,247,0.24) 0%, transparent 62%)" }} />
       </div>
-
-      {/* Diagnóstico temporário da travada pós-compartilhamento — só com ?diag=1 */}
-      <DiagToques />
 
       {/* Popup: vincular pedido recém-comprado com e-mail diferente */}
       {qrUrl && <QRModal url={qrUrl} onClose={() => setQrUrl(null)} />}
