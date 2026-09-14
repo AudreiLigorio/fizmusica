@@ -126,6 +126,12 @@ export default function MiniPlayer() {
   const sheetTouchY = useRef<number | null>(null)
   useEffect(() => { if (!fullOpen) setSheetOpen(false) }, [fullOpen])
   function onSheetTouchStart(e: React.TouchEvent) { sheetTouchY.current = e.touches[0].clientY }
+  // `touchcancel` é exatamente o que o iOS dispara quando uma bandeja do
+  // sistema abre no meio do toque — compartilhar, por exemplo. Nesse caso o
+  // `touchend` NUNCA chega, a posição inicial do dedo fica gravada, e o
+  // próximo toque é medido contra uma coordenada velha: o sheet abre ou fecha
+  // sozinho, sem ninguém ter arrastado.
+  function onSheetTouchCancel() { sheetTouchY.current = null }
   function onSheetTouchEnd(e: React.TouchEvent) {
     if (sheetTouchY.current === null) return
     const dy = e.changedTouches[0].clientY - sheetTouchY.current
@@ -584,6 +590,7 @@ export default function MiniPlayer() {
             }}
             onTouchStart={onSheetTouchStart}
             onTouchEnd={onSheetTouchEnd}
+            onTouchCancel={onSheetTouchCancel}
           >
             {/* O sheet é largo (vai de ponta a ponta), mas o CONTEÚDO não
                 pode ser: num monitor de 1280px a barra de progresso e a
