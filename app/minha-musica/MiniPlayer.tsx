@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { usePlayer, type PlayableTrack } from "./PlayerContext"
+import AplausoBarra from "./AplausoBarra"
 import { idDeSessao } from "@/lib/track"
 import { extrairCorDaCapa, tom, type CorDaCapa } from "@/lib/corDaCapa"
 import { useCatalogo } from "./CatalogoContext"
@@ -109,7 +110,7 @@ export default function MiniPlayer() {
   // recusa sem conta e o favorito não estava lá na volta. Mentira na tela.
   const router = useRouter()
   const [logado, setLogado] = useState<boolean | null>(null)
-  const [precisaConta, setPrecisaConta] = useState<null | "favorito" | "playlist">(null)
+  const [precisaConta, setPrecisaConta] = useState<null | "favorito" | "playlist" | "aplauso">(null)
   useEffect(() => {
     let vivo = true
     supabase.auth.getSession().then(({ data }) => { if (vivo) setLogado(!!data.session?.user) })
@@ -778,6 +779,14 @@ export default function MiniPlayer() {
               {[subtitulo, track.apelido].filter(Boolean).join(" · ") || " "}
             </p>
 
+            {/* Aplauso entre o autor e os botões, e não como quarto círculo:
+                arrastar é o gesto, e virar botão o esconderia atrás de um
+                toque. Só em música da Rede — na sua própria, aplaudir a si
+                mesmo não é sinal de nada. */}
+            {publico && !track.minha && (
+              <AplausoBarra orderId={track.id} logado={logado} onPrecisaConta={() => setPrecisaConta("aplauso")} />
+            )}
+
             {/* Favoritar e playlist ficam FORA do sheet de propósito: são as
                 ações próprias da Rede e têm que estar a um toque, sem obrigar
                 a abrir a letra. O coração só existe em música da Rede — na
@@ -1029,13 +1038,17 @@ export default function MiniPlayer() {
              onClick={() => setPrecisaConta(null)}>
           <div className="w-full max-w-sm rounded-3xl border border-white/10 p-6 text-center" style={{ background: "#15131d" }}
                onClick={(e) => e.stopPropagation()}>
-            <div className="text-3xl mb-2">{precisaConta === "favorito" ? "💜" : "🎵"}</div>
+            <div className="text-3xl mb-2">{precisaConta === "favorito" ? "💜" : precisaConta === "aplauso" ? "👏" : "🎵"}</div>
             <h2 className="text-lg font-bold mb-1.5">
-              {precisaConta === "favorito" ? "Guarde esta música" : "Monte sua playlist"}
+              {precisaConta === "favorito" ? "Guarde esta música"
+                : precisaConta === "aplauso" ? "Aplauda esta música"
+                : "Monte sua playlist"}
             </h2>
             <p className="text-white/55 text-sm leading-relaxed mb-5">
               {precisaConta === "favorito"
                 ? "Crie sua conta pra achar de novo os favoritos, em qualquer aparelho."
+                : precisaConta === "aplauso"
+                ? "Crie sua conta pra aplaudir. Cada pessoa tem 30 palmas por dia — e quem fez a música vê o aplauso chegar."
                 : "Crie sua conta pra montar playlists com o que você gosta."}
               {" "}Ouvir e compartilhar seguem livres, sem conta.
             </p>
