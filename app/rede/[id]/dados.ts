@@ -1,3 +1,4 @@
+import { tituloNeutro } from "@/lib/tituloPublico"
 import { createServerClient } from "@/lib/supabase"
 
 // Carregador único da música pública.
@@ -49,7 +50,7 @@ export async function carregarMusicaPublica(id: string) {
   // a trava existe pra não expor o título escolhido por terceiro.
   const titulo = music.musicName?.trim() && music.musicNameConfirmed
     ? music.musicName.trim()
-    : `Uma canção de ${order.subcategory}`
+    : tituloNeutro(order.subcategory)
 
   return {
     orderId: id,

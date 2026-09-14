@@ -1,3 +1,4 @@
+import { tituloNeutro } from "@/lib/tituloPublico"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
@@ -102,7 +103,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       const nome = music?.musicName?.trim()
       return {
         orderId,
-        title: nome && (music?.confirmado || proprio) ? nome : `Uma canção de ${o.subcategory}`,
+        title: nome && (music?.confirmado || proprio) ? nome : tituloNeutro(o.subcategory),
         occasion: o.subcategory,
         imageUrl: principal?.imageUrl ?? null,
         // Rota guardada, não o link do arquivo (ver /api/audio).

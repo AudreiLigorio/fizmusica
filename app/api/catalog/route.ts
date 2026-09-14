@@ -1,3 +1,4 @@
+import { tituloNeutro } from "@/lib/tituloPublico"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
@@ -313,7 +314,7 @@ export async function GET(req: NextRequest) {
       // (a trava do confirmado existe pra não expor título de terceiro).
       title: b.musicName?.trim() && (b.musicNameConfirmed || proprio)
         ? b.musicName.trim()
-        : `Uma canção de ${b.occasion}`,
+        : tituloNeutro(b.occasion),
       occasion: b.occasion,
       musicalStyle: b.musicalStyle,
       imageUrl: b.imageUrl,
