@@ -28,8 +28,11 @@ export default function DiagToques() {
   }, [])
 
   useEffect(() => {
-    function descreve(el: Element | null): string {
-      if (!el) return "nada"
+    function descreve(el: unknown): string {
+      // `instanceof Element` e não truthy: o alvo pode ser `window` ou
+      // `document`, e ler `.tagName` deles lança — o erro derrubava o resto
+      // do handler DEPOIS de já ter contado o toque.
+      if (!(el instanceof Element)) return "nao-elemento"
       const cls = (el.className || "").toString().split(/\s+/).filter(Boolean).slice(0, 3).join(".")
       const z = getComputedStyle(el).zIndex
       return `${el.tagName.toLowerCase()}${cls ? "." + cls : ""} z=${z}`
@@ -40,7 +43,7 @@ export default function DiagToques() {
       setN((x) => x + 1)
       // `elementFromPoint` diz quem está POR CIMA naquele ponto — que pode
       // não ser o mesmo que recebeu o evento.
-      setAlvo(`${descreve(e.target as Element)} | topo: ${descreve(document.elementFromPoint(p.clientX, p.clientY))}`)
+      setAlvo(`${descreve(e.target)} | topo: ${descreve(document.elementFromPoint(p.clientX, p.clientY))}`)
     }
     // Fase de captura: pega o evento antes de qualquer `stopPropagation`.
     window.addEventListener("touchstart", onToque as EventListener, true)
