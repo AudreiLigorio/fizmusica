@@ -156,6 +156,10 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const composicaoLivre = occasions.find((o) => o.label === "Composição Livre")
   const temas = occasions.filter((o) => o.label !== "Composição Livre")
   const temaAberto = temas.find((o) => o.label === selectedContext)
+  // Quem traz a própria letra pode estar escrevendo pra mãe — ou sobre um
+  // lugar, um sentimento, nada em particular. Aqui o nome do homenageado é
+  // opcional; no caminho da homenagem ele é o ponto inteiro, e segue exigido.
+  const ehComposicao = composicaoLivre ? selectedContext === composicaoLivre.label : false
 
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
@@ -638,7 +642,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
         mostrarErro("Preencha todos os seus dados.")
         return
       }
-      if (!honoreeName.trim()) {
+      if (!ehComposicao && !honoreeName.trim()) {
         mostrarErro("Informe para quem é essa música.")
         return
       }
@@ -1476,8 +1480,13 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
                 <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
                   🎵 Para quem é essa música?
+                  {ehComposicao && <span className="text-[11px] font-normal text-white/40">(opcional)</span>}
                 </label>
-                <p className="text-xs text-white/40 mb-3">Nome de quem vai receber a homenagem</p>
+                <p className="text-xs text-white/40 mb-3">
+                  {ehComposicao
+                    ? "Se for uma homenagem, o nome aparece no player. Pode deixar em branco."
+                    : "Nome de quem vai receber a homenagem"}
+                </p>
                 <div className="relative">
                   <input
                     value={honoreeName}
