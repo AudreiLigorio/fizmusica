@@ -113,11 +113,15 @@ export default function ResultadosBusca({
                 {
                   id: l.id, title: l.title, occasion: l.occasion, audioUrl: l.audioUrl,
                   imageUrl: l.imageUrl, lyrics: l.lyrics, lyricsLrc: l.lyricsLrc, apelido: l.apelido,
+                  // Sem estes dois o player não sabe se a faixa tem endereço
+                  // público, e os botões de favoritar e compartilhar somem.
+                  publico: l.publico, minha: l.minha,
                 },
                 // Fila = o resultado da busca, na ordem em que está na tela.
                 linhas.map((x) => ({
                   id: x.id, title: x.title, occasion: x.occasion, audioUrl: x.audioUrl,
                   imageUrl: x.imageUrl, lyrics: x.lyrics, lyricsLrc: x.lyricsLrc, apelido: x.apelido,
+                  publico: x.publico, minha: x.minha,
                 })),
               )}
               className="w-full flex items-center gap-3.5 px-1 py-2 rounded-xl hover:bg-white/[0.04] transition-colors text-left"

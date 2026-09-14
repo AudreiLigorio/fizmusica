@@ -173,6 +173,10 @@ export type Unificada = {
   lyricsLrc: string | null
   apelido: string | null
   minha: boolean
+  // Tem endereço público na Rede. Viaja junto com a faixa até o player, que
+  // usa isso pra decidir favoritar e compartilhar — antes ele procurava a
+  // faixa na lista carregada, que é paginada, e os botões sumiam.
+  publico: boolean
 }
 
 type TrackDoCliente = {

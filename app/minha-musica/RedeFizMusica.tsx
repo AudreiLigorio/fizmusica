@@ -157,6 +157,11 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
     audioUrl: it.audioUrl, imageUrl: it.imageUrl,
     lyrics: it.lyrics ?? null, lyricsLrc: it.lyricsLrc ?? null,
     apelido: it.authorApelido,
+    // Tudo que aparece na Rede tem endereço público, por definição — é o que
+    // decide se o player mostra favoritar e compartilhar. Sem isso o player
+    // caía numa busca na lista carregada, e faixa do Top 10 ou de página não
+    // carregada ficava sem botão.
+    publico: true, minha: false,
   })
 
   if (!items || items.length === 0) return null

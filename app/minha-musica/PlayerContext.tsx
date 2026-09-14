@@ -23,6 +23,9 @@ export type PlayableTrack = {
   // de compartilhar e outras não" — Audrei, 2026-09-14). Agora a faixa sabe
   // de si.
   publico?: boolean
+  // Música do próprio cliente. Não há o que favoritar na sua (o motor nem
+  // registra), então o coração não aparece nela.
+  minha?: boolean
 }
 
 type LrcLine = { time: number; text: string }

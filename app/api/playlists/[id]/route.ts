@@ -109,6 +109,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         // Rota guardada, não o link do arquivo (ver /api/audio).
         audioUrl: `/api/audio?o=${orderId}`,
         apelido: o.userId ? apelidoPorUser[o.userId] ?? null : null,
+        // A playlist mistura música da Rede com a do próprio dono, e só a
+        // publicada tem endereço público. Sem estes dois o player não sabe se
+        // pode oferecer compartilhar e favoritar.
+        publico: !!o.naRede,
+        minha: dono,
       }
     })
     .filter((t): t is NonNullable<typeof t> => t !== null)

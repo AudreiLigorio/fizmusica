@@ -7,7 +7,7 @@ import { useToast } from "./ToastContext"
 import { combina } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
 
-type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string; apelido: string | null }
+type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string; apelido: string | null; publico?: boolean; minha?: boolean }
 type PlaylistFull = { id: string; nome: string; tracks: Track[] }
 
 // Uma raia por playlist, sempre visível na tela (em vez de só um card que
@@ -143,13 +143,14 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                       <button
                         type="button"
                         onClick={() => playOuPausa(
-                          { id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null, apelido: t.apelido },
+                          { id: t.orderId, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl, imageUrl: t.imageUrl, lyrics: null, lyricsLrc: null, apelido: t.apelido, publico: !!t.publico, minha: !!t.minha },
                           // Fila = a playlist aberta, na ordem em que ela
                           // aparece — é o que a pessoa montou.
                           pl.tracks.map((x) => ({
                             id: x.orderId, title: x.title, occasion: x.occasion,
                             audioUrl: x.audioUrl, imageUrl: x.imageUrl,
                             lyrics: null, lyricsLrc: null, apelido: x.apelido,
+                            publico: !!x.publico, minha: !!x.minha,
                           })),
                         )}
                         className="absolute inset-0"

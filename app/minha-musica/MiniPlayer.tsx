@@ -92,6 +92,30 @@ export default function MiniPlayer() {
   // página do catálogo que por acaso foi carregada. O `naRede` segue valendo
   // pro coração, que precisa do estado de favorito — esse sim mora na lista.
   const publico = track?.publico ?? !!naRede
+
+  // Estado de favorito da faixa que está tocando.
+  //
+  // Antes saía do `naRede`, ou seja, da lista carregada do catálogo — e por
+  // isso o coração aparecia e sumia conforme a música tivesse vindo da lista,
+  // do Top 10, de uma busca ou da biblioteca do cliente. Agora o player
+  // pergunta pela faixa; a lista entra só como palpite inicial, pra não
+  // piscar enquanto a resposta não chega.
+  const podeFavoritar = publico && !track?.minha
+  const [favoritoDaFaixa, setFavoritoDaFaixa] = useState<boolean | null>(null)
+  useEffect(() => {
+    if (!track || !podeFavoritar) { setFavoritoDaFaixa(null); return }
+    let vivo = true
+    setFavoritoDaFaixa(naRede?.favorited ?? null)
+    ;(async () => {
+      const headers = await authHeaders()
+      const d = await fetch(`/api/catalog/favorite?orderId=${encodeURIComponent(track.id)}`, { headers })
+        .then((r) => r.json()).catch(() => null)
+      if (vivo && d && typeof d.favorited === "boolean") setFavoritoDaFaixa(d.favorited)
+    })()
+    return () => { vivo = false }
+    // `naRede?.favorited` fora das dependências de propósito: ele muda a cada
+    // favoritada e refazer a busca aqui desfaria o estado otimista.
+  }, [track?.id, podeFavoritar]) // eslint-disable-line react-hooks/exhaustive-deps
   const [playlists, setPlaylists] = useState<{ id: string; nome: string; track_order_ids: string[] }[] | null>(null)
   const [escolhendoPlaylist, setEscolhendoPlaylist] = useState(false)
   const [criandoPlaylist, setCriandoPlaylist] = useState(false)
@@ -150,11 +174,14 @@ export default function MiniPlayer() {
   }
 
   async function favoritar() {
-    if (!naRede) return
-    alternarFavorito(naRede.orderId)
+    if (!track || !podeFavoritar) return
+    setFavoritoDaFaixa((v) => !v)
+    // A lista também é atualizada quando a faixa está nela — senão o card lá
+    // atrás mostraria o contrário do player.
+    if (naRede) alternarFavorito(naRede.orderId)
     const headers = await authHeaders()
     await fetch("/api/catalog/favorite", {
-      method: "POST", headers, body: JSON.stringify({ orderId: naRede.orderId }),
+      method: "POST", headers, body: JSON.stringify({ orderId: track.id }),
     }).catch(() => {})
   }
 
@@ -741,17 +768,17 @@ export default function MiniPlayer() {
                 a abrir a letra. O coração só existe em música da Rede — na
                 sua própria não há o que favoritar (o motor nem registra). */}
             <div className="flex items-center gap-3 mt-5">
-              {naRede && (
+              {podeFavoritar && (
                 <button
                   {...aoAcionar(favoritar)}
-                  aria-label={naRede.favorited ? "Remover dos favoritos" : "Favoritar"}
+                  aria-label={favoritoDaFaixa ? "Remover dos favoritos" : "Favoritar"}
                   className={`w-11 h-11 shrink-0 rounded-full border flex items-center justify-center transition-colors ${
-                    naRede.favorited
+                    favoritoDaFaixa
                       ? "border-transparent bg-pink-500/15 text-pink-400"
                       : "border-white/15 bg-black/20 text-white/60 hover:text-white hover:border-white/35"
                   }`}
                 >
-                  <IconCoracao cheio={naRede.favorited} />
+                  <IconCoracao cheio={!!favoritoDaFaixa} />
                 </button>
               )}
               <button
