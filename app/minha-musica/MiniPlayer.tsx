@@ -226,16 +226,46 @@ export default function MiniPlayer() {
     })
   }
 
+  // Pausar enquanto o compartilhamento leva você pra outro app.
+  //
+  // Repro do Audrei (2026-09-14): compartilhar > Instagram > escolher a
+  // pessoa no Direct > enviar > voltar. A aba volta DESENHANDO e TOCANDO, mas
+  // sem receber toque nenhum — só fechando o navegador. Pelo WhatsApp não
+  // acontece, e a diferença é o tempo: o Direct segura a tela por muito mais
+  // tempo.
+  //
+  // A hipótese é que manter a aba viva tocando em segundo plano é o que faz o
+  // Safari devolvê-la meio restaurada. Então, e SÓ no caminho do
+  // compartilhamento, a música pausa ao sair e volta ao retornar. Em todo o
+  // resto — trocar de aba, bloquear a tela, atender ligação — continua
+  // tocando como antes, que foi feito de propósito pra ouvir com o celular no
+  // bolso.
+  const retomarAoVoltar = useRef(false)
+
   useEffect(() => {
     if (!fullOpen) return
-    function aoVoltar() { if (document.visibilityState === "visible") restaurarToques() }
+    function aoVoltar() {
+      if (document.visibilityState !== "visible") return
+      restaurarToques()
+      if (retomarAoVoltar.current) {
+        retomarAoVoltar.current = false
+        // `toggle()`, não `audio.play()` direto: o elemento não avisa o
+        // estado de volta (não há `onPause` ligado), então mexer no áudio por
+        // fora deixaria o botão mostrando "tocando" com a música parada se a
+        // retomada fosse recusada.
+        if (!playing) toggle()
+      }
+    }
     document.addEventListener("visibilitychange", aoVoltar)
     window.addEventListener("pageshow", aoVoltar)
     return () => {
       document.removeEventListener("visibilitychange", aoVoltar)
       window.removeEventListener("pageshow", aoVoltar)
     }
-  }, [fullOpen])
+    // `playing` e `toggle` entram nas dependências porque o `toggle` carrega o
+    // estado dentro dele: sem isso o handler guardaria uma versão velha e a
+    // retomada pausaria em vez de tocar.
+  }, [fullOpen, playing, toggle])
 
   // Compartilhamento nativo: abre a bandeja do sistema (Instagram, WhatsApp,
   // qualquer app instalado) e sai da conta pessoal de quem compartilha, que é
@@ -246,6 +276,10 @@ export default function MiniPlayer() {
     const url = `${window.location.origin}/rede/${track.id}`
     const texto = `Ouve essa música que achei na Fiz Música: "${track.title}"`
     if (navigator.share) {
+      if (playing) {
+        retomarAoVoltar.current = true
+        toggle()
+      }
       try {
         await navigator.share({ title: track.title, text: texto, url })
       } catch {
@@ -253,8 +287,13 @@ export default function MiniPlayer() {
         // seguida seria um efeito que ninguém pediu.
       } finally {
         // Cancelar sem sair do Safari não dispara `visibilitychange`, então a
-        // recuperação roda aqui também.
+        // recuperação roda aqui também — inclusive devolver a música, que
+        // senão ficaria pausada por um compartilhamento que nem aconteceu.
         restaurarToques()
+        if (retomarAoVoltar.current && document.visibilityState === "visible") {
+          retomarAoVoltar.current = false
+          if (!playing) toggle()
+        }
       }
       return
     }
