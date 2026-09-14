@@ -148,6 +148,30 @@ export default function MiniPlayer() {
     }).catch(() => {})
   }
 
+  // Compartilhamento nativo: abre a bandeja do sistema (Instagram, WhatsApp,
+  // qualquer app instalado) e sai da conta pessoal de quem compartilha, que é
+  // mais confiável que vir de um número de empresa. Sem suporte (desktop),
+  // cai pra copiar o link — mesma saída do botão que já existia no sheet.
+  async function compartilhar() {
+    if (!track) return
+    const url = `${window.location.origin}/rede/${track.id}`
+    const texto = `Ouve essa música que achei na Fiz Música: "${track.title}"`
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: track.title, text: texto, url })
+        return
+      } catch {
+        // Cancelar o compartilhamento também cai aqui. Copiar em seguida
+        // seria um efeito que ninguém pediu, então paramos por aqui.
+        return
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopiado(true); setTimeout(() => setCopiado(false), 2000)
+    } catch { /* clipboard bloqueado; nada a fazer */ }
+  }
+
   async function abrirAdicionar() {
     if (!track) return
     const headers = await authHeaders()
@@ -521,6 +545,29 @@ export default function MiniPlayer() {
               >
                 <IconMais />
               </button>
+
+              {/* Compartilhar sai do sheet e vem pro lado do "+".
+                  Antes ele existia só depois de arrastar a letra pra cima, e
+                  ali ninguém achava. É a ação que traz gente de fora: o link
+                  vai pro /rede/{id}, que toca sem conta, com um card montado
+                  pela marca (ver opengraph-image.tsx).
+                  NUNCA o /m/{slug} — aquele mostra as fotos do cliente. */}
+              {naRede && (
+                <button
+                  onClick={compartilhar}
+                  aria-label="Compartilhar esta música"
+                  className="w-11 h-11 shrink-0 rounded-full border border-white/15 bg-black/20 text-white/60 hover:text-white hover:border-white/35 flex items-center justify-center transition-colors"
+                >
+                  {copiado ? (
+                    <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 15V3m0 0L8 7m4-4 4 4" />
+                    </svg>
+                  )}
+                </button>
+              )}
             </div>
           </div>
 

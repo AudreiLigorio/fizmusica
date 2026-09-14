@@ -1,6 +1,6 @@
-import { createServerClient } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import RedeSongPage from "./RedeSongPage"
+import { carregarMusicaPublica } from "./dados"
 
 export const dynamic = "force-dynamic"
 
@@ -28,65 +28,9 @@ export const dynamic = "force-dynamic"
 
 type Params = { params: Promise<{ id: string }> }
 
-async function carregar(id: string) {
-  const supabase = createServerClient()
-
-  const { data: order } = await supabase
-    .from("orders")
-    .select("id, subcategory, musicalStyle, sunoTracks, userId, publication_consent, status")
-    .eq("id", id)
-    .maybeSingle()
-
-  if (!order || order.publication_consent !== true || order.status !== "DELIVERED") return null
-
-  const { data: music } = await supabase
-    .from("generated_music")
-    .select("musicName, musicNameConfirmed, lyrics, lyricsLrc, mp3Url")
-    .eq("orderId", id)
-    .maybeSingle()
-
-  if (!music) return null
-
-  type Track = { audioUrl: string; imageUrl: string | null }
-  const tracks = (order.sunoTracks as Track[] | null) ?? []
-  const principal = tracks.find((t) => t.audioUrl === music.mp3Url) ?? tracks[0]
-  const audioUrl = principal?.audioUrl ?? music.mp3Url ?? null
-  if (!audioUrl) return null
-
-  // Apelido: opt-in separado (`mostrar_apelido`). publication_consent
-  // autoriza publicar a OBRA; aparecer como autor é outra escolha.
-  let apelido: string | null = null
-  if (order.userId) {
-    const { data: perfil } = await supabase
-      .from("profiles").select("apelido, mostrar_apelido").eq("user_id", order.userId).maybeSingle()
-    if (perfil?.mostrar_apelido && perfil.apelido?.trim()) apelido = perfil.apelido.trim()
-  }
-
-  const { count } = await supabase
-    .from("music_plays").select("id", { count: "exact", head: true }).eq("orderId", id)
-
-  // Mesma regra do catálogo: título real só quando o cliente confirmou —
-  // a trava existe pra não expor o título escolhido por terceiro.
-  const titulo = music.musicName?.trim() && music.musicNameConfirmed
-    ? music.musicName.trim()
-    : `Uma canção de ${order.subcategory}`
-
-  return {
-    orderId: id,
-    titulo,
-    ocasiao: order.subcategory as string,
-    estilo: (order.musicalStyle as string | null) ?? null,
-    imageUrl: principal?.imageUrl ?? null,
-    lyrics: music.lyrics ?? null,
-    lyricsLrc: music.lyricsLrc ?? null,
-    apelido,
-    plays: count ?? 0,
-  }
-}
-
 export async function generateMetadata({ params }: Params) {
   const { id } = await params
-  const dados = await carregar(id)
+  const dados = await carregarMusicaPublica(id)
   if (!dados) return { title: "Fiz Música" }
 
   // O preview do WhatsApp é o produto aqui: quem recebe o link decide se
@@ -101,7 +45,9 @@ export async function generateMetadata({ params }: Params) {
     openGraph: {
       title: dados.titulo,
       description: descricao,
-      images: dados.imageUrl ? [dados.imageUrl] : undefined,
+      // `images` NÃO entra aqui: quem desenha o card é o opengraph-image.tsx
+      // deste mesmo segmento, e um `images` explícito no generateMetadata
+      // venceria o arquivo e devolveria a capa crua, sem a moldura da marca.
       type: "music.song",
     },
   }
@@ -109,7 +55,7 @@ export async function generateMetadata({ params }: Params) {
 
 export default async function Page({ params }: Params) {
   const { id } = await params
-  const dados = await carregar(id)
+  const dados = await carregarMusicaPublica(id)
   if (!dados) notFound()
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
