@@ -1,5 +1,6 @@
 "use client"
 
+import DiagToques from "./DiagToques"
 import { useEffect, useState, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense } from "react"
@@ -906,6 +907,9 @@ function MinhaMusicaContent() {
         <div className="absolute inset-0" style={{ background: "radial-gradient(55% 45% at 12% 6%, rgba(240,25,107,0.26) 0%, transparent 60%)" }} />
         <div className="absolute inset-0" style={{ background: "radial-gradient(55% 50% at 90% 96%, rgba(168,85,247,0.24) 0%, transparent 62%)" }} />
       </div>
+
+      {/* Diagnóstico temporário da travada pós-compartilhamento — só com ?diag=1 */}
+      {typeof window !== "undefined" && new URLSearchParams(window.location.search).get("diag") === "1" && <DiagToques />}
 
       {/* Popup: vincular pedido recém-comprado com e-mail diferente */}
       {qrUrl && <QRModal url={qrUrl} onClose={() => setQrUrl(null)} />}
