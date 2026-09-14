@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { usePlayer, type PlayableTrack } from "./PlayerContext"
 import { idDeSessao } from "@/lib/track"
@@ -102,6 +103,18 @@ export default function MiniPlayer() {
   // piscar enquanto a resposta não chega.
   const podeFavoritar = publico && !track?.minha
   const [favoritoDaFaixa, setFavoritoDaFaixa] = useState<boolean | null>(null)
+
+  // A Rede toca sem conta, de propósito — mas guardar coisa não dá. Sem isto
+  // o visitante tocava o coração, ele enchia na hora e nada era salvo: a API
+  // recusa sem conta e o favorito não estava lá na volta. Mentira na tela.
+  const router = useRouter()
+  const [logado, setLogado] = useState<boolean | null>(null)
+  const [precisaConta, setPrecisaConta] = useState<null | "favorito" | "playlist">(null)
+  useEffect(() => {
+    let vivo = true
+    supabase.auth.getSession().then(({ data }) => { if (vivo) setLogado(!!data.session?.user) })
+    return () => { vivo = false }
+  }, [])
   useEffect(() => {
     if (!track || !podeFavoritar) { setFavoritoDaFaixa(null); return }
     let vivo = true
@@ -175,6 +188,7 @@ export default function MiniPlayer() {
 
   async function favoritar() {
     if (!track || !podeFavoritar) return
+    if (logado === false) { setPrecisaConta("favorito"); return }
     setFavoritoDaFaixa((v) => !v)
     // A lista também é atualizada quando a faixa está nela — senão o card lá
     // atrás mostraria o contrário do player.
@@ -379,6 +393,7 @@ export default function MiniPlayer() {
 
   async function abrirAdicionar() {
     if (!track) return
+    if (logado === false) { setPrecisaConta("playlist"); return }
     const headers = await authHeaders()
     const d = await fetch("/api/playlists", { headers }).then((r) => r.json()).catch(() => ({}))
     const lista = d.playlists ?? []
@@ -1006,6 +1021,38 @@ export default function MiniPlayer() {
         onAdd={(playlistId) => adicionarNa(playlistId)}
         onCreateNew={() => { setEscolhendoPlaylist(false); setCriandoPlaylist(true) }}
       />
+      {/* Convite, não erro: o visitante não fez nada errado — ele só tentou
+          guardar alguma coisa, que é o único momento em que a conta passa a
+          fazer sentido pra ele. Ouvir e compartilhar seguem sem conta. */}
+      {precisaConta && (
+        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
+             onClick={() => setPrecisaConta(null)}>
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 p-6 text-center" style={{ background: "#15131d" }}
+               onClick={(e) => e.stopPropagation()}>
+            <div className="text-3xl mb-2">{precisaConta === "favorito" ? "💜" : "🎵"}</div>
+            <h2 className="text-lg font-bold mb-1.5">
+              {precisaConta === "favorito" ? "Guarde esta música" : "Monte sua playlist"}
+            </h2>
+            <p className="text-white/55 text-sm leading-relaxed mb-5">
+              {precisaConta === "favorito"
+                ? "Crie sua conta pra achar de novo os favoritos, em qualquer aparelho."
+                : "Crie sua conta pra montar playlists com o que você gosta."}
+              {" "}Ouvir e compartilhar seguem livres, sem conta.
+            </p>
+            <button
+              onClick={() => router.push("/entrar")}
+              className="w-full py-3 rounded-xl text-sm font-bold text-white mb-2"
+              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+            >
+              Criar minha conta
+            </button>
+            <button onClick={() => setPrecisaConta(null)} className="w-full py-2.5 text-sm text-white/45">
+              Agora não
+            </button>
+          </div>
+        </div>
+      )}
+
       <CreatePlaylistModal
         open={criandoPlaylist}
         onClose={() => setCriandoPlaylist(false)}
