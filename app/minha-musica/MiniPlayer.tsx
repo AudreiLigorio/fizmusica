@@ -154,6 +154,76 @@ export default function MiniPlayer() {
     }).catch(() => {})
   }
 
+  const overlayRef = useRef<HTMLDivElement>(null)
+
+  // Botão que responde AO TOQUE, não ao clique.
+  //
+  // Medido com o Audrei em 2026-09-14: depois de compartilhar no Instagram e
+  // voltar pro Safari, a página segue tocando e desenhando, os toques CHEGAM
+  // (o painel de diagnóstico contou 10) e o alvo é o próprio botão — mas
+  // nenhum `click` acontece. O Safari para de sintetizar o clique quando a
+  // bandeja do sistema rouba o gesto no meio, e nada do nosso lado o
+  // convence a voltar: girar o aparelho não resolve, forçar reflow não
+  // resolve.
+  //
+  // Então o botão deixa de depender do clique. `pointerup` de dedo já
+  // aciona; o `click` que vier depois é ignorado por 700ms pra ação não
+  // rodar duas vezes (favoritar duas vezes desfaz o favorito). Mouse segue
+  // pelo caminho normal, porque lá o clique nunca falta.
+  const ultimoToque = useRef(0)
+  function aoAcionar(fn: () => void) {
+    return {
+      onPointerUp: (e: React.PointerEvent) => {
+        if (e.pointerType === "mouse") return
+        ultimoToque.current = Date.now()
+        fn()
+      },
+      onClick: () => {
+        if (Date.now() - ultimoToque.current < 700) return
+        fn()
+      },
+    }
+  }
+
+
+  // Recuperação do toque depois de sair do navegador e voltar.
+  //
+  // Sintoma medido com o Audrei: compartilhou no Instagram, voltou pro
+  // Safari, e a página segue TOCANDO e DESENHANDO (progresso corre) mas nenhum
+  // botão responde. O painel de diagnóstico mostrou que os toques chegam na
+  // janela — ou seja, o que quebra é o caminho do toque até o elemento, não a
+  // thread principal. Girar o aparelho não devolve.
+  //
+  // O empurrão é forçar o navegador a refazer a camada do player: tirar do
+  // fluxo, ler `offsetHeight` (isso obriga o recálculo na hora) e devolver.
+  // É feio e é de uma linha só — mas é o que reconstrói o mapa de "onde o
+  // dedo tocou" sem recarregar a página e sem parar a música.
+  //
+  // MITIGAÇÃO, não cura: a causa está do lado do navegador. Se voltar a
+  // acontecer, o próximo passo é fazer os botões do player responderem ao
+  // toque direto em vez de esperar o clique.
+  function restaurarToques() {
+    requestAnimationFrame(() => {
+      const el = overlayRef.current
+      if (!el) return
+      const antes = el.style.display
+      el.style.display = "none"
+      void el.offsetHeight
+      el.style.display = antes
+    })
+  }
+
+  useEffect(() => {
+    if (!fullOpen) return
+    function aoVoltar() { if (document.visibilityState === "visible") restaurarToques() }
+    document.addEventListener("visibilitychange", aoVoltar)
+    window.addEventListener("pageshow", aoVoltar)
+    return () => {
+      document.removeEventListener("visibilitychange", aoVoltar)
+      window.removeEventListener("pageshow", aoVoltar)
+    }
+  }, [fullOpen])
+
   // Compartilhamento nativo: abre a bandeja do sistema (Instagram, WhatsApp,
   // qualquer app instalado) e sai da conta pessoal de quem compartilha, que é
   // mais confiável que vir de um número de empresa. Sem suporte (desktop),
@@ -165,12 +235,15 @@ export default function MiniPlayer() {
     if (navigator.share) {
       try {
         await navigator.share({ title: track.title, text: texto, url })
-        return
       } catch {
-        // Cancelar o compartilhamento também cai aqui. Copiar em seguida
-        // seria um efeito que ninguém pediu, então paramos por aqui.
-        return
+        // Cancelar o compartilhamento também cai aqui. Copiar o link em
+        // seguida seria um efeito que ninguém pediu.
+      } finally {
+        // Cancelar sem sair do Safari não dispara `visibilitychange`, então a
+        // recuperação roda aqui também.
+        restaurarToques()
       }
+      return
     }
     try {
       await navigator.clipboard.writeText(url)
@@ -386,7 +459,7 @@ export default function MiniPlayer() {
         style={{ background: BARRA, transition: "background-color 500ms ease", backdropFilter: "blur(14px)", ["--fm-tabbar" as string]: "calc(4.15rem + env(safe-area-inset-bottom))" }}
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <button onClick={openFull} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+          <button {...aoAcionar(openFull)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
             <div
               className="w-10 h-10 rounded-lg flex-none bg-cover bg-center border border-white/10"
               style={track.imageUrl ? { backgroundImage: `url(${track.imageUrl})` } : { background: "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
@@ -409,7 +482,7 @@ export default function MiniPlayer() {
           )}
 
           <button
-            onClick={toggleRepeat}
+            {...aoAcionar(toggleRepeat)}
             aria-label={repeat ? "Desativar repetir" : "Repetir música"}
             aria-pressed={repeat}
             title={repeat ? "Repetindo — toca de novo ao terminar" : "Repetir música"}
@@ -422,7 +495,7 @@ export default function MiniPlayer() {
             <IconRepeat />
           </button>
           <button
-            onClick={anterior}
+            {...aoAcionar(anterior)}
             disabled={!temAnterior}
             aria-label="Música anterior"
             title="Anterior"
@@ -431,7 +504,7 @@ export default function MiniPlayer() {
             <IconAnterior />
           </button>
           <button
-            onClick={toggle}
+            {...aoAcionar(toggle)}
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white"
             style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
             aria-label={playing ? "Pausar" : "Tocar"}
@@ -439,7 +512,7 @@ export default function MiniPlayer() {
             {playing ? <IconPause /> : <IconPlay />}
           </button>
           <button
-            onClick={proxima}
+            {...aoAcionar(proxima)}
             disabled={!temProxima}
             aria-label="Próxima música"
             title="Próxima"
@@ -466,7 +539,7 @@ export default function MiniPlayer() {
           no sheet, que tem rolagem própria: ela não disputa altura com
           mais nada. */}
       {fullOpen && (
-        <div className="fixed inset-0 z-50 text-white overflow-hidden" style={{ background: FUNDO, transition: "background-color 500ms ease" }}>
+        <div ref={overlayRef} className="fixed inset-0 z-50 text-white overflow-hidden" style={{ background: FUNDO, transition: "background-color 500ms ease" }}>
           {/* Fundo ambiente. `scale` esconde as bordas que o blur deixa
               translúcidas; sem ele aparece uma moldura clara na volta. */}
           {track.imageUrl && (
@@ -494,7 +567,7 @@ export default function MiniPlayer() {
               barra de baixo — não é navegação, ao contrário do player do
               pedido, que sai da página. Mesmo gesto, mesma posição. */}
           <button
-            onClick={closeFull}
+            {...aoAcionar(closeFull)}
             aria-label="Fechar player"
             className="absolute top-8 left-4 z-30 w-10 h-10 rounded-full flex items-center justify-center bg-black/35 backdrop-blur text-white/85 hover:text-white hover:bg-black/55 transition-colors"
           >
@@ -533,7 +606,7 @@ export default function MiniPlayer() {
             <div className="flex items-center gap-3 mt-5">
               {naRede && (
                 <button
-                  onClick={favoritar}
+                  {...aoAcionar(favoritar)}
                   aria-label={naRede.favorited ? "Remover dos favoritos" : "Favoritar"}
                   className={`w-11 h-11 shrink-0 rounded-full border flex items-center justify-center transition-colors ${
                     naRede.favorited
@@ -545,7 +618,7 @@ export default function MiniPlayer() {
                 </button>
               )}
               <button
-                onClick={abrirAdicionar}
+                {...aoAcionar(abrirAdicionar)}
                 aria-label="Adicionar esta música a uma playlist"
                 className="w-11 h-11 shrink-0 rounded-full border border-white/15 bg-black/20 text-white/60 hover:text-white hover:border-white/35 flex items-center justify-center transition-colors"
               >
@@ -560,7 +633,7 @@ export default function MiniPlayer() {
                   NUNCA o /m/{slug} — aquele mostra as fotos do cliente. */}
               {naRede && (
                 <button
-                  onClick={compartilhar}
+                  {...aoAcionar(compartilhar)}
                   aria-label="Compartilhar esta música"
                   className="w-11 h-11 shrink-0 rounded-full border border-white/15 bg-black/20 text-white/60 hover:text-white hover:border-white/35 flex items-center justify-center transition-colors"
                 >
@@ -597,7 +670,7 @@ export default function MiniPlayer() {
                 letra atravessavam a tela inteira. Uma coluna só, centrada. */}
             <div className="w-full max-w-2xl mx-auto flex flex-col flex-1 min-h-0">
             <button
-              onClick={() => setSheetOpen((v) => !v)}
+              {...aoAcionar(() => setSheetOpen((v) => !v))}
               aria-label={sheetOpen ? "Fechar letra" : "Abrir letra"}
               className="w-full pt-3 pb-1 flex flex-col items-center shrink-0"
             >
@@ -612,7 +685,7 @@ export default function MiniPlayer() {
                 isso não tem esses botões. */}
             <div className="shrink-0 flex items-center justify-center gap-5 px-6 py-2">
               <button
-                onClick={toggleRepeat}
+                {...aoAcionar(toggleRepeat)}
                 aria-label={repeat ? "Desativar repetir" : "Repetir música"}
                 aria-pressed={repeat}
                 className={`w-9 h-9 rounded-full flex items-center justify-center border transition-colors ${
@@ -622,7 +695,7 @@ export default function MiniPlayer() {
                 <IconRepeat />
               </button>
               <button
-                onClick={anterior}
+                {...aoAcionar(anterior)}
                 disabled={!temAnterior}
                 aria-label="Música anterior"
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white/55 hover:text-white disabled:opacity-25 transition-colors"
@@ -630,14 +703,14 @@ export default function MiniPlayer() {
                 <IconAnterior />
               </button>
               <button
-                onClick={toggle}
+                {...aoAcionar(toggle)}
                 className="w-14 h-14 rounded-full bg-white text-black flex items-center justify-center shrink-0"
                 aria-label={playing ? "Pausar" : "Tocar"}
               >
                 {playing ? <IconPause size="w-6 h-6" /> : <IconPlay size="w-6 h-6" />}
               </button>
               <button
-                onClick={proxima}
+                {...aoAcionar(proxima)}
                 disabled={!temProxima}
                 aria-label="Próxima música"
                 className="w-9 h-9 rounded-full flex items-center justify-center text-white/55 hover:text-white disabled:opacity-25 transition-colors"
