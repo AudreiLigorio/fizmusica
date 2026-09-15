@@ -62,6 +62,8 @@ export default function AplausoBarra({
   const [minhas, setMinhas] = useState(0)
   const [resta, setResta] = useState<number | null>(null)
   const [valor, setValor] = useState(0)
+  // Reabre o medidor pra quem já aplaudiu e quer dar mais.
+  const [aumentando, setAumentando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const pedido = useRef<string | null>(null)
 
@@ -69,6 +71,7 @@ export default function AplausoBarra({
     let vivo = true
     pedido.current = orderId
     setValor(0)
+    setAumentando(false)
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       const r = await fetch(`/api/rede/aplauso?orderId=${encodeURIComponent(orderId)}`, {
@@ -95,28 +98,47 @@ export default function AplausoBarra({
     if (!r || r.error) { if (r?.error) onPrecisaConta(); return }
     setTotal(r.total ?? 0); setMinhas(r.minhas ?? 0); setResta(r.resta ?? null)
     setValor(0)
-  }
-
-  // Já aplaudiu: vira leitura compacta.
-  if (minhas > 0) {
-    return (
-      <div className="mt-4 flex items-center justify-center gap-2.5 rounded-xl px-3 py-2"
-           style={{ background: "rgba(240,25,107,0.08)", border: "1px solid rgba(240,25,107,0.25)" }}>
-        <div className="w-16"><Segmentos n={minhas} altura={10} /></div>
-        <span className="text-[11px] text-white tabular-nums">{total.toLocaleString("pt-BR")}</span>
-        <span className="text-[11px] text-white/50">{total === 1 ? "palma" : "palmas"}</span>
-        <span className="text-[10px] text-white/35">· você deu {minhas}</span>
-      </div>
-    )
+    setAumentando(false)
   }
 
   const semCota = resta === 0
-  const teto = resta == null ? SEGMENTOS : Math.min(SEGMENTOS, resta)
+  // O teto é o que a cota do dia ainda permite ADICIONAR, somado ao que já
+  // foi dado nesta música — subir de 3 pra 5 custa 2, não 5 (é assim que a
+  // função do banco cobra).
+  const teto = resta == null ? SEGMENTOS : Math.min(SEGMENTOS, minhas + resta)
+  // Arrastar abaixo do que já foi dado não faz nada no banco (só aumenta),
+  // então o controle nem deixa chegar lá — gesto que não tem efeito confunde.
+  const piso = aumentando ? minhas : 0
+
+  // Já aplaudiu: vira leitura compacta — mas continua sendo um botão, porque
+  // aumentar é permitido. Sem isso a promessa de "dá pra aumentar depois"
+  // não tinha por onde acontecer (furo achado pelo Audrei).
+  if (minhas > 0 && !aumentando) {
+    const noTeto = minhas >= SEGMENTOS
+    return (
+      <button
+        type="button"
+        onClick={() => { if (!noTeto && !semCota) { setValor(minhas); setAumentando(true) } }}
+        disabled={noTeto || semCota}
+        className="mt-4 w-full flex items-center justify-center gap-2.5 rounded-xl px-3 py-2 disabled:cursor-default"
+        style={{ background: "rgba(240,25,107,0.08)", border: "1px solid rgba(240,25,107,0.25)" }}
+      >
+        <div className="w-16"><Segmentos n={minhas} altura={10} /></div>
+        <span className="text-[11px] text-white tabular-nums">{total.toLocaleString("pt-BR")}</span>
+        <span className="text-[11px] text-white/50">{total === 1 ? "palma" : "palmas"}</span>
+        <span className="text-[10px] text-white/35">
+          · você deu {minhas}{noTeto ? " (máximo)" : semCota ? "" : " · aumentar"}
+        </span>
+      </button>
+    )
+  }
 
   return (
     <div className="mt-4 rounded-xl px-3 py-2.5" style={{ background: "#0d0b14", border: "1px solid rgba(255,255,255,0.09)" }}>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[9px] uppercase tracking-[0.1em] text-white/35">Seu aplauso</span>
+        <span className="text-[9px] uppercase tracking-[0.1em] text-white/35">
+          {aumentando ? `Aumentar — você deu ${minhas}` : "Seu aplauso"}
+        </span>
         <span className="text-[10px] text-white/35 tabular-nums">
           {total > 0 ? `${total.toLocaleString("pt-BR")} palmas` : "seja o primeiro"}
         </span>
@@ -124,6 +146,7 @@ export default function AplausoBarra({
 
       <div className="relative">
         <Segmentos n={valor} altura={22} brilho />
+
         {/* Controle nativo por cima, invisível: o desenho é nosso, mas quem
             recebe o arrasto é um <input>, então teclado e leitor de tela
             funcionam sem reimplementar nada.
@@ -133,7 +156,7 @@ export default function AplausoBarra({
             subir. */}
         <input
           type="range"
-          min={0}
+          min={piso}
           max={teto}
           step={1}
           value={valor}
