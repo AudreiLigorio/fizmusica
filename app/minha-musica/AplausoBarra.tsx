@@ -159,8 +159,16 @@ export default function AplausoBarra({
           disabled={enviando}
           onChange={(e) => setValor(Number(e.target.value))}
           onPointerDown={() => { if (logado === false) onPrecisaConta() }}
-          onPointerUp={() => aplaudir(valor)}
-          onKeyUp={(e) => { if (/Arrow|Home|End|Enter| /.test(e.key)) aplaudir(valor) }}
+          // Lê do PRÓPRIO input, não do estado. Quando o dedo levanta, o
+          // React pode ainda não ter processado o último passo do arrasto —
+          // e aí `valor` no fecho é o anterior. Como o aplauso só aumenta,
+          // mandar o valor antigo não muda nada: era exatamente o sintoma de
+          // "abre mas não edita" (Audrei, 2026-09-15). O elemento sempre tem
+          // o número certo.
+          onPointerUp={(e) => aplaudir(Number((e.currentTarget as HTMLInputElement).value))}
+          onKeyUp={(e) => {
+            if (/Arrow|Home|End|Enter| /.test(e.key)) aplaudir(Number((e.currentTarget as HTMLInputElement).value))
+          }}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
       </div>
