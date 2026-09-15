@@ -92,11 +92,15 @@ type ItemBase = {
   // ouvindo AGORA.
   plays: number
   playsRecentes: number
+  // Total acumulado de palmas — o número que aparece na música. A ordem do
+  // "Em alta" é outra coisa (palmas por ouvinte na janela) e vem pronta do
+  // banco.
+  palmas: number
   createdAt: string
 }
 
 const TTL_MS = 60_000
-let cache: { em: number; itens: ItemBase[] } | null = null
+let cache: { em: number; itens: ItemBase[]; emAlta: string[] } | null = null
 
 // ── Crescimento do catálogo ───────────────────────────────────────────────
 //
@@ -138,8 +142,8 @@ async function porLotesDeIds<T>(
   return respostas.flatMap((r) => r.data ?? [])
 }
 
-async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
-  if (cache && Date.now() - cache.em < TTL_MS) return { itens: cache.itens }
+async function catalogoBase(): Promise<{ itens: ItemBase[]; emAlta: string[]; erro?: string }> {
+  if (cache && Date.now() - cache.em < TTL_MS) return { itens: cache.itens, emAlta: cache.emAlta }
 
   const supabase = createServerClient()
   type OrderRow = { id: string; context: string | null; subcategory: string; musicalStyle: string | null; sunoTracks: unknown; createdAt: string; userId: string | null }
@@ -159,7 +163,7 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
       .range(de, ate),
   )
 
-  if (error) return { itens: [], erro: error }
+  if (error) return { itens: [], emAlta: [], erro: error }
 
   // Apelido do autor. Desde 2026-09-14 quem AUTORIZA a publicação já sai
   // assinado (primeiro nome da conta, mostrado antes do aceite e desligável
@@ -193,6 +197,22 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
   const playsPorPedido: Record<string, { total: number; recentes: number }> = {}
   for (const c of (contagens as PlayRow[] | null) ?? []) {
     playsPorPedido[c.orderId] = { total: Number(c.total) || 0, recentes: Number(c.recentes) || 0 }
+  }
+
+  // Destaque por aplauso (migração 064). Vem pronto do banco com as travas
+  // aplicadas: janela de 30 dias, piso de ouvintes distintos, aplauso do
+  // dono fora e contas da casa fora. Aqui só se lê.
+  //
+  // Tolera a migração não ter rodado: sem a função, a prateleira não aparece
+  // e o resto da Rede segue igual.
+  type DestaqueRow = { orderId: string; palmas_janela: number; ouvintes_janela: number; por_ouvinte: number | null; palmas_total: number }
+  const { data: destaques, error: erroDestaque } = await supabase.rpc("destaque_aplauso", { p_dias: 30, p_piso: 3 })
+  if (erroDestaque) console.warn("[catalog] destaque_aplauso indisponível:", erroDestaque.message)
+  const emAltaOrdem: string[] = []
+  const palmasPorPedido: Record<string, number> = {}
+  for (const d of (destaques as DestaqueRow[] | null) ?? []) {
+    emAltaOrdem.push(d.orderId)
+    palmasPorPedido[d.orderId] = Number(d.palmas_total) || 0
   }
 
   const ids = (orders ?? []).map((o) => o.id)
@@ -234,13 +254,14 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; erro?: string }> {
         apelidoProprio: dono ? apelidoProprio[dono] ?? null : null,
         plays: playsPorPedido[o.id]?.total ?? 0,
         playsRecentes: playsPorPedido[o.id]?.recentes ?? 0,
+        palmas: palmasPorPedido[o.id] ?? 0,
         createdAt: o.createdAt as string,
       }
     })
     .filter((x): x is ItemBase => x !== null)
 
-  cache = { em: Date.now(), itens }
-  return { itens }
+  cache = { em: Date.now(), itens, emAlta: emAltaOrdem }
+  return { itens, emAlta: emAltaOrdem }
 }
 
 // Embaralhamento ESTÁVEL por semente.
@@ -284,7 +305,7 @@ export async function GET(req: NextRequest) {
   const user = await getUserFromAuth(req)
   const publico = !user
 
-  const { itens: base, erro } = await catalogoBase()
+  const { itens: base, emAlta: emAltaOrdem, erro } = await catalogoBase()
   if (erro) return NextResponse.json({ error: erro }, { status: 500 })
 
   const supabase = createServerClient()
@@ -329,6 +350,7 @@ export async function GET(req: NextRequest) {
       // Apelido próprio só sai pro próprio dono; pros outros vale o opt-in.
       authorApelido: publico ? null : (proprio ? b.apelidoProprio : b.apelidoPublico),
       plays: b.plays,
+      palmas: b.palmas,
       favorited: favoriteSet.has(b.orderId),
       createdAt: b.createdAt,
     }
@@ -412,10 +434,23 @@ export async function GET(req: NextRequest) {
     })
     .slice(0, 10)
 
+  // "Em alta": a ordem é a do banco (palmas por ouvinte na janela), não uma
+  // reordenação feita aqui — duas definições do mesmo ranking divergiriam.
+  // Índice sobre a lista PÚBLICA (`items`), não sobre a base: é dela que sai
+  // o título com a trava do confirmado e o áudio pela rota protegida. Pegar
+  // da base entregaria objeto com outra forma — foi o que aconteceu na
+  // primeira tentativa, e o card veio sem título.
+  const publicoPorId = new Map(items.map((i) => [i.orderId, i]))
+  const emAlta = emAltaOrdem
+    .map((id) => publicoPorId.get(id))
+    .filter((x): x is NonNullable<typeof x> => !!x)
+    .slice(0, 10)
+
   return NextResponse.json(
     {
       items: pagina,
       top10,
+      emAlta,
       total: ordenados.length,
       // Quantas músicas a busca encontrou ANTES do filtro de ocasião/estilo.
       //

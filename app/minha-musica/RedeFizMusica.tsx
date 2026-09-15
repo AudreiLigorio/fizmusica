@@ -26,7 +26,7 @@ function formatarPlays(n: number): string {
 }
 
 export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { onPlaylistsChanged?: () => void; onPrecisaLogin?: () => void }) {
-  const { items, top10, alternarFavorito, temMais, carregando, carregarMais, total } = useCatalogo()
+  const { items, top10, emAlta, alternarFavorito, temMais, carregando, carregarMais, total } = useCatalogo()
   const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
@@ -223,6 +223,53 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
           Lista numerada em vez da grade de capas porque a posição é a
           informação principal aqui — numa raia de capas iguais às de
           baixo, o "1º lugar" se perde. */}
+      {/* EM ALTA — palmas por ouvinte nos últimos 30 dias.
+          Prateleira separada do Top 10 de propósito: são perguntas
+          diferentes. Top 10 é "o que mais tocou"; Em alta é "o que mais
+          emocionou quem ouviu" — proporção, não volume, então música nova
+          não perde pra velha e música muito exibida não ganha por exposição.
+          Só aparece quando há material: a ordem vem do banco com piso de
+          ouvintes distintos, e prateleira vazia é melhor que pódio decidido
+          por duas pessoas. */}
+      {emAlta.length > 0 && (
+        <div className="mb-5 pb-5 border-b border-white/5">
+          <p className="text-sm font-extrabold uppercase tracking-wider mb-2.5">
+            <span style={{ color: "#f0196b" }}>Em alta</span>{" "}
+            <span className="text-white/90">mais aplaudidas</span>
+          </p>
+          <div className="grid sm:grid-cols-2 gap-x-6">
+            {emAlta.map((it, i) => {
+              const isPlaying = nowPlaying?.id === it.orderId && playing
+              return (
+                <button
+                  key={it.orderId}
+                  type="button"
+                  onClick={() => playOuPausa(paraFaixa(it), emAlta.map(paraFaixa))}
+                  className="w-full flex items-center gap-3 py-1.5 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
+                >
+                  <span className={`w-5 text-center text-sm font-bold tabular-nums shrink-0 ${i < 3 ? "text-pink-400" : "text-white/30"}`}>
+                    {i + 1}
+                  </span>
+                  <div
+                    className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-cover bg-center"
+                    style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
+                  >
+                    {isPlaying && <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-xs">❚❚</div>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs font-medium truncate ${isPlaying ? "text-pink-300" : ""}`}>{it.title}</p>
+                    <p className="text-[10px] text-white/40 truncate">{it.occasion}</p>
+                  </div>
+                  <span className="text-[11px] text-white/45 tabular-nums shrink-0">
+                    {(it.palmas ?? 0).toLocaleString("pt-BR")} 👏
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {top10.length > 0 && (
         <div className="mb-5 pb-5 border-b border-white/5">
           {/* Rótulo FIXO em "Top 10": é o nome da seção, não a contagem.

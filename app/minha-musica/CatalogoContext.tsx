@@ -31,6 +31,9 @@ export type CatalogItem = {
   authorApelido: string | null
   // Reproduções contadas (migração 057). Zero em tudo enquanto ela não roda.
   plays?: number
+  // Total acumulado de palmas (migração 061). A ORDEM do "Em alta" é outra
+  // coisa — palmas por ouvinte na janela — e já vem pronta do servidor.
+  palmas?: number
   favorited: boolean
   createdAt: string
 }
@@ -47,6 +50,9 @@ type Ctx = {
   // Ranking da Rede inteira — não acompanha busca, filtro nem página, por
   // isso vive separado de `items`.
   top10: CatalogItem[]
+  // Ordenada por palmas POR OUVINTE na janela de 30 dias — a ordem vem do
+  // banco (migração 064), com piso de ouvintes e contas da casa fora.
+  emAlta: CatalogItem[]
   total: number
   temMais: boolean
   // Total da BUSCA, sem o filtro de ocasião/estilo — é o que a pílula
@@ -65,7 +71,7 @@ type Ctx = {
 const VAZIO: Facetas = { ocasioes: [], estilos: [] }
 
 const CatalogoCtx = createContext<Ctx>({
-  items: null, top10: [], total: 0, totalDaBusca: 0, temMais: false, carregando: false, facetas: VAZIO,
+  items: null, top10: [], emAlta: [], total: 0, totalDaBusca: 0, temMais: false, carregando: false, facetas: VAZIO,
   busca: "", filtro: null,
   setBusca: () => {}, setFiltro: () => {}, carregarMais: () => {}, alternarFavorito: () => {},
 })
@@ -75,6 +81,7 @@ const POR_PAGINA = 40
 export function CatalogoProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [top10, setTop10] = useState<CatalogItem[]>([])
+  const [emAlta, setEmAlta] = useState<CatalogItem[]>([])
   const [total, setTotal] = useState(0)
   const [temMais, setTemMais] = useState(false)
   const [totalDaBusca, setTotalDaBusca] = useState(0)
@@ -112,7 +119,7 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => (desde === 0 ? (d.items ?? []) : [...(prev ?? []), ...(d.items ?? [])]))
     // Só na primeira página: o ranking é o mesmo em todas, e sobrescrever a
     // cada "mostrar mais" faria a lista piscar sem motivo.
-    if (desde === 0) setTop10(d.top10 ?? [])
+    if (desde === 0) { setTop10(d.top10 ?? []); setEmAlta(d.emAlta ?? []) }
     setTotal(d.total ?? 0)
     setTotalDaBusca(d.totalDaBusca ?? d.total ?? 0)
     setTemMais(!!d.temMais)
@@ -141,7 +148,7 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CatalogoCtx.Provider value={{
-      items, top10, total, totalDaBusca, temMais, carregando, facetas, busca, filtro,
+      items, top10, emAlta, total, totalDaBusca, temMais, carregando, facetas, busca, filtro,
       setBusca, setFiltro, carregarMais, alternarFavorito,
     }}>
       {children}
