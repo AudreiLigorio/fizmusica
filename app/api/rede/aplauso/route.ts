@@ -4,10 +4,10 @@ import { createServerClient } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
-// Cota diária de palmas. 30 com teto de 10 por música: permite aplaudir três
-// músicas de pé no mesmo dia. Com 10 a pessoa aplaudiria uma vez e acabou o
-// dia — escassez demais vira desistência, não decisão.
-const COTA_DIA = 30
+// Sem cota diária (decisão do Audrei, 2026-09-15): quanto mais palmas, mais
+// destaque. O limite que fica é UMA aplaudida por pessoa por música, e ela só
+// aumenta — é o que faz o número significar "quanta gente aplaudiu" em vez de
+// "quem insistiu mais". A regra vive no banco (migração 063).
 
 async function getUser(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "") ?? null
@@ -38,12 +38,11 @@ export async function GET(req: NextRequest) {
   // de "hoje" — livre pra divergir da que cobra. O dia é o de BRASÍLIA;
   // com o fuso do servidor a cota virava às 21h.
   //
-  // Visitante vê o total (o aplauso é público) e volta com `resta` nulo:
-  // dar palma exige conta, como favoritar e montar playlist.
+  // Visitante vê o total — o aplauso é público. O que ele não pode é dar
+  // palma: isso exige conta, como favoritar e montar playlist.
   const { data, error } = await supabase.rpc("aplauso_estado", {
     p_order_id: orderId,
     p_user_id: user?.id ?? null,
-    p_cota_dia: COTA_DIA,
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -51,8 +50,6 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     total: Number(r?.total ?? 0),
     minhas: r?.minhas ?? 0,
-    resta: r?.resta ?? null,
-    cota: COTA_DIA,
   })
 }
 
@@ -78,10 +75,9 @@ export async function POST(req: NextRequest) {
     p_order_id: orderId,
     p_user_id: user.id,
     p_palmas: n,
-    p_cota_dia: COTA_DIA,
   })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const r = Array.isArray(data) ? data[0] : data
-  return NextResponse.json({ total: Number(r?.total ?? 0), minhas: r?.minhas ?? 0, resta: r?.resta ?? 0, cota: COTA_DIA })
+  return NextResponse.json({ total: Number(r?.total ?? 0), minhas: r?.minhas ?? 0 })
 }

@@ -60,7 +60,6 @@ export default function AplausoBarra({
 }) {
   const [total, setTotal] = useState(0)
   const [minhas, setMinhas] = useState(0)
-  const [resta, setResta] = useState<number | null>(null)
   const [valor, setValor] = useState(0)
   // Reabre o medidor pra quem já aplaudiu e quer dar mais.
   const [aumentando, setAumentando] = useState(false)
@@ -79,7 +78,7 @@ export default function AplausoBarra({
       }).then((x) => x.json()).catch(() => null)
       // Troca de faixa no meio da resposta colaria o número na música errada.
       if (!vivo || pedido.current !== orderId || !r) return
-      setTotal(r.total ?? 0); setMinhas(r.minhas ?? 0); setResta(r.resta ?? null)
+      setTotal(r.total ?? 0); setMinhas(r.minhas ?? 0)
     })()
     return () => { vivo = false }
   }, [orderId])
@@ -96,16 +95,12 @@ export default function AplausoBarra({
     }).then((x) => x.json()).catch(() => null)
     setEnviando(false)
     if (!r || r.error) { if (r?.error) onPrecisaConta(); return }
-    setTotal(r.total ?? 0); setMinhas(r.minhas ?? 0); setResta(r.resta ?? null)
+    setTotal(r.total ?? 0); setMinhas(r.minhas ?? 0)
     setValor(0)
     setAumentando(false)
   }
 
-  const semCota = resta === 0
-  // O teto é o que a cota do dia ainda permite ADICIONAR, somado ao que já
-  // foi dado nesta música — subir de 3 pra 5 custa 2, não 5 (é assim que a
-  // função do banco cobra).
-  const teto = resta == null ? SEGMENTOS : Math.min(SEGMENTOS, minhas + resta)
+  const teto = SEGMENTOS
   // Arrastar abaixo do que já foi dado não faz nada no banco (só aumenta),
   // então o controle nem deixa chegar lá — gesto que não tem efeito confunde.
   const piso = aumentando ? minhas : 0
@@ -118,8 +113,8 @@ export default function AplausoBarra({
     return (
       <button
         type="button"
-        onClick={() => { if (!noTeto && !semCota) { setValor(minhas); setAumentando(true) } }}
-        disabled={noTeto || semCota}
+        onClick={() => { if (!noTeto) { setValor(minhas); setAumentando(true) } }}
+        disabled={noTeto}
         className="mt-4 w-full flex items-center justify-center gap-2.5 rounded-xl px-3 py-2 disabled:cursor-default"
         style={{ background: "rgba(240,25,107,0.08)", border: "1px solid rgba(240,25,107,0.25)" }}
       >
@@ -127,7 +122,7 @@ export default function AplausoBarra({
         <span className="text-[11px] text-white tabular-nums">{total.toLocaleString("pt-BR")}</span>
         <span className="text-[11px] text-white/50">{total === 1 ? "palma" : "palmas"}</span>
         <span className="text-[10px] text-white/35">
-          · você deu {minhas}{noTeto ? " (máximo)" : semCota ? "" : " · aumentar"}
+          · você deu {minhas}{noTeto ? " (máximo)" : " · aumentar"}
         </span>
       </button>
     )
@@ -161,7 +156,7 @@ export default function AplausoBarra({
           step={1}
           value={valor}
           aria-label="Quanto você aplaude, de 0 a 10"
-          disabled={enviando || semCota}
+          disabled={enviando}
           onChange={(e) => setValor(Number(e.target.value))}
           onPointerDown={() => { if (logado === false) onPrecisaConta() }}
           onPointerUp={() => aplaudir(valor)}
@@ -172,9 +167,6 @@ export default function AplausoBarra({
 
       <div className="flex items-center justify-between mt-1.5">
         <span className="text-[9px] text-white/30">SILÊNCIO</span>
-        <span className="text-[9px] text-white/30">
-          {semCota ? "palmas de hoje acabaram — voltam amanhã" : resta != null ? `${resta} palmas hoje` : ""}
-        </span>
         <span className="text-[9px] text-white/30">DE PÉ</span>
       </div>
     </div>
