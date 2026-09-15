@@ -33,25 +33,27 @@ export async function GET(req: NextRequest) {
   const supabase = createServerClient()
   const user = await getUser(req)
 
-  // Visitante vê o total — o aplauso é público. O que ele não tem é cota:
+  // Leitura vem do banco (migração 062), não montada aqui: o "início do dia"
+  // é o da cota, e calcular isso em JavaScript criaria uma segunda definição
+  // de "hoje" — livre pra divergir da que cobra. O dia é o de BRASÍLIA;
+  // com o fuso do servidor a cota virava às 21h.
+  //
+  // Visitante vê o total (o aplauso é público) e volta com `resta` nulo:
   // dar palma exige conta, como favoritar e montar playlist.
-  const { data: linhas } = await supabase
-    .from("music_applause").select("palmas, user_id").eq("orderId", orderId)
+  const { data, error } = await supabase.rpc("aplauso_estado", {
+    p_order_id: orderId,
+    p_user_id: user?.id ?? null,
+    p_cota_dia: COTA_DIA,
+  })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  const total = (linhas ?? []).reduce((s, l) => s + (l.palmas as number), 0)
-  const minhas = user ? (linhas ?? []).find((l) => l.user_id === user.id)?.palmas ?? 0 : 0
-
-  let resta: number | null = null
-  if (user) {
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
-    const { data: doDia } = await supabase
-      .from("music_applause").select("palmas")
-      .eq("user_id", user.id).gte("updated_at", hoje.toISOString())
-    const gasto = (doDia ?? []).reduce((s, l) => s + (l.palmas as number), 0)
-    resta = Math.max(COTA_DIA - gasto, 0)
-  }
-
-  return NextResponse.json({ total, minhas, resta, cota: COTA_DIA })
+  const r = Array.isArray(data) ? data[0] : data
+  return NextResponse.json({
+    total: Number(r?.total ?? 0),
+    minhas: r?.minhas ?? 0,
+    resta: r?.resta ?? null,
+    cota: COTA_DIA,
+  })
 }
 
 export async function POST(req: NextRequest) {
