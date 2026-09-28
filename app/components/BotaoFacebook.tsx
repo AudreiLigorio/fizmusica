@@ -1,7 +1,12 @@
 // Botão "Entrar com Facebook" — azul oficial da Meta (#1877F2) com o "f"
 // branco, como pedem as diretrizes de marca. `className` só ajusta o espaçamento
 // e o arredondamento de cada tela, pra ficar alinhado com o botão do Google ao lado.
+//
+// Escondido até NEXT_PUBLIC_FACEBOOK_LOGIN=1: enquanto o app da Meta não for
+// publicado (exige verificação de empresa, e hoje não há CNPJ), só quem tem
+// função no app consegue entrar — o cliente comum clicaria e daria erro da Meta.
 export default function BotaoFacebook({ onClick, className = "" }: { onClick: () => void; className?: string }) {
+  if (process.env.NEXT_PUBLIC_FACEBOOK_LOGIN !== "1") return null
   return (
     <button
       type="button"
