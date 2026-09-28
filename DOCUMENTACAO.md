@@ -315,6 +315,11 @@ Motivo de existir: campos como `lyricsApprovedAt` só guardam o estado **atual**
 ### Cliente — passwordless (Supabase Auth)
 Link mágico (`signInWithOtp`) e Google (`signInWithOAuth`). `/auth/callback` é página client (não `route.ts`) que chama `verifyOtp` no navegador — rota server não propagava a sessão. `AuthHashHandler` (layout raiz) captura o token em qualquer página (fluxo implícito pode cair na home) e redireciona pra `/minha-musica`.
 
+### Login com Facebook — pronto, mas escondido (2026-09-28)
+Botão em `/entrar`, `/sucesso` e `/preparar/[token]` (`app/components/BotaoFacebook.tsx`), mesmo fluxo OAuth do Google; testado em produção e o mesmo e-mail caiu na mesma conta. App da Meta **separado** do app de conteúdo do Instagram (ID `1648139246875446`, só `email` + `public_profile`). Conta do Facebook sem e-mail volta para `/entrar?erro=sem-email` com explicação.
+
+**Escondido** até `NEXT_PUBLIC_FACEBOOK_LOGIN=1`: enquanto o app não é publicado, só quem tem função nele consegue entrar, e o cliente comum veria um erro da Meta. Publicar exige **portfólio empresarial verificado**, e não existe verificação por CPF. **Parado até abrir MEI.** Retomada: verificar o portfólio com o Cartão CNPJ → religar o app ao portfólio → questionário de tratamento de dados e uso permitido → Publicar → variável na Vercel.
+
 ### Admin — cookie HMAC próprio
 Senha (`ADMIN_PASSWORD`) → token assinado HMAC-SHA256, cookie httpOnly 7 dias. `proxy.ts` protege `/admin/*`; `/api/admin/*` revalida internamente.
 
@@ -410,6 +415,7 @@ Levantamento feito a pedido do Audrei, com números medidos em produção — n�
 - Padronizar templates de e-mail do Supabase Auth (hoje "Confirm signup" ainda no default, sem o layout da marca).
 - Fase 3 — recorrência/monetização: lembretes de data especial, desconto recorrente, indicação, assinatura/playlist de músicas.
 - **Teaser Premium** (planejado, não codado): vídeo vertical 9:16 pra Reels/TikTok como diferencial do plano Premium — arquitetura decidida (template + JSON de cena normalizado, render via API de montagem tipo JSON2Video/Shotstack, ~R$1/render, emojis Google Noto), mas recomendação é validar por teste concierge (vender como add-on manual pra clientes reais e medir se postam) antes de construir o módulo.
+- **Login com Facebook** — pronto e escondido; parado até abrir MEI (ver seção 15).
 - **App Android** — ver seção 22 e `docs/app-android.md`. Próximo passo: fases 1 (base do TWA) e 2 (exclusão de conta). Decisões em aberto: conta pessoal × empresa, preço no app, descontos no app, iPhone.
 - Revisão jurídica final por advogado dos textos legais atualizados (IA na produção, licença, privacidade).
 
