@@ -410,6 +410,7 @@ Levantamento feito a pedido do Audrei, com números medidos em produção — n�
 - Padronizar templates de e-mail do Supabase Auth (hoje "Confirm signup" ainda no default, sem o layout da marca).
 - Fase 3 — recorrência/monetização: lembretes de data especial, desconto recorrente, indicação, assinatura/playlist de músicas.
 - **Teaser Premium** (planejado, não codado): vídeo vertical 9:16 pra Reels/TikTok como diferencial do plano Premium — arquitetura decidida (template + JSON de cena normalizado, render via API de montagem tipo JSON2Video/Shotstack, ~R$1/render, emojis Google Noto), mas recomendação é validar por teste concierge (vender como add-on manual pra clientes reais e medir se postam) antes de construir o módulo.
+- **App Android** — ver seção 22 e `docs/app-android.md`. Próximo passo: fases 1 (base do TWA) e 2 (exclusão de conta). Decisões em aberto: conta pessoal × empresa, preço no app, descontos no app, iPhone.
 - Revisão jurídica final por advogado dos textos legais atualizados (IA na produção, licença, privacidade).
 
 ## 21. Publicação nas redes (agentes de conteúdo)
@@ -440,6 +441,16 @@ Pedir `video.publish` antes da aprovação faz o TikTok recusar a tela de autori
 **Onde a API não publica, a tela entrega o material** (`⬇️ arquivo`, `📋 legenda`) e o botão `✔️ já postei` registra o que foi ao ar. Esse registro não é cosmético: o descarte dos ingredientes de vídeo (cenas, narração, trilha) só roda quando a **família inteira** foi publicada — sem ele, o storage cresceria para sempre e o painel mentiria sobre onde a história está.
 
 ---
+
+## 22. App Android (planejado, não codado)
+
+Plano completo em [`docs/app-android.md`](docs/app-android.md) (análise de 2026-09-26).
+
+- **Objetivo:** tudo dentro do app, inclusive a compra; web desktop e mobile continuam iguais. Um código só: o site detecta que está no app e só muda o pagamento.
+- **Agora: TWA** (site em tela cheia pelo Chrome). Cada deploy atualiza web e app juntos. **Depois: Flutter**, se retenção, uso e compras pelo app validarem. A troca vira atualização do mesmo app só se o **identificador do pacote** e a **chave de assinatura** forem os mesmos desde o primeiro dia.
+- **Pagamento no app: só Google Play Billing** (15%, programa de pequenas empresas). Música é conteúdo digital, então o Google exige a cobrança dele; site segue Mercado Pago sem taxa do Google. Links externos ("pagar no site") só chegam ao Brasil em 30/09/2027 — tarefa mensal agendada monitora. A validação da Play será o **7º ponto de pagamento**: automações de "pago" precisam rodar nele.
+- **Falta antes de publicar:** exclusão de conta (a Play exige, não existe hoje), App Links para o magic link abrir no app, e marcar o tráfego do app em `lib/track.ts`.
+- **Regra até o Flutter:** toda lógica de negócio passa por `/api` (hoje: zero server actions).
 
 ---
 
