@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
 
-// Login rápido pós-pagamento: Google (um toque) ou link mágico pro e-mail que
+// Login rápido pós-pagamento: Google/Facebook (um toque) ou link mágico pro e-mail que
 // já sabemos (não pede pra digitar de novo). Usado em /sucesso e em
 // /preparar/[token] — os dois precisam da mesma coisa, só com visual diferente.
 //
@@ -22,14 +22,16 @@ export function useQuickLogin(email: string | null | undefined, vincularToken?: 
     return vincularToken ? `${base}?vincular=${vincularToken}` : base
   }
 
-  async function withGoogle() {
+  async function withProvider(provider: "google" | "facebook") {
     setError("")
     const { error: authError } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider,
       options: { redirectTo: redirectTo() },
     })
     if (authError) setError(authError.message)
   }
+  const withGoogle = () => withProvider("google")
+  const withFacebook = () => withProvider("facebook")
 
   async function withEmail() {
     if (!email) return
@@ -44,5 +46,5 @@ export function useQuickLogin(email: string | null | undefined, vincularToken?: 
     else setEmailSent(true)
   }
 
-  return { withGoogle, withEmail, sending, emailSent, error }
+  return { withGoogle, withFacebook, withEmail, sending, emailSent, error }
 }

@@ -20,9 +20,22 @@ export default function AuthCallback() {
       // /preparar/[token] depois do login, que completa o vínculo do pedido à
       // conta. Dois jeitos de carregar esse token até aqui: ?vincular= na URL
       // (sobrevive a abrir o e-mail em outro aparelho) ou localStorage (o
-      // OAuth do Google sempre retorna no mesmo navegador que iniciou).
+      // OAuth (Google/Facebook) sempre retorna no mesmo navegador que iniciou).
       const vincularToken = url.searchParams.get("vincular") || localStorage.getItem("fm_vincular_token")
       const destino = vincularToken ? `/preparar/${vincularToken}` : "/minha-musica"
+
+      // Google/Facebook que voltaram SEM login trazem o motivo na URL (no
+      // fragmento, no fluxo implícito; na query, por garantia). O caso que
+      // importa é o do Facebook sem e-mail — conta criada com celular, ou
+      // e-mail negado no consentimento: o Supabase recusa ("Error getting user
+      // email from external provider"), e o cliente precisa saber que o
+      // caminho é outro, não ver a tela de login de novo sem explicação.
+      const hash = new URLSearchParams(window.location.hash.slice(1))
+      const erroProvedor = url.searchParams.get("error_description") || hash.get("error_description")
+      if (erroProvedor) {
+        router.replace(`/entrar?erro=${/email/i.test(erroProvedor) ? "sem-email" : "login-social"}`)
+        return
+      }
 
       // Fluxo token_hash (link mágico): valida no navegador → grava sessão
       if (token_hash && type) {
