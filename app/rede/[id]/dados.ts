@@ -1,4 +1,4 @@
-import { tituloNeutro } from "@/lib/tituloPublico"
+import { tituloNeutro, rotuloOcasiao } from "@/lib/tituloPublico"
 import { createServerClient } from "@/lib/supabase"
 
 // Carregador único da música pública.
@@ -55,7 +55,7 @@ export async function carregarMusicaPublica(id: string) {
   return {
     orderId: id,
     titulo,
-    ocasiao: order.subcategory as string,
+    ocasiao: rotuloOcasiao(order.subcategory as string),
     estilo: (order.musicalStyle as string | null) ?? null,
     imageUrl: principal?.imageUrl ?? null,
     lyrics: music.lyrics ?? null,

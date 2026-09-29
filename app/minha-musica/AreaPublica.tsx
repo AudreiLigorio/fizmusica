@@ -28,8 +28,8 @@ import { CatalogoProvider } from "./CatalogoContext"
 // Título e corpo seguem a escala da aba Músicas (RedeFizMusica.tsx): h2
 // text-xl font-bold, descrição text-xs — pra não ter uma aba com título
 // maior que a outra dentro da mesma área.
-function Convite({ icone, titulo, frase, acao, onAcao }: {
-  icone: string; titulo: string; frase: string; acao: string; onAcao: () => void
+function Convite({ icone, titulo, frase, acao, onAcao, extra }: {
+  icone: string; titulo: string; frase: string; acao: string; onAcao: () => void; extra?: React.ReactNode
 }) {
   return (
     // Prefixos sm: só — o mobile fica exatamente como estava. No desktop a
@@ -46,6 +46,7 @@ function Convite({ icone, titulo, frase, acao, onAcao }: {
       >
         {acao}
       </button>
+      {extra}
     </div>
   )
 }
@@ -116,6 +117,18 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
               frase="Depois que você encomenda uma música, é nesta tela que ela aparece — com a letra, as fotos e o link pra presentear."
               acao="Criar minha música"
               onAcao={() => router.push("/criar")}
+              // Quem JÁ comprou e abriu o app/site sem estar logado caía
+              // aqui e só via "Criar minha música" — como se a música dele
+              // não existisse. O "Entrar" do topo existe, mas ninguém liga
+              // o botão do cabeçalho a "cadê a minha música?".
+              extra={
+                <p className="text-white/70 text-sm mt-6">
+                  Já comprou?{" "}
+                  <button onClick={entrar} className="text-pink-300 font-semibold underline underline-offset-4 hover:text-pink-200">
+                    Entre para ver sua música
+                  </button>
+                </p>
+              }
             />
           )}
 

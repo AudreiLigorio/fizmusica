@@ -13,3 +13,14 @@ export function tituloNeutro(ocasiao?: string | null): string {
   if (!o || /composi[çc]/i.test(o)) return "Uma canção autoral"
   return `Uma canção de ${o}`
 }
+
+// Rótulo PÚBLICO da ocasião (Rede, página da música). Mesma armadilha do
+// título: a subcategoria da composição livre é texto de botão do wizard
+// ("Já tenho a composição da Letra") e aparecia como se fosse uma ocasião —
+// no filtro da Rede e embaixo do nome de cada música. Só troca a exibição;
+// o banco e o wizard seguem com o rótulo original.
+export function rotuloOcasiao(ocasiao?: string | null): string {
+  const o = (ocasiao ?? "").trim()
+  if (/composi[çc]/i.test(o)) return "Composição autoral"
+  return o
+}

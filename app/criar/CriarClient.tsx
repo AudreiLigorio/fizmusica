@@ -1120,11 +1120,15 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               ) : (
                 <div className="grid lg:grid-cols-2 gap-3 items-start">
 
-                  {/* ── Porta 1: quem já tem a letra ── */}
+                  {/* ── Porta 1: quem já tem a letra ──
+                      `order-last`: aparece DEPOIS da homenagem (embaixo no
+                      celular, à direita no computador). Homenagem é o uso
+                      principal; com o compositor em cima, o primeiro — e mais
+                      chamativo — botão da tela era o do caminho de nicho. */}
                   {composicaoLivre && composicaoLivre.wizard_subcategories[0] && (
                     <button
                       onClick={() => handleSubcategoryClick(composicaoLivre.wizard_subcategories[0], composicaoLivre.label)}
-                      className="text-left rounded-2xl p-5 transition-all hover:brightness-110 active:scale-[0.99]"
+                      className="order-last text-left rounded-2xl p-5 transition-all hover:brightness-110 active:scale-[0.99]"
                       style={{ background: "rgba(248,171,8,0.06)", border: "1px solid rgba(248,171,8,0.45)" }}
                     >
                       <span className="inline-block text-[9px] uppercase tracking-[0.12em] rounded-full px-2.5 py-1 mb-3"

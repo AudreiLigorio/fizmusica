@@ -267,7 +267,12 @@ function CartaRede({ onClick }: { onClick: () => void }) {
   ]
 
   return (
-    <div className={`${LARGURA} rounded-2xl border border-white/10 bg-white/[0.04] p-5 flex flex-col`}>
+    // `order-last` só no celular: lá cabe uma carta por vez, e a grátis na
+    // frente fazia a primeira coisa vista na vitrine ser "Começar agora" (que
+    // não é compra) — o plano "mais escolhido" ficava três arrastadas depois.
+    // No computador (lg:order-none) segue a primeira, como no print de
+    // referência, porque ali as quatro aparecem juntas.
+    <div className={`${LARGURA} order-last lg:order-none rounded-2xl border border-white/10 bg-white/[0.04] p-5 flex flex-col`}>
       <span className="self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300 border border-emerald-400/30 bg-emerald-400/10">
         Gratuito
       </span>

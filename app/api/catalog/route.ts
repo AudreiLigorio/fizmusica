@@ -1,4 +1,4 @@
-import { tituloNeutro } from "@/lib/tituloPublico"
+import { tituloNeutro, rotuloOcasiao } from "@/lib/tituloPublico"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
@@ -246,7 +246,7 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; emAlta: string[]; er
         ownerId: dono,
         musicName: music.musicName,
         musicNameConfirmed: music.musicNameConfirmed,
-        occasion: o.subcategory,
+        occasion: rotuloOcasiao(o.subcategory),
         musicalStyle: o.musicalStyle ?? null,
         imageUrl: principal?.imageUrl ?? null,
         audioUrl,

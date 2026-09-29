@@ -105,6 +105,10 @@ function ProdutosContent() {
   // Cupom digitado pelo cliente (visto nas redes). Validado contra o total atual;
   // o checkout revalida de forma autoritativa, então o desconto aqui é só preview.
   const [couponInput, setCouponInput]       = useState("")
+  // Campo de cupom recolhido por padrão: aberto no topo, ele manda quem não tem
+  // cupom sair da página pra procurar um (padrão conhecido de perda de venda).
+  // Com banner de campanha na tela, abre sozinho — ali o código está à vista.
+  const [cupomAberto, setCupomAberto]       = useState(false)
   const [appliedCoupon, setAppliedCoupon]   = useState<{ code: string; discount: number; finalTotal: number } | null>(null)
   const [couponMsg, setCouponMsg]           = useState("")
   const [checkingCoupon, setCheckingCoupon] = useState(false)
@@ -331,7 +335,8 @@ function ProdutosContent() {
               </div>
             )}
 
-            {/* Cupom de desconto — topo, abaixo do banner. Vale para os dois produtos. */}
+            {/* Cupom de desconto — topo, abaixo do banner. Vale para os dois produtos.
+                Sem banner, aparece só como link até a pessoa pedir. */}
             {!loading && (
               <div className="mb-6 lg:mb-10">
                 {appliedCoupon ? (
@@ -351,6 +356,13 @@ function ProdutosContent() {
                       Remover
                     </button>
                   </div>
+                ) : !promoCoupon && !cupomAberto ? (
+                  <button
+                    onClick={() => setCupomAberto(true)}
+                    className="text-sm text-white/70 hover:text-white underline underline-offset-4"
+                  >
+                    🎟️ Tenho um cupom de desconto
+                  </button>
                 ) : (
                   <div className="rounded-2xl px-4 py-3.5"
                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
