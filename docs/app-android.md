@@ -1,6 +1,6 @@
 # App Android — plano
 
-> Estado: **planejado, nada codado** (análise de 2026-09-26). Resumo em `DOCUMENTACAO.md`, seção 22.
+> Estado (2026-09-29): **fases 1 (parte web) e 2 no ar; aguardando a verificação de identidade no Play Console.** Resumo em `DOCUMENTACAO.md`, seção 22. Ver "Onde paramos" no fim.
 
 ## Objetivo
 
@@ -115,3 +115,29 @@ Combinar antes de lançar:
 - [Taxas de serviço — Play Console](https://support.google.com/googleplay/android-developer/answer/112622?hl=pt-BR)
 - [Mobile Time — novo modelo de cobrança (março/2026)](https://www.mobiletime.com.br/noticias/04/03/2026/google-play-fim-monopoli/)
 - [LeiaJá — Play Store amplia pagamentos alternativos (junho/2026)](https://www.leiaja.com/tecnologia/2026/06/25/google-play-store-amplia-formas-alternativas-de-pagamento-e-unifica-as-comissoes/)
+
+## Onde paramos (2026-09-29)
+
+**Decidido**
+- Identificador do app: **`com.fizmusica.app`** (definitivo — o Flutter futuro tem que usar o mesmo).
+- Abre em **`/minha-musica?origem=app`** (área do cliente; visitante vê a versão aberta).
+- Host oficial: **`https://www.fizmusica.com.br`** — o endereço sem `www` responde 307 para ele. TWA e `assetlinks.json` usam o `www`.
+- Conta Play Console **pessoal** (sem CNPJ). Com MEI, a mesma conta pode virar "empresa" (Sobre você → Alterar tipo de conta; exige D-U-N-S).
+- No app, pagamento **só pelo Google Play** (ver seção de pagamento acima).
+
+**No ar**
+- `aab8a2c` — base do app: `app/manifest.ts`, ícones em `public/app/` (normal + maskable), `public/offline.html`, `public/sw.js` mínimo (só a página offline; não guarda páginas em cache de propósito), `RegistrarSW` só em produção, `/sw.js` sem cache, canal app/web por evento em `site_events.canal` (migração 065, aplicada).
+- `3ce6af7` — exclusão de conta: Carreira → "Excluir minha conta" (confirma com EXCLUIR; bloqueia com música em produção), página pública **`/excluir-conta`** (URL do formulário da Play), e-mail de aviso. Pedidos pagos só perdem o vínculo; palmas viram autor anônimo.
+
+**Aguardando**
+- Verificação de identidade da conta pessoal no Play Console (pedida pelo Audrei em 2026-09-29).
+
+**Próximos passos, nesta ordem**
+1. Criar o app no Play Console (nome "Fiz Música", `com.fizmusica.app`) e ativar a assinatura gerenciada pelo Google.
+2. Gerar o projeto TWA com Bubblewrap apontando para `https://www.fizmusica.com.br/manifest.webmanifest` (o Mac não tem Java/Android SDK — o Bubblewrap baixa). Cria a **chave de envio**: o Audrei define a senha e guarda em lugar seguro (sem ela não há atualização).
+3. Publicar `/.well-known/assetlinks.json` com o SHA-256 da chave de assinatura que o Play Console mostra (sem isso aparece a barra do Chrome no topo).
+4. Loja: textos, ícone 512, banner 1024×500, prints; formulário de segurança dos dados (link de exclusão acima); classificação indicativa.
+5. Teste fechado: **12 testadores por 14 dias** (conta pessoal nova) antes da produção.
+6. Depois: pagamento no app via Play Billing (fase 3) e push (opcional).
+
+**Pendência legal:** a Política de Privacidade deve citar a exclusão de conta (e o login com Facebook, quando voltar).
