@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthHashHandler from "./components/AuthHashHandler";
 import ChunkReloadGuard from "./components/ChunkReloadGuard"
 import Tracker from "@/app/components/Tracker";
+import RegistrarSW from "@/app/components/RegistrarSW";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-display",
@@ -30,6 +31,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Cor da barra de status do celular no app instalado — a mesma do fundo.
+  themeColor: "#07060d",
 };
 
 export default function RootLayout({
@@ -46,6 +49,7 @@ export default function RootLayout({
         <AuthHashHandler />
         <Tracker />
         <ChunkReloadGuard />
+        <RegistrarSW />
         {children}
       </body>
     </html>

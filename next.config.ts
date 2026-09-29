@@ -25,6 +25,19 @@ const nextConfig: NextConfig = {
       { pathname: "/**", search: "" },
     ],
   },
+  // O service worker nunca pode ficar preso em cache: se ficar, uma correção
+  // nele só chegaria ao cliente dias depois. Recomendação da doc de PWA do Next.
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+        ],
+      },
+    ]
+  },
   // Desliga o cache do cliente das rotas dinâmicas para o painel sempre mostrar
   // dados frescos. (static tem mínimo de 30s no Next 16, então não o forçamos.)
   experimental: {

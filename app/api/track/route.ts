@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       utm_campaign: corta(b.utm_campaign, 120),
       utm_content: corta(b.utm_content, 120),
       referrer: corta(b.referrer, 200),
+      canal: b.canal === "app" ? "app" : "web",
     })
 
     return NextResponse.json({ ok: true })

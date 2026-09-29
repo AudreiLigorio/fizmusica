@@ -56,6 +56,18 @@ function origem(): Origem {
   }
 }
 
+// Diferente da origem (primeiro toque, fica gravada), o CANAL é de cada evento:
+// a mesma pessoa pode ter chegado pelo Instagram no navegador e hoje abrir pelo
+// app. "app" = site aberto como app instalado (o TWA da Play Store abre em modo
+// standalone e manda o referrer android-app://).
+function canal(): "app" | "web" {
+  try {
+    if (document.referrer.startsWith("android-app://")) return "app"
+    if (window.matchMedia("(display-mode: standalone)").matches) return "app"
+  } catch { /* segue como web */ }
+  return "web"
+}
+
 export function track(evento: string, detalhe?: string) {
   try {
     const corpo = JSON.stringify({
@@ -63,6 +75,7 @@ export function track(evento: string, detalhe?: string) {
       evento,
       detalhe,
       caminho: window.location.pathname,
+      canal: canal(),
       ...origem(),
     })
     // sendBeacon sobrevive à navegação — com fetch normal, o evento de clique
