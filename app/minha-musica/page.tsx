@@ -27,6 +27,7 @@ import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "
 import CarreiraPainel from "./CarreiraPainel"
 import AreaPublica from "./AreaPublica"
 import MinhaCarreira from "./MinhaCarreira"
+import ExcluirConta from "./ExcluirConta"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -1333,6 +1334,11 @@ function MinhaMusicaContent() {
               foi exatamente o que aconteceu entre esta ajuda e a FAQ da home
               ("nossa equipe avalia" numa, proibido na outra). */}
           {aba !== "home" && <AjudaCliente aba={aba} />}
+
+          {/* Exigência da Play Store: excluir a conta tem que ser achável
+              dentro do app. Fica na Carreira — é a aba da "identidade" do
+              cliente (apelido, foto, discos) — e sempre por último. */}
+          {aba === "carreira" && <ExcluirConta />}
         </section>
 
         <Footer />

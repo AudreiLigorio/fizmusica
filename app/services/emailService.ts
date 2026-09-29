@@ -240,6 +240,32 @@ export async function sendClaimConfirmationEmail(data: ClaimEmailData): Promise<
 }
 
 // ============================================================
+// E-mail: conta excluída pelo próprio cliente
+// ============================================================
+
+export async function sendAccountDeletedEmail(data: { email: string }): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      subject: "Sua conta foi excluída — FizMusica",
+      html: emailShell({
+        emoji: "👋",
+        title: "Sua conta foi excluída",
+        body:
+          para(`A conta ligada a ${strong(data.email)} foi excluída a pedido de quem estava logado nela. Apagamos seus favoritos, playlists, perfil, datas especiais e o histórico da Carreira.`) +
+          para(`As músicas que você comprou continuam suas: o arquivo e a letra ficam guardados, como garante a Licença. Se um dia criar uma conta de novo com este e-mail, elas voltam a aparecer.`),
+        note: { label: "Não foi você?", text: "Responda este e-mail ou escreva para contato@fizmusica.com.br que a gente ajuda." },
+      }),
+    })
+    if ((result as any).error) return { ok: false, error: (result as any).error?.message ?? "erro" }
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
+// ============================================================
 // E-mail: reenvio do link de acesso (token) — "perdi o e-mail"
 // ============================================================
 
