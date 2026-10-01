@@ -5,6 +5,8 @@ import AuthHashHandler from "./components/AuthHashHandler";
 import ChunkReloadGuard from "./components/ChunkReloadGuard"
 import Tracker from "@/app/components/Tracker";
 import RegistrarSW from "@/app/components/RegistrarSW";
+import { SincronizarTema } from "@/app/components/Tema";
+import { scriptTemaInicial } from "@/lib/tema";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-display",
@@ -41,15 +43,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    // suppressHydrationWarning: o script do <head> coloca data-tema no <html>
+    // antes do React carregar — diferença esperada, não erro.
     <html
       lang="pt-BR"
       className={`${cormorant.variable} ${dmSans.variable} h-full`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* Tema (claro/escuro) aplicado ANTES da primeira pintura — ver lib/tema.ts */}
+        <script dangerouslySetInnerHTML={{ __html: scriptTemaInicial }} />
+      </head>
       <body className="min-h-full flex flex-col antialiased">
         <AuthHashHandler />
         <Tracker />
         <ChunkReloadGuard />
         <RegistrarSW />
+        <SincronizarTema />
         {children}
       </body>
     </html>

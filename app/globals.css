@@ -347,3 +347,146 @@
     }
   }
 }
+/* ── Tema CLARO (escolha do cliente: Claro / Escuro / Automático) ─────────
+   Ativo quando o <html> tem data-tema="claro" — ver lib/tema.ts e
+   app/components/Tema.tsx. O site foi desenhado escuro e as cores estão
+   escritas tela a tela (classes e style={{}}), então o claro "repinta" por
+   cima: fica FORA das camadas do Tailwind de propósito (CSS sem @layer vence
+   as utilities) e casa também os style={{}} nos dois formatos em que chegam
+   (do servidor "#07060d"/"rgba(255,255,255,…" e do navegador "rgb(7, 6, 13)"/
+   "rgba(255, 255, 255, …"). Próximo passo saudável: trocar isso por tokens
+   de cor (um nome, dois valores) tela a tela.
+   ⚠️ Toda tela nova do CLIENTE precisa ser conferida nos dois temas.
+   ⚠️ Seletor que o processador não entende (ex.: :has() com lista) faz o
+   bloco INTEIRO sumir sem erro no log — conferir em document.styleSheets.
+   Paleta: fundo #fbf7f4, texto #1f1a24, secundário #4a4351/#5b5563, borda
+   #e3d8dc, campo #b9adb2, rosa de ação #c2185b. */
+[data-tema="claro"] { color: #1f1a24; background: #fbf7f4 !important; }
+/* Estilo inline vem do servidor como "#07060d" e, depois de mexido no
+   navegador, como "rgb(7, 6, 13)" — os dois formatos. */
+[data-tema="claro"] [style*="#07060d"],
+[data-tema="claro"] [style*="rgb(7, 6, 13)"] { background: #fbf7f4 !important; }
+
+[data-tema="claro"] .text-white { color: #1f1a24; }
+[data-tema="claro"] [class*="text-white/"],
+[data-tema="claro"] [class*="text-gray-"] { color: #4a4351; }
+[data-tema="claro"] [class*="text-pink-"],
+[data-tema="claro"] [class*="text-fuchsia-"] { color: #c2185b; }
+[data-tema="claro"] ::placeholder { color: #8a8190 !important; }
+
+[data-tema="claro"] [class*="bg-white/"],
+[data-tema="claro"] [class*="bg-black/"] { background-color: #ffffff; }
+[data-tema="claro"] [class*="border-white/"] { border-color: #e3d8dc; }
+[data-tema="claro"] [style*="background:rgba(255,255,255,0.0"],
+[data-tema="claro"] [style*="background: rgba(255, 255, 255, 0.0"],
+[data-tema="claro"] [style*="background:rgba(0,0,0,0.4)"],
+[data-tema="claro"] [style*="background: rgba(0, 0, 0, 0.4)"] { background: #ffffff !important; }
+[data-tema="claro"] [style*="solid rgba(255,255,255"],
+[data-tema="claro"] [style*="solid rgba(255, 255, 255"] { border-color: #e3d8dc !important; }
+
+[data-tema="claro"] input,
+[data-tema="claro"] textarea { background: #ffffff; border: 1.5px solid #b9adb2; color: #1f1a24; }
+[data-tema="claro"] input:focus,
+[data-tema="claro"] textarea:focus { border-color: #c2185b; box-shadow: 0 0 0 4px rgba(194, 24, 91, .15); }
+
+/* Botões com gradiente da marca seguem com texto branco */
+[data-tema="claro"] [style*="linear-gradient(135deg"][style*="f0196b"],
+[data-tema="claro"] [style*="linear-gradient(135deg"][style*="f0196b"] *,
+[data-tema="claro"] [style*="linear-gradient(135deg, rgb(240, 25, 107)"],
+[data-tema="claro"] [style*="linear-gradient(135deg, rgb(240, 25, 107)"] * { color: #ffffff; }
+/* Orbs de luz do fundo escuro não fazem sentido no claro */
+[data-tema="claro"] [style*="radial-gradient"]:not([style*="url("]) { display: none; }
+/* Cor de texto escrita direto no componente (style={{ color: "rgba(255,…)" }}) */
+[data-tema="claro"] [style*="color:rgba(255,255,255"],
+[data-tema="claro"] [style*="color: rgba(255, 255, 255"] { color: #4a4351 !important; }
+/* Texto em gradiente (background-clip: text): no creme, cor sólida mais escura */
+[data-tema="claro"] [style*="clip:text"],
+[data-tema="claro"] [style*="clip: text"] { background: none !important; color: #c2185b !important; -webkit-text-fill-color: #c2185b; }
+[data-tema="claro"] [style*="clip:text"][style*="#f6b440"],
+[data-tema="claro"] [style*="clip: text"][style*="246, 180, 64"] { color: #9a5800 !important; -webkit-text-fill-color: #9a5800; }
+/* Vitrine de /produtos: preço rosa-claro, verde dos recursos e o círculo de
+   seleção vêm em style={{}} pensados pro fundo preto. */
+[data-tema="claro"] [style*="244, 114, 182"],
+[data-tema="claro"] [style*="#f472b6"] { color: #c2185b !important; }
+[data-tema="claro"] [style*="74, 222, 128"],
+[data-tema="claro"] [style*="#4ade80"] { color: #18794e !important; }
+[data-tema="claro"] [style*="border-color: rgba(255, 255, 255"],
+[data-tema="claro"] [style*="border-color:rgba(255,255,255"] { border-color: #cfc3c8 !important; }
+[data-tema="claro"] [style*="background: rgba(25"],
+[data-tema="claro"] [style*="background:rgba(25"] { background: #ffffff !important; }
+/* Barras fixas "de vidro" (botão de ação no rodapé do celular) */
+[data-tema="claro"] [style*="rgba(7,6,13"],
+[data-tema="claro"] [style*="rgba(7, 6, 13"] { background: rgba(251, 247, 244, 0.95) !important; border-color: #eadfe3 !important; }
+
+/* ── Menus (topo na web, rodapé no celular) — mesma cor em todo o site ── */
+[data-tema="claro"] .bg-black { background: #fbf7f4; }
+[data-tema="claro"] img[src="/logo_fizmusica.png"] { content: url("/logo_fizmusica_claro.png"); }
+/* Topo: fundo creme translúcido (vem de rgba(7,6,13,…) — regra acima),
+   linha de baixo e as três barrinhas do menu hambúrguer */
+[data-tema="claro"] header { border-color: #eadfe3 !important; }
+[data-tema="claro"] header [class*="bg-white/70"] { background-color: #1f1a24 !important; }
+[data-tema="claro"] header [class*="hover:bg-white/5"] { background-color: transparent; }
+/* Barra de abas do celular: branca, com linha em cima */
+[data-tema="claro"] [style*="#241a33"],
+[data-tema="claro"] [style*="rgb(36, 26, 51)"] { background: #ffffff !important; border-top: 1px solid #eadfe3 !important; box-shadow: 0 -4px 16px rgba(31, 26, 36, 0.06); }
+[data-tema="claro"] nav[aria-label="Seções da sua área"]::after { background: #ffffff !important; }
+/* Abas: inativas em cinza escuro, ativa no rosa de ação (com o traço) */
+[data-tema="claro"] nav[aria-label="Seções da sua área"] button { color: #5b5563; }
+[data-tema="claro"] nav[aria-label="Seções da sua área"] button[aria-current="page"] { color: #c2185b; }
+[data-tema="claro"] nav[aria-label="Seções da sua área"] [class*="bg-[#ff5c94]"] { background-color: #c2185b; }
+/* Botões de fundo rosa sólido (ex.: "Entrar" no topo) seguem com texto branco */
+[data-tema="claro"] [style*="background: rgb(240, 25, 107)"],
+[data-tema="claro"] [style*="background:#f0196b"],
+[data-tema="claro"] [style*="background: rgb(240, 25, 107)"] *,
+[data-tema="claro"] [style*="background:#f0196b"] * { color: #ffffff; }
+/* Sombra de texto foi pensada para título sobre foto escura; no creme borra */
+[data-tema="claro"] h1, [data-tema="claro"] h2 { text-shadow: none !important; }
+/* Hero da home: os véus escuros sobre o vídeo viram véus creme — forte à
+   esquerda (onde está o texto), leve à direita (onde o vídeo aparece). */
+[data-tema="claro"] [style*="linear-gradient(90deg, rgba(7"] {
+  background: linear-gradient(90deg, rgba(251,247,244,.96) 0%, rgba(251,247,244,.86) 38%, rgba(251,247,244,.35) 70%, rgba(251,247,244,.15) 100%) !important;
+}
+[data-tema="claro"] [style*="linear-gradient(180deg, rgba(7"] {
+  background: linear-gradient(180deg, rgba(251,247,244,.80) 0%, rgba(251,247,244,.70) 40%, rgba(251,247,244,.95) 100%) !important;
+}
+[data-tema="claro"] h1, [data-tema="claro"] h1 * { filter: none !important; }
+/* "Criar música" nas abas do computador: botão de gradiente, texto branco
+   (a regra das abas acima é mais específica e o deixava rosa sobre rosa) */
+[data-tema="claro"] nav[aria-label="Seções da sua área"] button[style*="linear-gradient"] { color: #ffffff; }
+/* Texto branco escrito no componente, sem fundo próprio → texto escuro.
+   (Com fundo próprio — botão — mantém o branco: :not([style*="background"])) */
+[data-tema="claro"] [style*="color: rgb(255, 255, 255)"]:not([style*="background"]),
+[data-tema="claro"] [style*="color:#fff"]:not([style*="background"]),
+[data-tema="claro"] [style*="color:white"]:not([style*="background"]) { color: #1f1a24 !important; }
+/* Segundo tom do fundo escuro (#0e0d1a, cards da home) */
+[data-tema="claro"] [style*="rgba(14,13,26"],
+[data-tema="claro"] [style*="rgba(14, 13, 26"],
+[data-tema="claro"] [style*="#0e0d1a"] { background: #ffffff !important; border-color: #e3d8dc !important; }
+/* Botões de cor cheia (verde do WhatsApp, rosa, vermelho): texto branco */
+[data-tema="claro"] [class~="bg-green-500"], [data-tema="claro"] [class~="bg-green-500"] *,
+[data-tema="claro"] [class~="bg-green-600"], [data-tema="claro"] [class~="bg-green-600"] *,
+[data-tema="claro"] [class~="bg-pink-500"], [data-tema="claro"] [class~="bg-pink-500"] *,
+[data-tema="claro"] [class~="bg-pink-600"], [data-tema="claro"] [class~="bg-pink-600"] *,
+[data-tema="claro"] [class~="bg-red-500"], [data-tema="claro"] [class~="bg-red-500"] *,
+[data-tema="claro"] [class~="bg-red-600"], [data-tema="claro"] [class~="bg-red-600"] * { color: #ffffff; }
+/* Âmbar da vitrine (#f59e0b) como TEXTO: escurece no claro. Como fundo de
+   pílula de preço, fica como está. */
+[data-tema="claro"] [style*="color: rgb(245, 158, 11)"]:not([style*="background"]),
+[data-tema="claro"] [style*="color:#f59e0b"]:not([style*="background"]) { color: #9a5800 !important; }
+[data-tema="claro"] [style*="color:#f8ab08"]:not([style*="background"]),
+[data-tema="claro"] [style*="color: rgb(248, 171, 8)"]:not([style*="background"]) { color: #9a5800 !important; }
+/* Botão branco DENTRO de card rosa (ex.: "Entrar com Google" no /sucesso):
+   a regra de texto branco do gradiente não pode alcançá-lo */
+[data-tema="claro"] [style*="linear-gradient"] [class~="bg-white"],
+[data-tema="claro"] [style*="linear-gradient"] [class~="bg-white"] * { color: #1f1a24; }
+/* Cores de aviso pensadas para fundo escuro (amarelo/verde/vermelho/âmbar
+   claros) → tons escuros da mesma família */
+[data-tema="claro"] [class*="text-yellow-"],
+[data-tema="claro"] [class*="text-amber-"] { color: #8a5a00; }
+[data-tema="claro"] [class*="text-green-"],
+[data-tema="claro"] [class*="text-emerald-"] { color: #18794e; }
+[data-tema="claro"] [class*="text-red-"] { color: #b42318; }
+[data-tema="claro"] [class*="text-sky-"],
+[data-tema="claro"] [class*="text-blue-"] { color: #1d5fa8; }
+[data-tema="claro"] [class*="text-purple-"],
+[data-tema="claro"] [class*="text-violet-"] { color: #6d28d9; }

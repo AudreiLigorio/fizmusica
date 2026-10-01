@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { track } from "@/lib/track"
 import { useRouter, usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
+import { SeletorTema } from "@/app/components/Tema"
 
 // Este cabeçalho é o menu INSTITUCIONAL: Quem somos, Contato, Termos,
 // Entrar/Sair e o avatar. A navegação do aplicativo (Pedidos, Músicas,
@@ -132,6 +133,10 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
             Termos e Políticas
           </button>
 
+          {/* Aparência (Claro / Escuro / Automático). No celular ela mora no
+              menu ☰, para não apertar a linha do topo. */}
+          <div className="hidden md:block"><SeletorTema compacto /></div>
+
           {/* Mesmo lugar, a ação troca com a sessão: Entrar pra quem não tem
               conta, Sair pra quem tem e quer trocar de usuário. Nunca os
               dois juntos. Sem "Entrar" em cima do próprio /entrar — seria
@@ -239,6 +244,10 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
               <span className="font-medium">Termos e Políticas</span>
               <span className="ml-auto text-white/30">→</span>
             </button>
+            <div className="flex items-center justify-between gap-3 py-4 border-t border-white/[0.05]">
+              <span className="font-medium text-white/80">Aparência</span>
+              <SeletorTema />
+            </div>
             {/* Sair não repete aqui: agora fica sempre visível no topo (linha
                 acima), inclusive no mobile — não precisa abrir o hambúrguer
                 pra achar. */}
