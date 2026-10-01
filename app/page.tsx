@@ -457,6 +457,9 @@ export default function Home() {
             aqui). `lg:items-stretch` faz as duas colunas terem a MESMA
             altura, senão o cartão mais curto ficava com um vão vazio ao
             lado do mais alto. */}
+        {/* Os dois cartões com a MESMA altura (`items-stretch`). A lista,
+            esticada, antes ficava com um vão vazio embaixo — agora as linhas
+            se distribuem pela altura (`lg:flex-1` em cada uma, abaixo). */}
         <div className="lg:grid lg:grid-cols-[minmax(0,42%)_minmax(0,1fr)] lg:gap-6 lg:items-stretch">
 
         {/* Encolhida (pedido do Audrei): era um cartão largo com bastante
@@ -465,16 +468,21 @@ export default function Home() {
             uma tabela. No desktop ela é a coluna esquerda da grade acima,
             então perde o `max-w-xl`/centralização própria (`lg:max-w-none
             lg:mx-0`) pra preencher a coluna inteira. */}
-        <div className="max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:h-full rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
-             style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.14) 0%, rgba(217,70,239,0.10) 50%, rgba(255,255,255,0.03) 100%)", border: "1px solid rgba(240,25,107,0.2)", backdropFilter: "blur(24px)" }}>
-          <div className="space-y-0 p-1.5">
+        {/* Player de exemplos = zona sempre escura (data-zona-escura), como os
+            demais players: no tema claro ele vira uma "vitrine" escura sobre
+            a página clara. Por isso o fundo ganhou uma base sólida no fim do
+            gradiente (#0b0a14) — antes era só translúcido e dependia do preto
+            da página atrás. */}
+        <div data-zona-escura className="max-w-xl mx-auto lg:max-w-none lg:mx-0 lg:h-full lg:flex lg:flex-col rounded-3xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]"
+             style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.14) 0%, rgba(217,70,239,0.10) 50%, rgba(255,255,255,0.03) 100%), #0b0a14", border: "1px solid rgba(240,25,107,0.2)", backdropFilter: "blur(24px)" }}>
+          <div className="space-y-0 p-1.5 lg:flex-1 lg:flex lg:flex-col">
             {DEMOS.map((d, idx) => {
               const isActive = currentAudio === d.src && playing
               return (
                 <button
                   key={d.id}
                   onClick={() => togglePlay(d.src)}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group"
+                  className="w-full lg:flex-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-200 group"
                   style={{ background: isActive ? "rgba(240,25,107,0.15)" : "rgba(255,255,255,0.03)" }}
                 >
                   <span className="shrink-0 w-5 text-center tabular-nums"
@@ -530,7 +538,7 @@ export default function Home() {
             centraliza verticalmente: a coluna da lista ao lado dita a
             altura (`items-stretch` no grid), e sem isso o conteúdo ficaria
             grudado no topo com um vão vazio embaixo. */}
-        <div className="relative mt-6 lg:mt-0 lg:h-full rounded-3xl overflow-hidden">
+        <div data-zona-escura className="relative mt-6 lg:mt-0 lg:h-full rounded-3xl overflow-hidden">
           <div className="absolute inset-0"
                style={{ background: "radial-gradient(130% 160% at 12% 15%, rgba(240,25,107,0.38) 0%, transparent 55%), radial-gradient(130% 160% at 88% 85%, rgba(139,92,246,0.38) 0%, transparent 55%), #14111f" }} />
           <div className="absolute inset-0 opacity-40"
