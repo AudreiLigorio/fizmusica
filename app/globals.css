@@ -6,6 +6,11 @@
 
 /* ── Brand tokens ──────────────────────────────── */
 :root {
+  /* Plano "neutro" da vitrine de produtos (ProdutosCarrossel) — troca com o tema */
+  --vitrine-neutra-forte: #ffffff;
+  --vitrine-neutra-suave: rgba(255,255,255,0.10);
+  --vitrine-neutra-borda: rgba(255,255,255,0.28);
+  --vitrine-neutra-preco-texto: #0d0b16;
   --pink: #f0196b;
   --pink-soft: #ff6b9d;
   --fuchsia: #d946ef;
@@ -490,3 +495,10 @@
 [data-tema="claro"] [class*="text-blue-"] { color: #1d5fa8; }
 [data-tema="claro"] [class*="text-purple-"],
 [data-tema="claro"] [class*="text-violet-"] { color: #6d28d9; }
+/* Plano neutro da vitrine no claro: grafite no lugar do branco */
+[data-tema="claro"] {
+  --vitrine-neutra-forte: #1f1a24;
+  --vitrine-neutra-suave: #f4eef0;
+  --vitrine-neutra-borda: #d9cfd3;
+  --vitrine-neutra-preco-texto: #ffffff;
+}

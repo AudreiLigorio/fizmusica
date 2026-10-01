@@ -37,7 +37,10 @@ type Produto = {
 // `precoTexto` existe por causa do branco: a etiqueta de preço pinta o texto
 // SOBRE `forte`, e branco no branco desapareceria.
 const CORES = [
-  { forte: "#ffffff", suave: "rgba(255,255,255,0.10)", borda: "rgba(255,255,255,0.28)", precoTexto: "#0d0b16" },
+  // Cor "neutra" do primeiro plano: branco no tema escuro, grafite no claro
+  // (com branco ele sumia no fundo claro — ícone, ✓ e pílula de preço). Vem
+  // de variáveis CSS definidas em globals.css, que trocam com o tema.
+  { forte: "var(--vitrine-neutra-forte)", suave: "var(--vitrine-neutra-suave)", borda: "var(--vitrine-neutra-borda)", precoTexto: "var(--vitrine-neutra-preco-texto)" },
   { forte: "#f59e0b", suave: "rgba(245,158,11,0.18)", borda: "rgba(245,158,11,0.35)", precoTexto: "#ffffff" },
   { forte: "#3b82f6", suave: "rgba(59,130,246,0.18)", borda: "rgba(59,130,246,0.35)", precoTexto: "#ffffff" },
   { forte: "#22c55e", suave: "rgba(34,197,94,0.18)", borda: "rgba(34,197,94,0.35)", precoTexto: "#ffffff" },
@@ -349,7 +352,7 @@ function CartaProduto({ produto, cor, onClick }: {
           // em duas linhas, e sem isso o check escorregaria pro meio do texto.
           <li key={b} className="flex items-start gap-1.5 text-[11px] text-white/65 leading-snug">
             <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px]" aria-hidden="true"
-                 fill="none" stroke={cor.forte} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                 fill="none" style={{ stroke: cor.forte }} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
               <path d="m5 12 5 5L20 7" />
             </svg>
             {b}
