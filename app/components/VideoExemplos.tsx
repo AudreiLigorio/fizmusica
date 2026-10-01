@@ -87,6 +87,7 @@ export default function VideoExemplos() {
               <li key={ex.slug} className="snap-center shrink-0 w-[15.5rem] flex flex-col items-center">
                 {/* Mockup de celular */}
                 <div
+                  data-zona-escura
                   className="relative w-full rounded-[2.35rem] p-2"
                   style={{
                     aspectRatio: "9 / 14.4",

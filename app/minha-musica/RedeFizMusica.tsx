@@ -251,6 +251,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                     {i + 1}
                   </span>
                   <div
+                    data-zona-escura
                     className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-cover bg-center"
                     style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
                   >
@@ -300,6 +301,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                     {i + 1}
                   </span>
                   <div
+                    data-zona-escura
                     className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-cover bg-center"
                     style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
                   >

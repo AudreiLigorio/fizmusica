@@ -630,6 +630,7 @@ export default function MiniPlayer() {
           — sem isso o título (que não tem cor própria) herda o preto do body e
           some no fundo escuro. Mesma armadilha dos modais em portal. */}
       <div
+        data-zona-escura
         className="fixed left-0 right-0 bottom-[var(--fm-tabbar)] sm:bottom-0 z-40 border-t border-white/10 px-4 py-2.5 text-white"
         // A barra é o que mais se confundia com o preto do site — ela vive
         // por cima dele o tempo todo. Tingida e mais clara, passa a ser uma
@@ -719,7 +720,7 @@ export default function MiniPlayer() {
           no sheet, que tem rolagem própria: ela não disputa altura com
           mais nada. */}
       {fullOpen && (
-        <div ref={overlayRef} className="fixed inset-0 z-50 text-white overflow-hidden" style={{ background: FUNDO, transition: "background-color 500ms ease" }}>
+        <div ref={overlayRef} data-zona-escura className="fixed inset-0 z-50 text-white overflow-hidden" style={{ background: FUNDO, transition: "background-color 500ms ease" }}>
           {/* Fundo ambiente. `scale` esconde as bordas que o blur deixa
               translúcidas; sem ele aparece uma moldura clara na volta. */}
           {track.imageUrl && (
