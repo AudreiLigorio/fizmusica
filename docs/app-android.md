@@ -1,6 +1,6 @@
 # App Android — plano
 
-> Estado (2026-09-29): **fases 1 (parte web) e 2 no ar; aguardando a verificação de identidade no Play Console.** Resumo em `DOCUMENTACAO.md`, seção 22. Ver "Onde paramos" no fim.
+> Estado (2026-10-07): **app gerado (Bubblewrap) e criado no Play Console; enviando a primeira versão para o teste interno.** Resumo em `DOCUMENTACAO.md`, seção 22. Ver "Onde paramos" no fim.
 
 ## Objetivo
 
@@ -141,3 +141,24 @@ Combinar antes de lançar:
 6. Depois: pagamento no app via Play Billing (fase 3) e push (opcional).
 
 **Pendência legal:** a Política de Privacidade deve citar a exclusão de conta (e o login com Facebook, quando voltar).
+
+## Onde paramos (2026-10-07)
+
+**Feito**
+- Conta pessoal no Play Console aprovada. App **"Fiz Música"** criado (pacote `com.fizmusica.app` registrado na criação, Grátis, pt-BR).
+- Projeto Android gerado com Bubblewrap 1.25.0 em `android-app/` (fora do Git, no `.gitignore` junto com `*.keystore`/`*.jks`). Pacote: `android-app/app-release-bundle.aab`; APK de teste: `android-app/app-release-signed.apk`.
+- **Chave de envio** em `~/FizMusica-Chave/fizmusica.keystore` (alias `fizmusica`), fora do projeto. Senha só com o dono — **perder a chave ou a senha impede atualizar o app**; manter cópia do arquivo e a senha no gerenciador.
+- `public/.well-known/assetlinks.json` no ar, com o SHA-256 da chave de **envio** (validado na API Digital Asset Links do Google).
+
+**Armadilhas vistas**
+- O Bubblewrap sugere `br.com.fizmusica.www.twa` como Application ID: apagar e digitar `com.fizmusica.app`.
+- Na primeira build ele fica em "Still waiting for package manifests" — está esperando aceitar a **licença** sem mostrar a pergunta: digitar `y` + Enter.
+
+**Próximos passos**
+1. Teste interno: salvar lista de testadores `Equipe` → **Criar nova versão** → aceitar a assinatura gerada pelo Google → upload do `.aab` → salvar.
+2. **Integridade do app → Assinatura de apps:** copiar o SHA-256 da **chave de assinatura do app** (a do Google) e ACRESCENTAR no `assetlinks.json` (sem ele, o app baixado da loja abre com a barra do Chrome).
+3. Instalar pelo link do teste interno num **Android** e conferir: abre sem barra do Chrome, login (magic link) volta para o app, tema e navegação.
+4. Ficha da loja, segurança dos dados (link `https://www.fizmusica.com.br/excluir-conta`), classificação indicativa (público **18+**: TWA não pode mirar menores de 13).
+5. Teste fechado com **12 testadores com Android por 14 dias**, depois pedir acesso à produção.
+
+**Nova versão do app:** subir `appVersionCode` (e `appVersionName`) no `android-app/twa-manifest.json`, rodar `npx @bubblewrap/cli@1.25.0 update` e depois `build` (pede a senha da chave).
