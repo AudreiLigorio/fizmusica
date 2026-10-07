@@ -45,3 +45,9 @@ next-env.d.ts
 .claude/
 
 .vercel
+
+# App Android (TWA gerado pelo Bubblewrap). Fora do Git: pode conter a chave
+# de assinatura e e regeneravel. A chave mora FORA desta pasta (ver docs/app-android.md).
+/android-app/
+*.keystore
+*.jks
