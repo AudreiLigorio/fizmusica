@@ -97,8 +97,9 @@ A área do cliente (Pedidos, Carreira, playlists) exige conta. Para criar uma, t
 
 | Categoria → tipo | Coletado | Obrigatório? | Finalidades |
 |---|---|---|---|
+| Informações pessoais → **IDs do usuário** (id da conta) | Sim | Obrigatório | Funcionalidade do app; Gerenciamento de contas |
 | Informações pessoais → **Nome** | Sim | Obrigatório | Funcionalidade do app; Gerenciamento da conta |
-| Informações pessoais → **Endereço de e-mail** | Sim | Obrigatório | Funcionalidade do app; Gerenciamento da conta; Comunicações do desenvolvedor |
+| Informações pessoais → **Endereço de e-mail** | Sim | Obrigatório | Funcionalidade do app; Gerenciamento de contas; Mensagens do desenvolvedor; **Publicidade ou marketing** (recuperação de carrinho, lembrete de data especial, envio em massa do CRM) |
 | Informações pessoais → **Número de telefone** (WhatsApp) | Sim | Obrigatório | Funcionalidade do app; Comunicações do desenvolvedor |
 | Informações pessoais → **Endereço** (só plano com entrega física) | Sim | Opcional | Funcionalidade do app |
 | Informações financeiras → **Informações de pagamento do usuário** (cartão/PIX, pelo Mercado Pago) | Sim | Obrigatório | Funcionalidade do app; Prevenção contra fraudes |
@@ -111,5 +112,7 @@ A área do cliente (Pedidos, Carreira, playlists) exige conta. Para criar uma, t
 | IDs do dispositivo ou outros → **IDs de dispositivo ou outros** (identificador anônimo de sessão) | Sim | Obrigatório | Análise |
 
 Para cada tipo, o formulário pergunta se o dado é **processado temporariamente**: responder **Não** (fica guardado).
+
+**Personalização**: não marcada em nenhum tipo (a Rede mostra rankings gerais, não recomendação individual). Se isso mudar, atualizar.
 
 **Não coletados**: localização precisa, contatos, agenda, arquivos, áudio (o microfone do wizard só transforma fala em texto no próprio navegador; o áudio não é enviado ao Fiz Música), saúde, mensagens SMS/e-mail, histórico de navegação na web.
