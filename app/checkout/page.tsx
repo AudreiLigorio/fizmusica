@@ -7,6 +7,8 @@ import { Suspense } from "react"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
+import AvisoCompraApp from "@/app/components/AvisoCompraApp"
+import { useNoAppPlay } from "@/lib/canal"
 import { supabase } from "@/lib/supabase"
 import { melhorDesconto } from "@/lib/descontoRegra"
 
@@ -597,7 +599,32 @@ function CheckoutContent() {
   )
 }
 
+// Dentro do app da Play Store não há checkout do Mercado Pago (regra de
+// faturamento da Play — ver lib/canal.ts). Cobre quem chega aqui por link
+// direto; os botões que levam ao checkout já somem no app.
+function CheckoutNoApp() {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "#07060d" }}>
+      <div className="max-w-sm w-full space-y-4">
+        <AvisoCompraApp />
+        <a href="/minha-musica?aba=pedidos" className="block text-center py-3 rounded-2xl text-sm font-semibold text-white"
+           style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}>
+          Ver meus pedidos
+        </a>
+      </div>
+    </div>
+  )
+}
+
 export default function CheckoutPage() {
+  const noApp = useNoAppPlay()
+  if (noApp) return <CheckoutNoApp />
+  // Ainda detectando (um instante): nada de pagamento montado.
+  if (noApp === null) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: "#07060d" }}>
+      <div className="w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center" style={{ background: "#07060d" }}>

@@ -6,6 +6,8 @@ import { Suspense } from "react"
 import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
+import AvisoCompraApp from "@/app/components/AvisoCompraApp"
+import { useNoAppPlay } from "@/lib/canal"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 
@@ -211,6 +213,9 @@ function ProdutosContent() {
       setStep(2)
     }
   }
+
+  // Dentro do app da Play Store não vendemos (ver lib/canal.ts).
+  const noApp = useNoAppPlay() === true
 
   async function handleContinuar() {
     if (!selected) return
@@ -653,7 +658,10 @@ function ProdutosContent() {
                 ← Voltar
               </button>
               <div className="flex flex-col items-end gap-3">
-                {((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) && (
+                {noApp && ((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) && (
+                  <div className="w-80"><AvisoCompraApp compacto /></div>
+                )}
+                {!noApp && ((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) && (
                   <button
                     onClick={handleContinuar}
                     disabled={!canContinue || (savingShipping && isPhysical)}
@@ -679,7 +687,9 @@ function ProdutosContent() {
         {((step === 1 && selected && selected.product_delivery_options.length === 0 && !isPhysical) || step === 2) && (
           <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
-            {canContinue ? (
+            {noApp ? (
+              <AvisoCompraApp compacto />
+            ) : canContinue ? (
               <button
                 onClick={handleContinuar}
                 disabled={savingShipping && isPhysical}

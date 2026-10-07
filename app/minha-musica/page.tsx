@@ -30,6 +30,8 @@ import MinhaCarreira from "./MinhaCarreira"
 import ExcluirConta from "./ExcluirConta"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
+import AvisoCompraApp from "@/app/components/AvisoCompraApp"
+import { useNoAppPlay } from "@/lib/canal"
 
 // Pedido antigo/sem produto vem sem `features` da API — libera tudo, mesma
 // regra do servidor: dado faltando não pode cancelar recurso já pago.
@@ -165,6 +167,8 @@ function MinhaMusicaContent() {
   const orderId      = searchParams.get("orderId")
 
   const [user, setUser]     = useState<User | null>(null)
+  // Dentro do app da Play Store não vendemos (ver lib/canal.ts).
+  const noApp = useNoAppPlay() === true
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -1253,7 +1257,7 @@ function MinhaMusicaContent() {
                       <p className="text-sm text-white/60 mb-4">
                         Esse pedido não foi finalizado. Se ainda quiser essa música, é só retomar o pagamento.
                       </p>
-                      <a
+                      {noApp ? <AvisoCompraApp compacto /> : <a
                         href={
                           order.productId && order.products?.price
                             ? `/checkout?orderId=${order.id}&productId=${order.productId}&productName=${encodeURIComponent(order.products.name)}&price=${order.products.price}`
@@ -1263,7 +1267,7 @@ function MinhaMusicaContent() {
                         style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
                       >
                         {order.productId && order.products?.price ? "Finalizar pagamento →" : "Escolher produto →"}
-                      </a>
+                      </a>}
                     </div>
                   ) : (
                     renderOrderDetail(order)
