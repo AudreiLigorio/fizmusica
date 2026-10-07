@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.fizmusica.app",
+      "sha256_cert_fingerprints": [
+        "CD:92:A0:5B:8D:98:A0:76:F3:4A:67:06:C1:4F:64:54:08:DB:F8:BD:48:3C:26:4D:30:6A:F0:52:BD:B4:8D:7E"
+      ]
+    }
+  }
+]
