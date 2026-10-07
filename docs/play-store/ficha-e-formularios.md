@@ -12,13 +12,14 @@ Imagens nesta pasta: `icone-512.png` (ícone 512×512) e `banner-1024x500.png` (
 
 **Descrição curta** (até 80):
 ```
-Músicas personalizadas para presentear. Conte a história, a gente compõe.
+Música personalizada para presentear, ou a sua própria letra virando música.
 ```
 
 **Descrição completa** (até 4000):
 ```
-Transforme uma história real em uma música feita só para quem você ama.
+Transforme uma história real em uma música feita só para quem você ama — ou dê voz à letra que você mesmo escreveu.
 
+PARA PRESENTEAR
 No Fiz Música você conta a história — um aniversário, um casamento, uma homenagem para a mãe, o pai, os avós, um pedido de namoro, um chá revelação ou até a despedida de um pet — e nós compomos uma música personalizada, com letra exclusiva e o estilo que você escolher: sertanejo, pagode, MPB, pop, rock, gospel e muito mais.
 
 COMO FUNCIONA
@@ -40,7 +41,8 @@ Ouça músicas reais que outros clientes escolheram publicar, aplauda as que emo
 SUA CARREIRA DE CANTOR
 A cada música criada você ganha discos, sobe de nível e paga menos na próxima.
 
-Para quem compõe: também dá para enviar a sua própria letra e escolher o estilo para virar música.
+PARA QUEM COMPÕE
+Já tem a letra pronta? Cole a sua composição, escolha o estilo musical e receba a sua música produzida, com capa e player para ouvir e compartilhar. Se quiser, publique na Rede Fiz Música para outras pessoas ouvirem.
 
 Fiz Música — Sua história. Sua música.
 ```
