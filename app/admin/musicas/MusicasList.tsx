@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { fmtDateTimeBR } from "@/lib/date"
+import { rotuloMotivo } from "@/lib/denuncia"
 
 type Musica = {
   id: string
@@ -12,6 +13,10 @@ type Musica = {
   musicName: string | null
   personName: string | null
   publicationConsent: boolean
+  redeOculta: boolean
+  denunciasAbertas: number
+  denunciasTotal: number
+  motivosAbertos: string[]
   views: number
   publishedAt: string | null
   linkActive: boolean
@@ -23,6 +28,28 @@ export default function MusicasList({ initial }: { initial: Musica[] }) {
   const [onlyConsent, setOnlyConsent] = useState(false)
   const [sortBy, setSortBy] = useState<"views" | "date">("views")
   const [copied, setCopied] = useState("")
+  const [onlyDenunciadas, setOnlyDenunciadas] = useState(false)
+  // Cópia local para refletir a decisão na hora, sem recarregar a página.
+  const [itens, setItens] = useState(initial)
+  const [salvando, setSalvando] = useState("")
+
+  // Decisão sobre a denúncia (ver app/api/admin/rede). Qualquer ação encerra
+  // as denúncias abertas daquela música.
+  async function decidir(m: Musica, acao: "ocultar" | "mostrar" | "manter") {
+    if (acao === "ocultar" && !confirm("Tirar esta música da Rede? O cliente continua ouvindo a dele; o link público passa a dar 404.")) return
+    setSalvando(m.orderId)
+    const res = await fetch("/api/admin/rede", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId: m.orderId, acao }),
+    })
+    setSalvando("")
+    if (!res.ok) { alert("Não foi possível salvar. Tente de novo."); return }
+    setItens((lista) => lista.map((x) => x.orderId !== m.orderId ? x : {
+      ...x,
+      redeOculta: acao === "ocultar" ? true : acao === "mostrar" ? false : x.redeOculta,
+      denunciasAbertas: 0, motivosAbertos: [],
+    }))
+  }
 
   async function copyUrl(url: string) {
     await navigator.clipboard.writeText(url)
@@ -32,8 +59,9 @@ export default function MusicasList({ initial }: { initial: Musica[] }) {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    let list = initial.filter((m) => {
+    let list = itens.filter((m) => {
       if (onlyConsent && !m.publicationConsent) return false
+      if (onlyDenunciadas && m.denunciasTotal === 0) return false
       if (!q) return true
       return (
         m.code.toLowerCase().includes(q) ||
@@ -43,13 +71,17 @@ export default function MusicasList({ initial }: { initial: Musica[] }) {
         m.subcategory.toLowerCase().includes(q)
       )
     })
+    // Denúncia aberta sobe pro topo: é a única coisa desta tela que pede ação.
     list = [...list].sort((a, b) =>
-      sortBy === "views"
+      (b.denunciasAbertas > 0 ? 1 : 0) - (a.denunciasAbertas > 0 ? 1 : 0) ||
+      (sortBy === "views"
         ? b.views - a.views
-        : new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime()
+        : new Date(b.publishedAt ?? 0).getTime() - new Date(a.publishedAt ?? 0).getTime())
     )
     return list
-  }, [initial, search, onlyConsent, sortBy])
+  }, [itens, search, onlyConsent, onlyDenunciadas, sortBy])
+
+  const abertasTotal = itens.filter((m) => m.denunciasAbertas > 0).length
 
   return (
     <div>
@@ -64,6 +96,10 @@ export default function MusicasList({ initial }: { initial: Musica[] }) {
           <input type="checkbox" checked={onlyConsent} onChange={(e) => setOnlyConsent(e.target.checked)} className="accent-pink-500" />
           Só autorizados p/ publicação
         </label>
+        <label className="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+          <input type="checkbox" checked={onlyDenunciadas} onChange={(e) => setOnlyDenunciadas(e.target.checked)} className="accent-pink-500" />
+          Só denunciadas{abertasTotal > 0 && <span className="text-[11px] font-bold bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full">{abertasTotal} aberta(s)</span>}
+        </label>
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as "views" | "date")}
@@ -74,7 +110,7 @@ export default function MusicasList({ initial }: { initial: Musica[] }) {
         </select>
       </div>
 
-      <p className="text-xs text-gray-600 mb-3">Mostrando {filtered.length} de {initial.length} música(s).</p>
+      <p className="text-xs text-gray-600 mb-3">Mostrando {filtered.length} de {itens.length} música(s).</p>
 
       {filtered.length === 0 ? (
         <p className="text-gray-600 text-sm">Nenhuma música encontrada.</p>
@@ -102,8 +138,23 @@ export default function MusicasList({ initial }: { initial: Musica[] }) {
                   </td>
                   <td className="py-2.5 px-4 text-center">
                     {m.publicationConsent
-                      ? <span className="text-[11px] font-semibold bg-green-500/15 text-green-300 px-2 py-0.5 rounded-full">✅ autorizado</span>
+                      ? m.redeOculta
+                        ? <span className="text-[11px] font-semibold bg-orange-500/15 text-orange-300 px-2 py-0.5 rounded-full" title="Autorizada pelo cliente, mas tirada da Rede por você">🙈 fora da Rede</span>
+                        : <span className="text-[11px] font-semibold bg-green-500/15 text-green-300 px-2 py-0.5 rounded-full">✅ autorizado</span>
                       : <span className="text-[11px] font-medium bg-white/5 text-gray-500 px-2 py-0.5 rounded-full">não autorizado</span>}
+                    {m.denunciasAbertas > 0 && (
+                      <p className="mt-1">
+                        <span className="text-[11px] font-bold bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full"
+                              title={m.motivosAbertos.map((x) => rotuloMotivo(x) ?? x).join(" · ")}>
+                          🚩 {m.denunciasAbertas} denúncia{m.denunciasAbertas === 1 ? "" : "s"}
+                        </span>
+                      </p>
+                    )}
+                    {m.denunciasAbertas > 0 && (
+                      <p className="text-[10px] text-red-300/70 mt-1 max-w-[180px] mx-auto">
+                        {m.motivosAbertos.map((x) => rotuloMotivo(x) ?? x).join(" · ")}
+                      </p>
+                    )}
                   </td>
                   <td className="py-2.5 px-4 text-right text-gray-300">{m.views}</td>
                   <td className="py-2.5 px-4 text-gray-500">{m.publishedAt ? fmtDateTimeBR(m.publishedAt) : "—"}</td>
@@ -117,6 +168,23 @@ export default function MusicasList({ initial }: { initial: Musica[] }) {
                       <div className="flex items-center justify-end gap-2">
                         <a href={m.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline">abrir</a>
                         <button onClick={() => copyUrl(m.url!)} className="text-xs text-gray-500 hover:text-white">{copied === m.url ? "✓" : "copiar"}</button>
+                      </div>
+                    )}
+                    {/* Decisão sobre a Rede. Só faz sentido em música que o
+                        cliente autorizou — as outras nunca estiveram lá. */}
+                    {m.publicationConsent && (
+                      <div className="flex items-center justify-end gap-2 mt-1.5">
+                        {m.redeOculta ? (
+                          <button disabled={salvando === m.orderId} onClick={() => decidir(m, "mostrar")}
+                                  className="text-xs text-green-400 hover:underline disabled:opacity-40">voltar à Rede</button>
+                        ) : (
+                          <button disabled={salvando === m.orderId} onClick={() => decidir(m, "ocultar")}
+                                  className="text-xs text-red-400 hover:underline disabled:opacity-40">tirar da Rede</button>
+                        )}
+                        {m.denunciasAbertas > 0 && !m.redeOculta && (
+                          <button disabled={salvando === m.orderId} onClick={() => decidir(m, "manter")}
+                                  className="text-xs text-gray-400 hover:text-white disabled:opacity-40" title="Descarta as denúncias e mantém a música no ar">manter</button>
+                        )}
                       </div>
                     )}
                   </td>

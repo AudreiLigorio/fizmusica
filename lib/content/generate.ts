@@ -114,11 +114,12 @@ async function fillDraft(supabase: DB, draftId: string, input: CreateDraftInput)
   if (input.sourceType === "pedido") {
     const { data: order } = await supabase
       .from("orders")
-      .select("id, subcategory, publication_consent, lyricsDraft")
+      .select("id, subcategory, publication_consent, rede_oculta, lyricsDraft")
       .eq("id", input.sourceOrderId)
       .maybeSingle()
     if (!order) throw new Error("Pedido não encontrado.")
     if (!order.publication_consent) throw new Error("Este pedido não tem consentimento de publicação.")
+    if (order.rede_oculta) throw new Error("Esta música foi tirada da Rede após denúncia.")
 
     const { data: music } = await supabase
       .from("generated_music")

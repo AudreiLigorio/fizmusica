@@ -82,6 +82,7 @@ A área do cliente (Pedidos, Carreira, playlists) exige conta. Para criar uma, t
 - Categoria: **Todos os outros tipos de app** (não é jogo, não é rede social/comunicação)
 - Violência, medo, sexualidade, linguagem imprópria, drogas, jogos de azar: **Não** em todos
 - **Os usuários podem interagir ou trocar conteúdo?** **Sim**: clientes podem publicar suas músicas na Rede para outros ouvirem (não há chat nem mensagens entre usuários)
+- **Denunciar conteúdo?** **Sim** ("Denunciar esta música" no player e na página da música). **Bloquear usuários?** **Não** (não há interação direta entre usuários)
 - **Compartilha a localização do usuário com outros usuários?** Não
 - **Compras digitais?** **Sim** (músicas personalizadas)
 

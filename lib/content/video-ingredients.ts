@@ -52,12 +52,13 @@ async function musicaDoPedido(supabase: DB, draftId: string, orderIdEscolhido?: 
 
   const { data: order } = await supabase
     .from("orders")
-    .select("publication_consent")
+    .select("publication_consent, rede_oculta")
     .eq("id", orderId)
     .maybeSingle()
   if (!order?.publication_consent) {
     throw new Error("O cliente não autoriza a publicação — não é possível usar a música dele.")
   }
+  if (order.rede_oculta) throw new Error("Essa música foi tirada da Rede após denúncia.")
 
   const { data: music } = await supabase
     .from("generated_music")

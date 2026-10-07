@@ -11,6 +11,7 @@ import { useCatalogo } from "./CatalogoContext"
 import { useToast } from "./ToastContext"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
+import DenunciarMusica from "@/app/components/DenunciarMusica"
 
 // Ícones vetoriais — o "▶" de texto Unicode renderiza torto e com peso
 // diferente por aparelho/fonte. Mesmo traço das abas (AreaTabs.tsx).
@@ -132,6 +133,7 @@ export default function MiniPlayer() {
   }, [track?.id, podeFavoritar]) // eslint-disable-line react-hooks/exhaustive-deps
   const [playlists, setPlaylists] = useState<{ id: string; nome: string; track_order_ids: string[] }[] | null>(null)
   const [escolhendoPlaylist, setEscolhendoPlaylist] = useState(false)
+  const [denunciando, setDenunciando] = useState(false)
   const [criandoPlaylist, setCriandoPlaylist] = useState(false)
 
   // Bottom sheet da letra, mesmo mecanismo do player do pedido: fechado
@@ -836,6 +838,23 @@ export default function MiniPlayer() {
                   )}
                 </button>
               )}
+
+              {/* Denunciar: exigência da Play para conteúdo de usuário. Só
+                  em música da Rede de OUTRA pessoa, e encostado à direita,
+                  discreto — é ação de exceção, não deve competir com as de
+                  cima. Funciona sem conta. */}
+              {publico && !track.minha && (
+                <button
+                  {...aoAcionar(() => setDenunciando(true))}
+                  aria-label="Denunciar esta música"
+                  title="Denunciar esta música"
+                  className="ml-auto w-11 h-11 shrink-0 rounded-full flex items-center justify-center text-white/35 hover:text-white/70 transition-colors"
+                >
+                  <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 21V4m0 0h11l-2 4 2 4H5" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
@@ -1024,6 +1043,9 @@ export default function MiniPlayer() {
       {/* Modais de playlist. Ficam FORA do bloco `fullOpen` porque o player
           cheio ocupa a tela inteira com z-50 — dentro dele, o modal ficaria
           preso no mesmo contexto de empilhamento e apareceria por baixo. */}
+      {track && (
+        <DenunciarMusica orderId={track.id} open={denunciando} onClose={() => setDenunciando(false)} />
+      )}
       <AddToPlaylistModal
         open={escolhendoPlaylist}
         playlists={playlists}

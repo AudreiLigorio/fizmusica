@@ -72,6 +72,9 @@ type Order = {
   musicStatus?: string | null
   tracks?: { audioId: string; audioUrl: string; imageUrl: string | null; title: string | null; duration: number | null }[] | null
   publication_consent?: boolean
+  // Tirada da Rede pelo admin após denúncia: o cliente segue ouvindo, mas o
+  // link público dá 404 — então nada de selo "na Rede" nem compartilhar.
+  rede_oculta?: boolean
   answers?: { question: string; answer: string; position: number }[]
   shipping_name?: string | null
   shipping_cep?: string | null
@@ -538,7 +541,7 @@ function MinhaMusicaContent() {
         audioUrl: principal?.audioUrl ?? o.mp3Url ?? null,
         lyrics: o.lyrics ?? null,
         lyricsLrc: o.lyricsLrc ?? null,
-        publico: !!o.publication_consent,
+        publico: !!o.publication_consent && !o.rede_oculta,
       }
     })
 
@@ -1111,7 +1114,7 @@ function MinhaMusicaContent() {
                   // a maioria cairia nesse estado. Uma fileira de negativas lê
                   // como aviso de erro e como cobrança. Estado positivo ganha
                   // selo; o padrão não ganha nada.
-                  const naRede = !!order.publication_consent
+                  const naRede = !!order.publication_consent && !order.rede_oculta
                   const confirmando = confirmandoSaida === order.id
                   return (
                     <div key={order.id} className={`relative shrink-0 w-32 group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}>

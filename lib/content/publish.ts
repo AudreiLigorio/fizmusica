@@ -107,7 +107,7 @@ export async function publishDraft(supabase: DB, draftId: string, opcoesTiktok?:
   if (draft.sourceOrderId) {
     const { data: order } = await supabase
       .from("orders")
-      .select("publication_consent")
+      .select("publication_consent, rede_oculta")
       .eq("id", draft.sourceOrderId)
       .maybeSingle()
     if (!order?.publication_consent) {
@@ -116,6 +116,7 @@ export async function publishDraft(supabase: DB, draftId: string, opcoesTiktok?:
         "Esta peça não pode ir ao ar."
       )
     }
+    if (order.rede_oculta) throw new Error("Esta música foi tirada da Rede após denúncia — a peça não pode ir ao ar.")
   }
 
   // Última barreira antes do conteúdo virar público.

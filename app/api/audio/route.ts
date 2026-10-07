@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
   const [{ data: order }, { data: gm }] = await Promise.all([
     supabase
       .from("orders")
-      .select("id, userId, status, publication_consent, sunoTracks")
+      .select("id, userId, status, publication_consent, rede_oculta, sunoTracks")
       .eq("id", orderId)
       .maybeSingle(),
     supabase
@@ -79,7 +79,9 @@ export async function GET(req: NextRequest) {
   // Mesma regra do catálogo: entregue e com autorização de publicação. Quem
   // aparece na Rede pode ser ouvido por qualquer visitante — é o que a tela
   // já oferece hoje.
-  const naRede = order.status === "DELIVERED" && order.publication_consent === true
+  // `rede_oculta`: tirada da Rede pelo admin após denúncia — o dono segue
+  // ouvindo pelo caminho 3.
+  const naRede = order.status === "DELIVERED" && order.publication_consent === true && order.rede_oculta !== true
 
   // ── Caminho 3: o dono ─────────────────────────────────────────────────
   // Música não publicada só toca pra quem é dono dela.

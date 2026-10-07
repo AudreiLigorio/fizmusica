@@ -41,12 +41,15 @@ export async function POST(req: NextRequest) {
     if (sourceType === "pedido") {
       const { data: order } = await supabase
         .from("orders")
-        .select("id, subcategory, publication_consent, lyricsDraft")
+        .select("id, subcategory, publication_consent, rede_oculta, lyricsDraft")
         .eq("id", sourceOrderId)
         .maybeSingle()
       if (!order) return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 })
       if (!order.publication_consent) {
         return NextResponse.json({ error: "Este pedido não tem consentimento de publicação." }, { status: 400 })
+      }
+      if (order.rede_oculta) {
+        return NextResponse.json({ error: "Esta música foi tirada da Rede após denúncia." }, { status: 400 })
       }
 
       const { data: music } = await supabase

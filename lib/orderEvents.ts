@@ -20,6 +20,9 @@ export type OrderEventType =
   | "musica_gerada"
   | "musica_liberada"
   | "conteudo_gerado"
+  | "musica_denunciada"
+  | "rede_ocultada"
+  | "rede_restaurada"
 
 // Registra um evento no histórico do pedido (append-only — nunca sobrescreve).
 // Falhas de log NUNCA devem quebrar o fluxo principal, por isso engolimos o erro.

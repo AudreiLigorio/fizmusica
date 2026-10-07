@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     .eq("id", orderId)
     .eq("publication_consent", true)
     .eq("status", "DELIVERED")
+    .eq("rede_oculta", false)
     .maybeSingle()
 
   // Resposta igual pra "não existe" e "não pode": responder diferente diria a

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { idDeSessao } from "@/lib/track"
+import DenunciarMusica from "@/app/components/DenunciarMusica"
 
 // Tela pública de uma música da Rede. Mesma linguagem visual do player da
 // Rede (fundo com a capa borrada, capa no meio, letra rolando), mas é uma
@@ -50,6 +51,7 @@ export default function RedeSongPage({ dados, publicUrl }: { dados: Dados; publi
   const [progress, setProgress] = useState(0)
   const [duration, setDuration] = useState(0)
   const [copiado, setCopiado] = useState(false)
+  const [denunciando, setDenunciando] = useState(false)
 
   const lrc = dados.lyricsLrc ? parseLrc(dados.lyricsLrc) : []
   const linhas = lrc.length > 0
@@ -246,6 +248,14 @@ export default function RedeSongPage({ dados, publicUrl }: { dados: Dados; publi
         <a href="/minha-musica?aba=musicas" className="text-xs text-white/40 hover:text-white/70 transition-colors mt-4">
           ou ouvir outras músicas da Rede
         </a>
+
+        {/* Exigência da Play para conteúdo de usuário. No pé da página e em
+            tom apagado: quem precisa acha, quem só veio ouvir não tropeça. */}
+        <button onClick={() => setDenunciando(true)}
+                className="text-[11px] text-white/25 hover:text-white/50 transition-colors mt-8">
+          🚩 Denunciar esta música
+        </button>
+        <DenunciarMusica orderId={dados.orderId} open={denunciando} onClose={() => setDenunciando(false)} />
       </div>
     </div>
   )

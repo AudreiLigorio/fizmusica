@@ -156,6 +156,8 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; emAlta: string[]; er
       .select("id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId")
       .eq("publication_consent", true)
       .eq("status", "DELIVERED")
+      // Tirada da Rede pelo admin após denúncia (migração 066).
+      .eq("rede_oculta", false)
       // Ordem estável: sem ORDER BY o Postgres não garante a mesma sequência
       // entre páginas, e uma linha podia vir duas vezes ou nenhuma.
       .order("createdAt", { ascending: true })

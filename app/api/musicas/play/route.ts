@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
     .eq("id", orderId)
     .eq("status", "DELIVERED")
     .eq("publication_consent", true)
+    .eq("rede_oculta", false)
     .maybeSingle()
 
   if (!order) return NextResponse.json({ ok: false }, { status: 404 })

@@ -22,8 +22,8 @@ async function getUser(req: NextRequest) {
 // não está na Rede — bastaria saber o id.
 async function publicada(supabase: ReturnType<typeof createServerClient>, orderId: string) {
   const { data } = await supabase
-    .from("orders").select("publication_consent, status").eq("id", orderId).maybeSingle()
-  return data?.publication_consent === true && data.status === "DELIVERED"
+    .from("orders").select("publication_consent, status, rede_oculta").eq("id", orderId).maybeSingle()
+  return data?.publication_consent === true && data.status === "DELIVERED" && data.rede_oculta !== true
 }
 
 export async function GET(req: NextRequest) {

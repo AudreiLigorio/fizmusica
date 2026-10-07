@@ -284,6 +284,14 @@ Toda automação de "pedido pronto/entregue" (e-mail, cupom de fidelidade, cria�
 - Cliente opta (`orders.publication_consent`) se autoriza a música ser publicada em catálogo/playlist futura. Com opt-in, a obra pode ser divulgada com nomes/história reais tal como na letra (sem precisar anonimizar). **Nunca revela quem pagou, nunca usa fotos do cliente**, mesmo com opt-in.
 - **Catálogo** (`/admin/musicas`): lista todas as músicas geradas (link ativo ou desativado) com views, consentimento de publicação, código do pedido — decisão manual futura de curadoria de playlist, não automática.
 
+### 12.2.1 Denunciar música da Rede (2026-10-07)
+- Exigência da política de conteúdo gerado por usuário da Play Store; vale igual no site.
+- Botão **"Denunciar esta música"**: bandeira discreta no player cheio (só música da Rede de OUTRA pessoa) e link no pé de `/rede/[id]`. Modal `app/components/DenunciarMusica.tsx`, motivos em `lib/denuncia.ts` (ódio, sexual, nome/imagem sem autorização, direitos autorais, outro com texto obrigatório). **Funciona sem conta.**
+- `POST /api/rede/denunciar`: só aceita música que está na Rede; IP guardado só como hash; no máximo 5 denúncias por IP em 24h e uma por música. Grava em `music_reports` (migração 066, `on delete cascade`, RLS sem policy), registra `musica_denunciada` em `order_events` e manda e-mail ao admin (`sendMusicReportNotification`).
+- **A denúncia não tira nada do ar sozinha** (senão um concorrente derrubaria qualquer música). Quem decide é o admin no Catálogo: selo "🚩 N denúncias" com os motivos, filtro "Só denunciadas", e os botões **tirar da Rede / voltar à Rede / manter**. Toda decisão encerra as denúncias abertas.
+- "Tirar da Rede" grava `orders.rede_oculta = true` — flag do ADMIN, separada do `publication_consent` (escolha do CLIENTE, nunca alterada aqui). **Na Rede = `publication_consent` E `status = DELIVERED` E NÃO `rede_oculta`.** Essa regra está repetida em: catálogo, letra do catálogo, contagem de plays, playlists, `/api/audio`, aplauso, `/rede/[id]` (404) e nos agentes de conteúdo (storyboard, roteiro, generate, video-ingredients, video-partes, publish). Ponto novo que decida "está na Rede" tem que conferir as três.
+- O dono continua ouvindo a própria música oculta (caminho do dono em `/api/audio`); na área dele some o selo "na Rede" e o compartilhar.
+
 ### 12.3 Cupons
 - Tabela `coupons` (código, tipo %/valor, valor mínimo, limite de usos, validade, ativo).
 - Aparecem em 4 jornadas: e-mail de repescagem dia-3 (auto-aplica via link), campo no checkout, banner público em `/produtos`, cupom de fidelidade pós-entrega.
@@ -416,7 +424,7 @@ Levantamento feito a pedido do Audrei, com números medidos em produção — n�
 - Padronizar templates de e-mail do Supabase Auth (hoje "Confirm signup" ainda no default, sem o layout da marca).
 - Fase 3 — recorrência/monetização: lembretes de data especial, desconto recorrente, indicação, assinatura/playlist de músicas.
 - **Teaser Premium** (planejado, não codado): vídeo vertical 9:16 pra Reels/TikTok como diferencial do plano Premium — arquitetura decidida (template + JSON de cena normalizado, render via API de montagem tipo JSON2Video/Shotstack, ~R$1/render, emojis Google Noto), mas recomendação é validar por teste concierge (vender como add-on manual pra clientes reais e medir se postam) antes de construir o módulo.
-- **Denunciar música na Rede** — plano aprovado, não codado; exigido pela Play antes da produção (ver `docs/app-android.md`).
+- **Revisão legal:** Termos citarem que música da Rede pode ser retirada após denúncia (feature no ar desde 2026-10-07, seção 12.2.1).
 - **Login com Facebook** — pronto e escondido; parado até abrir MEI (ver seção 15).
 - **Revisão legal:** Política de Privacidade citar a exclusão de conta pelo próprio cliente (e o login com Facebook, quando voltar).
 - **App Android** — ver seção 22 e `docs/app-android.md`. Base e exclusão de conta no ar; aguardando verificação do Play Console. Decisões em aberto: preço no app, descontos no app, iPhone.

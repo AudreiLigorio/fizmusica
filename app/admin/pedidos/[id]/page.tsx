@@ -29,6 +29,9 @@ const EVENT_LABELS: Record<string, { icon: string; label: string }> = {
   musica_gerada:               { icon: "🤖", label: "Música gerada pela IA" },
   musica_liberada:             { icon: "🚀", label: "Música liberada ao cliente" },
   conteudo_gerado:             { icon: "🎬", label: "Rascunho de conteúdo gerado" },
+  musica_denunciada:           { icon: "🚩", label: "Música denunciada na Rede" },
+  rede_ocultada:               { icon: "🙈", label: "Tirada da Rede pelo admin" },
+  rede_restaurada:             { icon: "↩️", label: "Voltou à Rede" },
 }
 
 async function getOrder(id: string) {

@@ -48,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // alguém depois de ela ter sido retirada do ar.
   const { data: orders } = await supabase
     .from("orders")
-    .select("id, subcategory, sunoTracks, userId, status, publication_consent")
+    .select("id, subcategory, sunoTracks, userId, status, publication_consent, rede_oculta")
     .in("id", ids)
   const { data: gm } = await supabase.from("generated_music").select("orderId, mp3Url, musicName, musicNameConfirmed").in("orderId", ids)
   const musicByOrder: Record<string, { mp3Url: string | null; musicName: string | null; confirmado: boolean }> = {}
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     userId: (o.userId as string | null) ?? null,
     // Mesma regra de /api/audio, pra tela e som nunca discordarem sobre o
     // que está publicado.
-    naRede: o.status === "DELIVERED" && o.publication_consent === true,
+    naRede: o.status === "DELIVERED" && o.publication_consent === true && o.rede_oculta !== true,
   }
 
   const tracks = ids

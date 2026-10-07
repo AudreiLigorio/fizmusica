@@ -140,8 +140,9 @@ export async function trocarMusica(supabase: DB, draftId: string, origem: "pedid
   if (origem === "pedido") {
     if (!orderId) throw new Error("Escolha de qual pedido vem a música.")
     const { data: order } = await supabase
-      .from("orders").select("publication_consent").eq("id", orderId).maybeSingle()
+      .from("orders").select("publication_consent, rede_oculta").eq("id", orderId).maybeSingle()
     if (!order?.publication_consent) throw new Error("Esse pedido não autoriza publicação.")
+    if (order.rede_oculta) throw new Error("Essa música foi tirada da Rede após denúncia.")
 
     const { data: music } = await supabase
       .from("generated_music").select("mp3Url").eq("orderId", orderId).maybeSingle()

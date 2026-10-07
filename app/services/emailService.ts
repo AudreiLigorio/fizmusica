@@ -540,6 +540,38 @@ export async function sendRevisionRequestedNotification(data: { orderId: string;
   }
 }
 
+// Alerta ao admin: alguém denunciou uma música da Rede (política de conteúdo
+// gerado por usuário da Play Store). A música NÃO sai do ar sozinha — quem
+// decide é o admin, no Catálogo ("Tirar da Rede"). O texto vem de visitante
+// anônimo, por isso é escapado antes de entrar no HTML.
+export async function sendMusicReportNotification(data: { orderId: string; titulo: string; motivo: string; detalhe?: string | null; totalAbertas: number }): Promise<void> {
+  const adminUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"}/admin/musicas`
+  const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
+  try {
+    await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      ADMIN_REVIEW_EMAIL,
+      subject: `[Admin] 🚩 Denúncia na Rede — ${data.titulo}`,
+      html: emailShell({
+        emoji: "🚩",
+        title: "Música da Rede denunciada",
+        subtitle: "A música segue no ar até você decidir. Ouça e, se for o caso, use \"Tirar da Rede\" no Catálogo.",
+        body: adminRows([
+          ["Pedido", `<span style="font-family:monospace;color:#ec4899">#${data.orderId.slice(0, 8).toUpperCase()}</span>`],
+          ["Música", esc(data.titulo)],
+          ["Motivo", esc(data.motivo)],
+          ...(data.detalhe ? [["Detalhe", esc(data.detalhe)] as [string, string]] : []),
+          ["Denúncias abertas", String(data.totalAbertas)],
+        ]),
+        button: { text: "Abrir o Catálogo →", url: adminUrl },
+      }),
+    })
+    console.log(`[email] Alerta "denúncia na Rede" enviado para ${ADMIN_REVIEW_EMAIL}`)
+  } catch (err) {
+    console.error("[email] Falha ao notificar admin (denúncia na Rede):", err)
+  }
+}
+
 function buildAdminEmail(order: OrderEmailData): string {
   return emailShell({
     emoji: "🆕",

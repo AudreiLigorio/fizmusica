@@ -14,11 +14,12 @@ export async function carregarMusicaPublica(id: string) {
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, subcategory, musicalStyle, sunoTracks, userId, publication_consent, status")
+    .select("id, subcategory, musicalStyle, sunoTracks, userId, publication_consent, status, rede_oculta")
     .eq("id", id)
     .maybeSingle()
 
-  if (!order || order.publication_consent !== true || order.status !== "DELIVERED") return null
+  // rede_oculta: tirada da Rede pelo admin após denúncia (migração 066).
+  if (!order || order.publication_consent !== true || order.status !== "DELIVERED" || order.rede_oculta === true) return null
 
   const { data: music } = await supabase
     .from("generated_music")

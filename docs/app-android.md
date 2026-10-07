@@ -163,4 +163,4 @@ Combinar antes de lançar:
 
 **Nova versão do app:** subir `appVersionCode` (e `appVersionName`) no `android-app/twa-manifest.json`, rodar `npx @bubblewrap/cli@1.25.0 update` e depois `build` (pede a senha da chave).
 
-**Pendência antes de pedir produção (2026-10-07):** "Denunciar esta música" na Rede — a política da Play para conteúdo gerado pelo usuário exige denúncia dentro do app. Plano aprovado (botão no player e em `/rede/[id]`, e-mail ao admin, "Tirar da Rede" no Catálogo com flag própria do admin, tabela de denúncias), ainda não codado. No questionário de classificação ficou **Não** em denunciar/bloquear; trocar para **Sim** em denunciar quando estiver no ar.
+**Denunciar esta música (no ar em 2026-10-07):** exigência da política da Play para conteúdo gerado pelo usuário. Botão no player e em `/rede/[id]`, e-mail ao admin, "tirar da Rede" no Catálogo (ver DOCUMENTACAO seção 12.2.1). No questionário de classificação: **Sim** em denunciar, **Não** em bloquear (não há interação direta entre usuários).
