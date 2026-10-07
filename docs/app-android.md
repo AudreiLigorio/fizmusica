@@ -162,3 +162,5 @@ Combinar antes de lançar:
 5. Teste fechado com **12 testadores com Android por 14 dias**, depois pedir acesso à produção.
 
 **Nova versão do app:** subir `appVersionCode` (e `appVersionName`) no `android-app/twa-manifest.json`, rodar `npx @bubblewrap/cli@1.25.0 update` e depois `build` (pede a senha da chave).
+
+**Pendência antes de pedir produção (2026-10-07):** "Denunciar esta música" na Rede — a política da Play para conteúdo gerado pelo usuário exige denúncia dentro do app. Plano aprovado (botão no player e em `/rede/[id]`, e-mail ao admin, "Tirar da Rede" no Catálogo com flag própria do admin, tabela de denúncias), ainda não codado. No questionário de classificação ficou **Não** em denunciar/bloquear; trocar para **Sim** em denunciar quando estiver no ar.

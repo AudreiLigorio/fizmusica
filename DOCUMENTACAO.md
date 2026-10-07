@@ -416,6 +416,7 @@ Levantamento feito a pedido do Audrei, com números medidos em produção — n�
 - Padronizar templates de e-mail do Supabase Auth (hoje "Confirm signup" ainda no default, sem o layout da marca).
 - Fase 3 — recorrência/monetização: lembretes de data especial, desconto recorrente, indicação, assinatura/playlist de músicas.
 - **Teaser Premium** (planejado, não codado): vídeo vertical 9:16 pra Reels/TikTok como diferencial do plano Premium — arquitetura decidida (template + JSON de cena normalizado, render via API de montagem tipo JSON2Video/Shotstack, ~R$1/render, emojis Google Noto), mas recomendação é validar por teste concierge (vender como add-on manual pra clientes reais e medir se postam) antes de construir o módulo.
+- **Denunciar música na Rede** — plano aprovado, não codado; exigido pela Play antes da produção (ver `docs/app-android.md`).
 - **Login com Facebook** — pronto e escondido; parado até abrir MEI (ver seção 15).
 - **Revisão legal:** Política de Privacidade citar a exclusão de conta pelo próprio cliente (e o login com Facebook, quando voltar).
 - **App Android** — ver seção 22 e `docs/app-android.md`. Base e exclusão de conta no ar; aguardando verificação do Play Console. Decisões em aberto: preço no app, descontos no app, iPhone.
