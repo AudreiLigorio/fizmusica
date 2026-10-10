@@ -75,12 +75,8 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
     <div className="pb-4">
       {/* ── Abertura ───────────────────────────────────────────────── */}
       <div className="text-center pt-2 pb-9">
-        {/* Rótulo no mesmo tamanho/traço do "Por ocasião" e "Por estilo" da
-            aba Músicas (text-[10px] uppercase tracking-wide font-bold) —
-            estava em 11px com tracking mais largo, sem motivo pra divergir. */}
-        <p className="text-[10px] uppercase tracking-wide font-bold text-fuchsia-300/80 mb-3">
-          Programa de fidelidade
-        </p>
+        {/* Sem o rótulo "Programa de fidelidade" em cima do título — tirado a
+            pedido do Audrei (2026-10-09). */}
         {/* O h1 abaixo é a ÚNICA exceção à normalização: é o hero da página
             de venda que o Audrei pediu ("linda e vendável"), não um título de
             seção como os outros — não existe equivalente pra ele na aba
