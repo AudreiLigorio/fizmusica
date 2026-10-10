@@ -7,6 +7,8 @@ import { gradienteDaCapa } from "@/lib/capaGradiente"
 import InfoTooltip from "./InfoTooltip"
 import PublicacaoConsent from "./PublicacaoConsent"
 import { useToast } from "./ToastContext"
+import { usePlayer, type PlayableTrack } from "./PlayerContext"
+import type { LibraryTrack } from "./MinhasMusicas"
 
 // "Minhas músicas publicadas" — aba Músicas, só para quem está logado
 // (a aba do visitante nem monta este componente). Fecha o gancho do texto da
@@ -33,7 +35,11 @@ type Musica = {
 
 const fmt = (n: number) => n.toLocaleString("pt-BR")
 
-export default function MinhasPublicadas() {
+// `biblioteca`: as músicas do cliente que a aba já montou (page.tsx), com
+// áudio, letra e capa — a capa do cartão toca a partir delas, igual à
+// "Minha playlist". Não busca o áudio de novo.
+export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }: { biblioteca?: LibraryTrack[]; meuApelido?: string | null }) {
+  const { track: tocando, playing, playOuPausa } = usePlayer()
   const [musicas, setMusicas] = useState<Musica[] | null>(null)
   const [totalNaRede, setTotalNaRede] = useState(0)
   const [publicando, setPublicando] = useState<Musica | null>(null)
@@ -73,6 +79,15 @@ export default function MinhasPublicadas() {
 
   if (musicas === null) return null
 
+  // Fila = as músicas desta fileira que têm áudio, na mesma ordem.
+  const porId = new Map(biblioteca.map((t) => [t.id, t]))
+  const paraTocar = (t: LibraryTrack): PlayableTrack => ({
+    id: t.id, title: t.title, occasion: t.occasion, audioUrl: t.audioUrl as string,
+    imageUrl: t.imageUrl, lyrics: t.lyrics, lyricsLrc: t.lyricsLrc,
+    apelido: meuApelido, publico: !!t.publico, minha: true,
+  })
+  const fila = musicas.map((m) => porId.get(m.orderId)).filter((t): t is LibraryTrack => !!t?.audioUrl).map(paraTocar)
+
   return (
     <div className="mb-9">
       <div className="flex items-center gap-2.5 mb-1">
@@ -100,13 +115,29 @@ export default function MinhasPublicadas() {
               <div key={m.orderId} className="shrink-0 w-44 rounded-2xl border border-white/10 bg-white/[0.03] p-2.5 flex flex-col">
                 <div className="relative w-full aspect-square rounded-xl bg-cover bg-center"
                      style={{ background: m.imageUrl ? `url(${m.imageUrl}) center/cover` : gradienteDaCapa(m.orderId) }}>
+                  {(() => {
+                    const t = porId.get(m.orderId)
+                    if (!t?.audioUrl) return null
+                    const estaTocando = tocando?.id === m.orderId && playing
+                    return (
+                      <button type="button" onClick={() => playOuPausa(paraTocar(t), fila)}
+                              aria-label={estaTocando ? `Pausar ${m.titulo}` : `Ouvir ${m.titulo}`}
+                              className="absolute inset-0 flex items-center justify-center rounded-xl group">
+                        <span className={`w-11 h-11 rounded-full flex items-center justify-center text-white text-base backdrop-blur transition-transform group-hover:scale-110 ${
+                          estaTocando ? "bg-fuchsia-500/90" : "bg-black/45"
+                        }`}>
+                          {estaTocando ? "❚❚" : "▶"}
+                        </span>
+                      </button>
+                    )
+                  })()}
                   {m.situacao === "publicada" && m.posTop !== null && m.posTop <= 10 && (
                     <span className="absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-amber-950">
                       🏆 #{m.posTop} no Top 10
                     </span>
                   )}
                 </div>
-                <p className="text-xs font-semibold mt-2 truncate" title={m.titulo}>{m.titulo}</p>
+                <p className={`text-xs font-semibold mt-2 truncate ${tocando?.id === m.orderId && playing ? "text-fuchsia-300" : ""}`} title={m.titulo}>{m.titulo}</p>
 
                 <p className={`text-[10px] uppercase tracking-wide font-bold mt-1 ${
                   m.situacao === "publicada" ? "text-green-300" : m.situacao === "oculta" ? "text-orange-300" : "text-white/40"

@@ -1302,7 +1302,7 @@ function MinhaMusicaContent() {
             {/* Logo abaixo das playlists: situação de cada música na Rede,
                 desempenho (palmas, reproduções, ranking/Top 10) e publicar ou
                 tirar. Esta aba só renderiza logado — visitante não vê. */}
-            <MinhasPublicadas />
+            <MinhasPublicadas biblioteca={libraryTracks} meuApelido={meuApelido} />
 
           </AbaMusicas>
           </>}
