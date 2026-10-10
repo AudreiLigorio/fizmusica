@@ -38,3 +38,24 @@ export function useNoAppPlay(): boolean | null {
   useEffect(() => { setNoApp(estaNoAppPlay()) }, [])
   return noApp
 }
+
+// ── Bloqueio de compra dentro do app ─────────────────────────────────────
+//
+// DESLIGADO por decisão do Audrei (2026-10-09), ciente do risco: o app vende
+// pelo Mercado Pago igual ao site. Pela política de Pagamentos da Play, música
+// personalizada é conteúdo digital e exigiria o Google Play Faturamento, e a
+// conta é pessoal (CPF), então o faturamento alternativo também não se aplica
+// (Play Console → Configurações → Faturamento alternativo: "não se qualifica").
+//
+// Se a Play apontar a infração: troque para `true`, faça push e suba a correção
+// na revisão. As três telas (produtos, checkout, Pedidos) voltam a mostrar o
+// aviso neutro "Compras pelo app chegam em breve" no lugar do pagamento.
+export const BLOQUEAR_COMPRA_NO_APP = false
+
+// Quem decide trocar o pagamento pelo aviso. Mesmo contrato de useNoAppPlay
+// (`null` = ainda não sabemos), mas com o bloqueio desligado responde `false`
+// direto — sem o spinner de espera no checkout.
+export function useBloquearCompraNoApp(): boolean | null {
+  const noApp = useNoAppPlay()
+  return BLOQUEAR_COMPRA_NO_APP ? noApp : false
+}

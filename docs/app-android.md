@@ -55,6 +55,8 @@
 
 **No app, só Google Play Billing.** Taxa de 15% no programa de pequenas empresas (até US$ 1 milhão/ano). Sem User Choice Billing, então sem tela de escolha e sem reportar venda ao Google. Web segue só com Mercado Pago.
 
+**Mudança (2026-10-09): o app vende pelo Mercado Pago igual ao site, por decisão do Audrei, ciente do risco.** O bloqueio de compra no app (aviso "Compras pelo app chegam em breve") foi DESLIGADO pela chave `BLOQUEAR_COMPRA_NO_APP` em `lib/canal.ts`. Pela política de Pagamentos, música personalizada é conteúdo digital (a exceção antiga de "conteúdo consumido fora do app" não existe mais; só produto/serviço físico), e o faturamento alternativo exige conta de empresa: o Play Console mostra "No momento, você não se qualifica". **Se a Play apontar a infração:** trocar a chave para `true`, push e subir a correção na revisão. Risco: recusa na revisão (barato) ou remoção/aviso com o app em produção; reincidência pode suspender a conta pessoal.
+
 Quando os links externos chegarem ao Brasil, reavaliar ativar "pagar no site" dentro do app. Há uma tarefa agendada mensal (dia 1º, 9h) no app Claude, `monitor-google-play-links-externos-brasil`, que checa mudança de data, taxas, CADE/lei e User Choice Billing.
 
 ### Armadilhas do Play Billing

@@ -8,7 +8,7 @@ import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
 import AvisoCompraApp from "@/app/components/AvisoCompraApp"
-import { useNoAppPlay } from "@/lib/canal"
+import { useBloquearCompraNoApp } from "@/lib/canal"
 import { supabase } from "@/lib/supabase"
 import { melhorDesconto } from "@/lib/descontoRegra"
 
@@ -617,7 +617,7 @@ function CheckoutNoApp() {
 }
 
 export default function CheckoutPage() {
-  const noApp = useNoAppPlay()
+  const noApp = useBloquearCompraNoApp()
   if (noApp) return <CheckoutNoApp />
   // Ainda detectando (um instante): nada de pagamento montado.
   if (noApp === null) return (

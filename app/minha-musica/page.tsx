@@ -31,7 +31,7 @@ import ExcluirConta from "./ExcluirConta"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 import AvisoCompraApp from "@/app/components/AvisoCompraApp"
-import { useNoAppPlay } from "@/lib/canal"
+import { useBloquearCompraNoApp } from "@/lib/canal"
 
 // Pedido antigo/sem produto vem sem `features` da API — libera tudo, mesma
 // regra do servidor: dado faltando não pode cancelar recurso já pago.
@@ -171,7 +171,7 @@ function MinhaMusicaContent() {
 
   const [user, setUser]     = useState<User | null>(null)
   // Dentro do app da Play Store não vendemos (ver lib/canal.ts).
-  const noApp = useNoAppPlay() === true
+  const noApp = useBloquearCompraNoApp() === true
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 

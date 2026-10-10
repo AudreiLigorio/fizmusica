@@ -7,7 +7,7 @@ import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
 import AvisoCompraApp from "@/app/components/AvisoCompraApp"
-import { useNoAppPlay } from "@/lib/canal"
+import { useBloquearCompraNoApp } from "@/lib/canal"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 
@@ -215,7 +215,7 @@ function ProdutosContent() {
   }
 
   // Dentro do app da Play Store não vendemos (ver lib/canal.ts).
-  const noApp = useNoAppPlay() === true
+  const noApp = useBloquearCompraNoApp() === true
 
   async function handleContinuar() {
     if (!selected) return
