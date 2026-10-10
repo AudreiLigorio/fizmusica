@@ -1057,7 +1057,9 @@ export default function MiniPlayer() {
           guardar alguma coisa, que é o único momento em que a conta passa a
           fazer sentido pra ele. Ouvir e compartilhar seguem sem conta. */}
       {precisaConta && (
-        <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
+        // data-zona-escura: o convite fica FORA do player (por isso o tema
+        // claro o alcançava e deixava o título escuro no cartão escuro).
+        <div data-zona-escura className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
              onClick={() => setPrecisaConta(null)}>
           <div className="w-full max-w-sm rounded-3xl border border-white/10 p-6 text-center" style={{ background: "#15131d" }}
                onClick={(e) => e.stopPropagation()}>
@@ -1071,7 +1073,7 @@ export default function MiniPlayer() {
               {precisaConta === "favorito"
                 ? "Crie sua conta pra achar de novo os favoritos, em qualquer aparelho."
                 : precisaConta === "aplauso"
-                ? "Crie sua conta pra aplaudir. Cada pessoa tem 30 palmas por dia — e quem fez a música vê o aplauso chegar."
+                ? "Crie sua conta pra aplaudir. Você dá de 1 a 10 palmas por música — e quem fez a música vê o aplauso chegar."
                 : "Crie sua conta pra montar playlists com o que você gosta."}
               {" "}Ouvir e compartilhar seguem livres, sem conta.
             </p>

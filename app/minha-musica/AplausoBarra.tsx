@@ -84,7 +84,6 @@ export default function AplausoBarra({
   }, [orderId])
 
   async function aplaudir(n: number) {
-    if (logado === false) { onPrecisaConta(); return }
     if (n < 1 || enviando) return
     setEnviando(true)
     const { data: { session } } = await supabase.auth.getSession()
@@ -94,10 +93,42 @@ export default function AplausoBarra({
       body: JSON.stringify({ orderId, palmas: n }),
     }).then((x) => x.json()).catch(() => null)
     setEnviando(false)
-    if (!r || r.error) { if (r?.error) onPrecisaConta(); return }
+    // Sessão expirada no meio do caminho: o servidor recusa (401) e aí sim o
+    // convite faz sentido. Qualquer outra falha só desfaz o arrasto — antes
+    // TODO erro abria "crie sua conta", inclusive pra quem já tinha conta.
+    if (!r || r.error) { setValor(0); if (r?.error && /conta/i.test(r.error)) onPrecisaConta(); return }
     setTotal(r.total ?? 0); setMinhas(r.minhas ?? 0)
     setValor(0)
     setAumentando(false)
+  }
+
+  // Visitante (ou login ainda sendo conferido): NÃO ganha o controle de
+  // arrastar. Antes ganhava, e o resultado era enganoso — os segmentos
+  // acendiam com o dedo como se a palma tivesse sido dada, o convite de
+  // cadastro abria duas vezes (ao encostar e ao soltar) e, fechado o
+  // convite, a barra ficava acesa com um valor que nunca foi salvo
+  // (Audrei, 2026-10-09). Agora é um botão: mostra o total e, num toque,
+  // abre o convite UMA vez.
+  if (logado !== true) {
+    return (
+      <button
+        type="button"
+        onClick={() => { if (logado === false) onPrecisaConta() }}
+        className="mt-4 w-full rounded-xl px-3 py-2.5 text-left"
+        style={{ background: "#0d0b14", border: "1px solid rgba(255,255,255,0.09)" }}
+      >
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-[9px] uppercase tracking-[0.1em] text-white/35">Aplausos</span>
+          <span className="text-[10px] text-white/35 tabular-nums">
+            {total > 0 ? `${total.toLocaleString("pt-BR")} ${total === 1 ? "palma" : "palmas"}` : "seja o primeiro"}
+          </span>
+        </div>
+        <div className="flex items-center justify-center gap-2 h-[22px] rounded-md"
+             style={{ background: "rgba(240,25,107,0.08)", border: "1px dashed rgba(240,25,107,0.35)" }}>
+          <span className="text-[11px] font-semibold text-white/80">👏 Toque para aplaudir</span>
+        </div>
+      </button>
+    )
   }
 
   const teto = SEGMENTOS
@@ -158,7 +189,6 @@ export default function AplausoBarra({
           aria-label="Quanto você aplaude, de 0 a 10"
           disabled={enviando}
           onChange={(e) => setValor(Number(e.target.value))}
-          onPointerDown={() => { if (logado === false) onPrecisaConta() }}
           // Lê do PRÓPRIO input, não do estado. Quando o dedo levanta, o
           // React pode ainda não ter processado o último passo do arrasto —
           // e aí `valor` no fecho é o anterior. Como o aplauso só aumenta,
