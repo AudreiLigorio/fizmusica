@@ -9,6 +9,7 @@ import PublicacaoConsent from "./PublicacaoConsent"
 import { useToast } from "./ToastContext"
 import { usePlayer, type PlayableTrack } from "./PlayerContext"
 import type { LibraryTrack } from "./MinhasMusicas"
+import { confirmar } from "@/app/components/Dialogo"
 
 // "Minhas músicas publicadas" — aba Músicas, só para quem está logado
 // (a aba do visitante nem monta este componente). Fecha o gancho do texto da
@@ -63,7 +64,12 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
   useEffect(() => { carregar() }, [carregar])
 
   async function tirarDaRede(m: Musica) {
-    if (!confirm(`Tirar "${m.titulo}" da Rede? Ela some da Rede e o link público para de funcionar. Você pode publicar de novo quando quiser.`)) return
+    if (!(await confirmar({
+      titulo: `Tirar “${m.titulo}” da Rede?`,
+      mensagem: "Ela some da Rede e o link público para de funcionar. Você pode publicar de novo quando quiser.",
+      botao: "Tirar da Rede",
+      perigo: true,
+    }))) return
     setSalvando(m.orderId)
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch(`/api/orders/${m.orderId}/publicacao`, {

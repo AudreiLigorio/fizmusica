@@ -6,6 +6,7 @@ import { usePlayer } from "./PlayerContext"
 import { useToast } from "./ToastContext"
 import { combina } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
+import { confirmar } from "@/app/components/Dialogo"
 
 type Track = { orderId: string; title: string; occasion: string; imageUrl: string | null; audioUrl: string; apelido: string | null; publico?: boolean; minha?: boolean }
 type PlaylistFull = { id: string; nome: string; tracks: Track[] }
@@ -76,7 +77,12 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
   }
 
   async function excluirPlaylist(playlistId: string, nome: string) {
-    if (!window.confirm(`Excluir a playlist "${nome}"? Isso não apaga as músicas, só a coleção.`)) return
+    if (!(await confirmar({
+      titulo: `Excluir a playlist “${nome}”?`,
+      mensagem: "Isso não apaga as músicas, só a coleção.",
+      botao: "Excluir playlist",
+      perigo: true,
+    }))) return
     setPlaylists((prev) => prev?.filter((pl) => pl.id !== playlistId) ?? null) // otimista
     const headers = await authHeaders()
     await fetch(`/api/playlists/${playlistId}`, { method: "DELETE", headers })

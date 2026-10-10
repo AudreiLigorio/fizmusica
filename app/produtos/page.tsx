@@ -10,6 +10,7 @@ import AvisoCompraApp from "@/app/components/AvisoCompraApp"
 import { useBloquearCompraNoApp } from "@/lib/canal"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
+import { avisar } from "@/app/components/Dialogo"
 
 type DeliveryOption = {
   id: string
@@ -241,11 +242,11 @@ function ProdutosContent() {
           body: JSON.stringify(shipping),
         })
         if (!res.ok) {
-          alert("Erro ao salvar dados de envio. Tente novamente.")
+          await avisar({ titulo: "Não foi possível salvar o endereço", mensagem: "Confira os dados de entrega e tente de novo." })
           return
         }
       } catch {
-        alert("Erro de conexão.")
+        await avisar({ titulo: "Sem conexão", mensagem: "Verifique a internet e tente de novo." })
         return
       } finally {
         setSavingShipping(false)
