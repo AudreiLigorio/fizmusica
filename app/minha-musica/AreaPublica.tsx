@@ -98,6 +98,34 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
                     Crie uma conta pra guardar as que você gostou.
                   </p>
                 </div>
+
+                {/* Par do "Minhas músicas publicadas" do cliente logado: aqui
+                    vira CONVITE. Estímulo, não aviso — mostra o que a pessoa
+                    vai acompanhar (palmas, reproduções, Top 10) antes de ela
+                    ter. O botão leva a CRIAR, não a entrar: o "Entrar" segue
+                    sendo só o do topo. */}
+                <div className="mt-10">
+                  <h2 className="text-xl font-bold mb-1">Minhas músicas publicadas</h2>
+                  <p className="text-white/50 text-xs mb-4">Aqui você acompanha as músicas que lançar na Rede.</p>
+                  <div className="rounded-2xl p-5 text-center border border-fuchsia-500/25"
+                       style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.10), rgba(217,70,239,0.06))" }}>
+                    <div className="text-3xl mb-2">🎤</div>
+                    <p className="text-base font-bold">Sua carreira ainda não começou</p>
+                    <p className="text-xs text-white/60 leading-relaxed mt-1.5 max-w-sm mx-auto">
+                      Toda carreira começa com a primeira música. Crie a sua, publique na Rede e veja as
+                      pessoas ouvindo e aplaudindo. Quanto mais você lança, mais desconto ganha na próxima.
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                      {["👏 Palmas", "▶ Reproduções", "🏆 Top 10"].map((x) => (
+                        <span key={x} className="text-[11px] px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-white/60">{x}</span>
+                      ))}
+                    </div>
+                    <a href="/criar" className="inline-block mt-5 px-5 py-2.5 rounded-full text-xs font-bold text-white"
+                       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
+                      Começar minha carreira
+                    </a>
+                  </div>
+                </div>
               </AbaMusicas>
 
               {/* A MESMA ajuda da Rede do cliente logado, não uma versão
