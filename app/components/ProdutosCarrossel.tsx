@@ -276,7 +276,7 @@ function CartaRede({ onClick }: { onClick: () => void }) {
     // No computador (lg:order-none) segue a primeira, como no print de
     // referência, porque ali as quatro aparecem juntas.
     <div className={`${LARGURA} order-last lg:order-none rounded-2xl border border-white/10 bg-white/[0.04] p-5 flex flex-col`}>
-      <span className="self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300 border border-emerald-400/30 bg-emerald-400/10">
+      <span className="self-start px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-300 border border-emerald-400/30 bg-emerald-400/10">
         Gratuito
       </span>
 
@@ -286,7 +286,7 @@ function CartaRede({ onClick }: { onClick: () => void }) {
 
       <ul className="mt-4 space-y-3 grow">
         {itens.map((it) => (
-          <li key={it.texto} className="flex items-start gap-2.5 text-xs text-white/70 leading-snug">
+          <li key={it.texto} className="flex items-start gap-2.5 text-sm text-white/70 leading-snug">
             <span className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center border"
                   style={{ color: it.cor, borderColor: `${it.cor}55`, background: `${it.cor}1f` }}>
               <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" {...S}>{it.icon}</svg>
@@ -326,7 +326,7 @@ function CartaProduto({ produto, cor, onClick }: {
           o título pra baixo e as cartas ficam desalinhadas entre si. */}
       <div className="h-6">
         {produto.featured && (
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em]"
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.12em]"
                 style={{ color: cor.forte, background: cor.suave, border: `1px solid ${cor.borda}` }}>
             Mais escolhido
           </span>
@@ -350,7 +350,7 @@ function CartaProduto({ produto, cor, onClick }: {
         {beneficios(produto).map((b) => (
           // `items-start` + `shrink-0`: nesta largura os itens longos quebram
           // em duas linhas, e sem isso o check escorregaria pro meio do texto.
-          <li key={b} className="flex items-start gap-1.5 text-[11px] text-white/65 leading-snug">
+          <li key={b} className="flex items-start gap-1.5 text-[13px] text-white/65 leading-snug">
             <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px]" aria-hidden="true"
                  fill="none" style={{ stroke: cor.forte }} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
               <path d="m5 12 5 5L20 7" />

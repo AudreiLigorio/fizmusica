@@ -103,10 +103,10 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
       )}
 
       <div className="flex items-center justify-between mb-3">
-        <p className="text-pink-200 font-semibold text-sm">📸 Suas fotos <span className="text-white/40 font-normal text-xs">(opcional)</span></p>
-        <span className="text-white/30 text-[11px]">{photos.length}/{max}</span>
+        <p className="text-pink-200 font-semibold text-sm">📸 Suas fotos <span className="text-white/40 font-normal text-sm">(opcional)</span></p>
+        <span className="text-white/30 text-[13px]">{photos.length}/{max}</span>
       </div>
-      <p className="text-white/45 text-xs mb-4 leading-relaxed">
+      <p className="text-white/45 text-sm mb-4 leading-relaxed">
         Aparecem no player enquanto a música toca. Ao enviar, você declara ter o
         consentimento das pessoas retratadas e concorda com os{" "}
         <a href="/legal/direitos-autorais" className="underline hover:text-white/70">termos de Conteúdo Enviado</a>{" "}
@@ -115,7 +115,7 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
       </p>
 
       {error && (
-        <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2 mb-3 text-center">❌ {error}</p>
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2 mb-3 text-center">❌ {error}</p>
       )}
 
       {loading ? (
@@ -143,13 +143,13 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
                       <button
                         onClick={() => move(p.id, -1)}
                         disabled={ri === 0}
-                        className="w-6 h-6 rounded-full bg-black/60 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/60"
+                        className="w-6 h-6 rounded-full bg-black/60 hover:bg-pink-600 text-white text-[13px] font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/60"
                         title="Mover para trás"
                       >‹</button>
                       <button
                         onClick={() => move(p.id, 1)}
                         disabled={ri === reorderableCount - 1}
-                        className="w-6 h-6 rounded-full bg-black/60 hover:bg-pink-600 text-white text-xs font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/60"
+                        className="w-6 h-6 rounded-full bg-black/60 hover:bg-pink-600 text-white text-[13px] font-bold flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-black/60"
                         title="Mover para frente"
                       >›</button>
                     </div>
@@ -169,7 +169,7 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
               {uploading ? (
                 <div className="w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
               ) : (
-                <><span className="text-2xl leading-none">+</span><span className="text-[10px] mt-0.5">Adicionar</span></>
+                <><span className="text-2xl leading-none">+</span><span className="text-[13px] mt-0.5">Adicionar</span></>
               )}
             </button>
           )}
@@ -185,7 +185,7 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
       />
 
       {photos.length > 0 && (
-        <p className="text-center text-xs text-green-400/80 mt-3">✅ Fotos salvas.</p>
+        <p className="text-center text-sm text-green-400/80 mt-3">✅ Fotos salvas.</p>
       )}
     </div>
   )

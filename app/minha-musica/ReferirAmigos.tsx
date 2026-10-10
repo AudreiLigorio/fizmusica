@@ -67,17 +67,17 @@ export default function ReferirAmigos() {
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Indique amigos</h2>
         <InfoTooltip text="Faça indicações e ganhe bônus." />
       </div>
-      <p className="text-xs text-white/50 leading-relaxed mb-3">
+      <p className="text-sm text-white/50 leading-relaxed mb-3">
         Seu link pessoal — quando um amigo compra pela sua indicação, você fica sabendo aqui.
       </p>
 
       <div className="flex items-center gap-2 mb-3">
-        <div className="flex-1 min-w-0 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-white/70 truncate font-mono">
+        <div className="flex-1 min-w-0 bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-[13px] text-white/70 truncate font-mono">
           {link}
         </div>
         <button
           onClick={copiarLink}
-          className="shrink-0 px-3 py-2 rounded-lg text-xs font-medium border border-white/15 text-white/70 hover:text-white hover:border-fuchsia-500/40 transition-colors"
+          className="shrink-0 px-3 py-2 rounded-lg text-sm font-medium border border-white/15 text-white/70 hover:text-white hover:border-fuchsia-500/40 transition-colors"
         >
           {copiado ? "Copiado ✓" : "Copiar"}
         </button>
@@ -95,15 +95,15 @@ export default function ReferirAmigos() {
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
           <p className="text-lg font-bold font-mono">{funil.shares}</p>
-          <p className="text-[10px] text-white/40 uppercase tracking-wide">Compartilhados</p>
+          <p className="text-[11px] text-white/40 uppercase tracking-wide">Compartilhados</p>
         </div>
         <div>
           <p className="text-lg font-bold font-mono">{funil.accesses}</p>
-          <p className="text-[10px] text-white/40 uppercase tracking-wide">Acessos</p>
+          <p className="text-[11px] text-white/40 uppercase tracking-wide">Acessos</p>
         </div>
         <div>
           <p className="text-lg font-bold font-mono text-green-400">{funil.conversions}</p>
-          <p className="text-[10px] text-white/40 uppercase tracking-wide">Compras geradas</p>
+          <p className="text-[11px] text-white/40 uppercase tracking-wide">Compras geradas</p>
         </div>
       </div>
     </div>

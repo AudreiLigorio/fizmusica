@@ -77,7 +77,7 @@ export default function MinhaCarreira() {
   return (
     <div className="mb-9">
       <h2 className="text-xl font-bold mb-1">Minha carreira</h2>
-      <p className="text-xs text-white/50 mb-4">
+      <p className="text-sm text-white/50 mb-4">
         Cada música criada rende discos e faz seu personagem evoluir.
       </p>
 
@@ -92,7 +92,7 @@ export default function MinhaCarreira() {
                divertida do app. */
             <div className="flex-1 py-2">
               <p className="text-sm font-semibold mb-1">Escolha seu personagem</p>
-              <p className="text-[11px] text-white/45 mb-3 leading-relaxed">
+              <p className="text-[13px] text-white/45 mb-3 leading-relaxed">
                 Ele evolui com você a cada nível. Dá pra trocar quando quiser.
               </p>
               <div className="flex gap-2">
@@ -112,7 +112,7 @@ export default function MinhaCarreira() {
 
           {arte && (
             <div className="min-w-0 flex-1 pb-5">
-              <p className="text-[10px] uppercase tracking-wide font-bold text-white/35 mb-0.5">Seu nível</p>
+              <p className="text-[11px] uppercase tracking-wide font-bold text-white/35 mb-0.5">Seu nível</p>
               <p className="text-lg font-bold leading-tight mb-2">{c.nivel.icone} {c.nivel.nome}</p>
               <p className="text-2xl font-bold" style={{ color: "#f0abfc" }}>
                 {c.discos} <span className="text-sm font-medium text-white/50">disco{c.discos === 1 ? "" : "s"} 💿</span>
@@ -131,7 +131,7 @@ export default function MinhaCarreira() {
             {c.proximo ? (
               <>
                 <div className="flex items-baseline justify-between mb-1.5 gap-3">
-                  <span className="text-[11px] text-white/60 min-w-0">
+                  <span className="text-[13px] text-white/60 min-w-0">
                     Faltam <strong className="text-white">{c.faltam} 💿</strong> para {c.proximo.icone} <strong className="text-white">{c.proximo.nome}</strong>
                   </span>
                   <span className="text-[11px] text-white/35 font-mono shrink-0">{c.discos}/{c.proximo.minDiscos}</span>
@@ -143,7 +143,7 @@ export default function MinhaCarreira() {
                   />
                 </div>
                 {c.proximo.descontoDigital > c.nivel.descontoDigital && (
-                  <p className="text-[11px] text-fuchsia-300/90 mb-4">
+                  <p className="text-[13px] text-fuchsia-300/90 mb-4">
                     Lá o desconto sobe de {c.nivel.descontoDigital}% para <strong>{c.proximo.descontoDigital}%</strong>.
                   </p>
                 )}
@@ -154,7 +154,7 @@ export default function MinhaCarreira() {
                  e o desconto máximo passa a ser lembrado como permanente. */
               <div className="mb-4 rounded-2xl px-4 py-3 border border-amber-400/25 bg-amber-400/[0.07]">
                 <p className="text-sm font-bold text-amber-200">⭐ Você chegou ao topo da carreira</p>
-                <p className="text-[11px] text-amber-100/60 mt-0.5 leading-relaxed">
+                <p className="text-[13px] text-amber-100/60 mt-0.5 leading-relaxed">
                   Seu personagem passou por todos os palcos. O desconto máximo de {c.nivel.descontoDigital}% fica valendo em toda música que você criar.
                 </p>
               </div>
@@ -189,7 +189,7 @@ export default function MinhaCarreira() {
                     ) : (
                       <span className={`text-lg ${alcancado ? "" : "opacity-25 grayscale"} ${atual ? "scale-125" : ""}`}>{n.icone}</span>
                     )}
-                    <span className={`text-[8px] text-center leading-tight ${
+                    <span className={`text-[11px] text-center leading-tight ${
                       atual ? "text-white font-bold" : proximo ? "text-fuchsia-300" : "text-white/30"
                     }`}>
                       {n.minDiscos}+
@@ -203,7 +203,7 @@ export default function MinhaCarreira() {
                 está com a dúvida. Sem isso "faltam 4 💿" não diz o que fazer. */}
             <button
               onClick={() => setVerComoGanhar((v) => !v)}
-              className="w-full text-left text-[11px] text-white/45 hover:text-white/70 transition-colors mb-3"
+              className="w-full text-left text-[13px] text-white/45 hover:text-white/70 transition-colors mb-3"
             >
               Como se ganha um 💿 <span className="text-white/25">{verComoGanhar ? "▴" : "▾"}</span>
             </button>
@@ -211,17 +211,17 @@ export default function MinhaCarreira() {
             {verComoGanhar && (
               <div className="mb-3 space-y-1.5">
                 {produtos === null ? (
-                  <p className="text-[11px] text-white/30">Carregando…</p>
+                  <p className="text-[13px] text-white/30">Carregando…</p>
                 ) : (
                   <>
                     {produtos.map((p) => (
-                      <div key={p.id} className="flex items-center gap-2 text-[11px]">
+                      <div key={p.id} className="flex items-center gap-2 text-[13px]">
                         <span className="flex-1 min-w-0 truncate text-white/60">{p.name}</span>
                         <span className="text-white/30">R$ {p.price.toFixed(2).replace(".", ",")}</span>
                         <span className="font-bold text-fuchsia-300 w-7 text-right">+{p.loyalty_discos}</span>
                       </div>
                     ))}
-                    <div className="flex items-center gap-2 text-[11px] pt-1 border-t border-white/5">
+                    <div className="flex items-center gap-2 text-[13px] pt-1 border-t border-white/5">
                       <span className="flex-1 min-w-0 truncate text-white/60">Indicar um amigo que compra</span>
                       <span className="font-bold text-fuchsia-300 w-7 text-right">+2</span>
                     </div>
@@ -232,7 +232,7 @@ export default function MinhaCarreira() {
 
             {c.nivel.descontoDigital > 0 && (
               <div className="rounded-xl border border-fuchsia-500/25 bg-fuchsia-500/10 px-4 py-2.5 mb-3">
-                <p className="text-xs font-semibold text-fuchsia-200">
+                <p className="text-sm font-semibold text-fuchsia-200">
                   🎁 {c.nivel.descontoDigital}% de desconto na próxima música
                 </p>
               </div>
@@ -240,16 +240,16 @@ export default function MinhaCarreira() {
 
             <button
               onClick={() => setVerExtrato((v) => !v)}
-              className="w-full text-center text-[11px] text-white/40 hover:text-white/70 py-1 transition-colors"
+              className="w-full text-center text-[13px] text-white/40 hover:text-white/70 py-1 transition-colors"
             >
               {verExtrato ? "Ocultar histórico ▲" : "Ver de onde vieram meus discos ▾"}
             </button>
 
             {verExtrato && (
               <div className="mt-2 space-y-1.5">
-                {c.extrato.length === 0 && <p className="text-[11px] text-white/30 text-center py-2">Nada por aqui ainda.</p>}
+                {c.extrato.length === 0 && <p className="text-[13px] text-white/30 text-center py-2">Nada por aqui ainda.</p>}
                 {c.extrato.map((t, i) => (
-                  <div key={i} className="flex items-center gap-2 text-[11px] border-b border-white/5 pb-1.5">
+                  <div key={i} className="flex items-center gap-2 text-[13px] border-b border-white/5 pb-1.5">
                     <span className={`font-bold font-mono shrink-0 ${t.discos > 0 ? "text-green-400" : "text-red-400"}`}>
                       {t.discos > 0 ? "+" : ""}{t.discos}
                     </span>

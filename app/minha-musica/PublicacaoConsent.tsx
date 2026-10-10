@@ -83,7 +83,7 @@ export default function PublicacaoConsent({
                 cliente compartilha MOSTRA as fotos — e isso é escolha dele.
               - o limite da revogação passou a ser explícito: ela impede
                 novas exibições, não recupera o que alguém já salvou. */}
-          <p className="text-white/55 text-xs leading-relaxed mt-1">
+          <p className="text-white/55 text-sm leading-relaxed mt-1">
             Você pode autorizar a Fiz Música a divulgar <strong className="text-white/80">a sua música e a letra</strong> na Rede Fiz Música (que podem conter nomes e a história real como parte do conteúdo).
             <strong className="text-white/80"> As suas fotos não aparecem na Rede</strong> — só a capa gerada automaticamente.
             {/* O endereço público entra AQUI, e não só no termo: é o ponto em
@@ -108,7 +108,7 @@ export default function PublicacaoConsent({
           </label>
 
           {(assinatura || recusouAssinar) && (
-            <p className="text-[11px] text-white/45 mt-2 leading-relaxed">
+            <p className="text-[13px] text-white/45 mt-2 leading-relaxed">
               {recusouAssinar ? (
                 <>Suas músicas aparecem <strong className="text-white/60">sem identificação do autor</strong> — foi o que você escolheu em Carreira.</>
               ) : (
@@ -119,7 +119,7 @@ export default function PublicacaoConsent({
             </p>
           )}
 
-          {savedMsg && <p className="text-xs text-fuchsia-300/80 mt-2">{savedMsg}</p>}
+          {savedMsg && <p className="text-sm text-fuchsia-300/80 mt-2">{savedMsg}</p>}
         </div>
       </div>
     </div>

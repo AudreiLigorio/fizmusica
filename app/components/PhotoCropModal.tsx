@@ -136,7 +136,7 @@ export default function PhotoCropModal({
       <div className="bg-[#15131d] rounded-3xl overflow-hidden w-full max-w-sm">
         <div className="px-5 pt-5 pb-2 text-center">
           <p className="font-bold text-lg">Ajustar foto</p>
-          <p className="text-white/40 text-xs mt-1">Arraste para reposicionar · Pinça para zoom</p>
+          <p className="text-white/40 text-sm mt-1">Arraste para reposicionar · Pinça para zoom</p>
         </div>
 
         <div className="relative mx-auto overflow-hidden" style={{ width: CROP_SIZE, height: CROP_SIZE, maxWidth: "100%", touchAction: "none" }}>

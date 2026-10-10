@@ -156,18 +156,18 @@ function SucessoContent() {
                               <button
                                 onClick={quickLogin.withEmail}
                                 disabled={quickLogin.sending}
-                                className="w-full text-center text-white/75 hover:text-white text-xs underline underline-offset-2 mt-3 disabled:opacity-60"
+                                className="w-full text-center text-white/75 hover:text-white text-sm underline underline-offset-2 mt-3 disabled:opacity-60"
                               >
                                 {quickLogin.sending ? "Enviando…" : `Prefiro por e-mail (${order.email})`}
                               </button>
                             )}
                             {quickLogin.error && (
-                              <p className="text-red-100 text-xs mt-2 bg-red-500/20 rounded-lg px-3 py-2">{quickLogin.error}</p>
+                              <p className="text-red-100 text-sm mt-2 bg-red-500/20 rounded-lg px-3 py-2">{quickLogin.error}</p>
                             )}
                           </>
                         )}
 
-                        <p className="text-white/70 text-xs leading-relaxed mt-3">
+                        <p className="text-white/70 text-sm leading-relaxed mt-3">
                           As funcionalidades disponíveis variam de acordo com o plano contratado.
                         </p>
                       </div>
@@ -177,7 +177,7 @@ function SucessoContent() {
                       ⚠️ <strong>Atenção:</strong> seu projeto só é iniciado depois que você agir dentro da área — aprovar a letra, aceitar os termos, aprovar versões, entre outros.
                     </p>
 
-                    <p className="text-gray-400 text-xs leading-relaxed mb-4">
+                    <p className="text-gray-400 text-sm leading-relaxed mb-4">
                       ✨ Nessa área você também tem à disposição coleções, lembretes e muito mais.
                     </p>
                   </>
@@ -219,7 +219,7 @@ function SucessoContent() {
 
                 {/* NÚMERO DO PEDIDO — logo abaixo do produto (pendente/recebido) */}
                 {!isPaid && orderId && (
-                  <div className="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-center text-xs text-gray-400 mb-4 font-mono">
+                  <div className="bg-black/30 border border-white/10 rounded-2xl px-4 py-3 text-center text-sm text-gray-400 mb-4 font-mono">
                     Pedido <span className="text-pink-300">#{orderId.slice(0, 8).toUpperCase()}</span>
                   </div>
                 )}
@@ -244,7 +244,7 @@ function SucessoContent() {
 
                 {/* Contato compacto (pago) */}
                 {isPaid && (
-                  <p className="text-gray-500 text-xs text-center mb-2">
+                  <p className="text-gray-500 text-sm text-center mb-2">
                     Dúvida?{" "}
                     <a href="https://wa.me/5511996645678" target="_blank" rel="noopener noreferrer" className="text-pink-400 underline">WhatsApp</a>
                     {" "}·{" "}

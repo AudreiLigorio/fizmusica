@@ -42,9 +42,9 @@ function emailShell(o: {
       ${o.note ? `
       <div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 18px;margin:20px 0">
         ${o.note.label ? `<p style="color:#f6a7c6;font-size:13px;margin:0 0 6px;font-weight:bold">${o.note.label}</p>` : ""}
-        <p style="color:#aaaaaa;font-size:13px;margin:0;line-height:1.6">${o.note.text}</p>
+        <p style="color:#aaaaaa;font-size:14px;margin:0;line-height:1.6">${o.note.text}</p>
       </div>` : ""}
-      <p style="color:#666666;font-size:12px;margin:30px 0 0;padding-top:22px;border-top:1px solid #222222;text-align:center;line-height:1.7">
+      <p style="color:#666666;font-size:13px;margin:30px 0 0;padding-top:22px;border-top:1px solid #222222;text-align:center;line-height:1.7">
         <strong style="color:#ec4899">FizMusica</strong> — Sua história, sua música ❤️<br>
         Dúvidas? <a href="mailto:contato@fizmusica.com.br" style="color:#ec4899">contato@fizmusica.com.br</a> · <a href="https://fizmusica.com.br" style="color:#ec4899">fizmusica.com.br</a>
       </p>
@@ -104,7 +104,7 @@ function buildDeliveryEmail(data: MusicDeliveryEmailData): string {
     <div style="margin:24px 0;padding:18px;border:2px dashed #a855f7;border-radius:14px;background:rgba(168,85,247,0.08);text-align:center">
       <p style="margin:0 0 6px;color:#d8b4fe;font-size:13px;font-weight:bold">🎁 ${data.loyaltyCoupon.label} NA SUA PRÓXIMA MÚSICA</p>
       <p style="margin:0 0 4px;font-size:24px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:.1em">${data.loyaltyCoupon.code}</p>
-      <p style="margin:0;color:#cbd5e1;font-size:12px">Que tal surpreender outra pessoa especial? Use este código no checkout.</p>
+      <p style="margin:0;color:#cbd5e1;font-size:14px">Que tal surpreender outra pessoa especial? Use este código no checkout.</p>
     </div>` : ""}`
   return emailShell({
     emoji: "🎵",
@@ -283,7 +283,7 @@ export async function sendAccessLinksEmail(data: AccessLinksEmailData): Promise<
   const restList = rest.length
     ? `<div style="background:#1a1a1a;border:1px solid #333;border-radius:12px;padding:16px 18px;margin:20px 0">
          <p style="color:#f6a7c6;font-size:13px;margin:0 0 8px;font-weight:bold">Seus outros pedidos</p>
-         ${rest.map((o) => `<p style="margin:0 0 6px;font-size:13px;line-height:1.6"><a href="${o.url}" style="color:#ec4899">${o.label} →</a></p>`).join("")}
+         ${rest.map((o) => `<p style="margin:0 0 6px;font-size:14px;line-height:1.6"><a href="${o.url}" style="color:#ec4899">${o.label} →</a></p>`).join("")}
        </div>`
     : ""
   try {
@@ -629,7 +629,7 @@ function buildRecoveryEmail(data: RecoveryEmailData, siteUrl: string): string {
     ? `<div style="margin:24px 0;padding:18px;border:2px dashed #ec4899;border-radius:14px;background:rgba(236,72,153,0.08);text-align:center">
          <p style="margin:0 0 6px;color:#f9a8d4;font-size:13px;font-weight:bold;letter-spacing:.05em">🎟️ ${data.coupon.label} PRA VOCÊ VOLTAR</p>
          <p style="margin:0 0 4px;font-size:26px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:.1em">${data.coupon.code}</p>
-         <p style="margin:0;color:#cbd5e1;font-size:12px">Use este código no checkout ao finalizar.</p>
+         <p style="margin:0;color:#cbd5e1;font-size:14px">Use este código no checkout ao finalizar.</p>
        </div>`
     : ""
   return emailShell({
@@ -785,7 +785,7 @@ export async function sendMassEmail(recipients: MassEmailRecipient[], subject: s
                 🎵 Visitar FizMusica
               </a>
             </div>
-            <p style="color:#555;font-size:11px;margin:24px 0 0;padding-top:16px;border-top:1px solid #222;text-align:center">
+            <p style="color:#555;font-size:13px;margin:24px 0 0;padding-top:16px;border-top:1px solid #222;text-align:center">
               FizMusica — Músicas personalizadas feitas com amor ❤️
             </p>
           </div>

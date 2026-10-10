@@ -119,7 +119,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
 
           {/* Escolha do personagem — é feature real da conta, não enfeite. */}
           <div className="flex items-center justify-center gap-2 mt-5">
-            <span className="text-[11px] text-white/35 mr-1">Seu personagem:</span>
+            <span className="text-[13px] text-white/35 mr-1">Seu personagem:</span>
             {(["f", "m"] as const).map((p) => (
               <button
                 key={p}
@@ -142,7 +142,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
         {/* Nada de "nunca desce": estorno de pedido reverte discos (REFUND em
             lib/fidelidade.ts) e o nível pode cair junto. O que é verdade — e
             vende igual — é que o desconto entra sozinho. */}
-        <p className="text-white/40 text-xs mt-1">
+        <p className="text-white/40 text-sm mt-1">
           O desconto entra sozinho no seu próximo pedido. Sem cupom, sem código.
         </p>
       </div>
@@ -179,7 +179,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
 
                   <div className="flex-1 min-w-0 py-1">
                     <p className="font-bold text-[17px] leading-tight">{n.nome}</p>
-                    <p className="text-xs text-white/40 mt-1">
+                    <p className="text-sm text-white/40 mt-1">
                       {n.minDiscos === 0 ? "Todo mundo começa aqui" : `${n.minDiscos} discos`}
                     </p>
                   </div>
@@ -189,10 +189,10 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
                       <p className="text-xl font-bold leading-none bg-gradient-to-r from-pink-400 to-fuchsia-400 bg-clip-text text-transparent">
                         {n.descontoDigital}%
                       </p>
-                      <p className="text-[10px] text-white/35 mt-0.5">de desconto</p>
+                      <p className="text-[13px] text-white/35 mt-0.5">de desconto</p>
                     </div>
                   ) : (
-                    <span className="shrink-0 text-[10px] uppercase tracking-wider text-white/25 font-bold">Início</span>
+                    <span className="shrink-0 text-[11px] uppercase tracking-wider text-white/25 font-bold">Início</span>
                   )}
                 </div>
               )
@@ -204,7 +204,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
       {/* ── Como ganhar discos ─────────────────────────────────────── */}
       <div className="max-w-md sm:max-w-2xl mx-auto mt-12">
         <h2 className="text-xl font-bold mb-1">Como se ganha um 💿</h2>
-        <p className="text-white/40 text-xs mb-5">
+        <p className="text-white/40 text-sm mb-5">
           Quanto maior o plano, mais discos de uma vez. Eles ficam na sua conta e não expiram.
         </p>
 
@@ -219,7 +219,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
                 <span className="text-xl leading-none">🎵</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate">{p.name}</p>
-                  <p className="text-xs text-white/45 mt-0.5">
+                  <p className="text-sm text-white/45 mt-0.5">
                     R$ {p.price.toFixed(2).replace(".", ",")}
                   </p>
                 </div>
@@ -231,7 +231,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
               <span className="text-xl leading-none mt-0.5">💌</span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">Indicar um amigo</p>
-                <p className="text-xs text-white/45 mt-0.5 leading-relaxed">Você ganha quando ele cria a música dele pelo seu link.</p>
+                <p className="text-sm text-white/45 mt-0.5 leading-relaxed">Você ganha quando ele cria a música dele pelo seu link.</p>
               </div>
               <span className="shrink-0 text-sm font-bold text-fuchsia-300 mt-0.5">+{DISCOS_POR_INDICACAO}</span>
             </div>
@@ -248,7 +248,7 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
         >
           Começar minha carreira
         </button>
-        <p className="text-white/40 text-xs mt-3.5 max-w-[17rem] sm:max-w-sm mx-auto leading-relaxed">
+        <p className="text-white/40 text-sm mt-3.5 max-w-[17rem] sm:max-w-sm mx-auto leading-relaxed">
           Criar a conta é grátis. A primeira música que você fizer já te tira
           do chuveiro.
         </p>

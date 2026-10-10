@@ -57,14 +57,14 @@ export default function TituloMusica({
   return (
     <div className="rounded-xl border border-white/10 bg-black/20 p-3 mt-3">
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <label htmlFor={`titulo-${orderId}`} className="text-xs font-semibold text-fuchsia-200">
+        <label htmlFor={`titulo-${orderId}`} className="text-sm font-semibold text-fuchsia-200">
           🏷️ Nome da sua música
         </label>
         <button
           type="button"
           onClick={() => sugerir(true)}
           disabled={busy || disabled || !lyrics.trim()}
-          className="shrink-0 text-[11px] text-white/50 hover:text-fuchsia-300 disabled:opacity-40 transition-colors"
+          className="shrink-0 text-[13px] text-white/50 hover:text-fuchsia-300 disabled:opacity-40 transition-colors"
         >
           {busy ? "Pensando…" : "🔄 Sugerir outro"}
         </button>
@@ -80,12 +80,12 @@ export default function TituloMusica({
         className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-fuchsia-500/60 transition-colors disabled:opacity-50"
       />
 
-      <p className="text-[11px] text-white/35 mt-1.5 leading-relaxed">
+      <p className="text-[13px] text-white/35 mt-1.5 leading-relaxed">
         É o nome que aparece no player e no seu link de compartilhar. Pode
         deixar a sugestão ou escrever o seu. {value.length}/{MAX_TITULO}
       </p>
 
-      {erro && <p className="text-red-400 text-[11px] mt-1.5">{erro}</p>}
+      {erro && <p className="text-red-400 text-[13px] mt-1.5">{erro}</p>}
     </div>
   )
 }

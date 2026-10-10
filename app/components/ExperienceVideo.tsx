@@ -72,7 +72,7 @@ export default function ExperienceVideo() {
               </div>
             </div>
             <div className="absolute bottom-4 left-0 right-0 text-center">
-              <span className="text-xs text-white/70 tracking-wide">Toque para assistir</span>
+              <span className="text-sm text-white/70 tracking-wide">Toque para assistir</span>
             </div>
           </>
         )}

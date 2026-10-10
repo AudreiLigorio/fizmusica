@@ -132,7 +132,7 @@ export default function AjudaCliente({ aba }: { aba: AbaAjuda }) {
         <span className="text-lg shrink-0">💡</span>
         <span className="min-w-0 flex-1">
           <span className="block text-xl font-semibold text-white group-hover:text-fuchsia-200 transition-colors">{titulo}</span>
-          <span className="block text-xs text-white/40">
+          <span className="block text-sm text-white/40">
             {aberto ? "O essencial desta tela, em uma linha cada." : `${itens.length} respostas rápidas`}
           </span>
         </span>

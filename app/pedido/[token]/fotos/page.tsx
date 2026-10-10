@@ -120,7 +120,7 @@ export default function FotosPage() {
                 Adicione fotos que vão aparecer junto da sua música (a quantidade varia de acordo com o produto escolhido). Toque em uma para defini-la como capa.
                 <br />É opcional — você pode voltar por este link quando quiser.
               </p>
-              <p className="text-white/35 text-[11px] leading-relaxed mt-3 max-w-sm mx-auto">
+              <p className="text-white/35 text-[13px] leading-relaxed mt-3 max-w-sm mx-auto">
                 Ao enviar, você autoriza o uso das fotos apenas para exibição no player da sua música e declara ter o consentimento das pessoas retratadas (e dos responsáveis, se houver crianças), conforme os{" "}
                 <a href="/legal/direitos-autorais" className="underline hover:text-white/60">termos de Conteúdo Enviado</a>{" "}
                 e a{" "}
@@ -150,7 +150,7 @@ export default function FotosPage() {
 
                     {/* Badge capa */}
                     {p.is_cover && (
-                      <span className="absolute top-2 left-2 text-[10px] font-bold bg-pink-500 text-white px-2 py-0.5 rounded-full shadow">
+                      <span className="absolute top-2 left-2 text-[13px] font-bold bg-pink-500 text-white px-2 py-0.5 rounded-full shadow">
                         ★ CAPA
                       </span>
                     )}
@@ -167,12 +167,12 @@ export default function FotosPage() {
                   {!p.is_cover ? (
                     <button
                       onClick={() => setCover(p.id)}
-                      className="w-full text-[11px] font-semibold py-1.5 rounded-xl border border-pink-500/30 text-pink-300 hover:bg-pink-500/10 transition-colors"
+                      className="w-full text-[13px] font-semibold py-1.5 rounded-xl border border-pink-500/30 text-pink-300 hover:bg-pink-500/10 transition-colors"
                     >
                       ★ Definir capa
                     </button>
                   ) : (
-                    <span className="w-full text-center text-[11px] text-pink-400/60 py-1.5">
+                    <span className="w-full text-center text-[13px] text-pink-400/60 py-1.5">
                       Foto de capa
                     </span>
                   )}
@@ -193,18 +193,18 @@ export default function FotosPage() {
                     ) : (
                       <>
                         <span className="text-3xl">+</span>
-                        <span className="text-xs mt-1">Adicionar</span>
+                        <span className="text-sm mt-1">Adicionar</span>
                       </>
                     )}
                   </button>
-                  <span className="w-full text-center text-[11px] text-white/20 py-1.5">
+                  <span className="w-full text-center text-[13px] text-white/20 py-1.5">
                     {max - photos.length} restante{max - photos.length !== 1 ? "s" : ""}
                   </span>
                 </div>
               )}
             </div>
 
-            <p className="text-center text-xs text-white/30 mb-2">
+            <p className="text-center text-sm text-white/30 mb-2">
               {photos.length}/{max} fotos · JPG, PNG ou WebP · até 8 MB cada
             </p>
 

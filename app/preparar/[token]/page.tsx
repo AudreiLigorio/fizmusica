@@ -193,13 +193,13 @@ export default function PrepararPage() {
               <button
                 onClick={quickLogin.withEmail}
                 disabled={quickLogin.sending}
-                className="w-full text-center text-white/50 hover:text-white/80 text-xs underline underline-offset-2 mt-4 disabled:opacity-60"
+                className="w-full text-center text-white/50 hover:text-white/80 text-sm underline underline-offset-2 mt-4 disabled:opacity-60"
               >
                 {quickLogin.sending ? "Enviando…" : `Prefiro por e-mail (${order.email})`}
               </button>
             )}
             {quickLogin.error && (
-              <p className="text-red-300 text-xs mt-3 bg-red-500/10 rounded-lg px-3 py-2">{quickLogin.error}</p>
+              <p className="text-red-300 text-sm mt-3 bg-red-500/10 rounded-lg px-3 py-2">{quickLogin.error}</p>
             )}
           </div>
         )}

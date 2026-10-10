@@ -70,13 +70,13 @@ export default function FaixaCarreira({ onAbrirCarreira }: { onAbrirCarreira: ()
       )}
 
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-wider font-bold text-white/35 leading-none mb-1">
+        <p className="text-[11px] uppercase tracking-wider font-bold text-white/35 leading-none mb-1">
           Sua carreira
         </p>
         <p className="text-sm font-extrabold text-white/90 truncate leading-tight">{c.nivel.nome}</p>
 
         {noTopo ? (
-          <p className="text-[11px] text-fuchsia-300/80 mt-0.5 truncate">
+          <p className="text-[13px] text-fuchsia-300/80 mt-0.5 truncate">
             Nível máximo · {c.nivel.descontoDigital}% de desconto nas próximas
           </p>
         ) : (
@@ -85,7 +85,7 @@ export default function FaixaCarreira({ onAbrirCarreira }: { onAbrirCarreira: ()
               <div className="h-full rounded-full transition-all"
                    style={{ width: `${Math.round(c.progresso * 100)}%`, background: "linear-gradient(90deg,#f0196b,#d946ef)" }} />
             </div>
-            <p className="text-[11px] text-white/50 whitespace-nowrap">
+            <p className="text-[13px] text-white/50 whitespace-nowrap">
               faltam <strong className="text-fuchsia-300">{c.faltam}</strong> {c.faltam === 1 ? "disco" : "discos"}
             </p>
           </div>
@@ -94,7 +94,7 @@ export default function FaixaCarreira({ onAbrirCarreira }: { onAbrirCarreira: ()
 
       <div className="shrink-0 text-right hidden sm:block">
         {!noTopo && (
-          <p className="text-[11px] text-white/40 leading-tight">
+          <p className="text-[13px] text-white/40 leading-tight">
             próximo nível<br />
             <strong className="text-white/70">{c.proximo!.nome}</strong>
           </p>

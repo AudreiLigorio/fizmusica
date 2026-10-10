@@ -65,12 +65,12 @@ export default function ContatoPage() {
             <a href={`mailto:${EMAIL}`} className="rounded-2xl p-5 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
               <p className="text-[11px] font-bold uppercase tracking-widest text-pink-300/80 mb-1">E-mail geral</p>
               <p className="text-sm font-medium break-all">{EMAIL}</p>
-              <p className="text-xs text-white/40 mt-1">Dúvidas, pedidos e suporte</p>
+              <p className="text-sm text-white/40 mt-1">Dúvidas, pedidos e suporte</p>
             </a>
             <a href={`mailto:${EMAIL_PRIV}`} className="rounded-2xl p-5 border border-white/10 bg-white/[0.03] hover:bg-white/[0.05] transition-colors">
               <p className="text-[11px] font-bold uppercase tracking-widest text-fuchsia-300/80 mb-1">Privacidade</p>
               <p className="text-sm font-medium break-all">{EMAIL_PRIV}</p>
-              <p className="text-xs text-white/40 mt-1">Dados pessoais e LGPD</p>
+              <p className="text-sm text-white/40 mt-1">Dados pessoais e LGPD</p>
             </a>
           </div>
 
@@ -85,7 +85,7 @@ export default function ContatoPage() {
             </ul>
           </div>
 
-          <p className="text-center text-white/40 text-xs mt-8">
+          <p className="text-center text-white/40 text-sm mt-8">
             Atendimento de segunda a sábado. Fora do horário, deixe sua mensagem que retornamos assim que possível.
           </p>
         </section>

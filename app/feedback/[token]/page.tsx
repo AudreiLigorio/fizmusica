@@ -113,7 +113,7 @@ export default function FeedbackPage() {
         {/* Pergunta 1 — Nota com estrelas */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
           <p className="text-sm font-semibold mb-1">1. Como você avalia sua experiência com a FizMusica?</p>
-          <p className="text-xs text-gray-500 mb-4">Considere tudo: a música, o atendimento e a entrega. Dê uma nota de 1 a 5 estrelas</p>
+          <p className="text-sm text-gray-500 mb-4">Considere tudo: a música, o atendimento e a entrega. Dê uma nota de 1 a 5 estrelas</p>
           <div className="flex gap-3 justify-center">
             {[1, 2, 3, 4, 5].map(n => (
               <button
@@ -142,7 +142,7 @@ export default function FeedbackPage() {
             2. O que mais te surpreendeu ou emocionou na sua experiência?
             <span className="text-pink-400 ml-1">*</span>
           </p>
-          <p className="text-xs text-gray-500 mb-3">Pode ser a música, o atendimento, a entrega, um detalhe que te marcou…</p>
+          <p className="text-sm text-gray-500 mb-3">Pode ser a música, o atendimento, a entrega, um detalhe que te marcou…</p>
           <textarea
             rows={3}
             value={highlight}
@@ -155,7 +155,7 @@ export default function FeedbackPage() {
         {/* Pergunta 3 — Melhoria (opcional) */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
           <p className="text-sm font-semibold mb-1">3. Se pudesse mudar algo, o que seria?</p>
-          <p className="text-xs text-gray-500 mb-3">Opcional — sua resposta nos ajuda a melhorar cada vez mais</p>
+          <p className="text-sm text-gray-500 mb-3">Opcional — sua resposta nos ajuda a melhorar cada vez mais</p>
           <textarea
             rows={3}
             value={improvement}
@@ -181,7 +181,7 @@ export default function FeedbackPage() {
           ) : "Enviar avaliação 💜"}
         </button>
 
-        <p className="text-center text-xs text-gray-600">Leva menos de 2 minutos e faz toda a diferença pra nós ❤️</p>
+        <p className="text-center text-sm text-gray-600">Leva menos de 2 minutos e faz toda a diferença pra nós ❤️</p>
       </form>
     </Page>
   )

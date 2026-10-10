@@ -176,7 +176,7 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
             <button
               onClick={() => router.push("/minha-musica?aba=carreira")}
               aria-label="Meu perfil"
-              className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-xs font-bold text-white border border-white/15 hover:border-white/40 transition-colors"
+              className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center text-[13px] font-bold text-white border border-white/15 hover:border-white/40 transition-colors"
               style={avatarUrl ? undefined : { background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
             >
               {avatarUrl

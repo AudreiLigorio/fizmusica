@@ -119,7 +119,7 @@ export default function ContestarPage() {
                 <div>
                   <label className="text-sm text-white/60 font-medium block mb-2">
                     Descreva tudo o que quer alterar
-                    <span className="text-white/30 text-xs ml-1">(seja o mais detalhado possível)</span>
+                    <span className="text-white/30 text-sm ml-1">(seja o mais detalhado possível)</span>
                   </label>
                   <div className="relative">
                     <textarea
@@ -131,7 +131,7 @@ export default function ContestarPage() {
                       className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-white/25 outline-none focus:border-pink-500 transition-colors resize-none text-sm leading-relaxed"
                     />
                     {interim && (
-                      <p className="text-white/30 text-xs italic px-4 pb-2">…{interim}</p>
+                      <p className="text-white/30 text-sm italic px-4 pb-2">…{interim}</p>
                     )}
                     <div className="absolute bottom-3 right-3">
                       <MicButton
@@ -144,7 +144,7 @@ export default function ContestarPage() {
                 </div>
 
                 {/* Dicas */}
-                <div className="bg-white/[0.03] border border-white/8 rounded-xl p-4 text-xs text-white/40 space-y-1">
+                <div className="bg-white/[0.03] border border-white/8 rounded-xl p-4 text-sm text-white/40 space-y-1">
                   <p className="text-white/60 font-semibold mb-2">💡 O que ajuda a gente a fazer melhor:</p>
                   <p>• Estilo musical ou ritmo preferido (ex.: MPB mais lenta, sertanejo romântico)</p>
                   <p>• Tipo de voz (feminina, masculina, suave, potente)</p>

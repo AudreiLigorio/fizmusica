@@ -53,8 +53,8 @@ function Row({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null
   return (
     <div className="flex justify-between gap-4 py-1.5 border-b border-white/5 last:border-0">
-      <span className="text-white/40 text-xs shrink-0">{label}</span>
-      <span className="text-white/80 text-xs text-right">{value}</span>
+      <span className="text-white/40 text-sm shrink-0">{label}</span>
+      <span className="text-white/80 text-sm text-right">{value}</span>
     </div>
   )
 }
@@ -84,8 +84,8 @@ export default function DetalhesPedido({ order }: { order: Order }) {
           <div className="space-y-2">
             {order.answers.map((a, i) => (
               <div key={i} className="bg-black/20 rounded-lg px-3 py-2">
-                <p className="text-white/40 text-[11px] mb-0.5">{a.question}</p>
-                <p className="text-white/80 text-xs whitespace-pre-wrap leading-relaxed">{a.answer || "—"}</p>
+                <p className="text-white/40 text-[13px] mb-0.5">{a.question}</p>
+                <p className="text-white/80 text-sm whitespace-pre-wrap leading-relaxed">{a.answer || "—"}</p>
               </div>
             ))}
           </div>
@@ -124,7 +124,7 @@ export default function DetalhesPedido({ order }: { order: Order }) {
             <button
               type="button"
               onClick={() => setRevealed((v) => !v)}
-              className="text-white/40 hover:text-white/70 text-[11px] flex items-center gap-1 transition-colors"
+              className="text-white/40 hover:text-white/70 text-[13px] flex items-center gap-1 transition-colors"
             >
               {revealed ? (
                 <>
@@ -145,7 +145,7 @@ export default function DetalhesPedido({ order }: { order: Order }) {
         <Row label="WhatsApp" value={order.whatsapp ? (revealed ? order.whatsapp : maskPhone(order.whatsapp)) : undefined} />
       </div>
 
-      <p className="text-white/30 text-[11px] leading-relaxed pt-1">
+      <p className="text-white/30 text-[13px] leading-relaxed pt-1">
         Algo errado? Fale com a gente pelo WhatsApp informando o código do pedido.
       </p>
     </div>

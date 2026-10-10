@@ -22,7 +22,7 @@ export default function JourneyProgress({ current }: { current: JourneyStep }) {
           <div key={step.n} className="flex items-start">
             {/* Step */}
             <div className="flex flex-col items-center" style={{ minWidth: 46 }}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-semibold transition-all ${
                 done   ? "text-white" :
                 active ? "text-white animate-pulse-ring" :
                          "border border-white/12 bg-white/[0.03] text-white/30"
@@ -33,7 +33,7 @@ export default function JourneyProgress({ current }: { current: JourneyStep }) {
                   </svg>
                 ) : step.n}
               </div>
-              <span className={`text-[11px] mt-2 text-center leading-tight transition-all ${
+              <span className={`text-[13px] mt-2 text-center leading-tight transition-all ${
                 active ? "font-semibold text-white" :
                 done   ? "font-medium text-white/55" :
                          "text-white/30"

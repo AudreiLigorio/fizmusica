@@ -224,7 +224,7 @@ export default function LetraPanel({
     return (
       <div className="rounded-xl border border-green-500/25 bg-green-500/8 px-4 py-3 mb-4">
         <p className="text-green-300 text-sm font-semibold">✅ Letra aprovada</p>
-        <p className="text-green-400/70 text-xs">Sua letra está salva. A produção da sua música começa agora.</p>
+        <p className="text-green-400/70 text-sm">Sua letra está salva. A produção da sua música começa agora.</p>
       </div>
     )
   }
@@ -270,10 +270,10 @@ export default function LetraPanel({
             linha explicando parecem defeito no meio de uma homenagem.
             Os players já removem essas linhas, então elas nunca são
             exibidas na música pronta nem cantadas. */}
-        <p className="text-white/50 text-xs mt-0.5">
+        <p className="text-white/50 text-sm mt-0.5">
           Gere a letra, ajuste o que quiser e aprove antes da produção da música.
         </p>
-        <p className="text-white/35 text-[11px] mt-1">
+        <p className="text-white/35 text-[13px] mt-1">
           As marcações entre colchetes — <span className="text-white/50">[Refrão]</span>, <span className="text-white/50">[Ponte]</span> — organizam a música e <strong className="text-white/50">não são cantadas</strong>. Pode deixá-las como estão.
         </p>
       </div>
@@ -299,7 +299,7 @@ export default function LetraPanel({
           />
 
           {busy === "gerar" && (
-            <p className="text-fuchsia-300/70 text-xs mt-1.5 flex items-center gap-1.5">
+            <p className="text-fuchsia-300/70 text-sm mt-1.5 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-fuchsia-400 animate-pulse inline-block" />
               Compondo…
             </p>
@@ -315,13 +315,13 @@ export default function LetraPanel({
               className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-fuchsia-500/60 transition-colors mb-2 disabled:opacity-50"
             />
             <div className="flex items-center justify-between gap-3">
-              <span className={`text-xs ${semRevisoes ? "text-white/30" : "text-fuchsia-300/80"}`}>
+              <span className={`text-sm ${semRevisoes ? "text-white/30" : "text-fuchsia-300/80"}`}>
                 {semRevisoes ? "Sem revisões com IA — ajuste à mão e aprove" : `${state.reprocessLeft} de 3 revisões restantes`}
               </span>
               <button
                 onClick={reprocessar}
                 disabled={busy !== null || semRevisoes}
-                className="shrink-0 px-4 py-2 rounded-lg text-xs font-semibold text-white border border-fuchsia-500/40 bg-fuchsia-500/15 hover:bg-fuchsia-500/25 disabled:opacity-40 transition-all flex items-center gap-1.5"
+                className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold text-white border border-fuchsia-500/40 bg-fuchsia-500/15 hover:bg-fuchsia-500/25 disabled:opacity-40 transition-all flex items-center gap-1.5"
               >
                 {busy === "reprocessar" ? (
                   <><span className="w-3 h-3 border-2 border-fuchsia-300 border-t-transparent rounded-full animate-spin" /> Revisando…</>
@@ -331,7 +331,7 @@ export default function LetraPanel({
           </div>
 
           {editado && !semRevisoes && (
-            <p className="text-yellow-400/80 text-xs mt-3">
+            <p className="text-yellow-400/80 text-sm mt-3">
               Você editou a letra — peça uma revisão à IA antes de continuar.
             </p>
           )}
@@ -364,7 +364,7 @@ export default function LetraPanel({
         </>
       )}
 
-      {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
+      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
     </div>
     </>
   )

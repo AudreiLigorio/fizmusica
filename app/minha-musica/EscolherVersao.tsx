@@ -38,7 +38,7 @@ export default function EscolherVersao({
     <div className="rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/[0.07] p-5 mb-4">
       <div className="mb-4">
         <p className="text-fuchsia-100 font-semibold flex items-center gap-2">🎧 Sua música ficou pronta — em 2 versões!</p>
-        <p className="text-white/55 text-xs mt-0.5">
+        <p className="text-white/55 text-sm mt-0.5">
           Você fica com as <strong>duas</strong>. Ouça e escolha qual será a <strong>principal</strong> — a do QR Code e do link de
           compartilhar. As duas continuam disponíveis para ouvir e baixar.
         </p>
@@ -63,7 +63,7 @@ export default function EscolherVersao({
         ))}
       </div>
 
-      {error && <p className="text-red-400 text-xs mt-3">{error}</p>}
+      {error && <p className="text-red-400 text-sm mt-3">{error}</p>}
     </div>
   )
 }

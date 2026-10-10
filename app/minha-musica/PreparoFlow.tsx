@@ -68,13 +68,13 @@ export default function PreparoFlow({
           <span className="text-fuchsia-300 text-lg shrink-0">🔁</span>
           <div className="min-w-0">
             <p className="text-fuchsia-200 font-semibold text-sm">Revisão — ajuste o que quiser</p>
-            <p className="text-fuchsia-300/70 text-xs leading-relaxed">
+            <p className="text-fuchsia-300/70 text-sm leading-relaxed">
               Você pode trocar a <strong>letra</strong>{temFotos ? <> ou as <strong>fotos</strong></> : null} e gerar uma nova versão.
               Se já estiver tudo certo, gere direto.
             </p>
             <button
               onClick={() => { if (temFotos) setShowFotos(true); setPhotosConfirmed(true) }}
-              className="mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-200 hover:bg-fuchsia-500/25 transition-colors"
+              className="mt-2 text-sm font-semibold px-3 py-1.5 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-200 hover:bg-fuchsia-500/25 transition-colors"
             >
               Está tudo certo — gerar nova versão →
             </button>
@@ -83,7 +83,7 @@ export default function PreparoFlow({
       )}
 
       {/* Mini-stepper do preparo — plano sem fotos vai direto de Letra a Aprovar */}
-      <div className="flex items-center gap-2 text-[11px] px-0.5">
+      <div className="flex items-center gap-2 text-[13px] px-0.5">
         {(temFotos
           ? [{ n: 1, label: "Letra" }, { n: 2, label: "Fotos" }, { n: 3, label: "Aprovar" }]
           : [{ n: 1, label: "Letra" }, { n: 2, label: "Aprovar" }]
@@ -91,7 +91,7 @@ export default function PreparoFlow({
           const on = s.n <= activeStep
           return (
             <div key={s.n} className="flex items-center gap-2">
-              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${on ? "bg-fuchsia-500 text-white" : "bg-white/10 text-white/40"}`}>{s.n}</span>
+              <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ${on ? "bg-fuchsia-500 text-white" : "bg-white/10 text-white/40"}`}>{s.n}</span>
               <span className={on ? "text-fuchsia-200" : "text-white/40"}>{s.label}</span>
               {idx < arr.length - 1 && <span className="w-4 h-px bg-white/15" />}
             </div>
@@ -120,7 +120,7 @@ export default function PreparoFlow({
           {photoToken ? (
             <FotosPanel token={photoToken} />
           ) : (
-            <p className="text-white/40 text-xs px-1">Não há álbum de fotos para este pedido — você pode seguir sem fotos.</p>
+            <p className="text-white/40 text-sm px-1">Não há álbum de fotos para este pedido — você pode seguir sem fotos.</p>
           )}
           {!photosConfirmed && (
             <div className="flex gap-2">
@@ -146,7 +146,7 @@ export default function PreparoFlow({
       {photosConfirmed && (
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/[0.08] p-4">
           <p className="text-yellow-300 font-semibold text-sm mb-1">⚠️ Tudo pronto para gerar</p>
-          <p className="text-yellow-400/70 text-xs leading-relaxed mb-3">
+          <p className="text-yellow-400/70 text-sm leading-relaxed mb-3">
             Ao aprovar, a música é <strong>gerada automaticamente</strong> e a <strong>letra fica travada</strong>.
             As fotos você ainda pode ajustar depois, inclusive com a música pronta.
           </p>
@@ -178,7 +178,7 @@ export default function PreparoFlow({
             {temFotos && (
               <button
                 onClick={() => setPhotosConfirmed(false)}
-                className="px-3 py-2.5 rounded-xl text-xs font-medium text-white/60 border border-white/15 hover:bg-white/5 transition-colors"
+                className="px-3 py-2.5 rounded-xl text-sm font-medium text-white/60 border border-white/15 hover:bg-white/5 transition-colors"
               >
                 ← Ajustar fotos
               </button>
@@ -193,7 +193,7 @@ export default function PreparoFlow({
             </button>
           </div>
           {!letra.canApprove && (
-            <p className="text-yellow-400/70 text-[11px] mt-2">Revise a letra acima (peça uma revisão à IA) antes de gerar.</p>
+            <p className="text-yellow-400/70 text-[13px] mt-2">Revise a letra acima (peça uma revisão à IA) antes de gerar.</p>
           )}
         </div>
       )}

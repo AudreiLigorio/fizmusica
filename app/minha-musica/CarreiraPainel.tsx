@@ -100,7 +100,7 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
             {avatarUrl
               ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
               : <span className="w-full h-full flex items-center justify-center text-xl font-bold text-white">{inicial}</span>}
-            <span className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[10px] font-semibold text-white">
+            <span className="absolute inset-0 rounded-full bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[13px] font-semibold text-white">
               {enviando ? "…" : "Trocar"}
             </span>
           </span>
@@ -133,8 +133,8 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
 
         <div className="min-w-0 flex-1">
           <p className="font-bold text-base truncate">{salvo || nome}</p>
-          <p className="text-xs text-white/45 truncate">{email}</p>
-          <p className="text-[11px] text-white/30 mt-0.5">É por este e-mail que seus pedidos entram na conta.</p>
+          <p className="text-sm text-white/45 truncate">{email}</p>
+          <p className="text-[13px] text-white/30 mt-0.5">É por este e-mail que seus pedidos entram na conta.</p>
           {/* Em texto também: ícone sozinho ainda deixa dúvida sobre o que
               acontece ao tocar, e quem não tem foto precisa saber que pode
               colocar uma. */}
@@ -142,16 +142,16 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={enviando}
-            className="text-[11px] text-pink-400 hover:text-pink-300 disabled:opacity-50 mt-1.5"
+            className="text-[13px] text-pink-400 hover:text-pink-300 disabled:opacity-50 mt-1.5"
           >
             {enviando ? "Enviando…" : avatarUrl ? "Trocar foto" : "Adicionar foto"}
           </button>
         </div>
       </div>
 
-      {erro && <p className="text-red-400 text-[11px] mb-3">{erro}</p>}
+      {erro && <p className="text-red-400 text-[13px] mb-3">{erro}</p>}
 
-      <label htmlFor="apelido" className="block text-[11px] font-semibold text-white/50 mb-1.5">
+      <label htmlFor="apelido" className="block text-[13px] font-semibold text-white/50 mb-1.5">
         Como você quer ser chamado
       </label>
       <div className="flex gap-2 mb-4">
@@ -169,7 +169,7 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
           type="button"
           onClick={salvarApelido}
           disabled={apelido.trim() === salvo.trim()}
-          className="shrink-0 px-4 rounded-xl text-xs font-bold text-white disabled:opacity-30 transition-all"
+          className="shrink-0 px-4 rounded-xl text-sm font-bold text-white disabled:opacity-30 transition-all"
           style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
         >
           Salvar
@@ -193,8 +193,8 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
           <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${mostrarApelido ? "translate-x-4" : ""}`} />
         </span>
         <span className="min-w-0">
-          <span className="block text-xs font-semibold">Mostrar meu apelido na Rede Fiz Música</span>
-          <span className="block text-[11px] text-white/40">Aparece pra quem ouvir as músicas que você publicou lá</span>
+          <span className="block text-sm font-semibold">Mostrar meu apelido na Rede Fiz Música</span>
+          <span className="block text-[13px] text-white/40">Aparece pra quem ouvir as músicas que você publicou lá</span>
         </span>
       </label>
 

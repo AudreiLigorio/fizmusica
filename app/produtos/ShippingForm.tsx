@@ -94,7 +94,7 @@ export default function ShippingForm({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-xs text-gray-300 mb-1.5 block">Nome completo do destinatário *</label>
+        <label className="text-sm text-gray-300 mb-1.5 block">Nome completo do destinatário *</label>
         <input
           value={value.shipping_name}
           onChange={(e) => set({ shipping_name: e.target.value })}
@@ -105,7 +105,7 @@ export default function ShippingForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-300 mb-1.5 block">CEP *</label>
+          <label className="text-sm text-gray-300 mb-1.5 block">CEP *</label>
           <input
             value={value.shipping_cep}
             onChange={(e) => {
@@ -118,14 +118,14 @@ export default function ShippingForm({
             placeholder="00000-000"
             inputMode="numeric"
           />
-          {cepLoading && <p className="text-xs text-gray-400 mt-1">Buscando…</p>}
-          {cepError && <p className="text-xs text-red-400 mt-1">{cepError}</p>}
+          {cepLoading && <p className="text-sm text-gray-400 mt-1">Buscando…</p>}
+          {cepError && <p className="text-sm text-red-400 mt-1">{cepError}</p>}
           {cepDigits > 0 && cepDigits < 8 && (
-            <p className="text-xs text-yellow-400 mt-1">CEP incompleto</p>
+            <p className="text-sm text-yellow-400 mt-1">CEP incompleto</p>
           )}
         </div>
         <div>
-          <label className="text-xs text-gray-300 mb-1.5 block">Telefone *</label>
+          <label className="text-sm text-gray-300 mb-1.5 block">Telefone *</label>
           <input
             value={value.shipping_phone}
             onChange={(e) => set({ shipping_phone: maskPhone(e.target.value) })}
@@ -134,13 +134,13 @@ export default function ShippingForm({
             inputMode="tel"
           />
           {phoneDigits > 0 && phoneDigits < 10 && (
-            <p className="text-xs text-yellow-400 mt-1">Telefone incompleto</p>
+            <p className="text-sm text-yellow-400 mt-1">Telefone incompleto</p>
           )}
         </div>
       </div>
 
       <div>
-        <label className="text-xs text-gray-300 mb-1.5 block">Endereço *</label>
+        <label className="text-sm text-gray-300 mb-1.5 block">Endereço *</label>
         <input
           value={value.shipping_address}
           onChange={(e) => set({ shipping_address: e.target.value })}
@@ -151,7 +151,7 @@ export default function ShippingForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-300 mb-1.5 block">Número *</label>
+          <label className="text-sm text-gray-300 mb-1.5 block">Número *</label>
           <input
             value={value.shipping_number}
             onChange={(e) => set({ shipping_number: e.target.value })}
@@ -160,7 +160,7 @@ export default function ShippingForm({
           />
         </div>
         <div>
-          <label className="text-xs text-gray-300 mb-1.5 block">Complemento</label>
+          <label className="text-sm text-gray-300 mb-1.5 block">Complemento</label>
           <input
             value={value.shipping_complement}
             onChange={(e) => set({ shipping_complement: e.target.value })}
@@ -171,7 +171,7 @@ export default function ShippingForm({
       </div>
 
       <div>
-        <label className="text-xs text-gray-300 mb-1.5 block">Bairro *</label>
+        <label className="text-sm text-gray-300 mb-1.5 block">Bairro *</label>
         <input
           value={value.shipping_neighborhood}
           onChange={(e) => set({ shipping_neighborhood: e.target.value })}
@@ -181,7 +181,7 @@ export default function ShippingForm({
 
       <div className="grid grid-cols-[1fr_100px] gap-3">
         <div>
-          <label className="text-xs text-gray-300 mb-1.5 block">Cidade *</label>
+          <label className="text-sm text-gray-300 mb-1.5 block">Cidade *</label>
           <input
             value={value.shipping_city}
             onChange={(e) => set({ shipping_city: e.target.value })}
@@ -189,7 +189,7 @@ export default function ShippingForm({
           />
         </div>
         <div>
-          <label className="text-xs text-gray-300 mb-1.5 block">UF *</label>
+          <label className="text-sm text-gray-300 mb-1.5 block">UF *</label>
           <select
             value={value.shipping_state}
             onChange={(e) => set({ shipping_state: e.target.value })}

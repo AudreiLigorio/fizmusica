@@ -98,7 +98,7 @@ export default function QuemSomosPage() {
               <p className="text-3xl font-bold mb-1 bg-gradient-to-r from-pink-400 to-fuchsia-400 bg-clip-text text-transparent">
                 {numero}
               </p>
-              <p className="text-xs text-white/40">{label}</p>
+              <p className="text-sm text-white/40">{label}</p>
             </div>
           ))}
         </div>

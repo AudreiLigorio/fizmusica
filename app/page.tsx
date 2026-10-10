@@ -134,7 +134,7 @@ function StatItem({ stat, displayFont, bodyFont }: {
       >
         {stat.prefix}{display}{stat.suffix}
       </p>
-      <p className="text-xs tracking-wide" style={{ ...bodyFont, color: "rgba(255,255,255,0.3)" }}>
+      <p className="text-sm tracking-wide" style={{ ...bodyFont, color: "rgba(255,255,255,0.3)" }}>
         {stat.label}
       </p>
     </div>
@@ -388,7 +388,7 @@ export default function Home() {
               e com 14px os rótulos longos passavam a quebrar em TRÊS linhas
               — o último selo chegava a sumir atrás da barra de navegação.
               Aumentar a fonte tornava a lista menos legível, não mais. */}
-          <div className="animate-fade-up delay-400 mt-10 lg:mt-12 pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-xs lg:text-sm text-white/85 tracking-wide" style={bodyFont}>
+          <div className="animate-fade-up delay-400 mt-10 lg:mt-12 pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm lg:text-sm text-white/85 tracking-wide" style={bodyFont}>
               {[
                 // Mesmos ícones da /produtos (música e QR Code), pra selo e
                 // cartão de produto lerem como a mesma linguagem visual.
@@ -486,15 +486,15 @@ export default function Home() {
                   style={{ background: isActive ? "rgba(240,25,107,0.15)" : "rgba(255,255,255,0.03)" }}
                 >
                   <span className="shrink-0 w-5 text-center tabular-nums"
-                        style={{ ...bodyFont, fontSize: "0.68rem", color: isActive ? "rgba(240,25,107,0.8)" : "rgba(255,255,255,0.25)" }}>
+                        style={{ ...bodyFont, fontSize: "0.8125rem", color: isActive ? "rgba(240,25,107,0.8)" : "rgba(255,255,255,0.25)" }}>
                     {String(idx + 1).padStart(2, "0")}
                   </span>
                   <div className="flex-1 min-w-0">
                     <p className="truncate leading-snug"
-                       style={{ ...bodyFont, fontSize: "0.82rem", fontWeight: 500, color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)" }}>
+                       style={{ ...bodyFont, fontSize: "0.9375rem", fontWeight: 500, color: isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.85)" }}>
                       {d.emoji} {d.title}
                     </p>
-                    <p className="truncate" style={{ ...bodyFont, fontSize: "0.68rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)" }}>
+                    <p className="truncate" style={{ ...bodyFont, fontSize: "0.8125rem", color: isActive ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.4)" }}>
                       {d.meta}
                     </p>
                   </div>
@@ -946,7 +946,7 @@ export default function Home() {
                      style={{ background: "rgba(7,6,13,0.9)", backdropFilter: "blur(24px)", border: "1px solid rgba(240,25,107,0.15)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "#f0196b" }} />
-                    <p className="text-xs text-white/60" style={bodyFont}>Nossa missão</p>
+                    <p className="text-sm text-white/60" style={bodyFont}>Nossa missão</p>
                   </div>
                   <p className="font-medium text-white/90 leading-snug text-sm" style={bodyFont}>
                     Fazer parte das histórias mais importantes da sua vida ❤️

@@ -85,7 +85,7 @@ export function SeletorTema({ compacto = false }: { compacto?: boolean }) {
           // Cor da opção ativa em style: vence as regras do tema claro (que
           // trocam text-white por escuro) e fica igual nos dois temas.
           style={tema === o.id ? { background: "#c2185b", color: "#ffffff" } : undefined}
-          className={`rounded-full text-xs font-medium transition-colors ${compacto ? "w-8 h-8" : "px-3 py-1.5"} ${
+          className={`rounded-full text-[13px] font-medium transition-colors ${compacto ? "w-8 h-8" : "px-3 py-1.5"} ${
             tema === o.id ? "" : "text-white/70 hover:text-white"
           }`}
         >

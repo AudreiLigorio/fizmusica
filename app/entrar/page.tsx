@@ -165,7 +165,7 @@ export default function EntrarPage() {
                   {mode === "link" ? "Receba de novo o link da sua música 🎵" : "Entre ou crie sua conta"}
                 </p>
                 {mode === "login" && (
-                  <p className="text-gray-400 text-xs mt-1">
+                  <p className="text-gray-400 text-sm mt-1">
                     O mesmo e-mail serve pra quem já é cliente e pra quem está começando agora.
                   </p>
                 )}
@@ -184,7 +184,7 @@ export default function EntrarPage() {
 
               <div className="flex items-center gap-3 mb-4">
                 <span className="h-px flex-1 bg-white/10" />
-                <span className="text-xs text-gray-500">ou pelo e-mail</span>
+                <span className="text-sm text-gray-500">ou pelo e-mail</span>
                 <span className="h-px flex-1 bg-white/10" />
               </div>
               </>)}
@@ -223,7 +223,7 @@ export default function EntrarPage() {
                     <p className="text-amber-200 text-sm leading-relaxed">
                       Não encontramos nenhum pedido com <span className="font-medium text-white">{email}</span>.
                     </p>
-                    <p className="text-amber-200/70 text-xs leading-relaxed">
+                    <p className="text-amber-200/70 text-sm leading-relaxed">
                       Se você já comprou, confira se digitou certo — é só corrigir o e-mail acima. Se ainda não comprou, pode criar sua conta agora mesmo.
                     </p>
                     <button
@@ -254,7 +254,7 @@ export default function EntrarPage() {
                   )}
                 </button>
 
-                <p className="text-xs text-gray-300 text-center">
+                <p className="text-sm text-gray-300 text-center">
                   {mode === "link"
                     ? "Enviaremos o link direto da sua música pro e-mail usado na compra — sem login."
                     : "Você receberá um link seguro por e-mail — sem senha necessária."}
@@ -263,14 +263,14 @@ export default function EntrarPage() {
 
               <button
                 onClick={() => { setMode(mode === "link" ? "login" : "link"); setError("") }}
-                className="w-full text-center text-xs text-gray-400 hover:text-pink-300 mt-4 underline underline-offset-2"
+                className="w-full text-center text-sm text-gray-400 hover:text-pink-300 mt-4 underline underline-offset-2"
               >
                 {mode === "link"
                   ? "← Voltar para entrar na minha conta"
                   : "Perdeu o link da sua música? Receba de novo por e-mail, sem login"}
               </button>
 
-              <p className="text-[11px] text-gray-500 text-center mt-4 leading-relaxed">
+              <p className="text-[13px] text-gray-500 text-center mt-4 leading-relaxed">
                 Ao entrar, você concorda com os{" "}
                 <a href="/legal/termos-de-uso" className="underline hover:text-gray-300">Termos de Uso</a> e a{" "}
                 <a href="/legal/politica-de-privacidade" className="underline hover:text-gray-300">Política de Privacidade</a>.

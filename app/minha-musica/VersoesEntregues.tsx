@@ -133,12 +133,12 @@ export default function VersoesEntregues({
                       : "border-white/10 bg-black/20 hover:bg-white/5"
               }`}>
               {s.nudge && (
-                <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[8px] font-semibold bg-pink-500 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[11px] font-semibold bg-pink-500 text-white px-1.5 py-0.5 rounded-full whitespace-nowrap">
                   falta isso
                 </span>
               )}
               <span className="text-base leading-none mb-1">{s.done && !isActive ? "✓" : s.icon}</span>
-              <span className={`text-[10px] font-medium leading-tight ${
+              <span className={`text-[13px] font-medium leading-tight ${
                 isActive ? "text-pink-100" : s.nudge ? "text-pink-200" : s.done ? "text-green-300" : "text-white/70"
               }`}>{s.label}</span>
             </button>
@@ -149,21 +149,21 @@ export default function VersoesEntregues({
       {/* ── PRINCIPAL ── só a versão escolhida; "ouvir a outra" revela pra trocar */}
       {active === "principal" && (
         <div className="space-y-3">
-          <p className="text-white/60 text-xs">Ouça as versões e escolha a <strong className="text-white/80">principal</strong> — é ela que vai no QR Code e no link. {features.revisao && canRevise ? "Se nenhuma te agradou, você pode pedir para refazer." : "Você pode trocar quando quiser."}</p>
+          <p className="text-white/60 text-sm">Ouça as versões e escolha a <strong className="text-white/80">principal</strong> — é ela que vai no QR Code e no link. {features.revisao && canRevise ? "Se nenhuma te agradou, você pode pedir para refazer." : "Você pode trocar quando quiser."}</p>
 
           <div className="rounded-xl border border-pink-500/40 bg-pink-500/[0.06] p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-white/80 text-sm font-medium">
                 Versão {principalIndex + 1}{principal.duration ? ` · ${Math.round(principal.duration)}s` : ""}
               </p>
-              <span className="text-[10px] font-bold bg-pink-500 text-white px-2 py-0.5 rounded-full">⭐ PRINCIPAL</span>
+              <span className="text-[13px] font-bold bg-pink-500 text-white px-2 py-0.5 rounded-full">⭐ PRINCIPAL</span>
             </div>
             <audio controls src={principal.audioUrl} className="w-full h-10" />
           </div>
 
           {outras.length > 0 && !verOutra && (
             <button onClick={() => setVerOutra(true)}
-              className="w-full text-center py-2 rounded-lg text-xs text-white/50 hover:text-white/80 border border-white/10 hover:bg-white/5 transition-colors">
+              className="w-full text-center py-2 rounded-lg text-sm text-white/50 hover:text-white/80 border border-white/10 hover:bg-white/5 transition-colors">
               Ouvir / trocar a versão principal ▾
             </button>
           )}
@@ -175,7 +175,7 @@ export default function VersoesEntregues({
                   Versão {tracks.indexOf(t) + 1}{t.duration ? ` · ${Math.round(t.duration)}s` : ""}
                 </p>
                 <button onClick={() => tornarPrincipal(t.audioId)} disabled={busy !== null}
-                  className="text-[11px] font-semibold border border-pink-500/30 text-pink-300 hover:bg-pink-500/10 disabled:opacity-50 px-2.5 py-1 rounded-lg transition-colors">
+                  className="text-[13px] font-semibold border border-pink-500/30 text-pink-300 hover:bg-pink-500/10 disabled:opacity-50 px-2.5 py-1 rounded-lg transition-colors">
                   {busy === t.audioId ? "Trocando…" : "⭐ Tornar principal"}
                 </button>
               </div>
@@ -188,10 +188,10 @@ export default function VersoesEntregues({
           {features.revisao && canRevise && onNaoGostei && (
             <div className="border-t border-white/[0.08] pt-3 mt-1">
               <button onClick={onNaoGostei}
-                className="w-full text-center py-2.5 rounded-lg text-xs font-medium border border-white/12 text-white/45 hover:border-red-500/30 hover:text-red-400 transition-colors">
+                className="w-full text-center py-2.5 rounded-lg text-sm font-medium border border-white/12 text-white/45 hover:border-red-500/30 hover:text-red-400 transition-colors">
                 Não gostei de nenhuma — pedir para refazer →
               </button>
-              <p className="text-center text-[10px] text-white/30 mt-1.5">Você tem 1 revisão inclusa</p>
+              <p className="text-center text-[13px] text-white/30 mt-1.5">Você tem 1 revisão inclusa</p>
             </div>
           )}
         </div>
@@ -201,13 +201,13 @@ export default function VersoesEntregues({
       {active === "fotos" && (
         photoToken
           ? <FotosPanel token={photoToken} onChange={onChanged} />
-          : <p className="text-white/50 text-xs px-1 py-4 text-center">As fotos desta música não estão disponíveis para edição.</p>
+          : <p className="text-white/50 text-sm px-1 py-4 text-center">As fotos desta música não estão disponíveis para edição.</p>
       )}
 
       {/* ── SURPRESA ── opcional: transformar a música em presente físico via QR */}
       {active === "surpresa" && (
         <div className="rounded-xl border border-pink-500/30 bg-pink-500/[0.06] p-4">
-          <p className="text-white/55 text-xs text-center mb-3 leading-relaxed">Opcional — surpreenda colando o QR num presente físico: uma caixa, um cartão, um quadro, um buquê ou uma lembrancinha.</p>
+          <p className="text-white/55 text-sm text-center mb-3 leading-relaxed">Opcional — surpreenda colando o QR num presente físico: uma caixa, um cartão, um quadro, um buquê ou uma lembrancinha.</p>
           <p className="text-center text-sm font-semibold text-pink-200 mb-3">Agora a surpresa — o QR vira presente</p>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
@@ -217,7 +217,7 @@ export default function VersoesEntregues({
             ].map((m, i) => (
               <div key={i} className="text-center">
                 <div className="text-xl mb-1">{m.icon}</div>
-                <div className="text-[10px] text-white/55 leading-tight">{m.t}</div>
+                <div className="text-[13px] text-white/55 leading-tight">{m.t}</div>
               </div>
             ))}
           </div>
@@ -233,15 +233,15 @@ export default function VersoesEntregues({
       {active === "player" && (
         <div className="space-y-2">
           {linkAtivo ? (
-            <p className="text-white/55 text-xs text-center mb-1 leading-relaxed">
+            <p className="text-white/55 text-sm text-center mb-1 leading-relaxed">
               Veja como ficou no player{features.fotos > 0 ? ", com as suas fotos e a música exclusiva" : ", com a capa e a música exclusiva"}. Aqui você pode compartilhar o acesso a esse player exclusivo.
             </p>
           ) : (
             /* Link vencido: explica em vez de sumir sem aviso, senão o cliente
                acha que perdeu a música — que continua aqui, ouvível e baixável. */
             <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-3 mb-1">
-              <p className="text-xs font-semibold text-white/70 mb-1">🔒 Acesso público encerrado</p>
-              <p className="text-[11px] text-white/45 leading-relaxed">
+              <p className="text-sm font-semibold text-white/70 mb-1">🔒 Acesso público encerrado</p>
+              <p className="text-[13px] text-white/45 leading-relaxed">
                 {linkPrazoDias
                   ? `Terminou o prazo de ${linkPrazoDias} dias de link público do seu plano. `
                   : "Terminou o prazo de link público do seu plano. "}
@@ -261,18 +261,18 @@ export default function VersoesEntregues({
           <div className={`grid gap-2 ${!linkAtivo ? "grid-cols-1" : features.download && principalUrl ? "grid-cols-3" : "grid-cols-2"}`}>
             {principalUrl && features.download && (
               <a href={`/api/orders/${orderId}/musica/download`} download
-                className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
+                className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[13px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
                 <span className="text-base leading-none">⬇</span> Baixar
               </a>
             )}
             {linkAtivo && (
               <>
                 <button onClick={copiarLink}
-                  className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
+                  className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[13px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
                   <span className="text-base leading-none">🔗</span> {copied ? "Copiado!" : "Copiar link"}
                 </button>
                 <a href={waUrl} target="_blank" rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[11px] font-semibold border border-green-500/30 text-green-300 hover:bg-green-500/10 transition-colors">
+                  className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[13px] font-semibold border border-green-500/30 text-green-300 hover:bg-green-500/10 transition-colors">
                   <span className="text-base leading-none">💬</span> WhatsApp
                 </a>
               </>
@@ -281,7 +281,7 @@ export default function VersoesEntregues({
         </div>
       )}
 
-      {error && <p className="text-red-400 text-xs">{error}</p>}
+      {error && <p className="text-red-400 text-sm">{error}</p>}
     </div>
   )
 }

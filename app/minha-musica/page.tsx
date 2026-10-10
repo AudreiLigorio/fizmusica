@@ -570,15 +570,15 @@ function MinhaMusicaContent() {
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <p className="font-bold text-lg">{order.subcategory}</p>
               {order.is_revision && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
+                <span className="text-[13px] px-2 py-0.5 rounded-full border border-fuchsia-500/40 bg-fuchsia-500/15 text-fuchsia-300 font-semibold">REVISÃO</span>
               )}
               {order.products?.name && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full border border-pink-500/40 bg-pink-500/15 text-pink-200 font-semibold">
+                <span className="text-[13px] px-2 py-0.5 rounded-full border border-pink-500/40 bg-pink-500/15 text-pink-200 font-semibold">
                   {order.products.name}
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-400">#{order.id.slice(0, 8).toUpperCase()}</p>
+            <p className="text-sm text-gray-400">#{order.id.slice(0, 8).toUpperCase()}</p>
           </div>
           {order.payments?.amount != null && (
             <p className="text-pink-400 font-bold whitespace-nowrap text-sm">
@@ -602,9 +602,9 @@ function MinhaMusicaContent() {
                       st === "current" ? "bg-fuchsia-500 ring-4 ring-fuchsia-500/25 animate-pulse" :
                                          "bg-white/10 text-white/30"
                     }`}>
-                      {st === "done" ? "✓" : <span className="text-xs">{s.icon}</span>}
+                      {st === "done" ? "✓" : <span className="text-sm">{s.icon}</span>}
                     </span>
-                    <span className={`text-[10px] mt-1.5 text-center leading-tight ${
+                    <span className={`text-[13px] mt-1.5 text-center leading-tight ${
                       st === "done"    ? "text-green-400" :
                       st === "current" ? "text-fuchsia-300 font-semibold" :
                                          "text-gray-600"
@@ -651,19 +651,19 @@ function MinhaMusicaContent() {
             </span>
             <div>
               <p className="text-fuchsia-300 font-semibold text-sm">Sua música está sendo criada</p>
-              <p className="text-fuchsia-400/70 text-xs leading-relaxed">
+              <p className="text-fuchsia-400/70 text-sm leading-relaxed">
                 Pode fechar a página — avisamos por e-mail assim que ficar pronta.
                 <strong className="text-fuchsia-200"> Você não precisa fazer nada.</strong>
               </p>
               <div className="mt-2 flex items-center gap-3 flex-wrap">
-                <span className="text-fuchsia-300/70 text-[11px]">
+                <span className="text-fuchsia-300/70 text-[13px]">
                   {gaveUpProd
                     ? "Está demorando um pouco mais que o normal — avisamos por e-mail. 💜"
                     : "⏳ Esta tela atualiza sozinha quando ficar pronta."}
                 </span>
                 <button
                   onClick={() => { setGaveUpProd(false); loadOrders() }}
-                  className="text-[11px] underline text-fuchsia-300 hover:text-fuchsia-200"
+                  className="text-[13px] underline text-fuchsia-300 hover:text-fuchsia-200"
                 >
                   Atualizar agora
                 </button>
@@ -678,7 +678,7 @@ function MinhaMusicaContent() {
             <span className="text-orange-400 text-lg">✏️</span>
             <div>
               <p className="text-orange-300 font-semibold text-sm">Revisão em análise</p>
-              <p className="text-orange-400/60 text-xs">Nossa equipe vai entrar em contato em breve.</p>
+              <p className="text-orange-400/60 text-sm">Nossa equipe vai entrar em contato em breve.</p>
             </div>
           </div>
         )}
@@ -687,7 +687,7 @@ function MinhaMusicaContent() {
             <span className="text-fuchsia-400 text-lg">✅</span>
             <div>
               <p className="text-fuchsia-300 font-semibold text-sm">Revisão aceita</p>
-              <p className="text-fuchsia-400/60 text-xs">Sua nova versão está sendo produzida — veja o pedido de revisão na lista.</p>
+              <p className="text-fuchsia-400/60 text-sm">Sua nova versão está sendo produzida — veja o pedido de revisão na lista.</p>
             </div>
           </div>
         )}
@@ -696,7 +696,7 @@ function MinhaMusicaContent() {
         {delivered && order.slug && !termAccepted && (
           <div className="rounded-xl border border-pink-500/25 bg-pink-500/[0.06] p-4 mb-2">
             <p className="text-sm font-semibold text-white mb-1">🔒 Sua música está pronta!</p>
-            <p className="text-xs text-white/50 mb-3">
+            <p className="text-sm text-white/50 mb-3">
               Antes de ouvir, baixar e compartilhar, confirme o termo abaixo.
             </p>
             <label className="flex items-start gap-2 cursor-pointer mb-3">
@@ -706,7 +706,7 @@ function MinhaMusicaContent() {
                 onChange={(e) => setTermChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
                 className="w-4 h-4 mt-0.5 accent-pink-500 shrink-0"
               />
-              <span className="text-xs text-white/60 leading-relaxed">
+              <span className="text-sm text-white/60 leading-relaxed">
                 Li e aceito o{" "}
                 <a href="/legal/entrega-digital" className="text-pink-400 underline">Termo de Entrega Digital</a>
                 {" "}e entendo que o <strong className="text-white/80">compartilhamento da música é de minha responsabilidade</strong>.
@@ -725,7 +725,7 @@ function MinhaMusicaContent() {
                 onChange={(e) => setPubChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
                 className="w-4 h-4 mt-0.5 accent-fuchsia-500 shrink-0"
               />
-              <span className="text-xs text-white/60 leading-relaxed">
+              <span className="text-sm text-white/60 leading-relaxed">
                 <strong className="text-fuchsia-200">Opcional:</strong> autorizo a Fiz Música a divulgar{" "}
                 <strong className="text-white/80">minha música e a letra</strong> na Rede Fiz Música, que podem conter
                 nomes e a história real como parte do conteúdo.{" "}
@@ -797,7 +797,7 @@ function MinhaMusicaContent() {
                 </button>
               )}
               {order.linkAtivo === false && (
-                <p className="w-full text-[11px] text-white/40 leading-relaxed">
+                <p className="w-full text-[13px] text-white/40 leading-relaxed">
                   🔒 Terminou o prazo{order.linkPrazoDias ? ` de ${order.linkPrazoDias} dias` : ""} de
                   link público do seu plano — o QR Code, o compartilhamento e as fotos saíram do ar.
                   A música continua sua: dá pra baixar o MP3 aqui.
@@ -808,7 +808,7 @@ function MinhaMusicaContent() {
           {delivered && termAccepted && !hasRevision && !order.is_revision && (order.features ?? TUDO).revisao && (order.tracks?.length ?? 0) <= 1 && (
             <button
               onClick={() => router.push(`/contestar/${order.id}`)}
-              className="w-full mt-1 py-2.5 rounded-xl text-xs font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"
+              className="w-full mt-1 py-2.5 rounded-xl text-sm font-medium border border-white/10 text-white/40 hover:border-red-500/30 hover:text-red-400 transition-colors"
             >
               Não gostei dessa versão →
             </button>
@@ -848,7 +848,7 @@ function MinhaMusicaContent() {
             className="w-full mt-3 flex items-center gap-2 rounded-xl border border-fuchsia-500/20 bg-fuchsia-500/[0.06] px-3 py-2.5 text-left hover:border-fuchsia-400/40 hover:bg-fuchsia-500/[0.10] transition-colors group"
           >
             <span className="text-base shrink-0" aria-hidden="true">💜</span>
-            <span className="text-xs text-white/70 flex-1 min-w-0">
+            <span className="text-sm text-white/70 flex-1 min-w-0">
               Gostou? <strong className="text-white/90">Indique um amigo</strong> e ganhe discos.
             </span>
             <span className="text-white/30 group-hover:text-fuchsia-300 transition-colors shrink-0">›</span>
@@ -860,7 +860,7 @@ function MinhaMusicaContent() {
           {openDetails[order.id] && <DetalhesPedido order={order} />}
           <button
             onClick={() => setOpenDetails((p) => ({ ...p, [order.id]: !p[order.id] }))}
-            className="w-full text-center text-white/40 hover:text-white/70 text-xs py-1.5 transition-colors"
+            className="w-full text-center text-white/40 hover:text-white/70 text-sm py-1.5 transition-colors"
           >
             {openDetails[order.id] ? "Ocultar detalhes ▲" : "Ver detalhes do pedido ▾"}
           </button>
@@ -881,27 +881,27 @@ function MinhaMusicaContent() {
                 // coisa solta no meio da Carreira (Audrei, 2026-10-09).
                 <div>
                   <h2 className="text-xl font-bold mb-1">Pedidos em outro e-mail</h2>
-                  <p className="text-xs text-white/55 leading-relaxed mb-3">
+                  <p className="text-sm text-white/55 leading-relaxed mb-3">
                     Comprou com outro e-mail — do trabalho, de alguém da família ou um que você não usa mais?
                     Traga esses pedidos para esta conta. A gente manda uma confirmação para aquele e-mail e,
                     ao confirmar, as músicas aparecem aqui em Pedidos, na sua playlist e contam na sua Carreira.
                   </p>
                   <button onClick={() => setClaimOpen(true)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-pink-500/40 text-pink-300 hover:text-white hover:border-pink-400 text-xs font-semibold transition-colors">
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-pink-500/40 text-pink-300 hover:text-white hover:border-pink-400 text-sm font-semibold transition-colors">
                     Vincular outro e-mail →
                   </button>
                 </div>
               ) : (
                 <form onSubmit={submitClaim} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-3">
                   <p className="text-sm font-medium">Vincular pedidos feitos com outro e-mail</p>
-                  <p className="text-xs text-gray-500">Enviaremos um e-mail de confirmação para o e-mail usado na compra. Ao confirmar, todos os pedidos daquele e-mail entram na sua conta.</p>
+                  <p className="text-sm text-gray-500">Enviaremos um e-mail de confirmação para o e-mail usado na compra. Ao confirmar, todos os pedidos daquele e-mail entram na sua conta.</p>
                   <input
                     type="email" value={claimEmail} onChange={(e) => setClaimEmail(e.target.value)}
                     placeholder="E-mail usado na compra"
                     className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-pink-500"
                   />
                   {claimMsg && (
-                    <p className={`text-xs px-3 py-2 rounded-lg ${claimMsg.ok ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300"}`}>
+                    <p className={`text-sm px-3 py-2 rounded-lg ${claimMsg.ok ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300"}`}>
                       {claimMsg.text}
                     </p>
                   )}
@@ -1028,7 +1028,7 @@ function MinhaMusicaContent() {
                 <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Meus pedidos</h2>
                 <InfoTooltip text="Acompanhe o status de cada pedido e edite conforme a sua necessidade." />
               </div>
-              <p className="text-xs text-white/50 mb-4">Gerencie suas músicas e edições</p>
+              <p className="text-sm text-white/50 mb-4">Gerencie suas músicas e edições</p>
 
               {heroOrders.length > 0 ? (
                 <p className="text-[10.5px] uppercase tracking-wide font-bold text-fuchsia-300 mb-2.5 flex items-center gap-1.5">🔥 Precisa de você</p>
@@ -1039,7 +1039,7 @@ function MinhaMusicaContent() {
                 // estado, um deles dizendo que não há nada acontecendo.
                 <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-green-500/8 border border-green-500/20 mb-1">
                   <span className="text-lg">✅</span>
-                  <p className="text-xs font-semibold text-green-300">Tudo em dia — nada pendente no momento.</p>
+                  <p className="text-sm font-semibold text-green-300">Tudo em dia — nada pendente no momento.</p>
                 </div>
               ) : null}
 
@@ -1071,11 +1071,11 @@ function MinhaMusicaContent() {
                         >
                           <div className="min-w-0">
                             <p className="font-medium text-sm text-white/85 truncate">{order.subcategory}</p>
-                            <p className="text-[11px] text-white/40 truncate">
+                            <p className="text-[13px] text-white/40 truncate">
                               {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
                             </p>
                           </div>
-                          <span className="shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full bg-white/10 text-white/55">
+                          <span className="shrink-0 text-[13px] font-bold px-2.5 py-1 rounded-full bg-white/10 text-white/55">
                             💳 Pendente
                           </span>
                         </button>
@@ -1142,7 +1142,7 @@ function MinhaMusicaContent() {
                         style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : abandonado ? "linear-gradient(135deg,#3a3a3a,#1f1f1f)" : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
                       >
                         {!principal?.imageUrl && (abandonado ? "💳" : "🎁")}
-                        <span className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                        <span className={`absolute top-1.5 left-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full ${
                           abandonado ? "bg-white/15 text-white/70" : delivered ? "bg-green-500/90 text-green-950" : "bg-fuchsia-500/90 text-fuchsia-950"
                         }`}>
                           {abandonado ? "💳 Pendente" : delivered ? "✓ Entregue" : "🎵 Em produção"}
@@ -1160,10 +1160,10 @@ function MinhaMusicaContent() {
                           Na 2ª linha entra a ocasião, não mais o plano: ela
                           diz mais sobre a música, e o plano continua visível
                           no cartão que abre ao tocar. */}
-                      <p className="text-xs font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">
+                      <p className="text-sm font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">
                         {order.musicName?.trim() || order.subcategory}
                       </p>
-                      <p className="text-[11px] text-white/40 truncate">
+                      <p className="text-[13px] text-white/40 truncate">
                         {order.musicName?.trim() ? order.subcategory : order.products?.name}
                       </p>
                     </button>
@@ -1190,7 +1190,7 @@ function MinhaMusicaContent() {
                         disabled={saindoDaRede === order.id}
                         title={confirmando ? "Toque de novo pra tirar da Rede" : "Publicada na Rede Fiz Música — toque pra tirar"}
                         aria-label={confirmando ? "Confirmar: tirar da Rede Fiz Música" : "Publicada na Rede Fiz Música. Tocar para tirar"}
-                        className={`absolute top-1.5 right-1.5 text-[9px] font-bold px-2 py-0.5 rounded-full backdrop-blur transition-colors disabled:opacity-50 ${
+                        className={`absolute top-1.5 right-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full backdrop-blur transition-colors disabled:opacity-50 ${
                           confirmando
                             ? "bg-red-500/90 text-white"
                             : "bg-black/55 text-fuchsia-200 hover:bg-black/75"
@@ -1269,7 +1269,7 @@ function MinhaMusicaContent() {
                   {order.paymentStatus !== "PAID" ? (
                     <div>
                       <p className="font-bold text-lg mb-1">{order.subcategory}</p>
-                      <p className="text-xs text-gray-400 mb-4">
+                      <p className="text-sm text-gray-400 mb-4">
                         {order.products?.name ?? order.context} · #{order.id.slice(0, 8).toUpperCase()}
                       </p>
                       <p className="text-sm text-white/60 mb-4">

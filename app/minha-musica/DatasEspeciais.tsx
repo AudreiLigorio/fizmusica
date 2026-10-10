@@ -103,7 +103,7 @@ export default function DatasEspeciais() {
       <div className="flex items-center gap-2.5 mb-3">
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Lembrete de datas especiais</h2>
         {dates.length === 0 && (
-          <span className="text-[10px] font-bold uppercase tracking-wide bg-fuchsia-500 text-white px-2 py-0.5 rounded-full shrink-0">Novo</span>
+          <span className="text-[11px] font-bold uppercase tracking-wide bg-fuchsia-500 text-white px-2 py-0.5 rounded-full shrink-0">Novo</span>
         )}
         <InfoTooltip text="Cadastre no lembrete as datas especiais e ganhe bônus." />
       </div>
@@ -116,13 +116,13 @@ export default function DatasEspeciais() {
                 <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-sm shrink-0">{d.ocasiao_emoji}</div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{d.nome}</p>
-                  <p className="text-xs text-white/40 truncate">{d.ocasiao_label}</p>
+                  <p className="text-sm text-white/40 truncate">{d.ocasiao_label}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className="text-xs text-white/60 font-mono">{fmtDiaMes(d.data)}</span>
-                <button onClick={() => editar(d)} className="text-white/30 hover:text-fuchsia-300 text-xs transition-colors" aria-label="Editar">✏️</button>
-                <button onClick={() => remover(d.id)} className="text-white/30 hover:text-red-400 text-xs transition-colors" aria-label="Remover">✕</button>
+                <button onClick={() => editar(d)} className="text-white/30 hover:text-fuchsia-300 text-sm transition-colors" aria-label="Editar">✏️</button>
+                <button onClick={() => remover(d.id)} className="text-white/30 hover:text-red-400 text-sm transition-colors" aria-label="Remover">✕</button>
               </div>
             </div>
           ))}
@@ -132,7 +132,7 @@ export default function DatasEspeciais() {
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full mt-2 py-2 rounded-xl border border-dashed border-white/15 text-white/60 hover:text-white hover:border-fuchsia-500/40 text-xs transition-colors"
+          className="w-full mt-2 py-2 rounded-xl border border-dashed border-white/15 text-white/60 hover:text-white hover:border-fuchsia-500/40 text-sm transition-colors"
         >
           + Adicionar data especial
         </button>
@@ -142,12 +142,12 @@ export default function DatasEspeciais() {
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             placeholder="Nome da pessoa"
-            className="flex-1 min-w-[120px] bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs outline-none focus:border-fuchsia-500/50"
+            className="flex-1 min-w-[120px] bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-fuchsia-500/50"
           />
           <select
             value={ocasiao}
             onChange={(e) => setOcasiao(e.target.value)}
-            className="flex-[1.3] min-w-[160px] bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs outline-none focus:border-fuchsia-500/50"
+            className="flex-[1.3] min-w-[160px] bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-fuchsia-500/50"
           >
             <option value="" disabled>Ocasião</option>
             {OCASIOES.map((o) => (
@@ -158,19 +158,19 @@ export default function DatasEspeciais() {
             type="date"
             value={data}
             onChange={(e) => setData(e.target.value)}
-            className="bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-xs outline-none focus:border-fuchsia-500/50"
+            className="bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-sm outline-none focus:border-fuchsia-500/50"
           />
           <button
             onClick={salvar}
             disabled={saving || !nome.trim() || !ocasiao || !data}
-            className="px-4 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-40 transition-all"
+            className="px-4 py-2 rounded-lg text-sm font-bold text-white disabled:opacity-40 transition-all"
             style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
           >
             {saving ? "Salvando…" : editingId ? "Salvar edição" : "Salvar"}
           </button>
           <button
             onClick={limparForm}
-            className="px-3 py-2 rounded-lg text-xs font-medium text-white/50 hover:text-white transition-colors"
+            className="px-3 py-2 rounded-lg text-sm font-medium text-white/50 hover:text-white transition-colors"
           >
             Cancelar
           </button>

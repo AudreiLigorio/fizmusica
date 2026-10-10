@@ -142,7 +142,7 @@ export default function VideoExemplos() {
                         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,0.55) 0%,rgba(0,0,0,0.3) 34%,rgba(0,0,0,0) 48%,rgba(0,0,0,0) 62%,rgba(0,0,0,0.55) 100%)" }} />
 
                         {/* Badge da ocasião */}
-                        <span className="relative z-10 self-start mt-[1.4rem] ml-[0.85rem] px-[0.65rem] py-[0.3rem] text-[0.6rem] font-bold uppercase rounded-full text-white"
+                        <span className="relative z-10 self-start mt-[1.4rem] ml-[0.85rem] px-[0.65rem] py-[0.3rem] text-[0.6875rem] font-bold uppercase rounded-full text-white"
                               style={{ letterSpacing: "0.09em", background: "rgba(10,8,14,0.45)", backdropFilter: "blur(6px)", border: "1px solid rgba(255,255,255,0.18)" }}>
                           {ex.ocasiao}
                         </span>
@@ -172,10 +172,10 @@ export default function VideoExemplos() {
 
                         {/* Rodapé: duração ou aviso "em breve" */}
                         <div className="relative z-10 flex items-end justify-between px-[0.85rem] pb-[0.95rem]">
-                          <span className="text-[0.62rem] font-semibold text-white/85">
+                          <span className="text-[0.75rem] font-semibold text-white/85">
                             {isErrored ? "🎬 vídeo em breve" : ""}
                           </span>
-                          <span className="text-[0.65rem] font-semibold text-white/85 tabular-nums whitespace-nowrap px-2 py-[0.2rem] rounded-full"
+                          <span className="text-[0.75rem] font-semibold text-white/85 tabular-nums whitespace-nowrap px-2 py-[0.2rem] rounded-full"
                                 style={{ background: "rgba(10,8,14,0.4)", border: "1px solid rgba(255,255,255,0.16)" }}>
                             {ex.duracao}
                           </span>
@@ -189,7 +189,7 @@ export default function VideoExemplos() {
                 <div className="mt-[1.1rem] text-center max-w-[14rem]">
                   <p className="text-[0.98rem] font-extrabold text-white/90">{ex.nome}</p>
                   <p className="mt-[0.15rem] mb-[0.4rem] text-[0.84rem] italic text-white/45">&ldquo;{ex.musica}&rdquo;</p>
-                  <p className="text-[0.66rem] font-bold uppercase" style={{ letterSpacing: "0.09em", color: "#f0196b" }}>{ex.ocasiao}</p>
+                  <p className="text-[0.6875rem] font-bold uppercase" style={{ letterSpacing: "0.09em", color: "#f0196b" }}>{ex.ocasiao}</p>
                 </div>
               </li>
             )

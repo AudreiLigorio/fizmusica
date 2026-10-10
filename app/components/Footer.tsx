@@ -22,7 +22,7 @@
             repetidos no rodapé de toda página. Agora moram num lugar só, no
             menu do topo ("Termos e Políticas" → /legal), que já lista os 10
             documentos organizados. Pedido do Audrei, 2026-08-28. */}
-        <p className="text-xs text-white/20">© 2026 Fiz Música</p>
+        <p className="text-sm text-white/20">© 2026 Fiz Música</p>
       </div>
     </footer>
   )
