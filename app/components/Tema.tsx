@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { CHAVE_TEMA, EVENTO_TEMA, PREFIXOS_SEMPRE_ESCUROS, TEMA_PADRAO, type Tema } from "@/lib/tema"
+import { estaNoAppPlay, useNoAppPlay } from "@/lib/canal"
 
 // Aparência escolhida pelo cliente. O tema claro vive em app/globals.css, sob
 // [data-tema="claro"] no <html> — vale para o site inteiro, INCLUSIVE o topo
@@ -26,6 +27,9 @@ function escolherTema(t: Tema) {
 
 function deveSerClaro(pathname: string): boolean {
   if (PREFIXOS_SEMPRE_ESCUROS.some((p) => pathname.startsWith(p))) return false
+  // No app da Play: sempre escuro, ignore o que estiver salvo (o app
+  // compartilha o localStorage com o Chrome do celular).
+  if (estaNoAppPlay()) return false
   const t = lerTema()
   if (t !== "auto") return t === "claro"
   return !window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -49,6 +53,7 @@ export function SincronizarTema() {
 
 // Interruptor de três posições. `compacto` = só ícones (topo do computador).
 export function SeletorTema({ compacto = false }: { compacto?: boolean }) {
+  const noApp = useNoAppPlay()
   const [tema, setTema] = useState<Tema>(TEMA_PADRAO)
   useEffect(() => {
     setTema(lerTema())
@@ -56,6 +61,10 @@ export function SeletorTema({ compacto = false }: { compacto?: boolean }) {
     window.addEventListener(EVENTO_TEMA, ouvir)
     return () => window.removeEventListener(EVENTO_TEMA, ouvir)
   }, [])
+
+  // No app não há escolha (sempre escuro). `null` = ainda detectando: some
+  // também, para não piscar o seletor dentro do app.
+  if (noApp !== false) return null
 
   const opcoes: { id: Tema; icone: string; rotulo: string }[] = [
     { id: "claro", icone: "☀️", rotulo: "Claro" },

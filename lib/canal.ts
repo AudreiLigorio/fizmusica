@@ -16,8 +16,7 @@ import { useEffect, useState } from "react"
 // O referrer só vem na primeira página; o flag fica em sessionStorage, que é
 // da aba do app — não vaza para o Chrome comum (localStorage vazaria: o app
 // compartilha o armazenamento do Chrome).
-const CHAVE = "fm_app_play"
-const PACOTE = "android-app://com.fizmusica.app"
+import { CHAVE_APP_PLAY as CHAVE, PACOTE_APP_PLAY as PACOTE } from "@/lib/tema"
 
 export function estaNoAppPlay(): boolean {
   if (typeof window === "undefined") return false

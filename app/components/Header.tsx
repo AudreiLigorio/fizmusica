@@ -5,6 +5,7 @@ import { track } from "@/lib/track"
 import { useRouter, usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { SeletorTema } from "@/app/components/Tema"
+import { useNoAppPlay } from "@/lib/canal"
 
 // Este cabeçalho é o menu INSTITUCIONAL: Quem somos, Contato, Termos,
 // Entrar/Sair e o avatar. A navegação do aplicativo (Pedidos, Músicas,
@@ -18,6 +19,7 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
   const router = useRouter()
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+  const semEscolhaDeTema = useNoAppPlay()
   // null = ainda não sabemos. Entrar/Sair só aparecem depois de saber: mostrar
   // "Entrar" por um instante pra quem já está logado (ou vice-versa) seria
   // oferecer uma ação que não faz sentido pra ele.
@@ -244,10 +246,13 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
               <span className="font-medium">Termos e Políticas</span>
               <span className="ml-auto text-white/30">→</span>
             </button>
-            <div className="flex items-center justify-between gap-3 py-4 border-t border-white/[0.05]">
-              <span className="font-medium text-white/80">Aparência</span>
-              <SeletorTema />
-            </div>
+            {/* No app da Play o tema é sempre escuro — sem a linha inteira. */}
+            {semEscolhaDeTema === false && (
+              <div className="flex items-center justify-between gap-3 py-4 border-t border-white/[0.05]">
+                <span className="font-medium text-white/80">Aparência</span>
+                <SeletorTema />
+              </div>
+            )}
             {/* Sair não repete aqui: agora fica sempre visível no topo (linha
                 acima), inclusive no mobile — não precisa abrir o hambúrguer
                 pra achar. */}

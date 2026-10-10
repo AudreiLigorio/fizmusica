@@ -17,11 +17,21 @@ export const TEMA_PADRAO: Tema = "auto"
 // (operação) fica fora.
 export const PREFIXOS_SEMPRE_ESCUROS = ["/m/", "/rede/", "/admin"]
 
+// App da Play Store (TWA): SEMPRE escuro, sem escolha (decisão do Audrei,
+// 2026-10-09). Mesmo sinal de lib/canal.ts — o referrer
+// "android-app://com.fizmusica.app" na primeira página, guardado na
+// sessionStorage da aba do app. Ficam aqui (e não em canal.ts, que é
+// "use client") porque o script do <head> é montado no servidor.
+export const CHAVE_APP_PLAY = "fm_app_play"
+export const PACOTE_APP_PLAY = "android-app://com.fizmusica.app"
+
 // Script inline do <head>: aplica o tema ANTES da primeira pintura. Sem ele a
 // página abriria escura e clarearia na frente da pessoa (o "piscar").
 export const scriptTemaInicial = `(function(){try{
 var p=location.pathname,x=${JSON.stringify(PREFIXOS_SEMPRE_ESCUROS)};
 for(var i=0;i<x.length;i++){if(p.indexOf(x[i])===0)return;}
+if(document.referrer.indexOf(${JSON.stringify(PACOTE_APP_PLAY)})===0){sessionStorage.setItem(${JSON.stringify(CHAVE_APP_PLAY)},"1");}
+if(sessionStorage.getItem(${JSON.stringify(CHAVE_APP_PLAY)})==="1")return;
 var t=localStorage.getItem(${JSON.stringify(CHAVE_TEMA)})||${JSON.stringify(TEMA_PADRAO)};
 if(t==="claro"||(t==="auto"&&!matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.dataset.tema="claro";}
 }catch(e){}})();`
