@@ -17,6 +17,7 @@ import VersoesEntregues from "./VersoesEntregues"
 import DatasEspeciais from "./DatasEspeciais"
 import ReferirAmigos from "./ReferirAmigos"
 import MinhasMusicas, { type LibraryTrack } from "./MinhasMusicas"
+import MinhasPublicadas from "./MinhasPublicadas"
 import AbaMusicas from "./AbaMusicas"
 import { CatalogoProvider } from "./CatalogoContext"
 import { PlayerProvider } from "./PlayerContext"
@@ -1297,6 +1298,11 @@ function MinhaMusicaContent() {
                 As raias de playlist (uma por playlist, com as músicas já
                 dentro) ficam embutidas aqui, logo abaixo de "Minha Playlist". */}
             <MinhasMusicas tracks={libraryTracks} playlistsVersion={playlistsVersion} meuApelido={meuApelido} onPlaylistsChanged={() => setPlaylistsVersion((v) => v + 1)} />
+
+            {/* Logo abaixo das playlists: situação de cada música na Rede,
+                desempenho (palmas, reproduções, ranking/Top 10) e publicar ou
+                tirar. Esta aba só renderiza logado — visitante não vê. */}
+            <MinhasPublicadas />
 
           </AbaMusicas>
           </>}

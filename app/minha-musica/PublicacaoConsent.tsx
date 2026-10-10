@@ -11,9 +11,13 @@ import { apelidoPadrao } from "@/lib/apelido"
 export default function PublicacaoConsent({
   orderId,
   initial,
+  onChange,
 }: {
   orderId: string
   initial: boolean
+  // Avisa quem usa o componente que a escolha foi SALVA (ex.: a fileira
+  // "Minhas músicas publicadas" fecha o modal e recarrega a situação).
+  onChange?: (consent: boolean) => void
 }) {
   const [consent, setConsent] = useState(initial)
   const [saving, setSaving] = useState(false)
@@ -56,6 +60,7 @@ export default function PublicacaoConsent({
     setSaving(false)
     if (res.ok) {
       setConsent(next)
+      onChange?.(next)
       setSavedMsg(next ? "💜 Obrigado! Autorização registrada." : "Autorização removida.")
       setTimeout(() => setSavedMsg(""), 4000)
     } else {

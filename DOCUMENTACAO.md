@@ -299,6 +299,10 @@ Toda automação de "pedido pronto/entregue" (e-mail, cupom de fidelidade, cria�
 - O medidor trata o dedo direto (posição na largura = 0–10). **Não usar `<input type=range>` invisível sobre o desenho**: no iPhone ele só responde tocando a alça, e o "aumentar" passou 3 semanas sem funcionar por isso.
 - Funções `aplaudir`/`aplauso_estado` são SECURITY DEFINER e só o `service_role` executa — até a 067 o `anon` podia chamá-las direto e aplaudir em nome de qualquer usuário.
 
+### 12.2.3 Minhas músicas publicadas (2026-10-09)
+- Aba Músicas, só logado, abaixo das playlists (`MinhasPublicadas.tsx`). Um cartão por música ENTREGUE: situação (🌐 na Rede / 🔒 só você / 🙈 tirada pela equipe), 👏 palmas (sem as do próprio dono, como no destaque), ▶ reproduções, posição em reproduções (total de sempre) e no ranking do Top 10 (reproduções de 30 dias — mesma ordem de `app/api/catalog`; mudou lá, mudar em `app/api/minhas-musicas/desempenho`).
+- Publicar abre o `PublicacaoConsent` completo (consentimento com valor legal, não interruptor). Tirar da Rede é direto, com confirmação. Música com `rede_oculta` não é republicável por aqui.
+
 ### 12.3 Cupons
 - Tabela `coupons` (código, tipo %/valor, valor mínimo, limite de usos, validade, ativo).
 - Aparecem em 4 jornadas: e-mail de repescagem dia-3 (auto-aplica via link), campo no checkout, banner público em `/produtos`, cupom de fidelidade pós-entrega.
