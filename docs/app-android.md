@@ -1,6 +1,6 @@
 # App Android — plano
 
-> Estado (2026-10-07): **app gerado (Bubblewrap) e criado no Play Console; enviando a primeira versão para o teste interno.** Resumo em `DOCUMENTACAO.md`, seção 22. Ver "Onde paramos" no fim.
+> Estado (2026-10-10): **teste fechado ENVIADO para revisão do Google** (faixa Alpha, versão 2, Brasil, 13 testadores). Resumo em `DOCUMENTACAO.md`, seção 22. Ver "Onde paramos" no fim.
 
 ## Objetivo
 
@@ -166,3 +166,22 @@ Combinar antes de lançar:
 **Nova versão do app:** subir `appVersionCode` (e `appVersionName`) no `android-app/twa-manifest.json`, rodar `npx @bubblewrap/cli@1.25.0 update` e depois `build` (pede a senha da chave).
 
 **Denunciar esta música (no ar em 2026-10-07):** exigência da política da Play para conteúdo gerado pelo usuário. Botão no player e em `/rede/[id]`, e-mail ao admin, "tirar da Rede" no Catálogo (ver DOCUMENTACAO seção 12.2.1). No questionário de classificação: **Sim** em denunciar, **Não** em bloquear (não há interação direta entre usuários).
+
+## Onde paramos (2026-10-10)
+
+**Feito**
+- Teste interno publicado (versão 2), ficha da loja completa, todas as declarações.
+- Classificação do conteúdo refeita com **Sim** em denunciar (Alemanha caiu de 16 para 12; Brasil segue 14).
+- **Teste fechado "Alpha"**: versão 2 (2), país Brasil, lista de e-mails `testadores` com 13 Gmails.
+- **13 mudanças enviadas para revisão** em 2026-10-10 ~01:17. Publicação gerenciada DESATIVADA: aprovou, entra no ar sozinho.
+- App vende pelo Mercado Pago igual ao site (risco assumido; chave `BLOQUEAR_COMPRA_NO_APP` em `lib/canal.ts` para bloquear de novo se a Play apontar). App sempre no tema escuro.
+
+**Armadilha vista:** a lista "Faixas ativas" mostra "Não há versões nesta faixa" enquanto a versão está em RASCUNHO — ela não sumiu; entrar em Gerenciar faixa → Editar versão → Avançar → Salvar.
+
+**Próximos passos**
+1. Esperar o e-mail de aprovação (horas a ~7 dias). Se recusar por pagamento externo: `BLOQUEAR_COMPRA_NO_APP = true`, push, reenviar.
+2. Aprovado: Teste fechado → Gerenciar faixa → aba Testadores → copiar link **"Participar no Android"** e mandar a mensagem de convite (com o cupom `TESTEAPP` 100%, 13 usos — criar no admin antes).
+3. **14 dias seguidos com ≥12 testadores** que aceitaram. Lembrete no dia 7; anotar feedbacks.
+4. Dia 15: Painel → **Solicitar acesso à produção** (perguntas sobre recrutamento, feedback, mudanças, prontidão).
+5. Conta de revisão `fizmusicaoficial@gmail.com`: manter a verificação em 2 etapas DESLIGADA enquanto houver revisão.
+
