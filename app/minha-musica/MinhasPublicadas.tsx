@@ -203,9 +203,9 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
       {/* Publicar = o termo de autorização inteiro, o mesmo do pedido.
           Fecha sozinho quando a pessoa marca a autorização e ela é salva. */}
       {publicando && typeof document !== "undefined" && createPortal(
-        <div data-zona-escura className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
+        <div className="fm-popup-fundo fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
              onClick={() => setPublicando(null)}>
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#15111f] p-4 max-h-[90dvh] overflow-y-auto"
+          <div className="fm-popup w-full max-w-md rounded-2xl border border-white/10 bg-[#15111f] p-4 max-h-[90dvh] overflow-y-auto"
                onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <p className="font-semibold text-sm truncate">Publicar “{publicando.titulo}”</p>

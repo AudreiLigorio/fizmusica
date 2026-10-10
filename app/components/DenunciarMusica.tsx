@@ -10,7 +10,11 @@ import { MOTIVOS_DENUNCIA, type MotivoDenuncia } from "@/lib/denuncia"
 // /rede/[id]. Exigência da Play Store para conteúdo gerado por usuário (ver
 // app/api/rede/denunciar). Funciona sem conta.
 //
-// `data-zona-escura`: o modal vai por portal para o <body>, fora do player, e
+// Segue o tema escolhido (claro/escuro) pelas classes `fm-popup` /
+// `fm-popup-fundo` de app/globals.css — mesmo quando aberto sobre o player.
+// (Antes era `data-zona-escura`, sempre escuro; o Audrei pediu, em
+// 2026-10-10, que os popups acompanhem o tema.) Nota antiga, mantida:
+// o modal vai por portal para o <body>, fora do player, e
 // abre por cima de telas escuras (player, /rede). Sem a marca, o tema claro
 // trocaria só o texto e deixaria o cartão escuro com letra escura.
 export default function DenunciarMusica({ orderId, open, onClose }: {
@@ -66,12 +70,12 @@ export default function DenunciarMusica({ orderId, open, onClose }: {
   }
 
   return createPortal(
-    <div data-zona-escura
-         className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
+    <div
+         className="fm-popup-fundo fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
          onClick={fecharPeloFundo}>
       <div role="dialog" aria-modal="true" aria-labelledby="denunciar-titulo"
            onClick={(e) => e.stopPropagation()}
-           className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#15111f] p-5 max-h-[90dvh] overflow-y-auto">
+           className="fm-popup w-full max-w-sm rounded-2xl border border-white/10 bg-[#15111f] p-5 max-h-[90dvh] overflow-y-auto">
         {enviado ? (
           <div className="text-center py-2">
             <div className="text-3xl mb-2">🙏</div>

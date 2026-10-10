@@ -93,7 +93,9 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
   async function confirmarCriarPlaylist(nome: string) {
     setCreatingPlaylistOpen(false)
     const headers = await authHeaders()
-    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    // Nome repetido (o popup já avisa, mas o servidor é quem decide) ou falha.
+    if (!res.ok) { const j = await res.json().catch(() => ({})); showToast(j.error ?? "Não foi possível criar a playlist."); return }
     await carregarPlaylists()
     onPlaylistsChanged?.()
     // Só o toast: a raia em "Minha playlist" já mostra o resultado, abrir um

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
+import { mesmoNomePlaylist } from "@/lib/playlist"
 
 export const dynamic = "force-dynamic"
 
@@ -38,6 +39,18 @@ export async function POST(req: NextRequest) {
   if (!cleanNome) return NextResponse.json({ error: "Dê um nome para a playlist." }, { status: 400 })
 
   const supabase = createServerClient()
+
+  // Nome repetido: duas playlists "Rock" na mesma conta ficam indistinguíveis
+  // na tela. A tela já avisa antes (CreatePlaylistModal); aqui é a garantia.
+  const { data: minhas } = await supabase.from("playlists").select("nome").eq("user_id", user.id)
+  const repetida = (minhas ?? []).find((p) => mesmoNomePlaylist(p.nome as string, cleanNome))
+  if (repetida) {
+    return NextResponse.json(
+      { error: `Você já tem uma playlist chamada “${repetida.nome}”. Escolha outro nome.` },
+      { status: 409 },
+    )
+  }
+
   const { data, error } = await supabase
     .from("playlists")
     .insert({ user_id: user.id, nome: cleanNome, track_order_ids: orderId ? [orderId] : [] })

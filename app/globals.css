@@ -423,6 +423,12 @@
 [data-tema="claro"] [style*="rgba(7,6,13"]:not([data-zona-escura]):not([data-zona-escura] *),
 [data-tema="claro"] [style*="rgba(7, 6, 13"]:not([data-zona-escura]):not([data-zona-escura] *){ background: rgba(251, 247, 244, 0.95) !important; border-color: #eadfe3 !important; }
 
+/* ── Popups (confirmação, denúncia, convite, playlist, publicar) ──
+   Seguem o tema escolhido. O fundo atrás precisa de regra própria: a regra
+   de `bg-black/` acima o deixaria BRANCO OPACO, cobrindo a tela inteira. */
+[data-tema="claro"] .fm-popup-fundo{ background-color: rgba(31, 26, 36, 0.45) !important; }
+[data-tema="claro"] .fm-popup{ background: #ffffff !important; border-color: #eadfe3 !important; color: #1f1a24; box-shadow: 0 18px 48px rgba(31, 26, 36, 0.18); }
+
 /* ── Menus (topo na web, rodapé no celular) — mesma cor em todo o site ── */
 [data-tema="claro"] .bg-black:not([data-zona-escura]):not([data-zona-escura] *){ background: #fbf7f4; }
 [data-tema="claro"] img[src="/logo_fizmusica.png"]:not([data-zona-escura]):not([data-zona-escura] *){ content: url("/logo_fizmusica_claro.png"); }

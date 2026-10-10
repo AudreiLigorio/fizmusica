@@ -13,8 +13,8 @@ import { createRoot } from "react-dom/client"
 //   await avisar({ titulo: "Não deu certo", mensagem: "…" })
 // Monta num nó próprio no <body> — não precisa de provider em cada página.
 //
-// `data-zona-escura`: sempre escuro, como os outros popups (player, Rede),
-// pra o tema claro não deixar texto escuro em cartão escuro.
+// Segue o tema escolhido (claro/escuro) pelas classes `fm-popup` e
+// `fm-popup-fundo` (app/globals.css).
 
 type Opcoes = {
   titulo: string
@@ -36,21 +36,23 @@ function Caixa({ titulo, mensagem, botao = "Confirmar", cancelar, perigo, aoFech
   }, [aoFechar])
 
   return (
-    <div data-zona-escura role="presentation"
-         className="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
+    <div role="presentation"
+         className="fm-popup-fundo fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
          // Clique logo após abrir é o "fantasma" do toque que abriu a caixa.
          onClick={() => { if (Date.now() - abertoEm.current > 500) aoFechar(false) }}>
       <div role="alertdialog" aria-modal="true" aria-labelledby="dialogo-titulo"
            onClick={(e) => e.stopPropagation()}
-           className="w-full max-w-sm rounded-3xl border border-white/10 p-6 text-center"
+           className="fm-popup w-full max-w-sm rounded-3xl border border-white/10 p-6 text-center"
            style={{ background: "#15131d" }}>
         <p id="dialogo-titulo" className="text-lg font-bold">{titulo}</p>
         {mensagem && <p className="text-sm text-white/65 leading-relaxed mt-2">{mensagem}</p>}
         <button
           ref={confirmarRef}
           onClick={() => aoFechar(true)}
-          className="w-full mt-6 py-3 rounded-xl text-base font-bold text-white transition-all hover:brightness-110"
-          style={{ background: perigo ? "#dc2626" : "linear-gradient(135deg, #f0196b, #d946ef)" }}
+          className="w-full mt-6 py-3 rounded-xl text-base font-bold transition-all hover:brightness-110"
+          // Cor do texto no style: nos dois temas o botão é cheio (vermelho
+          // ou gradiente) e o texto tem que ficar branco.
+          style={{ background: perigo ? "#dc2626" : "linear-gradient(135deg, #f0196b, #d946ef)", color: "#ffffff" }}
         >
           {botao}
         </button>

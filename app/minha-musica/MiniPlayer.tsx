@@ -435,7 +435,9 @@ export default function MiniPlayer() {
     if (!track) return
     setCriandoPlaylist(false)
     const headers = await authHeaders()
-    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: track.id }) })
+    const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: track.id }) })
+    // Nome repetido (o popup já avisa, mas o servidor é quem decide) ou falha.
+    if (!res.ok) { const j = await res.json().catch(() => ({})); showToast(j.error ?? "Não foi possível criar a playlist."); return }
     showToast("Adicionado com sucesso ✓")
   }
 
@@ -1071,11 +1073,12 @@ export default function MiniPlayer() {
           guardar alguma coisa, que é o único momento em que a conta passa a
           fazer sentido pra ele. Ouvir e compartilhar seguem sem conta. */}
       {precisaConta && (
-        // data-zona-escura: o convite fica FORA do player (por isso o tema
+        // Segue o tema (fm-popup, ver globals.css) — pedido do Audrei em
+        // 2026-10-10. Nota antiga: o convite fica FORA do player (por isso o tema
         // claro o alcançava e deixava o título escuro no cartão escuro).
-        <div data-zona-escura className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
+        <div className="fm-popup-fundo fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white"
              onClick={() => setPrecisaConta(null)}>
-          <div className="w-full max-w-sm rounded-3xl border border-white/10 p-6 text-center" style={{ background: "#15131d" }}
+          <div className="fm-popup w-full max-w-sm rounded-3xl border border-white/10 p-6 text-center" style={{ background: "#15131d" }}
                onClick={(e) => e.stopPropagation()}>
             <div className="text-3xl mb-2">{precisaConta === "favorito" ? "💜" : precisaConta === "aplauso" ? "👏" : "🎵"}</div>
             <h2 className="text-lg font-bold mb-1.5">

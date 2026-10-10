@@ -89,7 +89,9 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
   async function confirmarCriarPlaylist(nome: string) {
     setCreatingPlaylistOpen(false)
     const headers = await authHeaders()
-    await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    const res = await fetch("/api/playlists", { method: "POST", headers, body: JSON.stringify({ nome, orderId: pendingOrderId }) })
+    // Nome repetido (o popup já avisa, mas o servidor é quem decide) ou falha.
+    if (!res.ok) { const j = await res.json().catch(() => ({})); showToast(j.error ?? "Não foi possível criar a playlist."); return }
     await carregar()
     onPlaylistsChanged?.()
     // Só o toast: a raia logo abaixo já mostra o resultado, abrir um modal por

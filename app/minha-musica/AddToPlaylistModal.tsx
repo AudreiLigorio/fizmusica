@@ -23,10 +23,10 @@ export default function AddToPlaylistModal({
   if (!open) return null
 
   return createPortal(
-    <div data-zona-escura className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white" onClick={onClose}>
+    <div className="fm-popup-fundo fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 text-white" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#15111f] p-5"
+        className="fm-popup w-full max-w-sm rounded-2xl border border-white/10 bg-[#15111f] p-5"
       >
         <div className="flex items-center justify-between mb-3">
           <p className="font-semibold text-sm">Adicionar à playlist</p>
