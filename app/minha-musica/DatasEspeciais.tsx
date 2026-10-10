@@ -101,7 +101,7 @@ export default function DatasEspeciais() {
   return (
     <div className="mb-9">
       <div className="flex items-center gap-2.5 mb-3">
-        <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Datas especiais</h2>
+        <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Lembrete de datas especiais</h2>
         {dates.length === 0 && (
           <span className="text-[10px] font-bold uppercase tracking-wide bg-fuchsia-500 text-white px-2 py-0.5 rounded-full shrink-0">Novo</span>
         )}
