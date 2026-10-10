@@ -219,6 +219,19 @@ export default function MiniPlayer() {
   // rodar duas vezes (favoritar duas vezes desfaz o favorito). Mouse segue
   // pelo caminho normal, porque lá o clique nunca falta.
   const ultimoToque = useRef(0)
+  // Clique fantasma: agindo na DESCIDA do dedo, a ação já aconteceu quando o
+  // dedo sobe — e o navegador ainda gera um `click` naquele ponto. Se a ação
+  // tirou o botão da tela (fechar o player), o clique cai no que estava ATRÁS:
+  // no canto do ▾ fica o logo do topo, link pra home. Era o "botão de voltar
+  // leva pra home" (Audrei, 2026-10-10). O primeiro clique logo depois do
+  // toque é engolido na captura, antes de chegar em qualquer elemento.
+  function engolirCliqueFantasma() {
+    const engolir = (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); parar() }
+    const parar = () => { window.removeEventListener("click", engolir, true); clearTimeout(t) }
+    window.addEventListener("click", engolir, true)
+    const t = setTimeout(parar, 700)
+  }
+
   function aoAcionar(fn: () => void) {
     return {
       // DESCER o dedo, não soltar. O `pointerup` não vem: quando o Safari
@@ -233,6 +246,7 @@ export default function MiniPlayer() {
       onPointerDown: (e: React.PointerEvent) => {
         if (e.pointerType === "mouse") return
         ultimoToque.current = Date.now()
+        engolirCliqueFantasma()
         fn()
       },
       onClick: () => {
