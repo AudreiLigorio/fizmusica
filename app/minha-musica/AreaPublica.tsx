@@ -38,7 +38,7 @@ function Convite({ icone, titulo, frase, acao, onAcao, extra }: {
     <div className="text-center py-14 sm:py-24 px-6">
       <div className="text-5xl sm:text-6xl mb-4">{icone}</div>
       <h2 className="text-xl sm:text-3xl font-bold mb-2">{titulo}</h2>
-      <p className="text-white/50 text-xs sm:text-sm leading-relaxed max-w-xs sm:max-w-md mx-auto mb-6 sm:mb-8">{frase}</p>
+      <p className="text-white/50 text-sm sm:text-base leading-relaxed max-w-xs sm:max-w-md mx-auto mb-6 sm:mb-8">{frase}</p>
       <button
         onClick={onAcao}
         className="px-7 sm:px-9 py-3 sm:py-3.5 rounded-full font-semibold text-white sm:text-[15px] transition-transform hover:scale-[1.03] active:scale-95"
@@ -94,7 +94,7 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
                   <h2 className="text-xl font-bold mb-1">Minha playlist</h2>
                   {/* Sem link de "Entrar" aqui: o botão do topo é o único ponto
                       de entrada, pra não repetir a mesma ação em dois lugares. */}
-                  <p className="text-white/50 text-xs">
+                  <p className="text-white/50 text-sm">
                     Crie uma conta pra guardar as que você gostou.
                   </p>
                 </div>
@@ -106,21 +106,21 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
                     sendo só o do topo. */}
                 <div className="mt-10">
                   <h2 className="text-xl font-bold mb-1">Minhas músicas publicadas</h2>
-                  <p className="text-white/50 text-xs mb-4">Aqui você acompanha as músicas que lançar na Rede.</p>
+                  <p className="text-white/50 text-sm mb-4">Aqui você acompanha as músicas que lançar na Rede.</p>
                   <div className="rounded-2xl p-5 text-center border border-fuchsia-500/25"
                        style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.10), rgba(217,70,239,0.06))" }}>
                     <div className="text-3xl mb-2">🎤</div>
                     <p className="text-base font-bold">Sua carreira ainda não começou</p>
-                    <p className="text-xs text-white/60 leading-relaxed mt-1.5 max-w-sm mx-auto">
+                    <p className="text-sm text-white/60 leading-relaxed mt-1.5 max-w-sm mx-auto">
                       Toda carreira começa com a primeira música. Crie a sua, publique na Rede e veja as
                       pessoas ouvindo e aplaudindo. Quanto mais você lança, mais desconto ganha na próxima.
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
                       {["👏 Palmas", "▶ Reproduções", "🏆 Top 10"].map((x) => (
-                        <span key={x} className="text-[11px] px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-white/60">{x}</span>
+                        <span key={x} className="text-[13px] px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-white/60">{x}</span>
                       ))}
                     </div>
-                    <a href="/criar" className="inline-block mt-5 px-5 py-2.5 rounded-full text-xs font-bold text-white"
+                    <a href="/criar" className="inline-block mt-5 px-5 py-2.5 rounded-full text-sm font-bold text-white"
                        style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
                       Começar minha carreira
                     </a>

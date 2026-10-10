@@ -20,7 +20,7 @@ export default function InfoTooltip({ text }: { text: string }) {
         i
       </button>
       <div
-        className={`absolute top-6 right-0 w-52 rounded-lg border border-white/10 bg-[#15111f] p-2.5 text-[11px] leading-relaxed text-white/60 shadow-lg z-10 transition-opacity ${
+        className={`absolute top-6 right-0 w-60 rounded-lg border border-white/10 bg-[#15111f] p-3 text-[13px] leading-relaxed text-white/60 shadow-lg z-10 transition-opacity ${
           open ? "opacity-100" : "opacity-0 pointer-events-none"
         } group-hover:opacity-100 group-hover:pointer-events-auto`}
       >

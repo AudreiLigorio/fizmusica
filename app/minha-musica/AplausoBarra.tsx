@@ -149,14 +149,14 @@ export default function AplausoBarra({
         style={{ background: "#0d0b14", border: "1px solid rgba(255,255,255,0.09)" }}
       >
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[9px] uppercase tracking-[0.1em] text-white/35">Aplausos</span>
-          <span className="text-[10px] text-white/35 tabular-nums">
+          <span className="text-[11px] uppercase tracking-[0.1em] text-white/35">Aplausos</span>
+          <span className="text-[13px] text-white/35 tabular-nums">
             {total > 0 ? `${total.toLocaleString("pt-BR")} ${total === 1 ? "palma" : "palmas"}` : "seja o primeiro"}
           </span>
         </div>
         <div className="flex items-center justify-center gap-2 h-[22px] rounded-md"
              style={{ background: "rgba(240,25,107,0.08)", border: "1px dashed rgba(240,25,107,0.35)" }}>
-          <span className="text-[11px] font-semibold text-white/80">👏 Toque para aplaudir</span>
+          <span className="text-[13px] font-semibold text-white/80">👏 Toque para aplaudir</span>
         </div>
       </button>
     )
@@ -193,18 +193,18 @@ export default function AplausoBarra({
             else setExplicando((v) => !v)
           }}
           aria-expanded={podeAjustar ? undefined : explicando}
-          className="w-full flex items-center justify-center gap-2.5 rounded-xl px-3 py-2"
+          className="w-full flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-xl px-3 py-2"
           style={{ background: "rgba(240,25,107,0.08)", border: "1px solid rgba(240,25,107,0.25)" }}
         >
           <div className="w-16"><Segmentos n={minhas} altura={10} /></div>
-          <span className="text-[11px] text-white tabular-nums">{total.toLocaleString("pt-BR")}</span>
-          <span className="text-[11px] text-white/50">{total === 1 ? "palma" : "palmas"}</span>
-          <span className="text-[10px] text-white/35">
+          <span className="text-[13px] text-white tabular-nums">{total.toLocaleString("pt-BR")}</span>
+          <span className="text-[13px] text-white/50">{total === 1 ? "palma" : "palmas"}</span>
+          <span className="text-[12px] text-white/35">
             · você deu {minhas}{podeAjustar ? ` · ajustar até ${ate}` : " 🔒"}
           </span>
         </button>
         {explicando && !podeAjustar && (
-          <p className="mt-2 rounded-lg px-3 py-2 text-[11px] leading-relaxed text-white/70"
+          <p className="mt-2 rounded-lg px-3 py-2 text-[13px] leading-relaxed text-white/70"
              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
             🔒 Seu aplauso já está valendo. Dá pra ajustar só na <strong className="text-white">primeira hora</strong> depois
             de aplaudir — depois ele fica fixo, porque o ranking das músicas mais aplaudidas da Rede é feito com as
@@ -218,14 +218,14 @@ export default function AplausoBarra({
   return (
     <div className="mt-4 rounded-xl px-3 py-2.5" style={{ background: "#0d0b14", border: "1px solid rgba(255,255,255,0.09)" }}>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[9px] uppercase tracking-[0.1em] text-white/35">
+        <span className="text-[11px] uppercase tracking-[0.1em] text-white/35">
           {aumentando ? `Ajustar — você deu ${minhas}` : "Seu aplauso"}
         </span>
         {aumentando && (
           <button type="button" onClick={() => { setAumentando(false); setValor(0) }}
-                  className="text-[10px] text-white/45 hover:text-white/70">cancelar</button>
+                  className="text-[13px] text-white/45 hover:text-white/70">cancelar</button>
         )}
-        <span className="text-[10px] text-white/35 tabular-nums">
+        <span className="text-[13px] text-white/35 tabular-nums">
           {total > 0 ? `${total.toLocaleString("pt-BR")} palmas` : "seja o primeiro"}
         </span>
       </div>
@@ -289,8 +289,8 @@ export default function AplausoBarra({
       </div>
 
       <div className="flex items-center justify-between mt-1.5">
-        <span className="text-[9px] text-white/30">SILÊNCIO</span>
-        <span className="text-[9px] text-white/30">DE PÉ</span>
+        <span className="text-[11px] text-white/30">SILÊNCIO</span>
+        <span className="text-[11px] text-white/30">DE PÉ</span>
       </div>
     </div>
   )

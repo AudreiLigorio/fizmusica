@@ -200,7 +200,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
           telas de música. */}
       <div className="flex items-center gap-2.5 mb-1">
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Rede Fiz Música</h2>
-        <InfoTooltip text="Explore músicas de outros usuários, comente, curta e divirta-se." />
+        <InfoTooltip text="Ouça músicas de outros usuários, aplauda as que emocionam, favorite e monte suas playlists." />
       </div>
       {/* A CONTAGEM DESTA seção fica aqui, e não só na pílula.
           A pílula "Todas · N" soma as duas seções da aba (a Rede + a
@@ -210,7 +210,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
           e aparecem na prateleira dele, mais abaixo). Relatado pelo Audrei
           como "não tem paginação e não cria outra raia". Com cada seção
           declarando o seu total, 23 + 45 = 68 fecha na tela. */}
-      <p className="text-xs text-white/50 mb-4">
+      <p className="text-sm text-white/50 mb-4">
         Escute músicas publicadas por outros usuários
         {total > 0 && <span className="text-white/35"> · {total} {total === 1 ? "música" : "músicas"}</span>}
       </p>
@@ -255,13 +255,13 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                     className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-cover bg-center"
                     style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
                   >
-                    {isPlaying && <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-xs">❚❚</div>}
+                    {isPlaying && <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-sm">❚❚</div>}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`text-xs font-medium truncate ${isPlaying ? "text-pink-300" : ""}`}>{it.title}</p>
-                    <p className="text-[10px] text-white/40 truncate">{it.occasion}</p>
+                    <p className={`text-sm font-medium truncate ${isPlaying ? "text-pink-300" : ""}`}>{it.title}</p>
+                    <p className="text-[13px] text-white/40 truncate">{it.occasion}</p>
                   </div>
-                  <span className="text-[11px] text-white/45 tabular-nums shrink-0">
+                  <span className="text-[13px] text-white/45 tabular-nums shrink-0">
                     {(it.palmas ?? 0).toLocaleString("pt-BR")} 👏
                   </span>
                 </button>
@@ -305,13 +305,13 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                     className="relative w-10 h-10 rounded-md overflow-hidden shrink-0 bg-cover bg-center"
                     style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
                   >
-                    {isPlaying && <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-xs">❚❚</div>}
+                    {isPlaying && <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-sm">❚❚</div>}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className={`text-xs font-medium truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
-                    <p className="text-[11px] text-white/35 truncate">{it.occasion}</p>
+                    <p className={`text-sm font-medium truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
+                    <p className="text-[13px] text-white/35 truncate">{it.occasion}</p>
                   </div>
-                  <span className="text-[11px] text-white/40 tabular-nums shrink-0">
+                  <span className="text-[13px] text-white/40 tabular-nums shrink-0">
                     {formatarPlays(it.plays ?? 0)}
                   </span>
                 </button>
@@ -323,7 +323,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
 
       {favoritados.length > 0 && (
         <div className="mb-5 pb-5 border-b border-white/5">
-          <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">❤️ Favoritas — toque no + para adicionar a uma playlist</p>
+          <p className="text-[11px] uppercase tracking-wide font-bold text-white/30 mb-2">❤️ Favoritas — toque no + para adicionar a uma playlist</p>
           <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
             {favoritados.map((it) => {
               const isPlaying = nowPlaying?.id === it.orderId && playing
@@ -347,7 +347,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                       type="button"
                       onClick={() => favoritar(it.orderId)}
                       aria-label="Remover dos favoritos"
-                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs hover:scale-110 transition-transform"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-[13px] hover:scale-110 transition-transform"
                     >
                       ❤️
                     </button>
@@ -355,12 +355,12 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                       type="button"
                       onClick={() => abrirAdicionar(it.orderId)}
                       aria-label="Adicionar à playlist"
-                      className="absolute top-1.5 right-8 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 transition-transform"
+                      className="absolute top-1.5 right-8 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-[13px] font-bold hover:scale-110 transition-transform"
                     >
                       +
                     </button>
                   </div>
-                  <p className={`text-xs font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{it.title}</p>
+                  <p className={`text-sm font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{it.title}</p>
                 </div>
               )
             })}
@@ -424,7 +424,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   +
                 </button>
               </div>
-              <p className={`text-xs font-medium mt-2 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
+              <p className={`text-sm font-medium mt-2 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
               {/* Apelido em LINHA PRÓPRIA, não "ocasião | apelido" na mesma.
                   O card tem 128px e a ocasião sozinha já truncava ("Já tenho a
                   composição da…") — inline, o apelido virava "| Lig…", que é
@@ -442,9 +442,9 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   Sem reprodução nenhuma o número não aparece — "0" em toda
                   a grade seria ruído, não informação. */}
               <div className="flex items-baseline gap-1.5">
-                <p className="text-[11px] text-white/40 truncate flex-1 min-w-0">{it.occasion}</p>
+                <p className="text-[13px] text-white/40 truncate flex-1 min-w-0">{it.occasion}</p>
                 {(it.plays ?? 0) > 0 && (
-                  <span className="text-[11px] text-white/30 tabular-nums shrink-0"
+                  <span className="text-[13px] text-white/30 tabular-nums shrink-0"
                         title={`${it.plays} reproduç${it.plays === 1 ? "ão" : "ões"}`}>
                     ▶ {formatarPlays(it.plays ?? 0)}
                   </span>
@@ -459,7 +459,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   O rótulo neutro torna o estado legível SEM revelar
                   identidade — publication_consent autoriza publicar a obra,
                   não expor quem encomendou. */}
-              <p className={`text-[11px] truncate ${it.authorApelido ? "text-white/55" : "text-white/25 italic"}`}
+              <p className={`text-[13px] truncate ${it.authorApelido ? "text-white/55" : "text-white/25 italic"}`}
                  title={it.authorApelido ?? "Este autor não escolheu aparecer na Rede"}>
                 {it.authorApelido ?? "Membro da Rede"}
               </p>
@@ -486,7 +486,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
         <div className="hidden sm:flex justify-center mt-3">
           <button
             onClick={() => setVerTudo(true)}
-            className="px-5 py-2 rounded-full text-xs font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 transition-colors"
+            className="px-5 py-2 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 transition-colors"
           >
             Ver todas as músicas ({total})
           </button>

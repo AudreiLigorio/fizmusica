@@ -92,7 +92,7 @@ function Linha({ titulo, itens }: { titulo: string; itens: ItemFiltro[] }) {
 
   return (
     <>
-      <p className="text-[10px] uppercase tracking-wide font-bold text-white/30 mb-2">{titulo}</p>
+      <p className="text-[11px] uppercase tracking-wide font-bold text-white/30 mb-2">{titulo}</p>
       {/* Sangra até a borda no celular pra rolagem horizontal não parecer
           cortada no meio do padding da página. */}
       <div className="flex gap-2 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 mb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
@@ -115,7 +115,7 @@ function Linha({ titulo, itens }: { titulo: string; itens: ItemFiltro[] }) {
         {escondidas > 0 && (
           <button
             onClick={() => setExpandido((v) => !v)}
-            className="hidden sm:inline-flex shrink-0 items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold border border-dashed border-white/15 text-white/45 hover:text-white/80 hover:border-white/30 transition-colors"
+            className="hidden sm:inline-flex shrink-0 items-center gap-1 px-3.5 py-1.5 rounded-full text-sm font-semibold border border-dashed border-white/15 text-white/45 hover:text-white/80 hover:border-white/30 transition-colors"
           >
             {expandido ? "Ver menos" : `Ver todos · +${escondidas}`}
             <svg viewBox="0 0 24 24" aria-hidden="true" className={`w-3 h-3 transition-transform ${expandido ? "rotate-180" : ""}`}
@@ -133,7 +133,7 @@ function Pill({ ativa, onClick, className = "", children }: { ativa: boolean; on
   return (
     <button
       onClick={onClick}
-      className={`${className} shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all hover:scale-[1.04] active:scale-95 ${
+      className={`${className} shrink-0 px-3.5 py-1.5 rounded-full text-sm font-semibold border transition-all hover:scale-[1.04] active:scale-95 ${
         ativa ? "border-transparent text-white shadow-[0_4px_16px_-2px_rgba(217,70,239,0.55)]" : "border-white/10 bg-white/[0.04] text-white/55 hover:text-white/85 hover:border-white/20"
       }`}
       style={ativa ? { background: "linear-gradient(135deg, #f0196b, #d946ef)" } : undefined}

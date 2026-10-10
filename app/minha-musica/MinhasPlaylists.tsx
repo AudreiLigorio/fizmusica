@@ -109,14 +109,14 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
               type="button"
               onClick={() => excluirPlaylist(pl.id, pl.nome)}
               aria-label="Excluir playlist"
-              className="shrink-0 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold text-white/70 hover:scale-110 hover:bg-red-500/70 hover:text-white transition-all"
+              className="shrink-0 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-[13px] font-bold text-white/70 hover:scale-110 hover:bg-red-500/70 hover:text-white transition-all"
             >
               −
             </button>
           </div>
 
           {pl.tracks.length === 0 ? (
-            <p className="text-xs text-white/40 leading-relaxed">
+            <p className="text-sm text-white/40 leading-relaxed">
               Clique no + de uma música na Rede Fiz Música e adicione músicas aqui.
             </p>
           ) : (
@@ -162,12 +162,12 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                         type="button"
                         onClick={() => remover(pl.id, t.orderId)}
                         aria-label="Remover da playlist"
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 hover:bg-red-500/70 transition-all"
+                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-[13px] font-bold hover:scale-110 hover:bg-red-500/70 transition-all"
                       >
                         −
                       </button>
                     </div>
-                    <p className={`text-xs font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
+                    <p className={`text-sm font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
                   </div>
                 )
               })}

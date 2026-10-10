@@ -103,7 +103,7 @@ export function TabBarMobile({
 
       {/* "Criar" não é aba, é atalho pra outro fluxo — por isso o tratamento
           visual diferente, senão o cliente estranha o menu sumir lá dentro. */}
-      <button onClick={onCriar} className="flex flex-col items-center gap-1 text-[10px] font-medium text-[#ff5c94] hover:text-white transition-colors">
+      <button onClick={onCriar} className="flex flex-col items-center gap-1 text-[11px] font-medium text-[#ff5c94] hover:text-white transition-colors">
         <span
           className="w-[34px] h-[34px] -mt-1 rounded-[11px] flex items-center justify-center text-white"
           style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 3px 12px rgba(240,25,107,.45)" }}
@@ -125,7 +125,7 @@ function TabBtn({ label, Icon, ativa, onClick }: { label: string; Icon: () => Re
     <button
       onClick={onClick}
       aria-current={ativa ? "page" : undefined}
-      className={`flex flex-col items-center gap-1 text-[10px] font-medium transition-colors ${ativa ? "text-white" : "text-[#ff5c94] hover:text-white"}`}
+      className={`flex flex-col items-center gap-1 text-[11px] font-medium transition-colors ${ativa ? "text-white" : "text-[#ff5c94] hover:text-white"}`}
     >
       <Icon />
       {label}

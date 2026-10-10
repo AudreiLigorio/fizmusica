@@ -40,18 +40,18 @@ export default function AddToPlaylistModal({
               onClick={() => { onAdd(pl.id); onClose() }}
               className="w-full flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-left hover:border-fuchsia-500/40 hover:bg-fuchsia-500/5 transition-colors"
             >
-              <span className="text-xs font-medium truncate">{pl.nome}</span>
-              <span className="text-[11px] text-white/40 shrink-0">{pl.track_order_ids.length} música{pl.track_order_ids.length === 1 ? "" : "s"}</span>
+              <span className="text-sm font-medium truncate">{pl.nome}</span>
+              <span className="text-[13px] text-white/40 shrink-0">{pl.track_order_ids.length} música{pl.track_order_ids.length === 1 ? "" : "s"}</span>
             </button>
           ))}
           {playlists?.length === 0 && (
-            <p className="text-xs text-white/30 text-center py-2">Você ainda não tem nenhuma playlist.</p>
+            <p className="text-sm text-white/30 text-center py-2">Você ainda não tem nenhuma playlist.</p>
           )}
         </div>
 
         <button
           onClick={() => { onCreateNew(); onClose() }}
-          className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:brightness-110"
+          className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:brightness-110"
           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
         >
           ➕ Nova playlist

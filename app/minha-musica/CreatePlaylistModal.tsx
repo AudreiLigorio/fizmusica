@@ -50,12 +50,12 @@ export default function CreatePlaylistModal({
           placeholder="Ex: Favoritas da Vó"
           className="w-full bg-black/20 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:border-fuchsia-500/40 mb-1.5"
         />
-        <p className="text-[11px] text-white/30 text-right mb-3">{nome.length}/{MAX_NOME}</p>
+        <p className="text-[13px] text-white/30 text-right mb-3">{nome.length}/{MAX_NOME}</p>
 
         <button
           onClick={confirmar}
           disabled={!nome.trim()}
-          className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
+          className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all hover:brightness-110 disabled:opacity-40"
           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
         >
           Criar playlist

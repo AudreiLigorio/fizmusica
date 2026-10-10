@@ -98,15 +98,15 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
       {musicas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/15 px-5 py-6 text-center">
           <p className="text-sm text-white/70">Você ainda não tem música para publicar.</p>
-          <p className="text-xs text-white/45 mt-1">Quando a sua música ficar pronta, ela aparece aqui e você decide se ela vai para a Rede.</p>
-          <a href="/criar" className="inline-block mt-4 px-4 py-2 rounded-full text-xs font-bold text-white"
+          <p className="text-sm text-white/45 mt-1">Quando a sua música ficar pronta, ela aparece aqui e você decide se ela vai para a Rede.</p>
+          <a href="/criar" className="inline-block mt-4 px-4 py-2 rounded-full text-sm font-bold text-white"
              style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
             Criar minha música
           </a>
         </div>
       ) : (
         <>
-          <p className="text-xs text-white/50 mb-4">
+          <p className="text-sm text-white/50 mb-4">
             {musicas.filter((m) => m.situacao === "publicada").length} de {musicas.length} na Rede
             <span className="text-white/35"> · {fmt(totalNaRede)} músicas na Rede ao todo</span>
           </p>
@@ -132,21 +132,21 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
                     )
                   })()}
                   {m.situacao === "publicada" && m.posTop !== null && m.posTop <= 10 && (
-                    <span className="absolute top-1.5 left-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-amber-950">
+                    <span className="absolute top-1.5 left-1.5 text-[13px] font-bold px-2 py-0.5 rounded-full bg-amber-400 text-amber-950">
                       🏆 #{m.posTop} no Top 10
                     </span>
                   )}
                 </div>
-                <p className={`text-xs font-semibold mt-2 truncate ${tocando?.id === m.orderId && playing ? "text-fuchsia-300" : ""}`} title={m.titulo}>{m.titulo}</p>
+                <p className={`text-sm font-semibold mt-2 truncate ${tocando?.id === m.orderId && playing ? "text-fuchsia-300" : ""}`} title={m.titulo}>{m.titulo}</p>
 
-                <p className={`text-[10px] uppercase tracking-wide font-bold mt-1 ${
+                <p className={`text-[11px] uppercase tracking-wide font-bold mt-1 ${
                   m.situacao === "publicada" ? "text-green-300" : m.situacao === "oculta" ? "text-orange-300" : "text-white/40"
                 }`}>
                   {m.situacao === "publicada" ? "🌐 Na Rede" : m.situacao === "oculta" ? "🙈 Tirada pela equipe" : "🔒 Só você"}
                 </p>
 
                 {m.situacao === "publicada" && (
-                  <div className="mt-2 space-y-1 text-[11px] text-white/70">
+                  <div className="mt-2 space-y-1 text-[13px] text-white/70">
                     <p>👏 <strong className="text-white">{fmt(m.palmas)}</strong> {m.palmas === 1 ? "palma" : "palmas"}</p>
                     <p>▶ <strong className="text-white">{fmt(m.reproducoes)}</strong> {m.reproducoes === 1 ? "reprodução" : "reproduções"}</p>
                     {m.posReproducoes !== null ? (
@@ -165,10 +165,10 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
                   </div>
                 )}
                 {m.situacao === "privada" && (
-                  <p className="mt-2 text-[11px] text-white/45 leading-snug">Publique para outras pessoas ouvirem e aplaudirem.</p>
+                  <p className="mt-2 text-[13px] text-white/45 leading-snug">Publique para outras pessoas ouvirem e aplaudirem.</p>
                 )}
                 {m.situacao === "oculta" && (
-                  <p className="mt-2 text-[11px] text-white/45 leading-snug">
+                  <p className="mt-2 text-[13px] text-white/45 leading-snug">
                     A equipe tirou esta música da Rede após uma denúncia. Dúvidas: contato@fizmusica.com.br
                   </p>
                 )}
@@ -176,13 +176,13 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
                 <div className="mt-auto pt-3">
                   {m.situacao === "publicada" && (
                     <button type="button" disabled={salvando === m.orderId} onClick={() => tirarDaRede(m)}
-                            className="w-full py-2 rounded-xl text-[11px] font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 disabled:opacity-40">
+                            className="w-full py-2 rounded-xl text-[13px] font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 disabled:opacity-40">
                       Tirar da Rede
                     </button>
                   )}
                   {m.situacao === "privada" && (
                     <button type="button" onClick={() => setPublicando(m)}
-                            className="w-full py-2 rounded-xl text-[11px] font-bold text-white"
+                            className="w-full py-2 rounded-xl text-[13px] font-bold text-white"
                             style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
                       Publicar na Rede
                     </button>

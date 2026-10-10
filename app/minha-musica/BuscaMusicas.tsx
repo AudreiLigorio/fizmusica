@@ -20,7 +20,7 @@ export default function BuscaMusicas({
           text-xs): sem ele a tela abria direto num campo e num muro de
           pílulas, sem dizer o que era aquilo nem onde uma seção terminava. */}
       <h2 className="text-xl font-bold">Buscar</h2>
-      <p className="text-xs text-white/50 mb-3">Encontre por nome, ocasião ou estilo</p>
+      <p className="text-sm text-white/50 mb-3">Encontre por nome, ocasião ou estilo</p>
 
       <div className="relative">
         <svg
@@ -54,7 +54,7 @@ export default function BuscaMusicas({
       </div>
 
       {buscando && resultados !== null && (
-        <p className="text-[11px] text-white/40 mt-2 px-1">
+        <p className="text-[13px] text-white/40 mt-2 px-1">
           {resultados === 0
             ? "Nenhuma música encontrada."
             : `${resultados} música${resultados === 1 ? "" : "s"} encontrada${resultados === 1 ? "" : "s"}.`}

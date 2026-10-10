@@ -92,7 +92,7 @@ export default function ResultadosBusca({
             ? <>Nada encontrado para <span className="text-white font-medium">“{busca}”</span>.</>
             : "Nada nesse filtro."}
         </p>
-        <p className="text-white/35 text-xs mt-1.5">Tente por ocasião (natal, aniversário) ou estilo (rock, pop).</p>
+        <p className="text-white/35 text-sm mt-1.5">Tente por ocasião (natal, aniversário) ou estilo (rock, pop).</p>
       </div>
     )
   }
@@ -138,7 +138,7 @@ export default function ResultadosBusca({
                     : gradienteDaCapa(l.id),
                 }}
               >
-                {tocando && <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-[11px]">❚❚</div>}
+                {tocando && <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-[13px]">❚❚</div>}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -150,7 +150,7 @@ export default function ResultadosBusca({
                     ser justo a parte cortada. Ocasião e estilo vêm depois —
                     se algo se perder, que seja o fim do estilo, que já aparece
                     destacado quando foi ele que casou com a busca. */}
-                <p className="text-[11px] text-white/40 truncate mt-0.5">
+                <p className="text-[13px] text-white/40 truncate mt-0.5">
                   <span className={l.minha ? "text-white/60" : "text-fuchsia-300/60"}>
                     {l.minha ? "Sua música" : "Da Rede"}
                   </span>

@@ -131,7 +131,7 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
           outros — o oposto do que o produto quer. */}
       {/* Contagem desta seção, pelo mesmo motivo da Rede: a pílula
           "Todas · N" soma as duas e ficava parecendo o total de uma só. */}
-      <p className="text-xs text-white/50 mb-4">
+      <p className="text-sm text-white/50 mb-4">
         {semMusicaPropria
           ? "Aqui ficam as músicas que você criar — e você ainda pode juntar as da Rede tocando no +. Faça a sua música, monte a sua playlist."
           : "Suas músicas ficam aqui. Toque no + para juntar também as da Rede e montar a playlist do seu jeito."}
@@ -172,12 +172,12 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
                   type="button"
                   onClick={() => abrirAdicionar(t.id)}
                   aria-label="Adicionar à playlist"
-                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-xs font-bold hover:scale-110 transition-transform"
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-[13px] font-bold hover:scale-110 transition-transform"
                 >
                   +
                 </button>
               </div>
-              <p className={`text-xs font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
+              <p className={`text-sm font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
             </div>
           )
         })}
@@ -189,9 +189,9 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
         <button
           type="button"
           onClick={() => abrirCriarPlaylist()}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-white/15 text-white/50 hover:text-white hover:border-fuchsia-500/40 text-[11px] font-medium transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-dashed border-white/15 text-white/50 hover:text-white hover:border-fuchsia-500/40 text-[13px] font-medium transition-colors"
         >
-          <span className="text-xs">➕</span>
+          <span className="text-sm">➕</span>
           Nova playlist
         </button>
       </div>
