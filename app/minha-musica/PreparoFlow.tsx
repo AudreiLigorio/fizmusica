@@ -55,7 +55,10 @@ export default function PreparoFlow({
   const mountedRef = useRef(false)
   useEffect(() => {
     if (!mountedRef.current) { mountedRef.current = true; return }
-    rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+    // Sem animação: no celular o teclado fechando (a pessoa acabou de editar
+    // a letra) cancela a rolagem suave e o passo novo fica fora da tela.
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+    rootRef.current?.scrollIntoView({ block: "start" })
   }, [activeStep])
 
   return (

@@ -355,7 +355,9 @@ function MinhaMusicaContent() {
     // botão Voltar iguais, sem round-trip. O `aba` já está no state, então
     // ninguém depende do searchParams se atualizar.
     window.history.replaceState(null, "", qs.toString() ? `/minha-musica?${qs}` : "/minha-musica")
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    // Aba nova começa no topo, na hora (rolagem suave podia ser cancelada no
+    // celular e deixar a aba nova no meio).
+    window.scrollTo(0, 0)
   }
 
   async function loadOrders() {

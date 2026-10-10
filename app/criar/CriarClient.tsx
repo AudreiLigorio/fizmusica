@@ -162,7 +162,6 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   const ehComposicao = composicaoLivre ? selectedContext === composicaoLivre.label : false
 
   const contentRef = useRef<HTMLDivElement>(null)
-  useScrollTopOnStepChange(`${step}-${questionStep}`, contentRef)
 
   // Passo alcançado: é o que revela onde a jornada trava. O wizard já salva a
   // sessão dele (wizard_sessions), mas aquilo é retomada de pedido — isto aqui
@@ -211,6 +210,10 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
 
   // Lead capture (após 3ª pergunta respondida)
   const [showLeadCapture, setShowLeadCapture] = useState(false)
+  // Toda tela nova começa no topo. Além da etapa e da pergunta, entram as
+  // telas que trocam SEM mudar de etapa: as subcategorias do tema (escolher
+  // "Pets" abre outra lista) e o "Informe seu contato".
+  useScrollTopOnStepChange(`${step}-${questionStep}-${selectedContext}-${showLeadCapture}`, contentRef)
   const [leadCaptured, setLeadCaptured] = useState(false)
   const [leadNome, setLeadNome] = useState("")
   const [leadEmail, setLeadEmail] = useState("")
