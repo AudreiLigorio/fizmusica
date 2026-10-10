@@ -89,9 +89,10 @@ export default function CarreiraPublica({ onEntrar }: { onEntrar: () => void }) 
           </span>
         </h1>
         <p className="text-white/55 text-[15px] sm:text-base leading-relaxed max-w-[19rem] sm:max-w-md mx-auto">
-          Ninguém começa famoso. Você começa de pantufa, cantando no chuveiro.
-          A cada música que você cria pra alguém, seu personagem ganha um palco
-          maior — e você paga menos na próxima.
+          Aqui você constrói a sua carreira. Cada música que você lança te
+          deixa mais famoso: publicada na Rede, ela é ouvida e aplaudida por
+          outras pessoas — e você acompanha as reproduções e as palmas. Quanto
+          mais você cria, mais desconto ganha na próxima.
         </p>
       </div>
 
