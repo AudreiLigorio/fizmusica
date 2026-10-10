@@ -876,9 +876,21 @@ function MinhaMusicaContent() {
   const blocoVincular = (
             <div className="mt-8 border-t border-white/10 pt-6">
               {!claimOpen ? (
-                <button onClick={() => setClaimOpen(true)} className="text-sm text-gray-400 hover:text-white transition-colors">
-                  Fez um pedido com outro e-mail? <span className="text-pink-400">Vincular aqui →</span>
-                </button>
+                // Com explicação, não só o link: sozinho ("Fez um pedido com
+                // outro e-mail?") ninguém entendia pra que servia — e parecia
+                // coisa solta no meio da Carreira (Audrei, 2026-10-09).
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Pedidos em outro e-mail</h2>
+                  <p className="text-xs text-white/55 leading-relaxed mb-3">
+                    Comprou com outro e-mail — do trabalho, de alguém da família ou um que você não usa mais?
+                    Traga esses pedidos para esta conta. A gente manda uma confirmação para aquele e-mail e,
+                    ao confirmar, as músicas aparecem aqui em Pedidos, na sua playlist e contam na sua Carreira.
+                  </p>
+                  <button onClick={() => setClaimOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-pink-500/40 text-pink-300 hover:text-white hover:border-pink-400 text-xs font-semibold transition-colors">
+                    Vincular outro e-mail →
+                  </button>
+                </div>
               ) : (
                 <form onSubmit={submitClaim} className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 space-y-3">
                   <p className="text-sm font-medium">Vincular pedidos feitos com outro e-mail</p>
@@ -1316,8 +1328,6 @@ function MinhaMusicaContent() {
           <MinhaCarreira />
 
           <CarreiraPainel nome={firstName ?? ""} email={user.email ?? ""} />
-
-          {blocoVincular}
           </>}
 
           {/* Indicação e datas ficam FORA do switch de abas, montados uma vez
@@ -1341,6 +1351,11 @@ function MinhaMusicaContent() {
             <ReferirAmigos />
             <DatasEspeciais />
           </div>
+
+          {/* Vincular pedidos de outro e-mail: na Carreira fica DEPOIS das
+              datas especiais (pedido do Audrei) — antes ficava entre o perfil
+              e o "Indique amigos". Continua também na aba Pedidos vazia. */}
+          {aba === "carreira" && blocoVincular}
 
           {/* Ajuda da aba atual, sempre por último: quem precisa dela já
               tentou resolver na tela primeiro. Um componente só, escolhendo
