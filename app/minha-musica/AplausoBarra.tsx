@@ -65,6 +65,12 @@ export default function AplausoBarra({
   const [aumentando, setAumentando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const pedido = useRef<string | null>(null)
+  const trilho = useRef<HTMLDivElement>(null)
+  const arrastando = useRef(false)
+  // O soltar lê daqui, não do estado: o último setValor do arrasto pode
+  // ainda não ter sido processado quando o dedo levanta.
+  const valorRef = useRef(0)
+  valorRef.current = valor
 
   useEffect(() => {
     let vivo = true
@@ -136,6 +142,16 @@ export default function AplausoBarra({
   // então o controle nem deixa chegar lá — gesto que não tem efeito confunde.
   const piso = aumentando ? minhas : 0
 
+  // Posição do dedo → número de palmas, na MESMA escala do desenho (0 a 10
+  // na largura inteira). Arredonda pra cima: tocar em qualquer parte de um
+  // segmento acende até ele.
+  function valorNoPonto(x: number) {
+    const r = trilho.current?.getBoundingClientRect()
+    if (!r || r.width === 0) return valorRef.current
+    const n = Math.ceil(((x - r.left) / r.width) * teto)
+    return Math.min(teto, Math.max(piso, n))
+  }
+
   // Já aplaudiu: vira leitura compacta — mas continua sendo um botão, porque
   // aumentar é permitido. Sem isso a promessa de "dá pra aumentar depois"
   // não tinha por onde acontecer (furo achado pelo Audrei).
@@ -165,42 +181,71 @@ export default function AplausoBarra({
         <span className="text-[9px] uppercase tracking-[0.1em] text-white/35">
           {aumentando ? `Aumentar — você deu ${minhas}` : "Seu aplauso"}
         </span>
+        {aumentando && (
+          <button type="button" onClick={() => { setAumentando(false); setValor(0) }}
+                  className="text-[10px] text-white/45 hover:text-white/70">cancelar</button>
+        )}
         <span className="text-[10px] text-white/35 tabular-nums">
           {total > 0 ? `${total.toLocaleString("pt-BR")} palmas` : "seja o primeiro"}
         </span>
       </div>
 
-      <div className="relative">
+      {/* O MEDIDOR TRATA O DEDO ELE MESMO. Antes era um <input type=range>
+          invisível por cima do desenho, e o "aumentar" não funcionava
+          (2026-10-09: nenhuma palma aumentada desde 15/09): no modo aumentar o
+          range ia de `minhas` a 10, então a alça invisível ficava no COMEÇO
+          da barra enquanto o desenho mostrava 9 segmentos acesos — e no
+          iPhone o range só responde se o dedo pegar a alça. A pessoa tocava
+          no fim da parte acesa e nada mexia.
+          Agora: a posição do dedo na largura toda vira 0–10 (a MESMA escala
+          do desenho), nunca abaixo do piso; toque simples também vale; grava
+          ao soltar. `touch-action: none` impede o navegador de roubar o gesto
+          (rolagem/fechar o player) e cancelar no meio. */}
+      <div
+        ref={trilho}
+        role="slider"
+        tabIndex={0}
+        aria-label="Quanto você aplaude, de 0 a 10"
+        aria-valuemin={0}
+        aria-valuemax={teto}
+        aria-valuenow={valor}
+        aria-disabled={enviando}
+        className="relative cursor-pointer select-none outline-none focus-visible:ring-2 focus-visible:ring-pink-500/60 rounded"
+        style={{ touchAction: "none" }}
+        onPointerDown={(e) => {
+          if (enviando) return
+          e.stopPropagation()
+          arrastando.current = true
+          // Captura: o arrasto continua valendo mesmo se o dedo sair da
+          // barra. Protegida — se o navegador recusar, o toque segue sem ela.
+          try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) } catch { /* segue sem captura */ }
+          setValor(valorNoPonto(e.clientX))
+        }}
+        onPointerMove={(e) => {
+          if (!arrastando.current) return
+          setValor(valorNoPonto(e.clientX))
+        }}
+        onPointerUp={(e) => {
+          if (!arrastando.current) return
+          arrastando.current = false
+          aplaudir(valorNoPonto(e.clientX))
+        }}
+        onPointerCancel={() => {
+          // O gesto foi tomado (não deveria, com touch-action none). Grava o
+          // que já estava aceso em vez de perder o aplauso calado.
+          if (!arrastando.current) return
+          arrastando.current = false
+          aplaudir(valorRef.current)
+        }}
+        onKeyDown={(e) => {
+          if (enviando) return
+          if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); setValor((v) => Math.min(teto, Math.max(piso, v + 1))) }
+          else if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); setValor((v) => Math.max(piso, v - 1)) }
+          else if (e.key === "End") { e.preventDefault(); setValor(teto) }
+          else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); aplaudir(valorRef.current) }
+        }}
+      >
         <Segmentos n={valor} altura={22} brilho />
-
-        {/* Controle nativo por cima, invisível: o desenho é nosso, mas quem
-            recebe o arrasto é um <input>, então teclado e leitor de tela
-            funcionam sem reimplementar nada.
-            O envio vai no SOLTAR (`pointerup`/`keyup`), nunca no `onChange`:
-            no React, `onChange` de range dispara a cada passo do arrasto, e o
-            aplauso sairia no primeiro milímetro — medido na tela antes de
-            subir. */}
-        <input
-          type="range"
-          min={piso}
-          max={teto}
-          step={1}
-          value={valor}
-          aria-label="Quanto você aplaude, de 0 a 10"
-          disabled={enviando}
-          onChange={(e) => setValor(Number(e.target.value))}
-          // Lê do PRÓPRIO input, não do estado. Quando o dedo levanta, o
-          // React pode ainda não ter processado o último passo do arrasto —
-          // e aí `valor` no fecho é o anterior. Como o aplauso só aumenta,
-          // mandar o valor antigo não muda nada: era exatamente o sintoma de
-          // "abre mas não edita" (Audrei, 2026-09-15). O elemento sempre tem
-          // o número certo.
-          onPointerUp={(e) => aplaudir(Number((e.currentTarget as HTMLInputElement).value))}
-          onKeyUp={(e) => {
-            if (/Arrow|Home|End|Enter| /.test(e.key)) aplaudir(Number((e.currentTarget as HTMLInputElement).value))
-          }}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-        />
       </div>
 
       <div className="flex items-center justify-between mt-1.5">
