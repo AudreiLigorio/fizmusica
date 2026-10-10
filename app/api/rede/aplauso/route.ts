@@ -5,9 +5,11 @@ import { createServerClient } from "@/lib/supabase"
 export const dynamic = "force-dynamic"
 
 // Sem cota diária (decisão do Audrei, 2026-09-15): quanto mais palmas, mais
-// destaque. O limite que fica é UMA aplaudida por pessoa por música, e ela só
-// aumenta — é o que faz o número significar "quanta gente aplaudiu" em vez de
-// "quem insistiu mais". A regra vive no banco (migração 063).
+// destaque. O limite que fica é UM aplauso por pessoa por música — é o que faz
+// o número significar "quanta gente aplaudiu" em vez de "quem insistiu mais".
+// Ajustável (pra mais ou pra menos) só na PRIMEIRA HORA; depois fica fixo,
+// porque o ranking da Rede é feito com as palmas (migração 067, 2026-10-09).
+// A regra vive no banco.
 
 async function getUser(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "") ?? null
@@ -50,6 +52,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     total: Number(r?.total ?? 0),
     minhas: r?.minhas ?? 0,
+    editavelAte: r?.editavel_ate ?? null,
   })
 }
 
@@ -68,9 +71,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Esta música não está na Rede." }, { status: 403 })
   }
 
-  // Toda a regra vive no banco (migração 061): só aumenta, e só a diferença
-  // sai da cota. Aqui não dá pra repetir isso sem correr o risco de duas
-  // pessoas aplaudindo ao mesmo tempo furarem a conta.
+  // Toda a regra vive no banco (migração 067): um aplauso por pessoa,
+  // ajustável na primeira hora. Repetir a regra aqui criaria uma segunda
+  // definição de "dentro da hora", livre pra divergir da que vale.
   const { data, error } = await supabase.rpc("aplaudir", {
     p_order_id: orderId,
     p_user_id: user.id,
@@ -79,5 +82,10 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const r = Array.isArray(data) ? data[0] : data
-  return NextResponse.json({ total: Number(r?.total ?? 0), minhas: r?.minhas ?? 0 })
+  const resposta = { total: Number(r?.total ?? 0), minhas: r?.minhas ?? 0, editavelAte: r?.editavel_ate ?? null }
+  // O banco não mexe fora da janela; aqui só se avisa a tela, com o motivo.
+  if (resposta.minhas !== n && resposta.editavelAte && new Date(resposta.editavelAte).getTime() < Date.now()) {
+    return NextResponse.json({ ...resposta, travado: true, error: "Seu aplauso já está fixo." }, { status: 409 })
+  }
+  return NextResponse.json(resposta)
 }

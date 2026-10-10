@@ -292,6 +292,13 @@ Toda automação de "pedido pronto/entregue" (e-mail, cupom de fidelidade, cria�
 - "Tirar da Rede" grava `orders.rede_oculta = true` — flag do ADMIN, separada do `publication_consent` (escolha do CLIENTE, nunca alterada aqui). **Na Rede = `publication_consent` E `status = DELIVERED` E NÃO `rede_oculta`.** Essa regra está repetida em: catálogo, letra do catálogo, contagem de plays, playlists, `/api/audio`, aplauso, `/rede/[id]` (404) e nos agentes de conteúdo (storyboard, roteiro, generate, video-ingredients, video-partes, publish). Ponto novo que decida "está na Rede" tem que conferir as três.
 - O dono continua ouvindo a própria música oculta (caminho do dono em `/api/audio`); na área dele some o selo "na Rede" e o compartilhar.
 
+### 12.2.2 Aplauso da Rede (regra vigente desde 2026-10-09)
+- Medidor de 1 a 10 palmas por pessoa por música (`music_applause`, uma linha por pessoa). Sem cota diária. A soma das palmas alimenta o ranking/destaque da Rede.
+- **Ajustável (para mais ou para menos, mínimo 1) só na primeira hora** depois do PRIMEIRO aplauso; depois fica fixo. Ajustar não renova o prazo. Regra no banco (`aplaudir`, migração 067); a API devolve `editavelAte` e responde 409 `travado` fora da janela.
+- Na tela (`AplausoBarra.tsx`): dentro da hora mostra "ajustar até HH:MM"; depois, um 🔒 e, ao tocar, a explicação (o ranking é feito com as palmas, mudar depois seria injusto). Visitante não arrasta: vê o total e "Toque para aplaudir" (abre o convite de conta).
+- O medidor trata o dedo direto (posição na largura = 0–10). **Não usar `<input type=range>` invisível sobre o desenho**: no iPhone ele só responde tocando a alça, e o "aumentar" passou 3 semanas sem funcionar por isso.
+- Funções `aplaudir`/`aplauso_estado` são SECURITY DEFINER e só o `service_role` executa — até a 067 o `anon` podia chamá-las direto e aplaudir em nome de qualquer usuário.
+
 ### 12.3 Cupons
 - Tabela `coupons` (código, tipo %/valor, valor mínimo, limite de usos, validade, ativo).
 - Aparecem em 4 jornadas: e-mail de repescagem dia-3 (auto-aplica via link), campo no checkout, banner público em `/produtos`, cupom de fidelidade pós-entrega.
