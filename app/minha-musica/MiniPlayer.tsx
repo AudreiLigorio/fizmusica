@@ -1075,7 +1075,6 @@ export default function MiniPlayer() {
                 : precisaConta === "aplauso"
                 ? "Crie sua conta pra aplaudir. Você dá de 1 a 10 palmas por música — e quem fez a música vê o aplauso chegar."
                 : "Crie sua conta pra montar playlists com o que você gosta."}
-              {" "}Ouvir e compartilhar seguem livres, sem conta.
             </p>
             <button
               onClick={() => router.push("/entrar")}
