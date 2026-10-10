@@ -33,7 +33,7 @@ export default function JourneyProgress({ current }: { current: JourneyStep }) {
                   </svg>
                 ) : step.n}
               </div>
-              <span className={`text-[10px] mt-2 text-center leading-tight transition-all ${
+              <span className={`text-[11px] mt-2 text-center leading-tight transition-all ${
                 active ? "font-semibold text-white" :
                 done   ? "font-medium text-white/55" :
                          "text-white/30"

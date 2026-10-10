@@ -8,7 +8,7 @@ export default function AvisoCompraApp({ compacto = false }: { compacto?: boolea
       style={{ background: "rgba(240,25,107,0.08)", border: "1px solid rgba(240,25,107,0.3)" }}
     >
       <p className="text-sm font-semibold text-white">🎵 Compras pelo app chegam em breve</p>
-      <p className="text-xs text-white/70 mt-1">Seu pedido fica salvo na aba Pedidos.</p>
+      <p className="text-sm text-white/70 mt-1">Seu pedido fica salvo na aba Pedidos.</p>
     </div>
   )
 }

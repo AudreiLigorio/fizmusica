@@ -322,7 +322,7 @@ function ProdutosContent() {
                 <h1 className="text-xl lg:text-2xl font-bold mb-1 leading-tight tracking-tight">
                   Selecione o produto ideal
                 </h1>
-                <p className="text-gray-400 text-sm">Escolha abaixo e prossiga para o pagamento.</p>
+                <p className="text-gray-400 text-[15px]">Escolha abaixo e prossiga para o pagamento.</p>
 
                 {/* Banner do cupom ativo */}
                 {promoCoupon && (
@@ -333,7 +333,7 @@ function ProdutosContent() {
                       <p className="text-sm font-bold text-pink-300">
                         {promoCoupon.label} com o cupom <span className="font-mono bg-pink-500/20 px-1.5 py-0.5 rounded">{promoCoupon.code}</span>
                       </p>
-                      <p className="text-xs text-white/50">{promoCoupon.description ?? "Digite o código abaixo e aplique."}</p>
+                      <p className="text-sm text-white/50">{promoCoupon.description ?? "Digite o código abaixo e aplique."}</p>
                     </div>
                   </div>
                 )}
@@ -351,13 +351,13 @@ function ProdutosContent() {
                       <p className="text-green-300 text-sm font-semibold">
                         🎟️ {appliedCoupon.code} {selected ? "aplicado" : "válido"}
                       </p>
-                      <p className="text-green-400/70 text-xs">
+                      <p className="text-green-400/70 text-sm">
                         {selected
                           ? `Você economizou R$ ${fmt(appliedCoupon.discount)}`
                           : "Selecione um produto para aplicar o desconto."}
                       </p>
                     </div>
-                    <button onClick={removeCoupon} className="text-xs text-white/50 hover:text-white underline shrink-0 ml-3">
+                    <button onClick={removeCoupon} className="text-sm text-white/50 hover:text-white underline shrink-0 ml-3">
                       Remover
                     </button>
                   </div>
@@ -372,7 +372,7 @@ function ProdutosContent() {
                   <div className="rounded-2xl px-4 py-3.5"
                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
                     <label className="text-sm text-white/70 font-medium">Tem um cupom de desconto?</label>
-                    <p className="text-xs text-white/35 mb-2.5">Use o código do banner ou um que você viu nas nossas redes sociais.</p>
+                    <p className="text-sm text-white/35 mb-2.5">Use o código do banner ou um que você viu nas nossas redes sociais.</p>
                     <div className="flex gap-2">
                       <input
                         value={couponInput}
@@ -384,13 +384,13 @@ function ProdutosContent() {
                       <button
                         onClick={() => applyCoupon()}
                         disabled={checkingCoupon || !couponInput.trim()}
-                        className="px-6 py-3 rounded-2xl text-sm font-semibold text-white disabled:opacity-40 transition-all shrink-0"
+                        className="px-6 py-3 rounded-2xl text-base font-semibold text-white disabled:opacity-40 transition-all shrink-0"
                         style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
                       >
                         {checkingCoupon ? "…" : "Aplicar"}
                       </button>
                     </div>
-                    {couponMsg && <p className="text-red-400 text-xs mt-2">{couponMsg}</p>}
+                    {couponMsg && <p className="text-red-400 text-sm mt-2">{couponMsg}</p>}
                   </div>
                 )}
               </div>
@@ -419,7 +419,7 @@ function ProdutosContent() {
                         <rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8v13M3 12h18"/><path d="M12 8c-1.5 0-3-1-3-2.5A2 2 0 0 1 12 4a2 2 0 0 1 3 1.5C15 7 13.5 8 12 8z"/>
                       </svg>
                     )}
-                    <span className="text-xs font-semibold tracking-wider uppercase" style={{ color: "rgba(244,114,182,0.7)" }}>
+                    <span className="text-[13px] font-semibold tracking-wider uppercase" style={{ color: "rgba(244,114,182,0.7)" }}>
                       {group === "voce" ? "Pra você" : "Pra presentear"}
                     </span>
                   </div>
@@ -452,33 +452,33 @@ function ProdutosContent() {
                           }}
                         >
                           {product.featured && (
-                            <div className="absolute -top-2.5 left-3.5 text-[10px] font-bold text-white px-2.5 py-1 rounded-full"
+                            <div className="absolute -top-2.5 left-3.5 text-[11px] font-bold text-white px-2.5 py-1 rounded-full"
                                  style={{ background: "#f0196b" }}>
                               mais escolhido aqui
                             </div>
                           )}
                           {isPhysicalPlan && (
-                            <div className="absolute -top-2.5 left-3.5 text-[10px] font-bold text-white px-2.5 py-1 rounded-full"
+                            <div className="absolute -top-2.5 left-3.5 text-[11px] font-bold text-white px-2.5 py-1 rounded-full"
                                  style={{ background: "#B8963E" }}>
                               efeito uau garantido
                             </div>
                           )}
 
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-1.5">
-                            <h3 className="text-[15px] font-semibold leading-tight min-w-0">{product.name}</h3>
-                            <span className="text-[15px] font-semibold whitespace-nowrap shrink-0" style={{ color: "#f472b6" }}>
+                            <h3 className="text-[17px] font-semibold leading-tight min-w-0">{product.name}</h3>
+                            <span className="text-[17px] font-semibold whitespace-nowrap shrink-0" style={{ color: "#f472b6" }}>
                               R$ {fmt(product.price)}
                             </span>
                           </div>
 
-                          <p className="text-[11px] mb-1" style={{ color: "rgba(74,222,128,0.55)" }}>
+                          <p className="text-sm mb-1" style={{ color: "rgba(74,222,128,0.55)" }}>
                             música personalizada · capa exclusiva · 2ª versão grátis
                           </p>
 
                           {chips.length > 0 && (
                             <div className="flex flex-wrap gap-2 mb-2.5">
                               {chips.map((chip) => (
-                                <span key={chip} className="text-[11px] font-medium" style={{ color: "#4ade80" }}>
+                                <span key={chip} className="text-sm font-medium" style={{ color: "#4ade80" }}>
                                   + {chip}
                                 </span>
                               ))}
@@ -486,7 +486,7 @@ function ProdutosContent() {
                           )}
 
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-xs" style={{ color: isSelected ? "#f472b6" : "rgba(255,255,255,0.6)" }}>
+                            <div className="flex items-center gap-1.5 text-sm" style={{ color: isSelected ? "#f472b6" : "rgba(255,255,255,0.6)" }}>
                               <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
                                    style={{ borderColor: isSelected ? "#f0196b" : "rgba(255,255,255,0.25)", background: isSelected ? "#f0196b" : "transparent" }}>
                                 {isSelected && (
@@ -502,7 +502,7 @@ function ProdutosContent() {
                               <button
                                 onClick={(e) => { e.stopPropagation(); toggleDetails(product.id) }}
                                 aria-label="Ver detalhes e fotos"
-                                className="flex items-center gap-1 text-[11px]"
+                                className="flex items-center gap-1 text-[13px]"
                                 style={{ color: "rgba(255,255,255,0.5)" }}
                               >
                                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -515,7 +515,7 @@ function ProdutosContent() {
 
                           {isExpanded && withPhotoCount && (
                             <div className="mt-2.5 pt-2 border-t" style={{ borderColor: "rgba(255,255,255,0.12)" }} onClick={(e) => e.stopPropagation()}>
-                              <p className="text-[11px] leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
+                              <p className="text-sm leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
                                 {withPhotoCount}{(chips.length > 0) && " Toque numa foto pra ampliar."}
                               </p>
                               {chips.length > 0 && (
@@ -578,7 +578,7 @@ function ProdutosContent() {
                 </div>
                 <div>
                   <p className="font-bold text-lg leading-tight">{selected.name}</p>
-                  <button onClick={() => setStep(1)} className="text-xs text-pink-400 hover:underline mt-0.5">
+                  <button onClick={() => setStep(1)} className="text-sm text-pink-400 hover:underline mt-0.5">
                     Trocar produto
                   </button>
                 </div>
@@ -628,7 +628,7 @@ function ProdutosContent() {
                       <div>
                         <p className="font-semibold">{opt.label}</p>
                         {opt.price_extra > 0 && (
-                          <p className="text-xs text-gray-200 mt-0.5">
+                          <p className="text-sm text-gray-200 mt-0.5">
                             + R$ {fmt(opt.price_extra)} de urgência
                           </p>
                         )}
@@ -637,7 +637,7 @@ function ProdutosContent() {
                     <div className="text-right">
                       <p className="font-bold text-pink-400">R$ {fmt(total)}</p>
                       {opt.price_extra === 0 && (
-                        <p className="text-xs text-green-400 mt-0.5">Sem acréscimo</p>
+                        <p className="text-sm text-green-400 mt-0.5">Sem acréscimo</p>
                       )}
                     </div>
                   </button>
@@ -693,13 +693,13 @@ function ProdutosContent() {
               <button
                 onClick={handleContinuar}
                 disabled={savingShipping && isPhysical}
-                className="w-full py-3 rounded-2xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full py-3 rounded-2xl text-base font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
               >
                 {(savingShipping && isPhysical) ? "Salvando…" : "Ir para pagamento ❤️"}
               </button>
             ) : (
-              <div className="w-full py-3 rounded-2xl text-sm font-semibold text-center text-white/40"
+              <div className="w-full py-3 rounded-2xl text-base font-semibold text-center text-white/40"
                    style={{ background: "rgba(255,255,255,0.05)" }}>
                 {isPhysical ? "Preencha os campos" : "Selecione um prazo"}
               </div>

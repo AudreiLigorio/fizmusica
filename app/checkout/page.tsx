@@ -380,10 +380,10 @@ function CheckoutContent() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-1">Finalizar pagamento</h1>
             <div className="flex items-center justify-between">
-              <p className="text-white/55 text-sm">{productName}</p>
+              <p className="text-white/55 text-[15px]">{productName}</p>
               <div className="text-right">
                 {vencedor.desconto > 0 && (
-                  <p className="text-white/30 text-xs line-through">
+                  <p className="text-white/30 text-sm line-through">
                     R$ {price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </p>
                 )}
@@ -400,7 +400,7 @@ function CheckoutContent() {
                 <p className="text-fuchsia-200 text-sm font-semibold">
                   {fid.nivelIcone} {fid.percentual}% de desconto — {fid.nivelNome}
                 </p>
-                <p className="text-fuchsia-300/70 text-xs">
+                <p className="text-fuchsia-300/70 text-sm">
                   Benefício da sua carreira. Você economizou R$ {fid.desconto.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -412,9 +412,9 @@ function CheckoutContent() {
                 <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-3 border border-green-500/25 bg-green-500/8">
                   <div>
                     <p className="text-green-300 text-sm font-semibold">🎟️ {coupon.code} aplicado</p>
-                    <p className="text-green-400/70 text-xs">Você economizou R$ {coupon.discount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
+                    <p className="text-green-400/70 text-sm">Você economizou R$ {coupon.discount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
                   </div>
-                  <button onClick={removeCoupon} className="text-xs text-white/40 hover:text-white/70 transition-colors">Remover</button>
+                  <button onClick={removeCoupon} className="text-sm text-white/40 hover:text-white/70 transition-colors">Remover</button>
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -434,7 +434,7 @@ function CheckoutContent() {
                   </button>
                 </div>
               )}
-              {couponMsg && <p className="text-red-400 text-xs mt-1.5">{couponMsg}</p>}
+              {couponMsg && <p className="text-red-400 text-sm mt-1.5">{couponMsg}</p>}
             </div>
           </div>
 
@@ -457,7 +457,7 @@ function CheckoutContent() {
           {status === "error" && (
             <div ref={errorRef} className="mb-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
               ❌ {errorMsg}
-              <button onClick={() => setStatus("ready")} className="block mt-2 text-pink-400 underline text-xs">
+              <button onClick={() => setStatus("ready")} className="block mt-2 text-pink-400 underline text-sm">
                 Tentar novamente
               </button>
             </div>
@@ -466,7 +466,7 @@ function CheckoutContent() {
           {/* PIX — QR na tela + copia e cola */}
           {status === "pix" && pixData && (
             <div className="flex flex-col items-center text-center">
-              <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 rounded-full px-4 py-1.5 text-xs font-medium mb-5">
+              <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 rounded-full px-4 py-1.5 text-[13px] font-medium mb-5">
                 ⏳ Aguardando pagamento via PIX
               </div>
 
@@ -481,7 +481,7 @@ function CheckoutContent() {
                 />
               </div>
 
-              <p className="text-white/70 text-sm mt-5 max-w-sm">
+              <p className="text-white/70 text-[15px] mt-5 max-w-sm">
                 Abra o app do seu banco, escolha <strong>PIX → Pagar com QR Code</strong> e aponte para o código acima.
               </p>
               <p className="text-pink-400 font-bold text-lg mt-2">
@@ -490,7 +490,7 @@ function CheckoutContent() {
 
               <button
                 onClick={copyPix}
-                className="mt-5 w-full max-w-sm bg-white/10 border border-white/15 hover:bg-white/15 transition-all py-3 rounded-2xl text-sm font-medium"
+                className="mt-5 w-full max-w-sm bg-white/10 border border-white/15 hover:bg-white/15 transition-all py-3 rounded-2xl text-base font-medium"
               >
                 {pixCopied ? "✅ Código copiado!" : "📋 Copiar código PIX (copia e cola)"}
               </button>
@@ -514,7 +514,7 @@ function CheckoutContent() {
                     <p className="text-sm text-white font-medium truncate">📧 {orderEmail}</p>
                   </div>
                   <button onClick={() => { setEditingEmail(true); setEmailMsg("") }}
-                    className="shrink-0 text-xs font-medium text-pink-300 hover:text-pink-200 underline underline-offset-2">
+                    className="shrink-0 text-sm font-medium text-pink-300 hover:text-pink-200 underline underline-offset-2">
                     Não é esse? Editar
                   </button>
                 </div>
@@ -533,7 +533,7 @@ function CheckoutContent() {
                       {savingEmail ? "…" : "Salvar"}
                     </button>
                   </div>
-                  {emailMsg && <p className="text-red-400 text-xs mt-1.5">{emailMsg}</p>}
+                  {emailMsg && <p className="text-red-400 text-sm mt-1.5">{emailMsg}</p>}
                 </div>
               )}
             </div>
@@ -555,7 +555,7 @@ function CheckoutContent() {
               <button
                 onClick={submitFree}
                 disabled={freeSubmitting}
-                className="w-full py-4 rounded-2xl text-sm font-bold text-white disabled:opacity-50 transition-all hover:brightness-110"
+                className="w-full py-4 rounded-2xl text-base font-bold text-white disabled:opacity-50 transition-all hover:brightness-110"
                 style={{ background: "linear-gradient(135deg, #16a34a, #22c55e)" }}
               >
                 {freeSubmitting ? "Concluindo…" : "Concluir pedido grátis 🎁"}
@@ -566,10 +566,10 @@ function CheckoutContent() {
           {/* Segurança */}
           {status !== "pix" && !isFreeOrder && (
             <>
-              <p className="text-center text-xs text-white/30 mt-6">
+              <p className="text-center text-sm text-white/30 mt-6">
                 🔒 Pagamento 100% seguro via Mercado Pago
               </p>
-              <p className="text-center text-[11px] text-white/30 mt-2 leading-relaxed">
+              <p className="text-center text-[13px] text-white/30 mt-2 leading-relaxed">
                 Ao pagar, você concorda com os{" "}
                 <a href="/legal/termos-de-uso" className="underline hover:text-white/60">Termos de Uso</a>,{" "}
                 <a href="/legal/politica-de-privacidade" className="underline hover:text-white/60">Política de Privacidade</a> e{" "}
@@ -607,7 +607,7 @@ function CheckoutNoApp() {
     <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "#07060d" }}>
       <div className="max-w-sm w-full space-y-4">
         <AvisoCompraApp />
-        <a href="/minha-musica?aba=pedidos" className="block text-center py-3 rounded-2xl text-sm font-semibold text-white"
+        <a href="/minha-musica?aba=pedidos" className="block text-center py-3 rounded-2xl text-base font-semibold text-white"
            style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}>
           Ver meus pedidos
         </a>

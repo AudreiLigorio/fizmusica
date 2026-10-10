@@ -895,7 +895,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                      fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                   <path d="m5 12 5 5L20 7" />
                 </svg>
-                <p className="text-xs text-white/70 leading-snug flex-1 min-w-0">
+                <p className="text-sm text-white/70 leading-snug flex-1 min-w-0">
                   Plano escolhido:{" "}
                   <span className="font-semibold text-white">{planoPre.name}</span>
                   <span className="text-white/50"> — R$ {planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
@@ -913,7 +913,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       window.history.replaceState(null, "", u.toString())
                     } catch {}
                   }}
-                  className="shrink-0 text-xs font-semibold text-white/50 hover:text-white underline underline-offset-2 transition-colors"
+                  className="shrink-0 text-sm font-semibold text-white/50 hover:text-white underline underline-offset-2 transition-colors"
                 >
                   Trocar
                 </button>
@@ -927,7 +927,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <p className="text-sm font-semibold text-white mb-1">
                   🎵 Encontramos sua música em andamento!
                 </p>
-                <p className="text-xs text-white/60 mb-4">
+                <p className="text-sm text-white/60 mb-4">
                   Você já havia respondido parte do formulário. Deseja continuar de onde parou?
                 </p>
                 <div className="flex gap-3">
@@ -955,14 +955,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           {showLeadCapture && (
             <div>
               <div className="mb-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-xs font-semibold"
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-4 text-[13px] font-semibold"
                      style={{ background: "rgba(240,25,107,0.15)", color: "#f0196b" }}>
                   ✨ Sua história já está sendo construída
                 </div>
                 <h1 className="text-xl font-bold tracking-tight mb-2">
                   Informe seu contato para continuar de qualquer dispositivo
                 </h1>
-                <p className="text-white/50 text-sm">
+                <p className="text-white/50 text-[15px]">
                   Assim suas respostas ficam salvas e você não perde nada se precisar pausar.
                 </p>
               </div>
@@ -1007,7 +1007,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     <button
                       type="button"
                       onClick={() => setLeadEmail(emailSuggestion)}
-                      className="text-xs text-yellow-400 hover:text-yellow-300 pl-2 text-left"
+                      className="text-sm text-yellow-400 hover:text-yellow-300 pl-2 text-left"
                     >
                       Você quis dizer <span className="underline font-medium">{emailSuggestion}</span>? Toque para corrigir.
                     </button>
@@ -1041,7 +1041,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     )}
                   </div>
                   {leadWhatsappDirty && !leadWhatsappOk && (
-                    <p className="text-xs pl-2" style={{ color: "#f0196b" }}>
+                    <p className="text-sm pl-2" style={{ color: "#f0196b" }}>
                       Formato: (XX) 9XXXX-XXXX — somente celular
                     </p>
                   )}
@@ -1052,7 +1052,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   <label className="text-sm font-semibold pl-1 flex items-center gap-2" style={{ color: "#f0196b" }}>
                     🎵 Para quem é essa música?
                   </label>
-                  <p className="text-xs text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
+                  <p className="text-sm text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
                   <div className="relative">
                     <input
                       value={leadHonoreeName}
@@ -1074,7 +1074,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   onClick={handleLeadSave}
-                  className="w-full py-4 rounded-2xl text-sm font-semibold text-white"
+                  className="w-full py-4 rounded-2xl text-base font-semibold text-white"
                   style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
                 >
                   Salvar e continuar →
@@ -1096,7 +1096,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
                   Qual história você quer transformar em música?
                 </h1>
-                <p className="text-white/55 text-sm">
+                <p className="text-white/55 text-[15px]">
                   Escolha por onde começar.
                 </p>
               </div>
@@ -1134,7 +1134,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       className="order-last text-left rounded-2xl p-5 transition-all hover:brightness-110 active:scale-[0.99]"
                       style={{ background: "rgba(248,171,8,0.06)", border: "1px solid rgba(248,171,8,0.45)" }}
                     >
-                      <span className="inline-block text-[9px] uppercase tracking-[0.12em] rounded-full px-2.5 py-1 mb-3"
+                      <span className="inline-block text-[11px] uppercase tracking-[0.12em] rounded-full px-2.5 py-1 mb-3"
                             style={{ color: "#f8ab08", border: "1px solid rgba(248,171,8,0.4)" }}>
                         Para quem compõe
                       </span>
@@ -1144,10 +1144,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                           Quero fazer música
                         </span>
                       </h2>
-                      <p className="text-[11px] leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
+                      <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
                         Cole a sua letra e escolha o estilo.
                       </p>
-                      <span className="block text-center rounded-xl py-3 text-xs font-bold"
+                      <span className="block text-center rounded-xl py-3 text-sm font-bold"
                             style={{ background: "linear-gradient(135deg,#f6b440,#f8ab08 55%,#e98811)", color: "#1a1205" }}>
                         Colar minha letra →
                       </span>
@@ -1156,7 +1156,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
                   {/* ── Porta 2: homenagem, com os temas em quadrante ── */}
                   <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(240,25,107,0.35)" }}>
-                    <span className="inline-block text-[9px] uppercase tracking-[0.12em] rounded-full px-2.5 py-1 mb-3"
+                    <span className="inline-block text-[11px] uppercase tracking-[0.12em] rounded-full px-2.5 py-1 mb-3"
                           style={{ color: "#f0196b", border: "1px solid rgba(240,25,107,0.4)" }}>
                       Para presentear
                     </span>
@@ -1171,17 +1171,17 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       <>
                         <button
                           onClick={() => setSelectedContext("")}
-                          className="text-[11px] text-white/45 hover:text-white/70 transition-colors mb-3"
+                          className="text-[13px] text-white/45 hover:text-white/70 transition-colors mb-3"
                         >
                           ← todos os temas
                         </button>
-                        <p className="text-xs font-medium text-white/70 mb-2">{temaAberto.emoji} {temaAberto.label}</p>
+                        <p className="text-sm font-medium text-white/70 mb-2">{temaAberto.emoji} {temaAberto.label}</p>
                         <div className="grid gap-2">
                           {temaAberto.wizard_subcategories.map((sub) => (
                             <button
                               key={sub.id}
                               onClick={() => handleSubcategoryClick(sub, temaAberto.label)}
-                              className={`rounded-xl px-4 py-3 border text-left text-sm transition-all ${
+                              className={`rounded-xl px-4 py-3 border text-left text-[15px] transition-all ${
                                 selectedSubcategory === sub.label
                                   ? "border-pink-500 bg-pink-500/10"
                                   : "border-white/10 bg-black/30 hover:border-pink-500"
@@ -1194,7 +1194,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       </>
                     ) : (
                       <>
-                        <p className="text-[11px] leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
+                        <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
                           Escolha o tema. A gente faz as perguntas e escreve a letra com você.
                         </p>
                         <div className="grid grid-cols-2 gap-2">
@@ -1204,8 +1204,8 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                               onClick={() => setSelectedContext(occasion.label)}
                               className="rounded-xl p-3 border border-white/10 bg-black/30 hover:border-pink-500/60 transition-all text-left"
                             >
-                              <span className="block text-base leading-none mb-1.5">{occasion.emoji}</span>
-                              <span className="block text-[11px] text-white leading-snug">{occasion.label}</span>
+                              <span className="block text-lg leading-none mb-1.5">{occasion.emoji}</span>
+                              <span className="block text-[15px] text-white leading-snug">{occasion.label}</span>
                             </button>
                           ))}
                         </div>
@@ -1227,7 +1227,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
               <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs text-pink-400 font-medium">
+                  <span className="text-sm text-pink-400 font-medium">
                     Pergunta {questionStep + 1} de {questions.length}
                   </span>
                   <div className="flex gap-1">
@@ -1246,7 +1246,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   </div>
                 </div>
 
-                <h2 className="text-base font-bold mb-3">{currentQuestion}</h2>
+                <h2 className="text-lg font-bold mb-3">{currentQuestion}</h2>
 
                 <div className="relative">
                   <textarea
@@ -1274,14 +1274,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 </div>
 
                 {interimText && (
-                  <p className="text-xs text-pink-300/70 px-1 mt-1 italic animate-pulse">
+                  <p className="text-sm text-pink-300/70 px-1 mt-1 italic animate-pulse">
                     🎤 {interimText}…
                   </p>
                 )}
 
                 <button
                   onClick={nextStep}
-                  className="lg:hidden w-full mt-3 py-3.5 rounded-2xl text-sm font-semibold text-white"
+                  className="lg:hidden w-full mt-3 py-3.5 rounded-2xl text-base font-semibold text-white"
                   style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
                 >
                   Continuar →
@@ -1298,7 +1298,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="mb-4">
-                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
+                <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
                   {[
@@ -1314,7 +1314,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     <button
                       key={item}
                       onClick={() => clicarEstilo(item)}
-                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium overflow-hidden ${
+                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-[15px] font-medium overflow-hidden ${
                         musicalStyle === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
@@ -1327,13 +1327,13 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="mb-4">
-                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Tipo de voz</h2>
+                <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Tipo de voz</h2>
                 <div className="grid grid-cols-2 gap-2 overflow-hidden">
                   {["👨 Masculina", "👩 Feminina"].map((item) => (
                     <button
                       key={item}
                       onClick={() => setVoiceType(item)}
-                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium overflow-hidden ${
+                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-[15px] font-medium overflow-hidden ${
                         voiceType === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
@@ -1352,7 +1352,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     dado estruturado que alimenta as facetas de busca da Rede
                     ("🎶 Pagode · 5"). Trocar um pelo outro derrubaria os
                     filtros do catálogo. */}
-                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>
+                <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>
                   Alguma referência? <span className="text-white/35 normal-case tracking-normal font-normal">(opcional)</span>
                 </h2>
                 <input
@@ -1362,11 +1362,11 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   placeholder="ex.: tipo Legião Urbana, com o peso do Foo Fighters"
                   className="w-full rounded-xl px-3 py-2.5 border border-white/10 bg-black/30 text-sm text-white placeholder:text-white/25 outline-none focus:border-pink-500/60 transition-colors mb-1"
                 />
-                <p className="text-[11px] text-white/35 mb-5">
+                <p className="text-[13px] text-white/35 mb-5">
                   Uma música ou banda que lembre o que você imagina. Usamos só a <strong className="text-white/50">sonoridade</strong> como inspiração — a sua música é original.
                 </p>
 
-                <h2 className="text-[0.65rem] font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Emoção da música</h2>
+                <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Emoção da música</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
                   {[
                     "💖 Emocionante",  "❤️ Romântica",
@@ -1381,7 +1381,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     <button
                       key={item}
                       onClick={() => setEmotion(item)}
-                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-sm font-medium overflow-hidden ${
+                      className={`min-w-0 w-full rounded-xl px-3 py-2.5 border transition-all text-left text-[15px] font-medium overflow-hidden ${
                         emotion === item
                           ? "border-pink-500 bg-pink-500/10 text-white"
                           : "border-white/10 bg-black/30 hover:border-pink-500/50 text-gray-300"
@@ -1432,7 +1432,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     // que é exatamente o que comprar com outro e-mail significa.
                     <div className="w-full bg-black/20 border border-white/10 rounded-3xl px-6 py-5">
                       <p className="text-lg truncate">{contaEmail}</p>
-                      <p className="text-xs text-white/40 mt-1">
+                      <p className="text-sm text-white/40 mt-1">
                         Sua música vai para esta conta.{" "}
                         <a href="/minha-musica" className="text-pink-400 underline">Não é você?</a>
                       </p>
@@ -1476,7 +1476,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     )}
                   </div>
                   {whatsappDirty && !whatsappOk && (
-                    <p className="text-xs pl-2" style={{ color: "#f0196b" }}>
+                    <p className="text-sm pl-2" style={{ color: "#f0196b" }}>
                       Formato: (XX) 9XXXX-XXXX — somente celular
                     </p>
                   )}
@@ -1487,9 +1487,9 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
                 <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
                   🎵 Para quem é essa música?
-                  {ehComposicao && <span className="text-[11px] font-normal text-white/40">(opcional)</span>}
+                  {ehComposicao && <span className="text-[13px] font-normal text-white/40">(opcional)</span>}
                 </label>
-                <p className="text-xs text-white/40 mb-3">
+                <p className="text-sm text-white/40 mb-3">
                   {ehComposicao
                     ? "Se for uma homenagem, o nome aparece no player. Pode deixar em branco."
                     : "Nome de quem vai receber a homenagem"}
@@ -1505,7 +1505,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 </div>
               </div>
 
-              <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-5 text-sm text-gray-200 leading-relaxed">
+              <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-5 text-[15px] text-gray-200 leading-relaxed">
                 🔒 Seus dados são privados e usados exclusivamente para entrega da sua música.
               </div>
             </div>
@@ -1529,8 +1529,8 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   { label: "Voz",     value: voiceType },
                 ].map(({ label, value }) => (
                   <div key={label} className="border border-pink-500/40 bg-pink-500/10 rounded-xl px-3 py-2.5">
-                    <p className="text-[10px] text-pink-400 font-medium mb-0.5 uppercase tracking-wider">{label}</p>
-                    <p className="text-xs font-semibold text-white leading-snug">{value}</p>
+                    <p className="text-[11px] text-pink-400 font-medium mb-0.5 uppercase tracking-wider">{label}</p>
+                    <p className="text-sm font-semibold text-white leading-snug">{value}</p>
                   </div>
                 ))}
               </div>
@@ -1544,7 +1544,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <div className="rounded-2xl px-5 py-8 mb-5 text-center"
                      style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.25)" }}>
                   <p className="text-sm font-semibold text-white">Compondo sua música</p>
-                  <p className="text-xs text-white/50 mt-1 mb-5">{PREVIA_MSGS[previaMsg]}</p>
+                  <p className="text-sm text-white/50 mt-1 mb-5">{PREVIA_MSGS[previaMsg]}</p>
                   <div className="flex flex-col items-center gap-2">
                     {[80, 62, 73].map((w, i) => (
                       <div key={i} className="h-[7px] rounded-full animate-pulse"
@@ -1557,16 +1557,16 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               {previaStatus === "revelado" && (
                 <div className="mb-5">
                   <p className="text-sm font-semibold text-white mb-0.5">O refrão da sua música</p>
-                  <p className="text-xs text-white/45 mb-3">Escrito agora, a partir da história que você contou.</p>
+                  <p className="text-sm text-white/45 mb-3">Escrito agora, a partir da história que você contou.</p>
 
                   <div className="relative overflow-hidden rounded-2xl px-5 pt-4"
                        style={{ background: "rgba(240,25,107,0.07)", border: "1px solid rgba(240,25,107,0.3)", boxShadow: "0 0 24px rgba(236,72,153,0.12)" }}>
-                    <p className="text-[10px] text-pink-400 uppercase tracking-widest mb-3">refrão</p>
+                    <p className="text-[11px] text-pink-400 uppercase tracking-widest mb-3">refrão</p>
                     <p className="text-[15px] text-white whitespace-pre-wrap" style={{ lineHeight: 1.85 }}>{refrao}</p>
 
                     <div aria-hidden="true" className="select-none mt-4" style={{ filter: "blur(4px)", opacity: 0.5 }}>
                       {PREVIA_BORRADA.map((l, i) => (
-                        <p key={i} className="text-sm text-white/75" style={{ lineHeight: 1.8 }}>{l}</p>
+                        <p key={i} className="text-[15px] text-white/75" style={{ lineHeight: 1.8 }}>{l}</p>
                       ))}
                       <div className="h-10" />
                     </div>
@@ -1575,12 +1575,12 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                          style={{ background: "linear-gradient(to bottom, rgba(7,6,13,0), rgba(7,6,13,0.97) 62%)" }}>
                       <div className="flex items-center gap-1.5 rounded-full px-3 py-1.5"
                            style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.16)" }}>
-                        <span className="text-[11px] text-white/75">🔒 os versos, a ponte e o refrão final</span>
+                        <span className="text-[13px] text-white/75">🔒 os versos, a ponte e o refrão final</span>
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-white/40 text-center mt-3 leading-relaxed">
+                  <p className="text-[13px] text-white/40 text-center mt-3 leading-relaxed">
                     A música completa fica pronta depois da contratação — e você ainda pode pedir ajustes.
                   </p>
                 </div>
@@ -1590,7 +1590,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <div className="flex items-start gap-2.5 rounded-2xl px-4 py-3.5 mb-5"
                      style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
                   <span className="text-sm">🎵</span>
-                  <p className="text-xs text-white/60 leading-relaxed">
+                  <p className="text-sm text-white/60 leading-relaxed">
                     Sua música vai ser composta assim que você finalizar.
                   </p>
                 </div>
@@ -1602,11 +1602,11 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   onClick={() => setDadosAbertos(!dadosAbertos)}
                   className="w-full flex items-center justify-between"
                 >
-                  <span className="text-xs text-white/60">👤 Seus dados e respostas</span>
-                  <span className="text-white/35 text-xs">{dadosAbertos ? "▲" : "▼"}</span>
+                  <span className="text-sm text-white/60">👤 Seus dados e respostas</span>
+                  <span className="text-white/35 text-sm">{dadosAbertos ? "▲" : "▼"}</span>
                 </button>
                 {dadosAbertos && (
-                  <div className="mt-3 bg-black/40 border border-white/10 rounded-2xl p-5 whitespace-pre-wrap text-gray-300 leading-relaxed text-xs max-h-80 overflow-y-auto">
+                  <div className="mt-3 bg-black/40 border border-white/10 rounded-2xl p-5 whitespace-pre-wrap text-gray-300 leading-relaxed text-sm max-h-80 overflow-y-auto">
                     {resumo}
                   </div>
                 )}
@@ -1636,7 +1636,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     onChange={(e) => setTermsAccepted(e.target.checked)}
                     className="mt-1 w-4 h-4 accent-pink-500 shrink-0"
                   />
-                  <span className="text-xs text-white/60 leading-relaxed">
+                  <span className="text-sm text-white/60 leading-relaxed">
                     Li e concordo com os{" "}
                     <a href="/legal/termos-de-uso" className="text-pink-400 underline">Termos de Uso</a>, a{" "}
                     <a href="/legal/politica-de-privacidade" className="text-pink-400 underline">Política de Privacidade</a>, a{" "}
@@ -1664,14 +1664,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 ) : <div />}
                 {step > 1 && step < 5 && (
                   <button onClick={nextStep}
-                          className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white"
+                          className="transition-all px-9 py-3.5 rounded-2xl text-base font-semibold text-white"
                           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
                     Continuar →
                   </button>
                 )}
                 {step === 5 && (
                   <button onClick={handleFinalizar} disabled={submitting}
-                          className="transition-all px-9 py-3.5 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center gap-3"
+                          className="transition-all px-9 py-3.5 rounded-2xl text-base font-semibold text-white disabled:opacity-60 flex items-center gap-3"
                           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
                     {submitting ? (
                       <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
@@ -1691,13 +1691,13 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
             {step < 5 ? (
               <button onClick={nextStep}
-                      className="w-full py-4 rounded-2xl text-sm font-semibold text-white"
+                      className="w-full py-4 rounded-2xl text-base font-semibold text-white"
                       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
                 Continuar →
               </button>
             ) : (
               <button onClick={handleFinalizar} disabled={submitting}
-                      className="w-full py-4 rounded-2xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-3"
+                      className="w-full py-4 rounded-2xl text-base font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-3"
                       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
                 {submitting ? (
                   <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</>
