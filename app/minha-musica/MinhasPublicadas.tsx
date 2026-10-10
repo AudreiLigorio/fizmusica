@@ -42,7 +42,8 @@ const fmt = (n: number) => n.toLocaleString("pt-BR")
 export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }: { biblioteca?: LibraryTrack[]; meuApelido?: string | null }) {
   const { track: tocando, playing, playOuPausa } = usePlayer()
   const [musicas, setMusicas] = useState<Musica[] | null>(null)
-  const [totalNaRede, setTotalNaRede] = useState(0)
+  // Sem o tamanho da Rede na tela por enquanto (Audrei, 2026-10-10); a API
+  // segue devolvendo `totalNaRede` pra quando voltar.
   const [publicando, setPublicando] = useState<Musica | null>(null)
   const [salvando, setSalvando] = useState<string | null>(null)
   const { showToast } = useToast()
@@ -55,7 +56,6 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
         headers: { Authorization: `Bearer ${session.access_token}` },
       }).then((x) => x.json())
       setMusicas(r.musicas ?? [])
-      setTotalNaRede(r.totalNaRede ?? 0)
     } catch {
       setMusicas((m) => m ?? [])
     }
@@ -98,7 +98,7 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
     <div className="mb-9">
       <div className="flex items-center gap-2.5 mb-1">
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Minhas músicas publicadas</h2>
-        <InfoTooltip text="Publique suas músicas na Rede Fiz Música para outras pessoas ouvirem e aplaudirem. Aqui você acompanha as palmas, as reproduções e a posição de cada uma no ranking." />
+        <InfoTooltip text="Publique suas músicas no SpotFiz para outras pessoas ouvirem e aplaudirem. Aqui você acompanha as palmas, as reproduções e a posição de cada uma no ranking." />
       </div>
 
       {musicas.length === 0 ? (
@@ -114,7 +114,6 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
         <>
           <p className="text-sm text-white/50 mb-4">
             {musicas.filter((m) => m.situacao === "publicada").length} de {musicas.length} na Rede
-            <span className="text-white/35"> · {fmt(totalNaRede)} músicas na Rede ao todo</span>
           </p>
           <div className="flex gap-3.5 overflow-x-auto pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
             {musicas.map((m) => (
@@ -156,7 +155,7 @@ export default function MinhasPublicadas({ biblioteca = [], meuApelido = null }:
                     <p>👏 <strong className="text-white">{fmt(m.palmas)}</strong> {m.palmas === 1 ? "palma" : "palmas"}</p>
                     <p>▶ <strong className="text-white">{fmt(m.reproducoes)}</strong> {m.reproducoes === 1 ? "reprodução" : "reproduções"}</p>
                     {m.posReproducoes !== null ? (
-                      <p className="text-white/55">#{m.posReproducoes} de {fmt(totalNaRede)} em reproduções</p>
+                      <p className="text-white/55">#{m.posReproducoes} em reproduções</p>
                     ) : (
                       <p className="text-white/40">Ainda sem reproduções — compartilhe!</p>
                     )}

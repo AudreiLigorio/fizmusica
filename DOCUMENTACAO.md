@@ -284,6 +284,12 @@ Toda automação de "pedido pronto/entregue" (e-mail, cupom de fidelidade, cria�
 - Cliente opta (`orders.publication_consent`) se autoriza a música ser publicada em catálogo/playlist futura. Com opt-in, a obra pode ser divulgada com nomes/história reais tal como na letra (sem precisar anonimizar). **Nunca revela quem pagou, nunca usa fotos do cliente**, mesmo com opt-in.
 - **Catálogo** (`/admin/musicas`): lista todas as músicas geradas (link ativo ou desativado) com views, consentimento de publicação, código do pedido — decisão manual futura de curadoria de playlist, não automática.
 
+### 12.2.0 Nome: SpotFiz (antes "Rede Fiz Música") — 2026-10-10
+- A Rede passou a se chamar **SpotFiz**: aba do app (no lugar de "Músicas"), título no topo da aba (acima da busca), home, perguntas frequentes, página pública `/rede/[id]`, prévia do link e os **termos** (01, 02, 03, 05, 07, 09). Nas definições dos termos: *"SpotFiz (antes chamado "Rede Fiz Música", também referido como "Rede")"* — mantém válidas as autorizações dadas com o nome antigo e deixa as frases curtas ("sai da Rede") corretas.
+- Nomes avaliados e descartados: SpotMusic (já existe um app com esse nome na Play), Play Music (produto do Google), Discover Music (genérico, inglês, não cabe na aba).
+- **Pendente:** ficha da Play Store (`docs/play-store/ficha-e-formularios.md`) ainda diz "Rede Fiz Música" — atualizar depois da aprovação do teste fechado.
+- **Sem total de músicas na tela por enquanto** (decisão do Audrei): sem "· N músicas", sem números nas pílulas de filtro, sem "(N restantes)" e sem "de N" nas posições. Os totais continuam calculados na API.
+
 ### 12.2.1 Denunciar música da Rede (2026-10-07)
 - Exigência da política de conteúdo gerado por usuário da Play Store; vale igual no site.
 - Botão **"Denunciar esta música"**: bandeira discreta no player cheio (só música da Rede de OUTRA pessoa) e link no pé de `/rede/[id]`. Modal `app/components/DenunciarMusica.tsx`, motivos em `lib/denuncia.ts` (ódio, sexual, nome/imagem sem autorização, direitos autorais, outro com texto obrigatório). **Funciona sem conta.**

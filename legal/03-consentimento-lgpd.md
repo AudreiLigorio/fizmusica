@@ -1,6 +1,6 @@
 # Consentimento para Tratamento de Dados Pessoais (Checkout / Formulário)
 
-Última atualização: Setembro de 2026
+Última atualização: 10 de outubro de 2026
 
 Este documento reúne **todos** os pontos em que a plataforma pede consentimento, o que cada um cobre e onde se revoga. Cada consentimento é coletado em **caixa própria**, nunca agrupado com outro.
 
@@ -26,11 +26,11 @@ Este documento reúne **todos** os pontos em que a plataforma pede consentimento
 
 > ☐ Li e aceito o [Termo de Entrega Digital](09-termo-de-entrega-digital.md) e entendo que o **compartilhamento da música é de minha responsabilidade**.
 
-### Publicação na Rede Fiz Música (opcional — caixa separada, desmarcada)
+### Publicação no SpotFiz (opcional — caixa separada, desmarcada)
 
-> ☐ Autorizo a Fiz Música a divulgar **minha música e a letra** na Rede Fiz Música, que podem conter nomes e a história real como parte do conteúdo. Ela ganha um **endereço público** que qualquer pessoa pode abrir e compartilhar. As fotos que enviei **não aparecem na Rede** — só a capa gerada automaticamente. Posso revogar quando quiser.
+> ☐ Autorizo a Fiz Música a divulgar **minha música e a letra** no SpotFiz, que podem conter nomes e a história real como parte do conteúdo. Ela ganha um **endereço público** que qualquer pessoa pode abrir e compartilhar. As fotos que enviei **não aparecem na Rede** — só a capa gerada automaticamente. Posso revogar quando quiser.
 
-O texto da caixa **não** afirma que o autor fica anônimo: quem ativa "Mostrar meu apelido na Rede" passa a ser identificado pelo apelido nas músicas que publica. Prometer anonimato aqui contradiria a outra opção.
+O texto da caixa **não** afirma que o autor fica anônimo: quem ativa "Mostrar meu apelido no SpotFiz" passa a ser identificado pelo apelido nas músicas que publica. Prometer anonimato aqui contradiria a outra opção.
 
 O texto também não repete que o compartilhamento é responsabilidade do Cliente — isso já está no Termo de Entrega, aceito na mesma tela, logo acima.
 

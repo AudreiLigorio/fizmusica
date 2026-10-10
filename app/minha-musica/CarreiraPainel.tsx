@@ -193,7 +193,7 @@ export default function CarreiraPainel({ nome, email }: { nome: string; email: s
           <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${mostrarApelido ? "translate-x-4" : ""}`} />
         </span>
         <span className="min-w-0">
-          <span className="block text-sm font-semibold">Mostrar meu apelido na Rede Fiz Música</span>
+          <span className="block text-sm font-semibold">Mostrar meu apelido no SpotFiz</span>
           <span className="block text-[13px] text-white/40">Aparece pra quem ouvir as músicas que você publicou lá</span>
         </span>
       </label>

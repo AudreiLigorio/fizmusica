@@ -1,6 +1,6 @@
 # Termo de Entrega Digital — Acesso, Download e Compartilhamento
 
-Última atualização: Setembro de 2026
+Última atualização: 10 de outubro de 2026
 
 ## 1. Acesso ao Pedido e à Área do Cliente
 
@@ -33,7 +33,7 @@ A música é disponibilizada em uma **página digital (player)** acessível por 
 
 Cada música entregue recebe um endereço próprio (`fizmusica.com.br/m/...`), **único e imprevisível**, gerado aleatoriamente e sem relação com o número do pedido.
 
-O compartilhamento é **facultativo** e feito exclusivamente pelo Cliente — a Fiz Música não divulga esse endereço nem o expõe na Rede Fiz Música.
+O compartilhamento é **facultativo** e feito exclusivamente pelo Cliente — a Fiz Música não divulga esse endereço nem o expõe no SpotFiz.
 
 **Atenção — o que o link mostra.** Quem abrir o link vê a página completa da música: áudio, letra e **as fotos que o Cliente cadastrou no player**. Esse é o propósito do link. Por isso ele funciona como uma chave:
 
@@ -41,7 +41,7 @@ O compartilhamento é **facultativo** e feito exclusivamente pelo Cliente — a 
 - A Fiz Música **não tem controle** sobre a distribuição do link depois de compartilhado;
 - A decisão de com quem compartilhar, e o cuidado com essa distribuição, são **do Cliente**.
 
-Quem quiser que a música seja ouvida **sem** expor as fotos pode publicá-la na [Rede Fiz Música](07-autorizacao-de-publicacao.md): a música publicada ganha um endereço público próprio, também compartilhável, onde as fotos **não** aparecem — apenas a capa gerada automaticamente.
+Quem quiser que a música seja ouvida **sem** expor as fotos pode publicá-la no [SpotFiz](07-autorizacao-de-publicacao.md): a música publicada ganha um endereço público próprio, também compartilhável, onde as fotos **não** aparecem — apenas a capa gerada automaticamente.
 
 ## 5. Prazo de Disponibilidade do Link
 
@@ -55,7 +55,7 @@ O prazo vigente é o indicado neste documento e na Área do Cliente, e pode ser 
 
 Este Termo é apresentado quando a música fica pronta e o seu **aceite é obrigatório** para liberar o acesso ao áudio, ao download e ao compartilhamento.
 
-Na mesma tela é apresentada, em **caixa separada e desmarcada por padrão**, a [Autorização de Publicação](07-autorizacao-de-publicacao.md) na Rede Fiz Música. São dois aceites **independentes**: aceitar este Termo **não** publica a música, e recusar a publicação **não** impede a entrega. O Cliente pode aceitar um sem o outro, e mudar de ideia depois na Área do Cliente.
+Na mesma tela é apresentada, em **caixa separada e desmarcada por padrão**, a [Autorização de Publicação](07-autorizacao-de-publicacao.md) no SpotFiz. São dois aceites **independentes**: aceitar este Termo **não** publica a música, e recusar a publicação **não** impede a entrega. O Cliente pode aceitar um sem o outro, e mudar de ideia depois na Área do Cliente.
 
 ## 7. Limitação de Responsabilidade
 

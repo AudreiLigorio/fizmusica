@@ -1,6 +1,6 @@
 # Termo de Autorização de Publicação e Uso de Conteúdo (Opcional)
 
-Última atualização: 14 de setembro de 2026
+Última atualização: 10 de outubro de 2026
 
 ## 1. Objeto
 
@@ -16,7 +16,7 @@ A divulgação compreende a Obra por inteiro, **trechos** (por exemplo, um recor
 
 ### 2.1. O que esta autorização NÃO abrange
 
-- **As fotos enviadas pelo Cliente.** Elas não são publicadas na Rede Fiz Música nem usadas em peças de divulgação. A imagem que acompanha a Obra na Rede é a **capa gerada automaticamente** pela própria ferramenta de inteligência artificial no momento da produção — não é foto de pessoa alguma.
+- **As fotos enviadas pelo Cliente.** Elas não são publicadas no SpotFiz nem usadas em peças de divulgação. A imagem que acompanha a Obra na Rede é a **capa gerada automaticamente** pela própria ferramenta de inteligência artificial no momento da produção — não é foto de pessoa alguma.
 - **Os dados cadastrais do Cliente.** Nome completo, e-mail, telefone e endereço nunca são exibidos.
 
 > **Sobre a identificação do autor:** ao autorizar a publicação, a Obra passa a aparecer na Rede **assinada com o apelido** do Cliente. Esse apelido é preenchido automaticamente com o **primeiro nome** da conta (nunca o nome completo) e é mostrado ao Cliente **antes** do aceite, na própria tela de autorização. O Cliente pode **trocar o apelido** ou **desativar a assinatura** a qualquer momento, em Carreira → Meu apelido, e a Obra volta a aparecer sem identificação do autor. Nenhum outro dado cadastral é exibido.
@@ -29,9 +29,9 @@ A divulgação compreende a Obra por inteiro, **trechos** (por exemplo, um recor
 
 ## 3. Onde a Obra pode ser divulgada
 
-### 3.1. Rede Fiz Música
+### 3.1. SpotFiz
 
-A **Rede Fiz Música** é um catálogo, dentro da plataforma, onde qualquer visitante — **com ou sem conta** — pode ouvir músicas publicadas por outros clientes. Autorizando a divulgação, a Obra passa a integrar esse catálogo, e quem acessar poderá:
+O **SpotFiz** (antes chamado “Rede Fiz Música”, também referido como “Rede”) é um catálogo, dentro da plataforma, onde qualquer visitante — **com ou sem conta** — pode ouvir músicas publicadas por outros clientes. Autorizando a divulgação, a Obra passa a integrar esse catálogo, e quem acessar poderá:
 
 - **Ouvir** a Obra e acompanhar a letra;
 - **Favoritar** a Obra e **incluí-la em playlists** pessoais dentro da plataforma (isto exige conta);
@@ -44,7 +44,7 @@ A **Rede Fiz Música** é um catálogo, dentro da plataforma, onde qualquer visi
 
 A plataforma registra o **número de reproduções** de cada Obra publicada, exibido junto a ela e usado para compor um **ranking das mais ouvidas**. Essa contagem é agregada e não identifica quem ouviu.
 
-**Apelido do autor.** O apelido do Cliente **só aparece** na Rede se ele tiver ativado, separadamente, a opção "Mostrar meu apelido na Rede" no seu perfil. Essa é uma escolha distinta desta autorização, desligada por padrão, e pode ser desativada a qualquer momento.
+**Apelido do autor.** O apelido do Cliente **só aparece** na Rede se ele tiver ativado, separadamente, a opção "Mostrar meu apelido no SpotFiz" no seu perfil. Essa é uma escolha distinta desta autorização, desligada por padrão, e pode ser desativada a qualquer momento.
 
 ### 3.2. Canais de marketing
 
@@ -56,7 +56,7 @@ Portfólio institucional; site oficial; perfis oficiais em redes sociais; materi
 
 **Autorizo a divulgação da Música e da Letra**
 
-> Autorizo a Fiz Música a divulgar a música e a letra criadas para mim — na Rede Fiz Música e em seus canais e materiais de marketing —, por inteiro ou em trechos, inclusive sincronizadas com imagens. Reconheço que a Obra pode conter **nomes e a história real** como parte do seu conteúdo. **As fotos que enviei não aparecem na Rede** (apenas a capa gerada automaticamente), meus **dados cadastrais** não são exibidos, e **depoimentos** não são usados sem autorização específica e separada. Posso **revogar esta autorização a qualquer momento**.
+> Autorizo a Fiz Música a divulgar a música e a letra criadas para mim — no SpotFiz e nos canais e materiais de marketing da Fiz Música —, por inteiro ou em trechos, inclusive sincronizadas com imagens. Reconheço que a Obra pode conter **nomes e a história real** como parte do seu conteúdo. **As fotos que enviei não aparecem na Rede** (apenas a capa gerada automaticamente), meus **dados cadastrais** não são exibidos, e **depoimentos** não são usados sem autorização específica e separada. Posso **revogar esta autorização a qualquer momento**.
 >
 > ( ) Sim ( ) Não
 
@@ -82,7 +82,7 @@ O Cliente pode revogar esta autorização **a qualquer momento e por conta próp
 
 **Efeito da revogação.** Em até 1 (um) minuto, a Obra:
 
-- Sai da Rede Fiz Música e deixa de aparecer em buscas e no ranking;
+- Sai do SpotFiz e deixa de aparecer em buscas e no ranking;
 - **Tem o seu endereço público desativado**: o link que porventura já tenha sido compartilhado deixa de abrir, e o áudio deixa de ser servido por ele;
 - Deixa de tocar para outras pessoas, inclusive nas playlists de terceiros que já a tivessem incluído;
 - Deixa de ter a letra exibida publicamente;

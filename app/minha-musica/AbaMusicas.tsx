@@ -6,6 +6,7 @@ import FiltrosMusica from "./FiltrosMusica"
 import ResultadosBusca from "./ResultadosBusca"
 import RedeFizMusica from "./RedeFizMusica"
 import FaixaCarreira from "./FaixaCarreira"
+import InfoTooltip from "./InfoTooltip"
 import { useCatalogo, casaFiltroCliente } from "./CatalogoContext"
 import { combina } from "@/lib/busca"
 import type { LibraryTrack } from "./MinhasMusicas"
@@ -62,6 +63,20 @@ export default function AbaMusicas({
 
   return (
     <>
+      {/* Título da aba no TOPO, acima da busca (pedido do Audrei,
+          2026-10-10): quem chega já lê onde está antes do campo. Ficava no
+          meio da tela, abaixo da busca e das pílulas.
+          A contagem só aparece fora da busca: buscando, o número de
+          resultados já vem no próprio campo — dois números confundiriam. */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2.5 mb-1">
+          <h2 className="text-xl font-bold flex-1 min-w-0 truncate">SpotFiz</h2>
+          <InfoTooltip text="Ouça músicas de outros usuários, aplauda as que emocionam, favorite e monte suas playlists." />
+        </div>
+        {/* Sem o total de músicas por enquanto (Audrei, 2026-10-10). */}
+        <p className="text-sm text-white/50">Escute músicas publicadas por outros usuários</p>
+      </div>
+
       <BuscaMusicas
         valor={busca}
         onValor={setBusca}

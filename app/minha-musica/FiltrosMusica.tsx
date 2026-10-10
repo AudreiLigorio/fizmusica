@@ -17,7 +17,7 @@ import { combina } from "@/lib/busca"
 // outro, erro que já aconteceu uma vez (ver 78faf4d). Às facetas somam-se as
 // músicas do próprio cliente, que a Rede não conhece.
 export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[] }) {
-  const { facetas, filtro, setFiltro, busca, totalDaBusca } = useCatalogo()
+  const { facetas, filtro, setFiltro, busca } = useCatalogo()
 
   // As do cliente são poucas e estão todas carregadas — contar na tela aqui
   // não custa nada, e sem isso a pílula ignoraria a biblioteca dele.
@@ -35,10 +35,10 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
   const estilos = somar(facetas.estilos, (t) =>
     (t.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean))
 
-  // `totalDaBusca` e não `total`: a pílula "Todas" promete o que aparece ao
-  // LIMPAR o filtro, então não pode já vir reduzida por ele. Com `total` a
-  // barra exibia "Todas · 5" ao lado de "Já tenho a composição da Letra · 22".
-  const totalGeral = totalDaBusca + minhasNaBusca.length
+  // Contagem da pílula "Todas", desligada por enquanto (ver abaixo). Se
+  // voltar: usar `totalDaBusca + minhasNaBusca.length`, nunca `total` — a
+  // pílula promete o que aparece ao LIMPAR o filtro, então não pode vir
+  // reduzida por ele ("Todas · 5" ao lado de "Composição · 22").
 
   if (ocasioes.length === 0) return null
 
@@ -47,10 +47,13 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
       <Linha
         titulo="Por ocasião"
         itens={[
-          { chave: "__todas", label: `Todas · ${totalGeral}`, ativa: filtro === null, onClick: () => setFiltro(null) },
-          ...ocasioes.map(([valor, n]) => ({
+          // Sem números nas pílulas por enquanto (Audrei, 2026-10-10: não
+          // mostrar o tamanho do catálogo). As facetas continuam trazendo a
+          // contagem — voltar é só pôr o " · n" de volta no label.
+          { chave: "__todas", label: "Todas", ativa: filtro === null, onClick: () => setFiltro(null) },
+          ...ocasioes.map(([valor]) => ({
             chave: valor,
-            label: `${valor} · ${n}`,
+            label: valor,
             ativa: filtro?.tipo === "ocasiao" && filtro.valor === valor,
             onClick: () => setFiltro({ tipo: "ocasiao" as const, valor }),
           })),
@@ -60,9 +63,9 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
       {estilos.length > 0 && (
         <Linha
           titulo="Por estilo"
-          itens={estilos.map(([valor, n]) => ({
+          itens={estilos.map(([valor]) => ({
             chave: valor,
-            label: `${valor} · ${n}`,
+            label: valor,
             ativa: filtro?.tipo === "estilo" && filtro.valor === valor,
             onClick: () => setFiltro({ tipo: "estilo" as const, valor }),
           }))}

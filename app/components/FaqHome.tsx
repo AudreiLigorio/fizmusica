@@ -58,10 +58,10 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Quem pode ouvir a minha música?",
-    a: "Por padrão, só você. Ela chega a outras pessoas de duas formas, e as duas dependem de você: mandando o seu link exclusivo, ou publicando na Rede Fiz Música.",
+    a: "Por padrão, só você. Ela chega a outras pessoas de duas formas, e as duas dependem de você: mandando o seu link exclusivo, ou publicando no SpotFiz.",
   },
   {
-    q: "O que é a Rede Fiz Música?",
+    q: "O que é o SpotFiz?",
     a: "Um espaço onde dá pra ouvir músicas que outros clientes escolheram publicar — e publicar as suas, se quiser. Publicar é opcional e reversível, e as suas fotos nunca aparecem lá: só a capa criada automaticamente.",
   },
   {

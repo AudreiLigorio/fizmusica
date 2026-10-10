@@ -16,11 +16,9 @@ export default function BuscaMusicas({
 
   return (
     <div className="mb-5">
-      {/* Mesmo par título+linha de apoio do "Rede Fiz Música" (text-xl /
-          text-xs): sem ele a tela abria direto num campo e num muro de
-          pílulas, sem dizer o que era aquilo nem onde uma seção terminava. */}
-      <h2 className="text-xl font-bold">Buscar</h2>
-      <p className="text-sm text-white/50 mb-3">Encontre por nome, ocasião ou estilo</p>
+      {/* Sem título próprio: o "SpotFiz" acima (AbaMusicas) já diz o que é a
+          tela, e "Buscar" logo embaixo seriam dois títulos empilhados. O
+          que o campo faz está no próprio texto dele. */}
 
       <div className="relative">
         <svg

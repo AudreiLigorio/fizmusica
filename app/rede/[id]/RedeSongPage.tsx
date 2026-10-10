@@ -129,7 +129,7 @@ export default function RedeSongPage({ dados, publicUrl }: { dados: Dados; publi
 
       <div className="relative z-10 max-w-lg mx-auto px-6 pt-10 pb-12 flex flex-col items-center text-center">
         <a href="/minha-musica?aba=musicas" className="text-[11px] uppercase tracking-wider font-bold text-white/40 hover:text-white/70 transition-colors mb-6">
-          Rede Fiz Música
+          SpotFiz
         </a>
 
         <div

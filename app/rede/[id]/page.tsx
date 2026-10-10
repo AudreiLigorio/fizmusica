@@ -36,8 +36,8 @@ export async function generateMetadata({ params }: Params) {
   // O preview do WhatsApp é o produto aqui: quem recebe o link decide se
   // abre pela imagem e pelo título.
   const descricao = dados.apelido
-    ? `${dados.ocasiao} · publicada por ${dados.apelido} na Rede Fiz Música.`
-    : `${dados.ocasiao} · publicada na Rede Fiz Música.`
+    ? `${dados.ocasiao} · publicada por ${dados.apelido} no SpotFiz, da Fiz Música.`
+    : `${dados.ocasiao} · publicada no SpotFiz, da Fiz Música.`
 
   return {
     title: `${dados.titulo} — Fiz Música`,

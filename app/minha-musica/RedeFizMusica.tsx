@@ -7,7 +7,6 @@ import { usePlayer } from "./PlayerContext"
 import AddToPlaylistModal from "./AddToPlaylistModal"
 import CreatePlaylistModal from "./CreatePlaylistModal"
 import { useToast } from "./ToastContext"
-import InfoTooltip from "./InfoTooltip"
 import { combina } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
 import { useCatalogo } from "./CatalogoContext"
@@ -26,7 +25,7 @@ function formatarPlays(n: number): string {
 }
 
 export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { onPlaylistsChanged?: () => void; onPrecisaLogin?: () => void }) {
-  const { items, top10, emAlta, alternarFavorito, temMais, carregando, carregarMais, total } = useCatalogo()
+  const { items, top10, emAlta, alternarFavorito, temMais, carregando, carregarMais } = useCatalogo()
   const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
@@ -197,26 +196,8 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
 
   return (
     <div className="mb-9">
-      {/* Sem card/borda de propósito — título grande em serifa separa esta
-          seção da próxima, mesma lógica do Spotify aplicada nas outras duas
-          telas de música. */}
-      <div className="flex items-center gap-2.5 mb-1">
-        <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Rede Fiz Música</h2>
-        <InfoTooltip text="Ouça músicas de outros usuários, aplauda as que emocionam, favorite e monte suas playlists." />
-      </div>
-      {/* A CONTAGEM DESTA seção fica aqui, e não só na pílula.
-          A pílula "Todas · N" soma as duas seções da aba (a Rede + a
-          biblioteca do cliente) e mora logo acima desta — então o número
-          dela lia como se fosse da Rede: dizia 68 e a raia mostrava 23,
-          que são as de OUTRAS pessoas (as outras 45 são do próprio cliente
-          e aparecem na prateleira dele, mais abaixo). Relatado pelo Audrei
-          como "não tem paginação e não cria outra raia". Com cada seção
-          declarando o seu total, 23 + 45 = 68 fecha na tela. */}
-      <p className="text-sm text-white/50 mb-4">
-        Escute músicas publicadas por outros usuários
-        {total > 0 && <span className="text-white/35"> · {total} {total === 1 ? "música" : "músicas"}</span>}
-      </p>
-
+      {/* O título "SpotFiz", a descrição e a contagem moram no TOPO da aba
+          (AbaMusicas), acima da busca — pedido do Audrei, 2026-10-10. */}
       {/* ── Top 10 mais ouvidas ──────────────────────────────────────
           Ranking real, vindo da contagem de reproduções (migração 057),
           não uma seleção editorial. Fica ESCONDIDO enquanto ninguém
@@ -490,7 +471,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
             onClick={() => setVerTudo(true)}
             className="px-5 py-2 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 transition-colors"
           >
-            Ver todas as músicas ({total})
+            Ver todas as músicas
           </button>
         </div>
       )}
@@ -514,7 +495,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
             disabled={carregando}
             className="px-6 py-2.5 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 disabled:opacity-50 transition-colors"
           >
-            {carregando ? "Carregando…" : `Mostrar mais (${total - itensBusca.length} restantes)`}
+            {carregando ? "Carregando…" : "Mostrar mais"}
           </button>
         </div>
       )}

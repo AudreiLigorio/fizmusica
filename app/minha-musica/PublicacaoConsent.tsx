@@ -84,7 +84,7 @@ export default function PublicacaoConsent({
               - o limite da revogação passou a ser explícito: ela impede
                 novas exibições, não recupera o que alguém já salvou. */}
           <p className="text-white/55 text-sm leading-relaxed mt-1">
-            Você pode autorizar a Fiz Música a divulgar <strong className="text-white/80">a sua música e a letra</strong> na Rede Fiz Música (que podem conter nomes e a história real como parte do conteúdo).
+            Você pode autorizar a Fiz Música a divulgar <strong className="text-white/80">a sua música e a letra</strong> no SpotFiz (que podem conter nomes e a história real como parte do conteúdo).
             <strong className="text-white/80"> As suas fotos não aparecem na Rede</strong> — só a capa gerada automaticamente.
             {/* O endereço público entra AQUI, e não só no termo: é o ponto em
                 que a consequência da autorização sai da plataforma. A partir

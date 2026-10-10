@@ -67,7 +67,7 @@ function IconCriar() {
 const ABAS: { id: Aba; label: string; Icon: () => React.JSX.Element }[] = [
   { id: "home", label: "Home", Icon: IconHome },
   { id: "pedidos", label: "Pedidos", Icon: IconPedidos },
-  { id: "musicas", label: "Músicas", Icon: IconMusicas },
+  { id: "musicas", label: "SpotFiz", Icon: IconMusicas },
   { id: "carreira", label: "Carreira", Icon: IconCarreira },
 ]
 

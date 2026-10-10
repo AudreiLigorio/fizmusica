@@ -727,7 +727,7 @@ function MinhaMusicaContent() {
               />
               <span className="text-sm text-white/60 leading-relaxed">
                 <strong className="text-fuchsia-200">Opcional:</strong> autorizo a Fiz Música a divulgar{" "}
-                <strong className="text-white/80">minha música e a letra</strong> na Rede Fiz Música, que podem conter
+                <strong className="text-white/80">minha música e a letra</strong> no SpotFiz, que podem conter
                 nomes e a história real como parte do conteúdo.{" "}
                 <strong className="text-white/80">As fotos que enviei não aparecem na Rede</strong> — só a capa gerada
                 automaticamente. Posso revogar quando quiser.{" "}
@@ -1188,8 +1188,8 @@ function MinhaMusicaContent() {
                           setTimeout(() => setConfirmandoSaida((a) => (a === order.id ? null : a)), 3000)
                         }}
                         disabled={saindoDaRede === order.id}
-                        title={confirmando ? "Toque de novo pra tirar da Rede" : "Publicada na Rede Fiz Música — toque pra tirar"}
-                        aria-label={confirmando ? "Confirmar: tirar da Rede Fiz Música" : "Publicada na Rede Fiz Música. Tocar para tirar"}
+                        title={confirmando ? "Toque de novo pra tirar da Rede" : "Publicada no SpotFiz — toque pra tirar"}
+                        aria-label={confirmando ? "Confirmar: tirar do SpotFiz" : "Publicada no SpotFiz. Tocar para tirar"}
                         className={`absolute top-1.5 right-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full backdrop-blur transition-colors disabled:opacity-50 ${
                           confirmando
                             ? "bg-red-500/90 text-white"

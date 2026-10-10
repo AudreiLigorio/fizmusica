@@ -125,7 +125,7 @@ export default function MinhasMusicas({ tracks: todasTracks, playlistsVersion, b
           Spotify. Capas maiores (w-32) e coladas na borda, "mais expandido". */}
       <div className="flex items-center gap-2.5 mb-1">
         <h2 className="text-xl font-bold flex-1 min-w-0 truncate">Minha playlist</h2>
-        <InfoTooltip text="Suas músicas entram aqui automaticamente quando ficam prontas. Você também pode juntar músicas da Rede Fiz Música tocando no + de cada capa." />
+        <InfoTooltip text="Suas músicas entram aqui automaticamente quando ficam prontas. Você também pode juntar músicas do SpotFiz tocando no + de cada capa." />
       </div>
       {/* Pra quem ainda não tem música, o texto põe a MÚSICA DELE em primeiro
           lugar e a Rede como complemento. A versão anterior falava só da Rede

@@ -16,7 +16,7 @@ import { carregarMusicaPublica } from "./dados"
 // Música sem capa cai no gradiente da marca. Música despublicada não tem card:
 // o loader devolve null e o pedido some junto com a página.
 
-export const alt = "Música publicada na Rede Fiz Música"
+export const alt = "Música publicada no SpotFiz, da Fiz Música"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 export const dynamic = "force-dynamic"
@@ -49,7 +49,7 @@ export default async function Image({ params }: { params: Promise<{ id: string }
     } catch { /* sem capa: cai no gradiente */ }
   }
 
-  const titulo = dados?.titulo ?? "Rede Fiz Música"
+  const titulo = dados?.titulo ?? "SpotFiz"
   const linha = dados ? [dados.ocasiao, dados.apelido].filter(Boolean).join(" · ") : "Músicas feitas para pessoas reais"
 
   const fonte = { style: "normal" as const }

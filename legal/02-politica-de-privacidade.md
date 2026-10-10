@@ -1,6 +1,6 @@
 # Política de Privacidade — Fiz Música
 
-Última atualização: Setembro de 2026
+Última atualização: 10 de outubro de 2026
 
 ## 1. Apresentação
 
@@ -24,7 +24,7 @@ Fiz Música é uma plataforma digital dedicada à criação de músicas personal
 
 **Dados de uso da plataforma (Área do Cliente):**
 
-- **Apelido**, quando preenchido pelo Cliente no seu perfil, e a escolha de exibi-lo ou não na Rede Fiz Música;
+- **Apelido**, quando preenchido pelo Cliente no seu perfil, e a escolha de exibi-lo ou não no SpotFiz;
 - **Favoritos e playlists** criados pelo Cliente;
 - **Reproduções de músicas publicadas**: registramos que uma reprodução ocorreu, com um identificador anônimo de sessão (gerado no próprio navegador, sem vínculo com o cadastro) e a data/hora, para contar quantas vezes cada música publicada foi ouvida e montar o ranking das mais ouvidas. Não registramos **quem** ouviu o quê;
 - **Datas especiais** cadastradas voluntariamente pelo Cliente (nome da pessoa, ocasião e dia) para receber lembretes;
@@ -42,7 +42,7 @@ Fiz Música é uma plataforma digital dedicada à criação de músicas personal
 - Cumprir obrigações legais e regulatórias;
 - Garantir segurança e prevenção a fraudes;
 - Gerar estatísticas agregadas sobre a origem geográfica dos pedidos (estimativa de estado via IP), para análise de negócio;
-- Operar a **Rede Fiz Música** (catálogo de músicas publicadas), incluindo busca, filtros, favoritos, playlists e a contagem de reproduções que compõe o ranking das mais ouvidas — **somente** para músicas cujo autor concedeu a [Autorização de Publicação](07-autorizacao-de-publicacao.md);
+- Operar o **SpotFiz** (catálogo de músicas publicadas), incluindo busca, filtros, favoritos, playlists e a contagem de reproduções que compõe o ranking das mais ouvidas — **somente** para músicas cujo autor concedeu a [Autorização de Publicação](07-autorizacao-de-publicacao.md);
 - Enviar **lembretes de datas especiais** cadastradas pelo próprio Cliente;
 - Operar o **programa de fidelidade** ("Minha Carreira") e o **programa de indicação**, calculando níveis e descontos.
 
@@ -55,8 +55,8 @@ Tratamentos que dependem de **consentimento específico**, cada um coletado em s
 | Tratamento | Consentimento | Onde se revoga |
 |---|---|---|
 | Fotos exibidas no player da própria música | No envio das fotos | Removendo as fotos na Área do Cliente |
-| Publicação da música e da letra na Rede Fiz Música e em marketing | Caixa própria, desmarcada por padrão, apresentada junto ao Termo de Entrega | Desmarcando na Área do Cliente |
-| Exibição do apelido do autor na Rede | Opção "Mostrar meu apelido na Rede", desligada por padrão | Desligando no perfil |
+| Publicação da música e da letra no SpotFiz e em marketing | Caixa própria, desmarcada por padrão, apresentada junto ao Termo de Entrega | Desmarcando na Área do Cliente |
+| Exibição do apelido do autor na Rede | Opção "Mostrar meu apelido no SpotFiz", desligada por padrão | Desligando no perfil |
 | Lembretes de datas especiais | Ao cadastrar a data | Removendo a data na Área do Cliente |
 
 Recusar qualquer um deles **não impede** a contratação nem a entrega da música.
@@ -96,7 +96,7 @@ Por padrão, as músicas permanecem **privadas**. Existem duas — e apenas duas
 
 **a) Link de compartilhamento do próprio Cliente.** Cada música entregue tem um endereço próprio (`/m/...`), único e imprevisível, que o Cliente compartilha com quem quiser. Quem tiver o link acessa a página da música — **inclusive as fotos** que o Cliente cadastrou no player. Essa é a finalidade do link, e a distribuição dele é responsabilidade do Cliente. A Fiz Música não divulga esse link e não o expõe na Rede.
 
-**b) Rede Fiz Música.** Somente se o Cliente conceder a [Autorização de Publicação](07-autorizacao-de-publicacao.md). Nesse caso, qualquer visitante — **com ou sem conta** — pode ouvir a música; favoritar e incluir em playlists exige conta. A música publicada passa a ter um **endereço público próprio**, que pode ser aberto sem conta e **compartilhado fora da plataforma**, e cuja pré-visualização em aplicativos de mensagem exibe o **título e a capa gerada automaticamente**. **As fotos do Cliente não são exibidas na Rede nem nessa página** — apenas a capa gerada pela IA. A autorização é revogável a qualquer momento pelo próprio Cliente, com efeito em até 1 minuto, e a revogação **desativa também esse endereço público**.
+**b) SpotFiz** (antes “Rede Fiz Música”)**.** Somente se o Cliente conceder a [Autorização de Publicação](07-autorizacao-de-publicacao.md). Nesse caso, qualquer visitante — **com ou sem conta** — pode ouvir a música; favoritar e incluir em playlists exige conta. A música publicada passa a ter um **endereço público próprio**, que pode ser aberto sem conta e **compartilhado fora da plataforma**, e cuja pré-visualização em aplicativos de mensagem exibe o **título e a capa gerada automaticamente**. **As fotos do Cliente não são exibidas na Rede nem nessa página** — apenas a capa gerada pela IA. A autorização é revogável a qualquer momento pelo próprio Cliente, com efeito em até 1 minuto, e a revogação **desativa também esse endereço público**.
 
 ## 9. Uso de Músicas para Divulgação
 

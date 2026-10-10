@@ -82,7 +82,7 @@ function iconeDoPlano(p: Produto) {
 // campo no banco — não há coluna de "capa" nem de "2ª versão", e inventar
 // uma só pra marcar `true` em todos os planos seria dado morto.
 const BENEFICIOS_DE_TODOS = ["Música personalizada", "Capa exclusiva", "Segunda versão grátis"]
-const BENEFICIOS_FINAIS   = ["Publicar na Rede Fiz Música", "Criar playlist"]
+const BENEFICIOS_FINAIS   = ["Publicar no SpotFiz", "Criar playlist"]
 
 // O que vem no plano, na ordem que o Audrei passou. Os itens do MEIO saem
 // dos campos do produto (os mesmos que a /produtos usa pra montar os chips),

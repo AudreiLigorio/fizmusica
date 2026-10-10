@@ -123,7 +123,7 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
 
           {pl.tracks.length === 0 ? (
             <p className="text-sm text-white/40 leading-relaxed">
-              Clique no + de uma música na Rede Fiz Música e adicione músicas aqui.
+              Clique no + de uma música no SpotFiz e adicione músicas aqui.
             </p>
           ) : (
             <div className="flex gap-3.5 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">

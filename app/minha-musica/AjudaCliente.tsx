@@ -59,7 +59,7 @@ const POR_ABA: Record<AbaAjuda, { titulo: string; itens: Item[] }> = {
   },
 
   musicas: {
-    titulo: "Dúvidas sobre a Rede Fiz Música",
+    titulo: "Dúvidas sobre o SpotFiz",
     itens: [
       {
         q: "Como escuto?",

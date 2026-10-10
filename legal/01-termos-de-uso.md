@@ -1,6 +1,6 @@
 # Termos de Uso — Fiz Música
 
-Última atualização: Setembro de 2026
+Última atualização: 10 de outubro de 2026
 
 ## 1. Aceitação dos Termos
 
@@ -31,7 +31,7 @@ Os recursos variam conforme o plano contratado. Os planos vigentes e o que cada 
 | **Download do MP3** | Mediante aceite do Termo de Entrega Digital |
 | **Revisão** | Direito a uma nova versão, conforme a seção 7 |
 
-Recursos **incluídos em todos os planos**: a música personalizada, a capa gerada automaticamente, o player, o link de compartilhamento, a possibilidade de publicar na Rede Fiz Música e de montar playlists.
+Recursos **incluídos em todos os planos**: a música personalizada, a capa gerada automaticamente, o player, o link de compartilhamento, a possibilidade de publicar no SpotFiz e de montar playlists.
 
 O plano contratado fica gravado no pedido: alterações posteriores na oferta **não reduzem** o que já foi contratado e pago.
 
@@ -81,11 +81,11 @@ Por padrão, as músicas produzidas permanecem **privadas**. Existem duas formas
 
 **a) Link de compartilhamento.** Cada música entregue tem um endereço próprio e imprevisível, que o Cliente compartilha com quem quiser (inclusive por WhatsApp ou QR Code). Quem tiver o link acessa a página da música, **incluindo as fotos** cadastradas no player. A guarda e a distribuição do link são responsabilidade do Cliente, que reconhece que a Fiz Música não tem controle sobre a circulação do link depois de compartilhado.
 
-**b) Rede Fiz Música.** Catálogo dentro da plataforma onde qualquer visitante, com ou sem conta, ouve músicas publicadas por outros clientes. A publicação **depende de autorização expressa e opcional** do Cliente, é revogável a qualquer momento por ele mesmo, e **não expõe as fotos** enviadas — apenas a capa gerada automaticamente. Ver a [Autorização de Publicação](07-autorizacao-de-publicacao.md).
+**b) SpotFiz** (antes “Rede Fiz Música”)**.** Catálogo dentro da plataforma onde qualquer visitante, com ou sem conta, ouve músicas publicadas por outros clientes. A publicação **depende de autorização expressa e opcional** do Cliente, é revogável a qualquer momento por ele mesmo, e **não expõe as fotos** enviadas — apenas a capa gerada automaticamente. Ver a [Autorização de Publicação](07-autorizacao-de-publicacao.md).
 
-## 12. Rede Fiz Música
+## 12. SpotFiz
 
-A **Rede Fiz Música** é um catálogo, dentro da plataforma, onde qualquer visitante — **com ou sem conta** — pode ouvir músicas que outros clientes escolheram publicar.
+O **SpotFiz** (antes chamado “Rede Fiz Música”, também referido como “Rede”) é um catálogo, dentro da plataforma, onde qualquer visitante — **com ou sem conta** — pode ouvir músicas que outros clientes escolheram publicar.
 
 - **Publicar é opcional e reversível.** Só entra na Rede a música cujo autor autorizou expressamente, e ele pode retirá-la a qualquer momento, sozinho, pela Área do Cliente.
 - **O que aparece:** a música, a letra, a ocasião, o estilo musical e a capa gerada automaticamente. **As fotos enviadas pelo Cliente não aparecem na Rede.**
