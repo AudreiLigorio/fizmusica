@@ -56,6 +56,9 @@ type SessionData = {
 }
 
 import { track } from "@/lib/track"
+import { useNoAppPlay } from "@/lib/canal"
+import { TabBarMobile } from "@/app/minha-musica/AreaTabs"
+import { confirmar } from "@/app/components/Dialogo"
 
 const SESSION_KEY = "fizmusica_session_id"
 
@@ -690,6 +693,66 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   }
 
   /* ================================================= */
+  /* APP ANDROID: voltar do sistema, saída e barra      */
+  /* ================================================= */
+  // As etapas do wizard mudam por estado (sem histórico), então o voltar do
+  // Android saía do wizard INTEIRO no meio das perguntas. No app, cada tela
+  // nova vira uma entrada no histórico e o voltar do sistema volta uma etapa.
+  // Na primeira tela ele leva ao SpotFiz — nunca fecha o app no meio do
+  // caminho (quem desiste conhece o app em vez de sair). Só no app: no site
+  // o navegador já tem os botões dele e nada muda.
+  const noApp = useNoAppPlay() === true
+  const voltandoPeloSistema = useRef(false)
+  const posicaoWizard = `${step}-${questionStep}-${selectedContext}-${showLeadCapture}`
+  useEffect(() => {
+    if (!noApp) return
+    if (voltandoPeloSistema.current) { voltandoPeloSistema.current = false; return }
+    window.history.pushState({ fmWizard: posicaoWizard }, "")
+  }, [noApp, posicaoWizard])
+  // O ouvinte é registrado UMA vez e lê o estado atual por esta referência.
+  // Registrar a cada render não funcionava: o roteador do Next também ouve o
+  // "voltar" (e é chamado antes), provoca um render no meio do disparo, o
+  // nosso ouvinte era removido e recolocado — e o navegador não chama ouvinte
+  // removido durante o disparo. O voltar do Android não fazia nada.
+  const aoVoltarRef = useRef<() => void>(() => {})
+  useEffect(() => { aoVoltarRef.current = () => {
+    voltandoPeloSistema.current = true
+    // Se o voltar não mudar nenhuma tela, o aviso não pode ficar preso
+    // (senão a próxima tela nova não entraria no histórico).
+    setTimeout(() => { voltandoPeloSistema.current = false }, 400)
+    if (showLeadCapture) { setShowLeadCapture(false); return }
+    if (step === 1) {
+      if (selectedContext) { setSelectedContext(""); return }
+      // Depois do Next restaurar /criar (ele também trata o "voltar"); no
+      // mesmo instante a restauração dele vencia e a pessoa ficava aqui.
+      setTimeout(() => router.replace("/minha-musica?aba=musicas"), 80)
+      return
+    }
+    prevStep()
+  } })
+  useEffect(() => {
+    if (!noApp) return
+    const aoVoltar = () => aoVoltarRef.current()
+    window.addEventListener("popstate", aoVoltar)
+    return () => window.removeEventListener("popstate", aoVoltar)
+  }, [noApp])
+
+  // "← Voltar" da tela, no app, passa pelo histórico — assim o botão da tela
+  // e o voltar do Android andam juntos e o histórico não acumula entradas.
+  const voltarTela = () => (noApp ? window.history.back() : prevStep())
+
+  // ✕ no app: sair é decisão consciente, e quem sai cai no SpotFiz.
+  async function sairDoWizard() {
+    const irParaSpotFiz = await confirmar({
+      titulo: "Sair da criação?",
+      mensagem: "Seu progresso fica salvo e você continua de onde parou.",
+      botao: "🎧 Ouvir músicas no SpotFiz",
+      cancelar: "Continuar criando",
+    })
+    if (irParaSpotFiz) router.push("/minha-musica?aba=musicas&retomar=1")
+  }
+
+  /* ================================================= */
   /* INIT SESSION on first subcategory click           */
   /* ================================================= */
 
@@ -868,11 +931,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           </div>
           <div className="flex items-center justify-between px-5 pt-4 pb-2">
             {step >= 1 && !showLeadCapture ? (
-              <button onClick={prevStep} disabled={submitting}
+              <button onClick={voltarTela} disabled={submitting}
                       className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
             ) : <div />}
             <div />
-            <div />
+            {noApp ? (
+              <button onClick={sairDoWizard} aria-label="Sair da criação"
+                      className="w-9 h-9 -mr-2 flex items-center justify-center rounded-full text-white/60 hover:text-white text-xl leading-none">✕</button>
+            ) : <div />}
           </div>
         </div>
 
@@ -1170,7 +1236,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     {temaAberto ? (
                       <>
                         <button
-                          onClick={() => setSelectedContext("")}
+                          onClick={() => (noApp ? window.history.back() : setSelectedContext(""))}
                           className="text-[13px] text-white/45 hover:text-white/70 transition-colors mb-3"
                         >
                           ← todos os temas
@@ -1710,6 +1776,18 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         <div className="hidden lg:block">
           <Footer />
         </div>
+
+        {/* App: na PRIMEIRA tela (escolha do tema) a barra de abas aparece —
+            a pessoa ainda está explorando e precisa ver que o app tem SpotFiz,
+            Carreira etc. A partir da primeira pergunta ela some e o foco é
+            terminar a música (decisão de 2026-08-28 segue valendo daí em diante). */}
+        {noApp && step === 1 && !showLeadCapture && (
+          <TabBarMobile
+            aba={null}
+            onAba={(a) => router.push(a === "home" ? "/" : `/minha-musica?aba=${a}`)}
+            onCriar={() => {}}
+          />
+        )}
 
       </div>
     </div>

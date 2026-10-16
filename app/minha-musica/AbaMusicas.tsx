@@ -7,6 +7,8 @@ import ResultadosBusca from "./ResultadosBusca"
 import RedeFizMusica from "./RedeFizMusica"
 import FaixaCarreira from "./FaixaCarreira"
 import InfoTooltip from "./InfoTooltip"
+import ResumeMusicBanner from "@/app/components/ResumeMusicBanner"
+import { useNoAppPlay } from "@/lib/canal"
 import { useCatalogo, casaFiltroCliente } from "./CatalogoContext"
 import { combina } from "@/lib/busca"
 import type { LibraryTrack } from "./MinhasMusicas"
@@ -47,6 +49,7 @@ export default function AbaMusicas({
   children?: React.ReactNode
 }) {
   const { busca, setBusca, filtro, total } = useCatalogo()
+  const noApp = useNoAppPlay() === true
 
   const modoResultado = !!busca.trim() || !!filtro
   useEffect(() => { onModoResultado?.(modoResultado) }, [modoResultado, onModoResultado])
@@ -63,6 +66,10 @@ export default function AbaMusicas({
 
   return (
     <>
+      {/* App: quem saiu do wizard no meio cai aqui — o lembrete da música
+          salva fica no topo, antes de tudo. */}
+      {noApp && !modoResultado && <ResumeMusicBanner formato="cartao" />}
+
       {/* Título da aba no TOPO, acima da busca (pedido do Audrei,
           2026-10-10): quem chega já lê onde está antes do campo. Ficava no
           meio da tela, abaixo da busca e das pílulas.
