@@ -326,7 +326,7 @@ export function iniciarOnboarding(raiz, opcoes) {
   }
 
   // Fotos do pedido de exemplo da Pamela (fictícias), na ordem da história
-  const fotoReal = (i) => `<img src="/onboarding/foto-${i + 1}.jpg" alt="" draggable="false">`;
+  const fotoReal = (i) => `<img src="/onboarding/casal-${i + 1}.jpg" alt="" draggable="false">`;
   function desenharQR(cv) {
     const n = 21, g = cv.getContext("2d"); cv.width = n; cv.height = n; g.fillStyle = "#fff"; g.fillRect(0, 0, n, n); g.fillStyle = "#15131d";
     let semente = 7; const rnd = () => (semente = (semente * 9301 + 49297) % 233280) / 233280;
