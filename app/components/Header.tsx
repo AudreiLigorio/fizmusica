@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { SeletorTema } from "@/app/components/Tema"
 import { useNoAppPlay } from "@/lib/canal"
+import { EVENTO_ABRIR_ONBOARDING } from "@/app/components/onboarding/OnboardingPortao"
 
 // Este cabeçalho é o menu INSTITUCIONAL: Quem somos, Contato, Termos,
 // Entrar/Sair e o avatar. A navegação do aplicativo (Pedidos, Músicas,
@@ -238,6 +239,17 @@ export default function Header({ progress }: { showButton?: boolean; progress?: 
               <span className="font-medium">Contato</span>
               <span className="ml-auto text-white/30">→</span>
             </button>
+            {/* Só no app: reabre o onboarding (ele aparece sozinho só na 1ª vez). */}
+            {semEscolhaDeTema === true && (
+              <button
+                onClick={() => { setMenuOpen(false); window.dispatchEvent(new Event(EVENTO_ABRIR_ONBOARDING)) }}
+                className="flex items-center gap-3 text-left text-white/80 hover:text-white py-4 transition-colors"
+              >
+                <span className="text-lg">✨</span>
+                <span className="font-medium">Como funciona</span>
+                <span className="ml-auto text-white/30">→</span>
+              </button>
+            )}
             <button
               onClick={() => go("/legal")}
               className="flex items-center gap-3 text-left text-white/80 hover:text-white py-4 transition-colors"

@@ -6,6 +6,7 @@ import ChunkReloadGuard from "./components/ChunkReloadGuard"
 import Tracker from "@/app/components/Tracker";
 import RegistrarSW from "@/app/components/RegistrarSW";
 import { SincronizarTema } from "@/app/components/Tema";
+import OnboardingPortao from "@/app/components/onboarding/OnboardingPortao";
 import { scriptTemaInicial } from "@/lib/tema";
 
 const cormorant = Cormorant_Garamond({
@@ -60,6 +61,7 @@ export default function RootLayout({
         <ChunkReloadGuard />
         <RegistrarSW />
         <SincronizarTema />
+        <OnboardingPortao />
         {children}
       </body>
     </html>

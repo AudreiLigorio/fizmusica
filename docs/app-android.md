@@ -185,3 +185,12 @@ Combinar antes de lançar:
 4. Dia 15: Painel → **Solicitar acesso à produção** (perguntas sobre recrutamento, feedback, mudanças, prontidão).
 5. Conta de revisão `fizmusicaoficial@gmail.com`: manter a verificação em 2 etapas DESLIGADA enquanto houver revisão.
 
+## Onboarding do app (no ar em 2026-10-15)
+
+- Aparece **só no app Android**, **só na primeira abertura** (marca `fm_onboarding_visto` no localStorage), nunca por cima de link de música (`/m/`, `/rede/`). Reabre pelo menu ☰ → **"Como funciona"**.
+- 4 telas, interativas e guiadas pela mãozinha: boas-vindas (simples, rápido, fácil) → como funciona (chave Presentear / Minha letra, passos em barra de progresso) → o que você recebe (player com letra, fotos, QR Code) → SpotFiz e Carreira (palmas obrigatórias para liberar os botões; "Criar minha música" e "Explorar o SpotFiz" com o mesmo destaque).
+- Código: `app/components/onboarding/` — `motor.js` (lógica do protótipo aprovado, sem mudanças), `onboarding.css` (tudo sob `.onb`, animações `onb-*`), `marcacao.ts`, `OnboardingApp.tsx` (monta), `OnboardingPortao.tsx` (decide quando mostrar; montado no layout, baixa as telas só quando vão aparecer). Protótipo: claude.ai/artifact/4o9jeJi4iLUpxSAZsTep3v.
+- A tela é desenhada em 370×780 e **escala** para caber inteira em qualquer celular (sem rolagem).
+- Métricas em `site_events`: `onboarding_abriu`, `onboarding_tela`, `onboarding_modo`, `onboarding_palmas`, `onboarding_fim` (detalhe: criar / spotfiz / pular).
+- **Pendente:** trocar os sons sintetizados por trechos reais de músicas publicadas no SpotFiz e as ilustrações da retrospectiva por fotos de banco de imagens.
+
