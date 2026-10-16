@@ -325,7 +325,7 @@ export function iniciarOnboarding(raiz, opcoes) {
     agendarMao("#colar");
   }
 
-  // Fotos reais do pedido de exemplo "Estrela da Praia Brava"
+  // Fotos do pedido de exemplo da Pamela (fictícias), na ordem da história
   const fotoReal = (i) => `<img src="/onboarding/foto-${i + 1}.jpg" alt="" draggable="false">`;
   function desenharQR(cv) {
     const n = 21, g = cv.getContext("2d"); cv.width = n; cv.height = n; g.fillStyle = "#fff"; g.fillRect(0, 0, n, n); g.fillStyle = "#15131d";
@@ -352,7 +352,7 @@ export function iniciarOnboarding(raiz, opcoes) {
       </div>` : `
       <div class="extras">
         <div class="extra"><span class="rotulo">📸 Retrospectiva</span>
-          <div class="fotos" id="fotos"><div class="trilho" id="trilho">${[0, 1, 2, 3].map(fotoReal).join("")}</div><span class="legenda">Estrela da Praia Brava</span><div class="marcas" id="marcas">${"<i></i>".repeat(4)}</div></div>
+          <div class="fotos" id="fotos"><div class="trilho" id="trilho">${[0, 1, 2, 3].map(fotoReal).join("")}</div><div class="marcas" id="marcas">${"<i></i>".repeat(4)}</div></div>
           <span class="plano">Planos Retrospectiva</span></div>
         <div class="extra"><span class="rotulo">🎁 Cartão QR Code</span>
           <button class="cartao-qr" id="qr" type="button" aria-label="Virar o cartão"><div class="giro"><div class="face frente">Para você,<br>Pamela 💘<br><span style="font-weight:500;font-size:12px;opacity:.7">toque pra virar</span></div><div class="face verso"><canvas id="qr-canvas"></canvas></div></div></button>
