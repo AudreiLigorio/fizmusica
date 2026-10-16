@@ -185,6 +185,10 @@ Combinar antes de lançar:
 4. Dia 15: Painel → **Solicitar acesso à produção** (perguntas sobre recrutamento, feedback, mudanças, prontidão).
 5. Conta de revisão `fizmusicaoficial@gmail.com`: manter a verificação em 2 etapas DESLIGADA enquanto houver revisão.
 
+## Aba inicial no app (2026-10-15)
+
+- O app abre em `/minha-musica?origem=app`. Sem `?aba=` no endereço, **no app** a área abre no **SpotFiz** (quem acabou de instalar não tem pedido; Pedidos vazio não mostra o produto). Exceção: cliente logado com pedido **pago** esperando ação dele (`precisaAcao`: letra, versão, termo) abre em **Pedidos**. Pedido não pago não conta (o SpotFiz do app já mostra o cartão "continuar"). Link com `?aba=` sempre manda. No site segue Pedidos. Código: `app/minha-musica/page.tsx` (`abaDoAppDecidida`, decidido uma vez no primeiro `loadOrders`, atrás do spinner — não pisca).
+
 ## Onboarding do app (no ar em 2026-10-15)
 
 - Aparece **só no app Android**, **só na primeira abertura** (marca `fm_onboarding_visto` no localStorage), nunca por cima de link de música (`/m/`, `/rede/`). Reabre pelo menu ☰ → **"Como funciona"**.

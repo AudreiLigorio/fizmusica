@@ -32,7 +32,7 @@ import ExcluirConta from "./ExcluirConta"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
 import AvisoCompraApp from "@/app/components/AvisoCompraApp"
-import { useBloquearCompraNoApp } from "@/lib/canal"
+import { useBloquearCompraNoApp, estaNoAppPlay } from "@/lib/canal"
 
 // Pedido antigo/sem produto vem sem `features` da API — libera tudo, mesma
 // regra do servidor: dado faltando não pode cancelar recurso já pago.
@@ -305,6 +305,14 @@ function MinhaMusicaContent() {
   // botão Voltar jogava o cliente de volta em Pedidos sem explicação.
   const abaUrl = searchParams.get("aba")
   const abaDaUrl: Aba = abaUrl === "musicas" || abaUrl === "carreira" ? abaUrl : "pedidos"
+  // No app Android, sem aba no endereço, a área abre no SpotFiz: quem acabou
+  // de instalar não tem pedido, e Pedidos vazio não mostra nada do produto.
+  // Exceção: pedido pago esperando o cliente (letra, versão, termo) abre em
+  // Pedidos — aí isso é o mais importante do app (Audrei, 2026-10-15).
+  // Pedido não pago não conta: o SpotFiz do app já tem o cartão "continuar".
+  // Link com ?aba= (e-mail, QR) manda sempre. No site segue Pedidos.
+  const abaExplicita = abaUrl === "pedidos" || abaUrl === "musicas" || abaUrl === "carreira"
+  const abaDoAppDecidida = useRef(false)
 
   // A aba vive em estado local, não direto no endereço. Motivo: staleTimes
   // dynamic=0 (next.config) faz cada router.replace buscar o RSC no servidor,
@@ -381,6 +389,11 @@ function MinhaMusicaContent() {
     const ordersWithRevisions = orders.map((o, i) => ({ ...o, revision: revisions[i]?.revision ?? null }))
 
     setOrders(ordersWithRevisions)
+    if (!abaDoAppDecidida.current) {
+      abaDoAppDecidida.current = true
+      const esperandoCliente = ordersWithRevisions.some((o) => o.paymentStatus === "PAID" && precisaAcao(o))
+      if (!abaExplicita && !esperandoCliente && estaNoAppPlay()) setAba("musicas")
+    }
     setLoading(false)
   }
 
@@ -487,7 +500,8 @@ function MinhaMusicaContent() {
 
   // Sem conta: a mesma casa, com as portas pessoais vazias. Antes daqui saía
   // um spinner infinito — o visitante batia numa tela travada.
-  if (!user) return <AreaPublica abaInicial={abaDaUrl} />
+  // Render só depois do loading (já no navegador): ler o app aqui é seguro.
+  if (!user) return <AreaPublica abaInicial={!abaExplicita && estaNoAppPlay() ? "musicas" : abaDaUrl} />
 
   const firstName = (user.user_metadata?.full_name as string)?.split(" ")[0] || user.email?.split("@")[0]
 
