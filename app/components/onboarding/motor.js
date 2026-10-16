@@ -33,7 +33,15 @@ export function iniciarOnboarding(raiz, opcoes) {
     { t: 6.46, l: "Não consigo fazer duas coisas ao mesmo tempo" },
     { t: 10.37, l: "Mas focar em você é o meu melhor talento" },
   ];
-  const LETRA_EXEMPLO = "Na varanda da nossa casa\no café passava devagar\ne você cantava baixinho\npra o dia acordar.";
+  // Caminho "Minha letra": a letra colada é a de "Estrela da Praia Brava"
+  // (homenagem pet, pedido de exemplo); tempos do LRC dentro do trecho.
+  const LETRA_COMPOR = [
+    { t: 0.24, l: "Vai em paz, doce amigo do peito" },
+    { t: 4.22, l: "Sua estrela agora brilha lá no céu" },
+    { t: 7.78, l: "A justiça dos homens falha na terra" },
+    { t: 11.72, l: "Mas Deus cuida de quem foi fiel" },
+  ];
+  const LETRA_EXEMPLO = LETRA_COMPOR.map((x) => x.l).join("\n");
   const REFRAO = ["Pâmela, você é a minha melhor metade", "O meu porto seguro, minha felicidade"];
 
   const $ = (s, r = raiz) => r.querySelector(s);
@@ -56,28 +64,10 @@ export function iniciarOnboarding(raiz, opcoes) {
   let modo = "presente", indice = 0, cenaAtual = null, maoTimer = 0, maoEl = null, feito = {};
   let discos = 0, palmasTotal = 37;
 
-  // ── Som: sintetizado, só depois de um toque (regra dos celulares) ──
+  // ── Som: trechos reais + efeitos curtos, só depois de um toque (regra dos celulares) ──
   let ctx = null;
   const somLigado = () => { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === "suspended") ctx.resume(); return ctx; } catch { return null; } };
-  const midi = (n) => 440 * Math.pow(2, (n - 69) / 12);
   let somParar = null;
-  function tocar(notas, bpm, onda = "triangle", aoNota) {
-    const a = somLigado(); if (!a) return;
-    pararSom();
-    const dur = 60 / bpm, t0 = a.currentTime + 0.05, nos = [];
-    notas.forEach((n, i) => {
-      const o = a.createOscillator(), g = a.createGain();
-      o.type = onda; o.frequency.value = midi(n);
-      g.gain.setValueAtTime(0.0001, t0 + i * dur);
-      g.gain.exponentialRampToValueAtTime(0.12, t0 + i * dur + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (i + 0.95) * dur);
-      o.connect(g).connect(a.destination); o.start(t0 + i * dur); o.stop(t0 + (i + 1) * dur);
-      nos.push(o);
-    });
-    const timers = notas.map((_, i) => setTimeout(() => aoNota && aoNota(i), (i * dur + 0.05) * 1000));
-    somParar = () => { nos.forEach((o) => { try { o.stop(); } catch {} }); timers.forEach(clearTimeout); };
-    return notas.length * dur;
-  }
   function pararSom() { if (somParar) { somParar(); somParar = null; } }
   // Trecho real: toca `src` por até `max` s; `aoTempo(t)` a cada quadro.
   function tocarTrecho(src, max, aoTempo, aoFim) {
@@ -335,16 +325,8 @@ export function iniciarOnboarding(raiz, opcoes) {
     agendarMao("#colar");
   }
 
-  function svgFoto(i) {
-    const cenas = [
-      ["#fde68a", "#f97316", '<circle cx="150" cy="40" r="18" fill="#fff7ed"/><path d="M0 95 Q60 60 120 90 T240 80 V140 H0Z" fill="#7c2d12"/>'],
-      ["#bae6fd", "#0ea5e9", '<path d="M0 100 Q70 80 140 100 T280 95 V140 H0Z" fill="#0369a1"/><circle cx="60" cy="45" r="14" fill="#fff"/>'],
-      ["#fbcfe8", "#db2777", '<circle cx="85" cy="70" r="20" fill="#fff1f2"/><circle cx="125" cy="70" r="20" fill="#fff1f2"/><path d="M60 140 Q105 90 150 140Z" fill="#9d174d"/>'],
-      ["#ddd6fe", "#7c3aed", '<path d="M40 140 L110 50 L180 140Z" fill="#4c1d95"/><circle cx="170" cy="40" r="12" fill="#fff"/>'],
-    ];
-    const [a, b, desenho] = cenas[i];
-    return `<svg viewBox="0 0 220 140" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="g${i}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="220" height="140" fill="url(#g${i})"/>${desenho}</svg>`;
-  }
+  // Fotos reais do pedido de exemplo "Estrela da Praia Brava"
+  const fotoReal = (i) => `<img src="/onboarding/foto-${i + 1}.jpg" alt="" draggable="false">`;
   function desenharQR(cv) {
     const n = 21, g = cv.getContext("2d"); cv.width = n; cv.height = n; g.fillStyle = "#fff"; g.fillRect(0, 0, n, n); g.fillStyle = "#15131d";
     let semente = 7; const rnd = () => (semente = (semente * 9301 + 49297) % 233280) / 233280;
@@ -358,9 +340,9 @@ export function iniciarOnboarding(raiz, opcoes) {
       <div><span class="selo">⚡ Pronta em minutos</span></div>
       <h2>Veja o que você <span class="destaque">recebe</span></h2>
       <div class="player">
-        <div class="mini-capa" ${compor ? "" : 'style="background:url(/onboarding/capa-talento.jpg) center/cover"'}><button class="play" id="play" type="button" aria-label="Tocar">▶</button></div>
-        <div><div class="titulo">${compor ? "Varanda" : "Meu Melhor Talento"}</div><div class="meta">${compor ? "Composição autoral · MPB" : "Pedido de Namoro · K-Pop"}</div></div>
-        <div class="letras" id="letras">${(compor ? LETRA_EXEMPLO.split("\n") : LETRA_PLAYER.map((x) => x.l)).map((l) => `<p>${l}</p>`).join("")}</div>
+        <div class="mini-capa" style="background:url(/onboarding/capa-${compor ? "estrela" : "talento"}.jpg) center/cover"><button class="play" id="play" type="button" aria-label="Tocar">▶</button></div>
+        <div><div class="titulo">${compor ? "Estrela da Praia Brava" : "Meu Melhor Talento"}</div><div class="meta">${compor ? "Letra autoral · Pop" : "Pedido de Namoro · K-Pop"}</div></div>
+        <div class="letras" id="letras">${(compor ? LETRA_COMPOR : LETRA_PLAYER).map((x) => x.l).map((l) => `<p>${l}</p>`).join("")}</div>
         <div class="barra"><i id="progresso"></i></div>
       </div>
       ${compor ? `
@@ -370,7 +352,7 @@ export function iniciarOnboarding(raiz, opcoes) {
       </div>` : `
       <div class="extras">
         <div class="extra"><span class="rotulo">📸 Retrospectiva</span>
-          <div class="fotos" id="fotos"><div class="trilho" id="trilho">${[0, 1, 2, 3].map(svgFoto).join("")}</div><div class="marcas" id="marcas">${"<i></i>".repeat(4)}</div></div>
+          <div class="fotos" id="fotos"><div class="trilho" id="trilho">${[0, 1, 2, 3].map(fotoReal).join("")}</div><span class="legenda">Estrela da Praia Brava</span><div class="marcas" id="marcas">${"<i></i>".repeat(4)}</div></div>
           <span class="plano">Planos Retrospectiva</span></div>
         <div class="extra"><span class="rotulo">🎁 Cartão QR Code</span>
           <button class="cartao-qr" id="qr" type="button" aria-label="Virar o cartão"><div class="giro"><div class="face frente">Para você,<br>Pamela 💘<br><span style="font-weight:500;font-size:12px;opacity:.7">toque pra virar</span></div><div class="face verso"><canvas id="qr-canvas"></canvas></div></div></button>
@@ -383,25 +365,14 @@ export function iniciarOnboarding(raiz, opcoes) {
       const p = $("#progresso", s);
       const terminou = () => { b.textContent = "▶"; linhas.forEach((x) => x.classList.remove("agora")); agendarMao(compor ? "#bt-prox" : "#fotos", compor ? "toca" : "arrasta", 200); };
       b.textContent = "❚❚";
-      if (!compor) {
-        // Música real: a linha acende no tempo da letra sincronizada (LRC)
-        const DUR = 13.2;
-        p.style.transition = "none";
-        tocarTrecho("/onboarding/talento.mp3", DUR, (t) => {
-          let l = -1; LETRA_PLAYER.forEach((x, k) => { if (t >= x.t) l = k; });
-          linhas.forEach((x, k) => x.classList.toggle("agora", k === l));
-          p.style.width = Math.min(100, (t / DUR) * 100) + "%";
-        }, terminou);
-        return;
-      }
-      const notas = [65, 69, 72, 69, 67, 65, 64, 65];
-      const dur = tocar(notas, 120, "triangle", (i) => {
-        const l = Math.min(linhas.length - 1, Math.floor(i / 2));
+      // Música real: a linha acende no tempo da letra sincronizada (LRC)
+      const letra = compor ? LETRA_COMPOR : LETRA_PLAYER, DUR = compor ? 13 : 13.2;
+      p.style.transition = "none";
+      tocarTrecho(`/onboarding/${compor ? "estrela" : "talento"}.mp3`, DUR, (t) => {
+        let l = -1; letra.forEach((x, k) => { if (t >= x.t) l = k; });
         linhas.forEach((x, k) => x.classList.toggle("agora", k === l));
-      });
-      p.style.transition = "none"; p.style.width = "0";
-      requestAnimationFrame(() => { p.style.transition = `width ${dur}s linear`; p.style.width = "100%"; });
-      setTimeout(terminou, dur * 1000 + 100);
+        p.style.width = Math.min(100, (t / DUR) * 100) + "%";
+      }, terminou);
     };
     if (!compor) {
       let foto = 0; const trilho = $("#trilho", s), marcas = [...s.querySelectorAll("#marcas i")];
