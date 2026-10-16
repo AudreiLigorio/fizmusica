@@ -17,14 +17,24 @@ export function iniciarOnboarding(raiz, opcoes) {
   // Um caminho só, orientativo. Os dois jeitos de criar ficam numa chave
   // dentro da tela "Como funciona" — ninguém precisa escolher antes de entender.
   const TELAS = ["boas", "como", "recebe", "rede"];
+  // Os estilos tocam trechos REAIS de músicas do SpotFiz (pedidos de
+  // demonstração do Audrei, dados fictícios — publicados por ele). Trechos
+  // curtos em public/onboarding/, sem depender de login nem da rota de áudio.
   const ESTILOS = {
-    Sertanejo: { emoji: "🤠", grad: "linear-gradient(135deg,#92400e,#f59e0b 60%,#fde68a)", notas: [64, 67, 69, 67, 64, 62, 64], bpm: 150, onda: "triangle" },
-    Pop: { emoji: "💖", grad: "linear-gradient(135deg,#be185d,#f0196b 55%,#f9a8d4)", notas: [72, 74, 76, 79, 76, 74, 72], bpm: 200, onda: "square" },
-    Rock: { emoji: "🎸", grad: "linear-gradient(135deg,#111827,#7f1d1d 55%,#ef4444)", notas: [52, 52, 55, 57, 55, 52, 50], bpm: 220, onda: "sawtooth" },
-    Gospel: { emoji: "🙏", grad: "linear-gradient(135deg,#1e3a8a,#6366f1 55%,#c7d2fe)", notas: [60, 64, 67, 72, 67, 64, 60], bpm: 110, onda: "sine" },
+    "K-Pop": { emoji: "🇰🇷", audio: "/onboarding/talento.mp3", capa: "/onboarding/capa-talento.jpg", musica: "Meu Melhor Talento" },
+    Pop: { emoji: "💖", audio: "/onboarding/estrela.mp3", capa: "/onboarding/capa-estrela.jpg", musica: "Estrela da Praia Brava" },
+    Sertanejo: { emoji: "🎤", audio: "/onboarding/doce.mp3", capa: "/onboarding/capa-doce.jpg", musica: "A Mais Doce Espera" },
   };
+  // Refrão real de "Meu Melhor Talento" (pedido de namoro da Pamela). Os
+  // tempos (s) são do trecho talento.mp3 (64,2 s → 77,6 s da música).
+  const LETRA_PLAYER = [
+    { t: 0.26, l: "O meu porto seguro, minha felicidade" },
+    { t: 2.3, l: "Eu sei que sou meio atrapalhado, é verdade" },
+    { t: 6.46, l: "Não consigo fazer duas coisas ao mesmo tempo" },
+    { t: 10.37, l: "Mas focar em você é o meu melhor talento" },
+  ];
   const LETRA_EXEMPLO = "Na varanda da nossa casa\no café passava devagar\ne você cantava baixinho\npra o dia acordar.";
-  const REFRAO = ["Desde o dia em que te vi", "meu coração aprendeu a sonhar", "por isso hoje eu vim aqui", "te pedir pra namorar"];
+  const REFRAO = ["Pâmela, você é a minha melhor metade", "O meu porto seguro, minha felicidade"];
 
   const $ = (s, r = raiz) => r.querySelector(s);
   const tela = $("#tela"), palco = $("#palco"), rodape = $("#rodape"), pontos = $("#pontos"), aviso = $("#aviso");
@@ -69,6 +79,17 @@ export function iniciarOnboarding(raiz, opcoes) {
     return notas.length * dur;
   }
   function pararSom() { if (somParar) { somParar(); somParar = null; } }
+  // Trecho real: toca `src` por até `max` s; `aoTempo(t)` a cada quadro.
+  function tocarTrecho(src, max, aoTempo, aoFim) {
+    pararSom();
+    const a = new Audio(src); a.preload = "auto";
+    let quadro = 0, parado = false;
+    const passo = () => { if (parado) return; aoTempo && aoTempo(a.currentTime); if (a.currentTime >= max) { fim(); return; } quadro = requestAnimationFrame(passo); };
+    const fim = () => { if (parado) return; parado = true; cancelAnimationFrame(quadro); try { a.pause(); } catch {} aoFim && aoFim(); };
+    a.addEventListener("ended", fim);
+    a.play().then(() => { quadro = requestAnimationFrame(passo); }).catch(() => fim());
+    somParar = fim;
+  }
   function tom(freq = 880, dur = 0.12) { const a = somLigado(); if (!a) return; const o = a.createOscillator(), g = a.createGain(); o.type = "sine"; o.frequency.value = freq; g.gain.setValueAtTime(0.1, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + dur); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + dur); }
   const vibra = (p) => { try { navigator.vibrate && navigator.vibrate(p); } catch {} };
 
@@ -232,9 +253,11 @@ export function iniciarOnboarding(raiz, opcoes) {
       s.querySelectorAll(".pilula").forEach((x) => x.setAttribute("aria-pressed", "false"));
       p.setAttribute("aria-pressed", "true"); vibra(10);
       const e = ESTILOS[p.dataset.e];
-      $("#capa", s).style.background = e.grad; $("#capa-nome", s).textContent = `${e.emoji} ${p.dataset.e}`;
-      tocar(e.notas, e.bpm, e.onda, () => ondas.forEach((o) => o.style.height = (6 + Math.random() * 34) + "px"));
-      setTimeout(() => ondas.forEach((o) => o.style.height = "6px"), (e.notas.length * 60 / e.bpm) * 1000 + 200);
+      $("#capa", s).style.background = `linear-gradient(0deg, rgba(0,0,0,.55), rgba(0,0,0,.05)), url(${e.capa}) center/cover`;
+      $("#capa-nome", s).textContent = `${e.emoji} ${p.dataset.e}`;
+      let ultimo = 0;
+      tocarTrecho(e.audio, 6, (t) => { if (t - ultimo > 0.12) { ultimo = t; ondas.forEach((o) => o.style.height = (6 + Math.random() * 34) + "px"); } },
+        () => ondas.forEach((o) => o.style.height = "6px"));
       aoEscolher && aoEscolher(p.dataset.e);
     });
   }
@@ -268,7 +291,7 @@ export function iniciarOnboarding(raiz, opcoes) {
       <button class="acao" id="aprovar" type="button" disabled>Aprovar a letra ✓</button>`;
     // Passo 1 acontece sozinho: a história se digita no balão
     marcarEtapa(s, 1);
-    const historia = "“A gente se conheceu num show e eu quero pedir ela em namoro no aniversário dela…”";
+    const historia = "“Conheci a Pamela por amigos em comum. Era só troca de olhares, até que num churrasco a conversa fluiu…”";
     let k = 0; const balao = $("#balao", s);
     const digita = () => {
       // Para se a pessoa trocou de aba/tela no meio (o balão saiu da página)
@@ -335,9 +358,9 @@ export function iniciarOnboarding(raiz, opcoes) {
       <div><span class="selo">⚡ Pronta em minutos</span></div>
       <h2>Veja o que você <span class="destaque">recebe</span></h2>
       <div class="player">
-        <div class="mini-capa"><button class="play" id="play" type="button" aria-label="Tocar">▶</button></div>
-        <div><div class="titulo">${compor ? "Varanda" : "Diz Que Sim"}</div><div class="meta">${compor ? "Composição autoral · MPB" : "Pedido de Namoro · Sertanejo"}</div></div>
-        <div class="letras" id="letras">${(compor ? LETRA_EXEMPLO.split("\n") : REFRAO).map((l) => `<p>${l}</p>`).join("")}</div>
+        <div class="mini-capa" ${compor ? "" : 'style="background:url(/onboarding/capa-talento.jpg) center/cover"'}><button class="play" id="play" type="button" aria-label="Tocar">▶</button></div>
+        <div><div class="titulo">${compor ? "Varanda" : "Meu Melhor Talento"}</div><div class="meta">${compor ? "Composição autoral · MPB" : "Pedido de Namoro · K-Pop"}</div></div>
+        <div class="letras" id="letras">${(compor ? LETRA_EXEMPLO.split("\n") : LETRA_PLAYER.map((x) => x.l)).map((l) => `<p>${l}</p>`).join("")}</div>
         <div class="barra"><i id="progresso"></i></div>
       </div>
       ${compor ? `
@@ -350,21 +373,35 @@ export function iniciarOnboarding(raiz, opcoes) {
           <div class="fotos" id="fotos"><div class="trilho" id="trilho">${[0, 1, 2, 3].map(svgFoto).join("")}</div><div class="marcas" id="marcas">${"<i></i>".repeat(4)}</div></div>
           <span class="plano">Planos Retrospectiva</span></div>
         <div class="extra"><span class="rotulo">🎁 Cartão QR Code</span>
-          <button class="cartao-qr" id="qr" type="button" aria-label="Virar o cartão"><div class="giro"><div class="face frente">Para você,<br>meu amor 💘<br><span style="font-weight:500;font-size:12px;opacity:.7">toque pra virar</span></div><div class="face verso"><canvas id="qr-canvas"></canvas></div></div></button>
+          <button class="cartao-qr" id="qr" type="button" aria-label="Virar o cartão"><div class="giro"><div class="face frente">Para você,<br>Pamela 💘<br><span style="font-weight:500;font-size:12px;opacity:.7">toque pra virar</span></div><div class="face verso"><canvas id="qr-canvas"></canvas></div></div></button>
           <span class="plano">Plano Premium</span></div>
       </div>`}
       <div class="chips"><span class="chip">🎵 2ª versão grátis</span><span class="chip">🖼️ Capa exclusiva</span><span class="chip">📝 Letra sincronizada</span></div>`;
     const linhas = [...s.querySelectorAll("#letras p")];
     $("#play", s).onclick = (e) => {
       const b = e.currentTarget; vibra(10);
-      const notas = compor ? [65, 69, 72, 69, 67, 65, 64, 65] : [64, 67, 69, 72, 69, 67, 64, 62];
+      const p = $("#progresso", s);
+      const terminou = () => { b.textContent = "▶"; linhas.forEach((x) => x.classList.remove("agora")); agendarMao(compor ? "#bt-prox" : "#fotos", compor ? "toca" : "arrasta", 200); };
+      b.textContent = "❚❚";
+      if (!compor) {
+        // Música real: a linha acende no tempo da letra sincronizada (LRC)
+        const DUR = 13.2;
+        p.style.transition = "none";
+        tocarTrecho("/onboarding/talento.mp3", DUR, (t) => {
+          let l = -1; LETRA_PLAYER.forEach((x, k) => { if (t >= x.t) l = k; });
+          linhas.forEach((x, k) => x.classList.toggle("agora", k === l));
+          p.style.width = Math.min(100, (t / DUR) * 100) + "%";
+        }, terminou);
+        return;
+      }
+      const notas = [65, 69, 72, 69, 67, 65, 64, 65];
       const dur = tocar(notas, 120, "triangle", (i) => {
         const l = Math.min(linhas.length - 1, Math.floor(i / 2));
         linhas.forEach((x, k) => x.classList.toggle("agora", k === l));
       });
-      b.textContent = "❚❚"; const p = $("#progresso", s); p.style.transition = "none"; p.style.width = "0";
+      p.style.transition = "none"; p.style.width = "0";
       requestAnimationFrame(() => { p.style.transition = `width ${dur}s linear`; p.style.width = "100%"; });
-      setTimeout(() => { b.textContent = "▶"; linhas.forEach((x) => x.classList.remove("agora")); agendarMao(compor ? "#bt-prox" : "#fotos", compor ? "toca" : "arrasta", 200); }, dur * 1000 + 100);
+      setTimeout(terminou, dur * 1000 + 100);
     };
     if (!compor) {
       let foto = 0; const trilho = $("#trilho", s), marcas = [...s.querySelectorAll("#marcas i")];
@@ -392,7 +429,7 @@ export function iniciarOnboarding(raiz, opcoes) {
           <p>Publique a sua e veja se ela entra nas mais ouvidas e mais aplaudidas.</p>
           <div class="selos"><span>▶ Mais ouvidas</span><span>👏 Mais aplaudidas</span><span>🏆 Top 10</span></div>
         </div>
-        <div class="musica"><div class="c"></div><div><b>Café no Fogão</b><span>Homenagem para Avó · publicada por Ana</span></div></div>
+        <div class="musica"><button class="c" id="ouvir-rede" type="button" aria-label="Ouvir A Mais Doce Espera" style="background:url(/onboarding/capa-doce.jpg) center/cover;border:0;cursor:pointer;display:grid;place-items:center;color:#fff;font-size:14px">▶</button><div><b>A Mais Doce Espera</b><span>Chá Revelação · Sertanejo</span></div></div>
         ${feito.palma ? "" : '<div class="convite-palma" id="convite">👆 Arraste para dar palmas 👏</div>'}
         <div class="medidor ${feito.palma ? "" : "convida"}" id="medidor" role="slider" tabindex="0" aria-label="Quantas palmas, de 0 a 10" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0">
           ${feito.palma ? "" : '<div class="dica-mao" aria-hidden="true">👆</div>'}
@@ -410,6 +447,13 @@ export function iniciarOnboarding(raiz, opcoes) {
         </div>
       </div>`;
     // Medidor: mesma lógica do app (posição do dedo na largura = 0 a 10)
+    // Ouvir a música de exemplo do SpotFiz (trecho real de 10 s)
+    $("#ouvir-rede", s).onclick = (e) => {
+      const b = e.currentTarget; somLigado(); vibra(8);
+      if (b.textContent === "❚❚") { pararSom(); b.textContent = "▶"; return; }
+      b.textContent = "❚❚";
+      tocarTrecho("/onboarding/doce.mp3", 10, null, () => { b.textContent = "▶"; });
+    };
     const med = $("#medidor", s), segs = [...s.querySelectorAll("#segs i")], cor = (i) => { const p = i / 9; return `rgb(${Math.round(240 - 23 * p)},${Math.round(25 + 45 * p)},${Math.round(107 + 132 * p)})`; };
     let valor = 0, arrastando = false, dado = 0;
     const pinta = (v) => { segs.forEach((x, i) => { x.style.background = i < v ? cor(i) : ""; x.style.boxShadow = i < v ? `0 0 8px ${cor(i)}` : ""; }); med.setAttribute("aria-valuenow", v); };

@@ -107,7 +107,7 @@
 .onb .player .titulo { font-weight: 800; font-size: 16px; }
 .onb .player .meta { font-size: 13px; color: var(--texto-3); }
 .onb .letras { grid-column: 1 / -1; display: grid; gap: 2px; padding: 4px 4px 2px; }
-.onb .letras p { margin: 0; font-size: 15px; color: var(--texto-3); transition: color .3s, transform .3s; transform-origin: left center; }
+.onb .letras p { margin: 0; font-size: 13.5px; line-height: 1.35; color: var(--texto-3); transition: color .3s, transform .3s; transform-origin: left center; }
 .onb .letras p.agora { color: var(--texto); transform: scale(1.04); font-weight: 700; }
 .onb .barra { grid-column: 1 / -1; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.1); overflow: hidden; }
 .onb .barra i { display: block; height: 100%; width: 0; background: var(--grad); }
