@@ -10,6 +10,7 @@ import Footer from "../components/Footer"
 import JourneyProgress from "../components/JourneyProgress"
 import BotaoFacebook from "@/app/components/BotaoFacebook"
 import { useQuickLogin } from "../hooks/useQuickLogin"
+import { supabase } from "@/lib/supabase"
 
 type OrderData = {
   id: string
@@ -67,6 +68,18 @@ function SucessoContent() {
   // Login sempre — o token só prova posse do pedido pra vincular à conta
   // (ver /preparar/[token]), não substitui entrar de verdade.
   const quickLogin = useQuickLogin(order?.email, order?.photo_token)
+
+  // Já logado (o caso comum no app, onde a pessoa entra antes de comprar):
+  // oferecer login de novo fazia ela pedir o link por e-mail e sair do app
+  // pra caçar o e-mail — relato de testador, 2026-10-16. Aqui vira um botão
+  // direto; /preparar/[token] vincula o pedido à conta logada e cai em Pedidos.
+  const [logado, setLogado] = useState(false)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setLogado(!!data.session))
+    const { data: escuta } = supabase.auth.onAuthStateChange((_e, sessao) => setLogado(!!sessao))
+    return () => escuta.subscription.unsubscribe()
+  }, [])
+  const linkArea = order?.photo_token ? `/preparar/${order.photo_token}` : `/minha-musica?orderId=${orderId ?? ""}`
 
   return (
     <div className="relative min-h-screen text-white font-sans overflow-hidden" style={{ background: "#07060d" }}>
@@ -138,7 +151,14 @@ function SucessoContent() {
                           Entre na sua área para aprovar a letra, cadastrar fotos e acessar o player.
                         </p>
 
-                        {quickLogin.emailSent ? (
+                        {logado ? (
+                          <button
+                            onClick={() => router.push(linkArea)}
+                            className="w-full inline-flex items-center justify-center gap-2 bg-white text-gray-900 hover:bg-gray-100 transition-colors font-bold text-base px-6 py-4 rounded-2xl shadow-lg"
+                          >
+                            Acessar minha área →
+                          </button>
+                        ) : quickLogin.emailSent ? (
                           <p className="text-white/90 text-sm leading-relaxed bg-white/10 rounded-2xl px-4 py-3">
                             📧 Enviamos um link de acesso para <strong>{order?.email}</strong>. Clique nele pra entrar.
                           </p>
