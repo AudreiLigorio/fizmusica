@@ -54,7 +54,20 @@ export default function ResumeMusicBanner({ formato = "flutuante" }: { formato?:
   }
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 max-w-[92vw] rounded-2xl px-4 py-3 text-sm text-white shadow-2xl"
+    // No celular precisa subir acima da barra de abas, que é `fixed bottom-0`
+    // e tem a mesma z-40: com `bottom-4` o aviso caía DENTRO da área da barra e
+    // ainda perdia o empilhamento pra ela, aparecendo cortado por baixo do
+    // menu. O deslocamento soma a altura da barra e a faixa de gestos do
+    // aparelho (safe-area), senão em iPhone com barra inferior ele encosta.
+    // Do `sm` pra cima a barra não existe (ela é `sm:hidden`) e o aviso volta
+    // pro rodapé normal. z-50 fica acima do menu e abaixo dos popups (z-100).
+    // `left-4 right-4 mx-auto w-fit` em vez de `left-1/2 -translate-x-1/2`:
+    // num elemento fixo com apenas `left`, a largura disponível passa a ser da
+    // metade da tela até a borda, então o aviso nunca passava de ~50vw e a
+    // frase quebrava em quatro linhas no celular — o `max-w-[92vw]` não tinha
+    // efeito nenhum. Assim ele cresce até a largura da tela e encolhe quando o
+    // texto é curto.
+    <div className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] sm:bottom-4 left-4 right-4 mx-auto w-fit z-50 flex items-center gap-3 rounded-2xl px-4 py-3 text-sm text-white shadow-2xl"
          style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 10px 40px rgba(240,25,107,0.45)" }}>
       <button onClick={() => router.push(href)} className="flex items-center gap-2 font-medium text-left hover:underline">
         🎵 Continue sua música{info.sub ? ` de ${info.sub}` : ""} de onde parou →
