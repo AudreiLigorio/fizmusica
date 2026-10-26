@@ -9,6 +9,7 @@ type State = {
   lyricsApproved: boolean
   reprocessLeft: number
   reprocessUsed: number
+  rejection: string | null
 }
 
 type Busy = "gerar" | "reprocessar" | "aprovar" | null
@@ -99,6 +100,7 @@ export default function LetraPanel({
         lyricsApproved: d.lyricsApproved,
         reprocessLeft: d.reprocessLeft,
         reprocessUsed: d.reprocessUsed,
+        rejection: d.rejection ?? null,
       })
       if (d.lyricsDraft && !text) { setText(d.lyricsDraft); setLastAiText(d.lyricsDraft) }
     } finally {
@@ -261,6 +263,34 @@ export default function LetraPanel({
         </div>
       </div>
     )}
+    {/* A letra voltou porque o estúdio de IA recusou. Sem esta explicação o
+        pedido reapareceria como "aprove sua letra" do nada, e a pessoa acharia
+        que o site desfez o que ela já tinha feito.
+
+        Não mostramos "o trecho recusado" porque o fornecedor não informa qual
+        é — a resposta dele é só "contém material protegido". Pedir "altere o
+        trecho" viraria adivinhação: olhar a letra inteira sem saber o que
+        mudar, tentar de novo e ser recusado outra vez. */}
+    {state.rejection === "letra_protegida" && (
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-5 mb-4">
+        <p className="text-amber-200 font-semibold">⚠️ Precisamos ajustar a sua letra</p>
+        <p className="text-white/70 text-sm mt-1.5 leading-relaxed">
+          O estúdio de IA que produz a música identificou que a letra enviada tem
+          trechos de uma música que já existe, e não pode gravá-la. Isso vale para
+          letra de artista conhecido, mesmo que seja só um pedaço ou o refrão.
+        </p>
+        <p className="text-white/70 text-sm mt-3 leading-relaxed">
+          Para seguir, edite a letra abaixo com palavras suas — ou peça para a
+          gente compor uma original a partir da sua história, que é o que fazemos
+          na maioria dos pedidos. Seu pedido continua pago e garantido.
+        </p>
+        <p className="text-white/40 text-xs mt-3 leading-relaxed">
+          Escreveu você mesmo e acha que houve engano? Fale com a gente que
+          resolvemos junto.
+        </p>
+      </div>
+    )}
+
     <div className="rounded-2xl border border-fuchsia-500/25 bg-fuchsia-500/[0.06] p-5 mb-4">
       <div className="mb-4">
         <p className="text-fuchsia-200 font-semibold flex items-center gap-2">🎼 Sua letra</p>

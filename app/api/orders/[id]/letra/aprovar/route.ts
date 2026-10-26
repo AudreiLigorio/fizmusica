@@ -32,6 +32,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       lyricsDraft: final,
       lyricsApproved: true,
       lyricsApprovedAt: new Date().toISOString(),
+      // Recusa pendente com o cliente se resolve aqui: ele leu o aviso, mexeu
+      // na letra e aprovou de novo. Se o fornecedor recusar outra vez, a falha
+      // regrava o código — não fica preso ao problema anterior.
+      lyrics_rejection: null,
       // O rótulo do admin passa a refletir a realidade: aprovou a letra → em produção.
       status: "IN_PRODUCTION",
     })

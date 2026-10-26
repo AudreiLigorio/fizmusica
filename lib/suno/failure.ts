@@ -1,8 +1,20 @@
 import type { createServerClient } from "@/lib/supabase"
 import { getMusicDetails } from "./client"
 import { triggerSunoGeneration, AUTORETRY_SENTINEL } from "./trigger"
+import { logOrderEvent } from "@/lib/orderEvents"
 
 type DB = ReturnType<typeof createServerClient>
+
+// A KIE não publica catálogo de recusas de conteúdo: os códigos documentados
+// são de transporte (401 chave, 402 crédito, 429 limite, 5xx servidor) e o
+// motivo real vem como TEXTO LIVRE em inglês, que o fornecedor pode reescrever
+// quando quiser. Então classificar é necessariamente heurístico — e por isso o
+// padrão é NÃO envolver o cliente: só o que reconhecemos com segurança vira
+// pedido de ação pra ele.
+export function pedeAcaoDoCliente(msg: string): "letra_protegida" | null {
+  if (/copyright|copyrighted material/i.test(msg)) return "letra_protegida"
+  return null
+}
 
 // Extrai o termo que o Suno bloqueou da mensagem de erro do KIE, para regenerar sem ele.
 // Ex.: "Your tags contain artist name oficina g3 - we don't reference specific artists"
@@ -54,9 +66,34 @@ export async function handleSunoFailure(supabase: DB, orderId: string, taskId: s
   // Grava o motivo real para o admin enxergar no painel.
   await supabase.from("orders").update({ sunoStatus: "FAILED", sunoError: display }).eq("id", orderId)
 
+  // Registra a recusa no histórico com o texto CRU do fornecedor. Sem isto o
+  // sistema é cego: `sunoError` é estado atual e some no próximo sucesso, então
+  // toda recusa anterior se perdeu — não dá pra saber se um tipo acontece uma
+  // vez por mês ou toda semana, nem medir se o tratamento resolveu.
+  await logOrderEvent(supabase, orderId, "musica_recusada", errMsg.slice(0, 500), "system")
+
+  // Recusa que o cliente resolve: devolve a letra pra ele editar. A área do
+  // cliente é guiada por `lyricsApproved` — zerar faz o pedido subir pro topo
+  // como "precisa da sua ação" e reabrir a etapa da Letra sozinho. Sem isso o
+  // aviso seria cruel: mostraríamos o problema com a edição travada em 409.
+  const acionavel = pedeAcaoDoCliente(errMsg)
+  if (acionavel) {
+    await supabase
+      .from("orders")
+      .update({ lyricsApproved: false, lyrics_rejection: acionavel })
+      .eq("id", orderId)
+    return
+  }
+
   // Auto-retry único para palavra sensível: regenera sem o termo bloqueado.
   if (isSensitive && !wasAutoRetry) {
     try {
+      // Fica gravado para o cliente ver o que mudou no pedido dele. Alterar a
+      // encomenda de alguém em silêncio não é aceitável: ela pediu uma
+      // referência de artista e vai receber uma música sem ela.
+      if (avoid) {
+        await supabase.from("orders").update({ estilo_termo_removido: avoid }).eq("id", orderId)
+      }
       await triggerSunoGeneration(supabase, order, { avoid, isRetry: true })
     } catch {
       // Se o retry falhar ao disparar, o pedido permanece FAILED com o motivo real.

@@ -17,6 +17,7 @@ export type OrderEventType =
   | "termo_entrega_aceito"
   | "revisao_solicitada"
   | "revisao_aceita"
+  | "musica_recusada"
   | "musica_gerada"
   | "musica_liberada"
   | "conteudo_gerado"

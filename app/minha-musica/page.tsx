@@ -68,6 +68,10 @@ type Order = {
   lyricsLrc?: string | null
   sharing_term_accepted_at?: string | null
   lyricsApproved?: boolean
+  // Termo de estilo que o sistema removeu sozinho pra conseguir gerar (o
+  // estúdio não aceita nome de artista). Mostrado como aviso: o pedido dela
+  // foi alterado, e ela precisa saber o quê e por quê.
+  estilo_termo_removido?: string | null
   photoCount?: number
   productId?: string | null
   musicStatus?: string | null
@@ -654,6 +658,23 @@ function MinhaMusicaContent() {
         {/* ESCOLHER VERSÃO — versões liberadas, cliente ainda não escolheu */}
         {escolhaPendente && (
           <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={recarregarEMostrarPedidos} />
+        )}
+
+        {/* AJUSTE AUTOMÁTICO NO PEDIDO: o estúdio de IA não grava citando nome
+            de artista, então o sistema tirou o termo e gerou sem ele. Isso
+            acontecia em silêncio — a pessoa pedia "estilo Racionais", recebia
+            uma música sem a referência e nunca ficava sabendo. Mudança feita
+            por nós no pedido de alguém precisa ser contada, com o que mudou e
+            por quê. Fica visível na produção e continua depois da entrega. */}
+        {paid && order.estilo_termo_removido && (
+          <div className="rounded-xl border border-sky-500/25 bg-sky-500/[0.07] px-4 py-3 mb-3">
+            <p className="text-sky-200 text-sm font-semibold">ℹ️ Ajustamos o estilo da sua música</p>
+            <p className="text-white/65 text-sm mt-1 leading-relaxed">
+              Tiramos a referência a <span className="text-sky-200">“{order.estilo_termo_removido}”</span>,
+              porque o estúdio de IA não grava citando nome de artista. O gênero, a
+              emoção e a sua letra foram mantidos — só a menção ao artista saiu.
+            </p>
+          </div>
         )}
 
         {/* EM PRODUÇÃO (sem ação): card pulsante. Fotos já foram travadas na aprovação. */}

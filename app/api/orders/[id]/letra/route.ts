@@ -12,7 +12,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const { data, error } = await supabase
     .from("orders")
-    .select("paymentStatus, lyricsDraft, lyricsApproved, lyricsReprocessCount")
+    .select("paymentStatus, lyricsDraft, lyricsApproved, lyricsReprocessCount, lyrics_rejection")
     .eq("id", id)
     .single()
 
@@ -23,6 +23,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     paymentStatus:  data.paymentStatus,
     lyricsDraft:    data.lyricsDraft ?? null,
     lyricsApproved: !!data.lyricsApproved,
+    // Código da recusa que voltou pro cliente resolver (o texto fica na tela).
+    // Nome neutro de propósito: o motivo cru do fornecedor nunca chega aqui.
+    rejection:      data.lyrics_rejection ?? null,
     reprocessUsed:  used,
     reprocessLeft:  Math.max(0, REPROCESS_LIMIT - used),
   })

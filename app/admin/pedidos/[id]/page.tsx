@@ -26,6 +26,7 @@ const EVENT_LABELS: Record<string, { icon: string; label: string }> = {
   termo_entrega_aceito:        { icon: "🔒", label: "Termo de entrega aceito" },
   revisao_solicitada:          { icon: "✏️", label: "Revisão solicitada" },
   revisao_aceita:              { icon: "✅", label: "Revisão aceita" },
+  musica_recusada:             { icon: "🚫", label: "Geração recusada pelo fornecedor" },
   musica_gerada:               { icon: "🤖", label: "Música gerada pela IA" },
   musica_liberada:             { icon: "🚀", label: "Música liberada ao cliente" },
   conteudo_gerado:             { icon: "🎬", label: "Rascunho de conteúdo gerado" },
