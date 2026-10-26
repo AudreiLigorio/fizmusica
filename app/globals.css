@@ -511,3 +511,24 @@
 /* Zona sempre escura (players, capas tocando, mockups): reinicia a cor do
    texto que, sem isso, viria herdada do <html> claro */
 [data-tema="claro"] [data-zona-escura] { color: #ffffff; }
+
+/* ── Faixa de selos do herói (home) no tema claro ──
+   O véu creme sobre o vídeo é graduado: 96% à esquerda, onde está o texto, e
+   15% à direita, pra deixar a arte do produto aparecer. Só que a faixa de
+   selos atravessa as três colunas, e a última começa a ~66% da largura — onde
+   o véu já caiu pra perto de 40%. O texto escuro (#4a4351) ficava sobre o
+   vídeo claro, cinza em cima de cinza.
+   Reforçar o véu inteiro resolveria o texto e apagaria a arte, que é o que
+   vende. Então a faixa ganha superfície própria e para de depender de onde o
+   gradiente está naquela altura. Só no claro: no escuro o texto é branco sobre
+   vídeo escuro e já tem contraste. */
+[data-tema="claro"] .fm-hero-selos:not([data-zona-escura]):not([data-zona-escura] *){
+  background: rgba(251, 247, 244, 0.90);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 14px;
+  padding: 1.25rem 1rem 1rem;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  border-top-color: #e3d8dc !important;
+}

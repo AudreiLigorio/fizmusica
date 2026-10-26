@@ -388,7 +388,14 @@ export default function Home() {
               e com 14px os rótulos longos passavam a quebrar em TRÊS linhas
               — o último selo chegava a sumir atrás da barra de navegação.
               Aumentar a fonte tornava a lista menos legível, não mais. */}
-          <div className="animate-fade-up delay-400 mt-10 lg:mt-12 pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm lg:text-sm text-white/85 tracking-wide" style={bodyFont}>
+          {/* `fm-hero-selos`: a faixa precisa de fundo próprio no tema claro.
+              O véu sobre o vídeo é graduado de propósito (forte à esquerda,
+              onde fica o texto; fraco à direita, pra aparecer a arte do
+              produto) — mas esta lista atravessa as três colunas e a última
+              cai em ~66% da largura, onde o véu já está perto de 40%. Resultado
+              no creme: texto escuro sobre o vídeo claro, quase ilegível.
+              Reforçar o véu inteiro apagaria justamente a arte que vende. */}
+          <div className="fm-hero-selos animate-fade-up delay-400 mt-10 lg:mt-12 pt-6 border-t border-white/10 grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-sm lg:text-sm text-white/85 tracking-wide" style={bodyFont}>
               {[
                 // Mesmos ícones da /produtos (música e QR Code), pra selo e
                 // cartão de produto lerem como a mesma linguagem visual.
