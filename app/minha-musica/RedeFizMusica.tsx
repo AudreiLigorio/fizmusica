@@ -338,7 +338,8 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                       type="button"
                       onClick={() => abrirAdicionar(it.orderId)}
                       aria-label="Adicionar à playlist"
-                      className="absolute top-1.5 right-8 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-[13px] font-bold hover:scale-110 transition-transform"
+                      data-zona-escura
+                  className="absolute top-1.5 right-8 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-white text-[13px] font-bold hover:scale-110 transition-transform"
                     >
                       +
                     </button>
@@ -402,7 +403,8 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                   type="button"
                   onClick={() => abrirAdicionar(it.orderId)}
                   aria-label="Adicionar à playlist"
-                  className="absolute top-1.5 right-9 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-sm font-bold transition-transform hover:scale-110"
+                  data-zona-escura
+                  className="absolute top-1.5 right-9 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white text-sm font-bold transition-transform hover:scale-110"
                 >
                   +
                 </button>

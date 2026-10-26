@@ -168,7 +168,8 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                         type="button"
                         onClick={() => remover(pl.id, t.orderId)}
                         aria-label="Remover da playlist"
-                        className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-[13px] font-bold hover:scale-110 hover:bg-red-500/70 transition-all"
+                        data-zona-escura
+                  className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-white text-[13px] font-bold hover:scale-110 hover:bg-red-500/70 transition-all"
                       >
                         −
                       </button>
