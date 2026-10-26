@@ -22,6 +22,8 @@ type Order = {
   createdAt: string
   photo_effect?: string | null
   lyricsApproved?: boolean
+  // Recusa devolvida ao cliente: a bola está com ELE, não com a produção.
+  lyrics_rejection?: string | null
   lyricsDraft?: string | null
   products?: { name: string; feat_qrcode?: boolean | null } | null
   product_delivery_options?: { label: string; days: number } | null
@@ -52,8 +54,13 @@ const fmtTime = fmtTimeBR
 
 // Um pedido "precisa de ação" quando: cliente pediu revisão (esperando aceite),
 // a geração falhou (precisa gerar de novo), ou está pronta esperando ser liberada.
-function needsAction(o: Order): "revision" | "failed" | "ready" | null {
+function needsAction(o: Order): "revision" | "failed" | "aguardando_cliente" | "ready" | null {
   if (o.revision) return "revision"
+  // Falhou MAS a letra já voltou pro cliente editar: quem precisa agir é ele.
+  // Sem separar isso, o card dizia só "geração falhou" e dava pra clicar em
+  // "Gerar novamente" com a mesma letra recusada — queimando crédito e
+  // falhando de novo, sem perceber que a bola não estava com a produção.
+  if (o.sunoStatus === "FAILED" && o.lyrics_rejection) return "aguardando_cliente"
   if (o.sunoStatus === "FAILED") return "failed"
   if (o.sunoStatus === "READY") return "ready"
   return null
@@ -62,11 +69,13 @@ function needsAction(o: Order): "revision" | "failed" | "ready" | null {
 const ACTION_LABEL: Record<string, string> = {
   revision: "⚠️ Revisão solicitada",
   failed:   "❌ Geração falhou",
+  aguardando_cliente: "⏳ Aguardando o cliente ajustar a letra",
   ready:    "✅ Pronta p/ liberar",
 }
 const ACTION_COLOR: Record<string, string> = {
   revision: "bg-orange-500/15 text-orange-300 border-orange-500/30",
   failed:   "bg-red-500/15 text-red-300 border-red-500/30",
+  aguardando_cliente: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   ready:    "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
 }
 
@@ -141,7 +150,9 @@ export default function ProductionList({ orders }: { orders: Order[] }) {
     })
     // Prioriza quem precisa de ação (revisão > falha > pronto) no topo; resto
     // segue a ordem cronológica original (mais antigo primeiro).
-    const ACTION_WEIGHT: Record<string, number> = { revision: 0, failed: 1, ready: 2 }
+    // "aguardando_cliente" fica abaixo de "failed": o que exige a SUA ação vem
+    // primeiro; esse aí já está encaminhado e a espera é por outra pessoa.
+    const ACTION_WEIGHT: Record<string, number> = { revision: 0, failed: 1, ready: 2, aguardando_cliente: 3 }
     const weight = (o: Order) => ACTION_WEIGHT[needsAction(o) ?? ""] ?? 3
     return [...base].sort((a, b) => weight(a) - weight(b))
   }, [orders, search, status, product, from, to, onlyAction])

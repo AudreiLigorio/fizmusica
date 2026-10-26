@@ -315,6 +315,56 @@ export async function sendAccessLinksEmail(data: AccessLinksEmailData): Promise<
   }
 }
 
+// ============================================================
+// Letra recusada pelo estúdio: precisa de ajuste do cliente
+// ============================================================
+
+// Sem este e-mail a correção não chega em quem pagou: o aviso existe na área
+// do cliente, mas ele não tem motivo pra abrir o site — do ponto de vista dele
+// a música está sendo feita. Ficaria esperando por algo que nunca vem.
+export async function sendLyricsRejectedEmail(data: {
+  orderId: string
+  nome: string
+  email: string
+}): Promise<{ ok: boolean; error?: string }> {
+  const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
+  const url = `${siteUrl}/minha-musica?orderId=${data.orderId}`
+  const firstName = data.nome?.split(" ")[0]
+
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      data.email,
+      // Sem "erro"/"falha" no assunto: não é problema dele nem do pagamento,
+      // e assunto alarmante em e-mail de compra assusta à toa.
+      subject: "Sua letra precisa de um pequeno ajuste — FizMusica",
+      html: emailShell({
+        emoji: "✏️",
+        title: "Precisamos ajustar a sua letra",
+        subtitle: "Leva dois minutos e a produção continua",
+        body:
+          para(`Olá${firstName ? `, ${strong(firstName)}` : ""}!`) +
+          para(`O estúdio de inteligência artificial que grava a sua música identificou que a letra enviada tem trechos de ${strong("uma música que já existe")} — e por isso não pode gravá-la. Isso vale mesmo quando é só um pedaço ou o refrão.`) +
+          para(`Para seguir, é só abrir seu pedido e ${strong("editar a letra com palavras suas")} — ou pedir que a gente componha uma original a partir da sua história, que é o que fazemos na maioria dos pedidos.`),
+        button: { text: "✏️ Ajustar minha letra", url },
+        note: {
+          label: "💛 Seu pedido está garantido",
+          text: "O pagamento segue confirmado e nada se perdeu. Se você escreveu a letra e acha que houve engano, responda este e-mail que a gente resolve junto.",
+        },
+      }),
+    })
+    if ((result as any).error) {
+      const msg = (result as any).error?.message ?? JSON.stringify((result as any).error)
+      console.error("[email] Resend erro no aviso de letra recusada:", msg)
+      return { ok: false, error: msg }
+    }
+    console.log(`[email] Aviso de letra recusada enviado para ${data.email}`)
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
+
 interface OrderEmailData {
   orderId: string
   nome: string

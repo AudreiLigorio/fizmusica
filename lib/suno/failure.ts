@@ -33,7 +33,7 @@ function parseBlockedTerm(msg: string): string | undefined {
 export async function handleSunoFailure(supabase: DB, orderId: string, taskId: string): Promise<void> {
   const { data: order } = await supabase
     .from("orders")
-    .select("id, sunoError, lyricsDraft, musicalStyle, voiceType, emotion, honoreeName, nome, subcategory, revision_note, style_confirmed, style_reference")
+    .select("id, email, sunoError, lyricsDraft, musicalStyle, voiceType, emotion, honoreeName, nome, subcategory, revision_note, style_confirmed, style_reference")
     .eq("id", orderId)
     .single()
   if (!order) return
@@ -82,6 +82,14 @@ export async function handleSunoFailure(supabase: DB, orderId: string, taskId: s
       .from("orders")
       .update({ lyricsApproved: false, lyrics_rejection: acionavel })
       .eq("id", orderId)
+
+    // E avisa por e-mail. Só o aviso na tela não resolve: do ponto de vista do
+    // cliente a música está sendo feita, então ele não tem motivo pra abrir o
+    // site — ficaria esperando por algo que nunca chega.
+    if (order.email) {
+      const { sendLyricsRejectedEmail } = await import("@/app/services/emailService")
+      await sendLyricsRejectedEmail({ orderId, nome: order.nome ?? "", email: order.email })
+    }
     return
   }
 
