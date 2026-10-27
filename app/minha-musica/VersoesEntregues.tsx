@@ -315,8 +315,20 @@ export default function VersoesEntregues({
       {active === "player" && (
         <div className="space-y-2">
           {linkAtivo ? (
+            /* Três frases curtas, uma ideia cada: o que é, quem vê, como
+               mudar. O texto antigo ("Veja como ficou no player… Aqui você
+               pode compartilhar o acesso a esse player exclusivo") repetia
+               "exclusiv-" duas vezes, chamava o player pelo nome duas vezes e
+               não dizia a parte que importa: que ESTA tela é exatamente o que
+               a outra pessoa vai ver.
+
+               As condições não são enfeite — a aba Fotos só existe em plano
+               com fotos e a aba QR Code só em plano com QR. Citar uma aba que
+               não está na tela manda o cliente procurar o que não há. */
             <p className="text-white/55 text-sm text-center mb-1 leading-relaxed">
-              Veja como ficou no player{features.fotos > 0 ? ", com as suas fotos e a música exclusiva" : ", com a capa e a música exclusiva"}. Aqui você pode compartilhar o acesso a esse player exclusivo.
+              Veja como ficou: {features.fotos > 0 ? "as suas fotos e a música, sincronizadas" : "a capa e a música"}.{" "}
+              É isto que a pessoa vê ao abrir o link{features.qrcode ? " ou escanear o QR Code" : ""}.{" "}
+              Para mudar, use {features.fotos > 0 ? "as abas Fotos e Música" : "a aba Música"}.
             </p>
           ) : (
             /* Link vencido: explica em vez de sumir sem aviso, senão o cliente
