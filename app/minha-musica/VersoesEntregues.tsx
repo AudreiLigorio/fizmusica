@@ -256,7 +256,11 @@ export default function VersoesEntregues({
       {/* ── SURPRESA ── opcional: transformar a música em presente físico via QR */}
       {active === "surpresa" && (
         <div className="rounded-xl border border-pink-500/30 bg-pink-500/[0.06] p-4">
-          <p className="text-white/55 text-sm text-center mb-3 leading-relaxed">Opcional — surpreenda colando o QR num presente físico: uma caixa, um cartão, um quadro, um buquê ou uma lembrancinha.</p>
+          {/* Sem o "Opcional —" na frente (Audrei, 2026-10-27): a frase abria
+              avisando o que ela NÃO é, e o aviso vinha antes da ideia. A aba
+              inteira já é opcional — quem não quer o QR simplesmente não entra
+              aqui. Agora começa pelo convite. */}
+          <p className="text-white/55 text-sm text-center mb-3 leading-relaxed">Surpreenda colando o QR num presente físico: uma caixa, um cartão, um quadro, um buquê ou uma lembrancinha.</p>
           <p className="text-center text-sm font-semibold text-pink-200 mb-3">Agora a surpresa — o QR vira presente</p>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
