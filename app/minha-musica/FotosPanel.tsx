@@ -115,10 +115,17 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
           aquela caixa, nenhuma foto existia, então ninguém podia declarar nada
           sobre as pessoas retratadas. A declaração e os termos de Conteúdo
           Enviado só podem ser dados aqui, e é o que os documentos 02 e 03
-          dizem — "consentimento de fotos: no envio das fotos". */}
+          dizem — "consentimento de fotos: no envio das fotos".
+
+          A menção aos responsáveis por crianças estava só na OUTRA tela de
+          upload (/pedido/[token]/fotos): as duas pediam coisas diferentes pelo
+          mesmo envio, e esta era a mais fraca justamente no ponto que o
+          documento 03 prescreve e que o README dos jurídicos marca como
+          atenção especial. As duas agora dizem o mesmo. */}
       <p className="text-white/45 text-sm mb-4 leading-relaxed">
         Aparecem no player enquanto a música toca. Ao enviar, você declara ter o
-        consentimento das pessoas retratadas e concorda com os{" "}
+        consentimento das pessoas retratadas — e dos responsáveis, se houver
+        crianças — e concorda com os{" "}
         <a href="/legal/direitos-autorais" className="underline hover:text-white/70">termos de Conteúdo Enviado</a>.
       </p>
 

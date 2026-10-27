@@ -121,10 +121,14 @@ export default function FotosPage() {
                 <br />É opcional — você pode voltar por este link quando quiser.
               </p>
               <p className="text-white/35 text-[13px] leading-relaxed mt-3 max-w-sm mx-auto">
-                Ao enviar, você autoriza o uso das fotos apenas para exibição no player da sua música e declara ter o consentimento das pessoas retratadas (e dos responsáveis, se houver crianças), conforme os{" "}
-                <a href="/legal/direitos-autorais" className="underline hover:text-white/60">termos de Conteúdo Enviado</a>{" "}
-                e a{" "}
-                <a href="/legal/politica-de-privacidade" className="underline hover:text-white/60">Política de Privacidade</a>.
+                {/* Sem a Política de Privacidade: ela já foi aceita na caixa
+                    do wizard, junto com Termos, Licença e Reembolso. O resto
+                    fica porque não tem equivalente lá atrás — na hora daquele
+                    aceite não havia foto nenhuma para declarar nada sobre
+                    quem aparece nela. Mesmo texto do painel do app
+                    (FotosPanel), que pedia menos pelo mesmo envio. */}
+                Ao enviar, você autoriza o uso das fotos apenas para exibição no player da sua música e declara ter o consentimento das pessoas retratadas — e dos responsáveis, se houver crianças — conforme os{" "}
+                <a href="/legal/direitos-autorais" className="underline hover:text-white/60">termos de Conteúdo Enviado</a>.
               </p>
             </div>
 
