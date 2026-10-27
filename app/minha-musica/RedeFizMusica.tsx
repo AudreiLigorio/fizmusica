@@ -50,13 +50,9 @@ function quandoPublicou(iso: string): string {
   return meses === 1 ? "há 1 mês" : `há ${meses} meses`
 }
 
-export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, muralAberto = false, onMuralAberto }: {
+export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: {
   onPlaylistsChanged?: () => void
   onPrecisaLogin?: () => void
-  // Vêm de AbaMusicas porque este componente desmonta ao entrar num ritmo —
-  // ver o comentário lá.
-  muralAberto?: boolean
-  onMuralAberto?: (v: boolean) => void
 }) {
   const { items, top10, emAlta, recentes, ritmos, setFiltro, alternarFavorito } = useCatalogo()
   const { track: nowPlaying, playing, playOuPausa } = usePlayer()
@@ -155,9 +151,6 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, mura
   // Este componente só existe no modo NAVEGAÇÃO (ver AbaMusicas): com busca
   // ou filtro ativo a tela troca pela lista de resultados.
   //
-  // Mural recolhido nos ritmos principais. Aberto, mostra os 20 — e a cauda
-  // é mesmo cauda: do décimo em diante são ritmos de 1 a 4 músicas, que como
-  // banner prometem mais do que entregam.
 
   // Setas do carrossel "Mais recentes". No celular o dedo arrasta e elas não
   // aparecem; no desktop, sem elas a raia dependia da barra de rolagem
@@ -564,7 +557,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, mura
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
             {(() => {
-              const visiveis = muralAberto ? ritmos : ritmos.slice(0, PRINCIPAIS)
+              const visiveis = ritmos.slice(0, PRINCIPAIS)
               return visiveis.map((r, i) => (
               <button
                 key={r.nome}
@@ -611,14 +604,27 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, mura
             })()}
           </div>
 
+          {/* A CAUDA, sempre à vista.
+              O Audrei pediu 100% dos ritmos — o Funk, com 1 música, estava
+              atrás de um "Ver todos" que ninguém abria. Mas 20 banners
+              inteiros fariam o mural virar o bloco mais longo da tela, que é
+              justamente o que ele veio resolver.
+              Então a cauda aparece como PASTILHA: mesmo destino ao toque, sem
+              capa e sem altura de banner. A diferença de tamanho também é
+              honesta — um ritmo de 1 música não é a mesma porta que um de 13. */}
           {ritmos.length > PRINCIPAIS && (
-            <div className="flex justify-center mt-3">
-              <button
-                onClick={() => onMuralAberto?.(!muralAberto)}
-                className="px-5 py-2 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 transition-colors"
-              >
-                {muralAberto ? "Ver menos" : `Ver todos os ritmos · ${ritmos.length}`}
-              </button>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+              {ritmos.slice(PRINCIPAIS).map((r) => (
+                <button
+                  key={r.nome}
+                  type="button"
+                  onClick={() => setFiltro({ tipo: "estilo", valor: r.nome })}
+                  className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.07] hover:border-white/25 transition-colors"
+                >
+                  <span className="text-[13px] font-medium text-white/80 truncate">{r.rotulo}</span>
+                  <span className="text-[13px] text-white/35 tabular-nums shrink-0">{r.total}</span>
+                </button>
+              ))}
             </div>
           )}
         </div>
