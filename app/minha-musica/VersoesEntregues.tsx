@@ -210,6 +210,19 @@ export default function VersoesEntregues({
             <audio controls src={principal.audioUrl} className="w-full h-10" />
           </div>
 
+          {/* Baixar TAMBÉM aqui, e não só na aba Player.
+              Clientes relataram não achar o botão (Audrei, 2026-10-27): ele
+              morava na 4ª aba, e quem quer o arquivo procura em "Música" —
+              "Player" soa como ouvir online, não como levar o arquivo embora.
+              Fica colado na versão escolhida porque é ela que vem no
+              download, mesmo com as outras versões abertas abaixo. */}
+          {features.download && principalUrl && (
+            <a href={`/api/orders/${orderId}/musica/download`} download
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
+              <span className="text-base leading-none">⬇</span> Baixar MP3
+            </a>
+          )}
+
           {outras.length > 0 && !verOutra && (
             <button onClick={() => setVerOutra(true)}
               className="w-full text-center py-2 rounded-lg text-sm text-white/50 hover:text-white/80 border border-white/10 hover:bg-white/5 transition-colors">
@@ -352,19 +365,23 @@ export default function VersoesEntregues({
               ▶ Ouvir no player
             </a>
           )}
-          <div className={`grid gap-2 ${!linkAtivo ? "grid-cols-1" : features.download && principalUrl ? "grid-cols-3" : "grid-cols-2"}`}>
-            {principalUrl && features.download && (
-              <a href={`/api/orders/${orderId}/musica/download`} download
-                className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[13px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
-                {/* "Baixar MP3", não só "Baixar": nomeia o arquivo que a
-                    pessoa está procurando — e é como a outra tela de entrega
-                    (page.tsx, entrega legada) já chamava. Os dois nomes
-                    conviviam. */}
-                <span className="text-base leading-none">⬇</span> Baixar MP3
-              </a>
-            )}
-            {linkAtivo && (
-              <>
+          {/* Baixar SAIU da fileira de três.
+              "Copiar link" e "WhatsApp" são sobre mandar pros outros; baixar é
+              sobre guardar pra você. Com os três no mesmo grid, mesmo
+              contorno e mesmo peso, quem decidia "agora não quero
+              compartilhar" pulava a fileira inteira — e levava o download
+              junto. Agora ele tem linha própria, e os dois de envio vivem sob
+              um rótulo que diz o que são. */}
+          {principalUrl && features.download && (
+            <a href={`/api/orders/${orderId}/musica/download`} download
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-lg text-sm font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
+              <span className="text-base leading-none">⬇</span> Baixar MP3
+            </a>
+          )}
+          {linkAtivo && (
+            <div className="pt-1">
+              <p className="text-[11px] uppercase tracking-wide font-bold text-white/30 mb-2">Compartilhar</p>
+              <div className="grid grid-cols-2 gap-2">
                 <button onClick={copiarLink}
                   className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[13px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
                   <span className="text-base leading-none">🔗</span> {copied ? "Copiado!" : "Copiar link"}
@@ -373,9 +390,9 @@ export default function VersoesEntregues({
                   className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[13px] font-semibold border border-green-500/30 text-green-300 hover:bg-green-500/10 transition-colors">
                   <span className="text-base leading-none">💬</span> WhatsApp
                 </a>
-              </>
-            )}
-          </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
