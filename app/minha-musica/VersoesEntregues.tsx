@@ -107,7 +107,24 @@ export default function VersoesEntregues({
   // que ela encontra ao tocar. As `key` continuam as mesmas — são estado
   // interno, e trocá-las não mudaria nada na tela.
   const steps: { key: StepKey; icon: ReactNode; label: string; done: boolean; nudge?: boolean }[] = [
-    { key: "principal", icon: "⭐", label: "Música", done: true },
+    {
+      key: "principal",
+      // Clave de sol desenhada à mão em SVG (Audrei, 2026-10-27). NÃO é o
+      // caractere 𝄞 (U+1D11E): ele vive no bloco de símbolos musicais, que
+      // falta em muitas fontes de Android — no app viraria um quadradinho.
+      // Traçado, não preenchido: a clave é um gesto de caneta, e em 16px um
+      // desenho vazado fica mais legível que uma mancha cheia.
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}
+             strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+          <path d="M12.4 21c-1.7.4-3.1-.6-3.1-2.1 0-1.2 1-2 2.1-1.7" />
+          <path d="M14.2 2.6c-2.4 2.2-3.6 4.5-3.6 6.8 0 2.5 1.8 4.4 3 6.5 1.3 2.2 1.4 4.6-1.2 5.8" />
+          <path d="M14.2 2.6c1.6 2.4 2.1 5.2 1.4 8-.7 2.8-3 4.6-4.7 3.7-1.6-.8-1.5-3 .5-4.4 1.8-1.3 4-1.7 5.5-1.1" />
+        </svg>
+      ),
+      label: "Música",
+      done: true,
+    },
     // Fotos somem junto com o link: o expurgo apaga os arquivos no mesmo
     // evento, e sem o player público não há mais onde elas apareceriam.
     ...(features.fotos > 0 && linkAtivo
