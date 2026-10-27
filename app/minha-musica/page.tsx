@@ -217,6 +217,23 @@ function MinhaMusicaContent() {
   const [pubChecked, setPubChecked] = useState<Record<string, boolean>>({})
   const [pubTouched, setPubTouched] = useState<Record<string, boolean>>({})
 
+  // Pedidos cuja música foi liberada NESTA sessão.
+  //
+  // Sem isto, aceitar o termo fazia o cartão sumir: `precisaAcao` deixa de ser
+  // verdadeiro no mesmo instante, o pedido cai na prateleira e vira uma
+  // capinha de 176px. A pessoa clicava em "Aceitar e liberar minha música" e
+  // era devolvida pra lista de entregues, sem a música na frente — justo no
+  // momento mais importante da jornada inteira.
+  //
+  // É o mesmo problema que já foi resolvido uma vez em "em produção" (ver o
+  // comentário de `emProducaoOrders`): no instante em que o cliente faz a
+  // parte dele, a tela encolhia. A regra ali virou "manter o cliente na visão
+  // de gestão"; aqui vale igual.
+  //
+  // Vive só em memória, de propósito: na próxima visita o pedido já é um
+  // entregue como os outros e a prateleira é o lugar certo dele.
+  const [recemLiberados, setRecemLiberados] = useState<string[]>([])
+
   // Depois de uma ação que muda DRASTICAMENTE o tamanho do card (aprovar a
   // letra, escolher a versão, aceitar o termo), só recarregar não basta: a
   // rolagem fica onde estava, mas o conteúdo daquele ponto sumiu.
@@ -230,7 +247,10 @@ function MinhaMusicaContent() {
   // assim o cabeçalho "Meus pedidos" aparece junto e dá contexto.
   const pedidosRef = useRef<HTMLDivElement>(null)
 
-  async function recarregarEMostrarPedidos() {
+  // `alvo` opcional: por padrão volta pro topo da seção de pedidos, mas a
+  // liberação da música manda o foco pro CARTÃO daquela música (ver
+  // `acceptDeliveryTerm`).
+  async function recarregarEMostrarPedidos(alvo?: () => HTMLElement | null) {
     await loadOrders()
 
     // Rolagem INSTANTÂNEA, não suave — e repetida.
@@ -247,7 +267,7 @@ function MinhaMusicaContent() {
     // é reafirmada mais duas vezes: só corrige se tiver saído do lugar, e
     // para de insistir se a pessoa rolou por conta própria.
     const irParaOTopo = () => {
-      const el = pedidosRef.current
+      const el = alvo ? alvo() : pedidosRef.current
       if (!el) return
       const y = el.getBoundingClientRect().top
       // Já está no lugar (a margem do cabeçalho fixo é 5rem = 80px).
@@ -283,7 +303,9 @@ function MinhaMusicaContent() {
     }
 
     setAcceptingTerm(null)
-    if (res.ok) await recarregarEMostrarPedidos()
+    if (!res.ok) return
+    setRecemLiberados((p) => (p.includes(orderId) ? p : [...p, orderId]))
+    await recarregarEMostrarPedidos(() => document.getElementById(`pedido-${orderId}`))
   }
 
   const [linkPrompt, setLinkPrompt] = useState<{ code: string; maskedEmail: string } | null>(null)
@@ -556,13 +578,24 @@ function MinhaMusicaContent() {
     .filter((o) => o.paymentStatus === "PAID" && !precisaAcao(o) && o.status !== "DELIVERED")
     .sort((a, b) => dbTime(b.createdAt) - dbTime(a.createdAt))
 
+  // Liberado agora segue como cartão inteiro (ver `recemLiberados`), então
+  // sai da prateleira — senão apareceria nos dois lugares.
+  const liberadosAgora = orders
+    .filter((o) => recemLiberados.includes(o.id) && !precisaAcao(o) && o.status === "DELIVERED")
+
   const shelfOrders = orders
+    .filter((o) => !recemLiberados.includes(o.id))
     .filter((o) => (o.paymentStatus === "PAID" && !precisaAcao(o) && o.status === "DELIVERED") || (o.paymentStatus !== "PAID" && o.status === "ABANDONED"))
     .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
 
   // "Minhas músicas" não é dado novo — é derivado dos mesmos pedidos entregues
   // que já alimentam o carrossel, só que reempacotado como prateleira.
-  const libraryTracks: LibraryTrack[] = shelfOrders
+  //
+  // Soma os recém-liberados: eles saíram de `shelfOrders` pra não aparecer
+  // duas vezes na tela de pedidos, mas continuam sendo músicas entregues do
+  // cliente. Sem isto, a música recém-liberada sumiria de "Minhas músicas",
+  // das playlists e da fila do player — justo a que ele acabou de destravar.
+  const libraryTracks: LibraryTrack[] = [...shelfOrders, ...liberadosAgora]
     .filter((o) => o.status === "DELIVERED" && o.slug)
     .map((o) => {
       const principal = o.tracks?.find((t) => t.audioUrl === o.mp3Url) ?? o.tracks?.[0]
@@ -1159,12 +1192,42 @@ function MinhaMusicaContent() {
                       )
                     }
                     return (
-                      <div key={order.id} className="rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
+                      // Âncora pra rolagem: quando a música é liberada mas
+                      // ainda falta escolher a versão principal, o pedido
+                      // CONTINUA aqui em "Precisa de você" — e o foco depois
+                      // do aceite tem que achar este cartão, não o de baixo.
+                      <div key={order.id} id={`pedido-${order.id}`} style={{ scrollMarginTop: "5rem" }}
+                           className="rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
                         <div className="p-6">{renderOrderDetail(order)}</div>
                       </div>
                     )
                   })}
                 </div>
+              )}
+
+              {/* MÚSICA LIBERADA AGORA — fica onde estava, como cartão
+                  inteiro, em vez de virar capinha na prateleira.
+                  Cabeçalho próprio e comemorativo: é o fim da jornada, e o
+                  cartão abaixo já traz o player, a escolha da versão e as
+                  fotos — tudo o que o aceite acabou de destravar. */}
+              {liberadosAgora.length > 0 && (
+                <>
+                  <p className="text-[10.5px] uppercase tracking-wide font-bold text-green-300 mb-2.5 mt-4 flex items-center gap-1.5">
+                    🎉 Sua música está liberada
+                  </p>
+                  <div className="space-y-4 mb-2">
+                    {liberadosAgora.map((order) => (
+                      <div
+                        key={order.id}
+                        id={`pedido-${order.id}`}
+                        style={{ scrollMarginTop: "5rem" }}
+                        className="rounded-2xl border border-green-500/25 bg-green-500/[0.04] overflow-hidden"
+                      >
+                        <div className="p-6">{renderOrderDetail(order)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               )}
 
               {/* EM PRODUÇÃO — cartão inteiro, não capinha (pedido do Audrei:
