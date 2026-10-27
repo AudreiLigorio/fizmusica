@@ -225,8 +225,17 @@ export default function VersoesEntregues({
 
           {outras.length > 0 && !verOutra && (
             <button onClick={() => setVerOutra(true)}
-              className="w-full text-center py-2 rounded-lg text-sm text-white/50 hover:text-white/80 border border-white/10 hover:bg-white/5 transition-colors">
-              Ouvir / trocar a versão principal ▾
+              // Era branco a 50% sobre borda a 10%: sumia. O Suno entrega DUAS
+              // versões, e metade da entrega ficava escondida atrás de um
+              // botão que o cliente não via.
+              // Cinza forte, e não rosa: ouvir a outra versão é útil, mas o
+              // rosa é do "Ouvir no player" e do que gera a música — dois
+              // botões com o mesmo peso brigariam.
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white/85 border border-white/25 bg-white/[0.06] hover:bg-white/10 hover:border-white/40 transition-colors">
+              <span className="text-base leading-none" aria-hidden="true">🎧</span>
+              {/* Diz QUANTAS são, em vez de "a versão principal": o rótulo
+                  antigo não deixava claro que existe outra música pra ouvir. */}
+              {outras.length === 1 ? "Ouvir a outra versão" : `Ouvir as outras ${outras.length} versões`} ▾
             </button>
           )}
 
@@ -245,15 +254,29 @@ export default function VersoesEntregues({
             </div>
           ))}
 
-          {/* Saída de emergência: não gostou de nenhuma → pedir revisão. Discreto,
-              separado, e só enquanto a revisão está disponível. */}
+          {/* Saída de emergência: não gostou de nenhuma → pedir revisão.
+              Continua SEPARADA por uma linha e continua sendo a última coisa
+              da aba — mas deixou de ser invisível (era branco a 45% sobre
+              borda a 12%). Quem não gostou da música precisa achar isso.
+
+              Em âmbar, não em rosa nem vermelho: rosa é o botão que avança, e
+              vermelho leria como erro ou destruição. Âmbar é o aviso de "tem
+              consequência" — gasta a revisão inclusa.
+
+              A contagem subiu pra ANTES do botão e ganhou contraste: ela é o
+              que torna a decisão informada, e a 30% de branco ninguém lia. */}
           {features.revisao && canRevise && onNaoGostei && (
             <div className="border-t border-white/[0.08] pt-3 mt-1">
+              <p className="text-center text-[13px] text-white/55 mb-2">
+                Você tem <strong className="text-white/80">1 revisão inclusa</strong> neste pedido.
+              </p>
               <button onClick={onNaoGostei}
-                className="w-full text-center py-2.5 rounded-lg text-sm font-medium border border-white/12 text-white/45 hover:border-red-500/30 hover:text-red-400 transition-colors">
-                Não gostei de nenhuma — pedir para refazer →
+                className="w-full text-center py-3 rounded-xl text-sm font-semibold border border-amber-500/40 bg-amber-500/[0.08] text-amber-200 hover:bg-amber-500/15 hover:border-amber-500/60 transition-colors">
+                {/* Sem a seta: a frase não cabe numa linha e a seta sobrava
+                    sozinha na segunda, o que fica pior agora que o botão tem
+                    destaque. O botão já se parece com ação. */}
+                Não gostei de nenhuma — pedir para refazer
               </button>
-              <p className="text-center text-[13px] text-white/30 mt-1.5">Você tem 1 revisão inclusa</p>
             </div>
           )}
         </div>
