@@ -32,12 +32,6 @@ function formatarPlays(n: number): string {
 // Passa pelo `parseDbDate` porque `publishedAt` é `timestamp without time zone`
 // e chega sem fuso — lido direto pelo `new Date` ele adianta ~3h e uma música
 // publicada hoje de manhã podia aparecer como "amanhã".
-// Quantos banners o mural mostra recolhido. Nove, não oito: unificando os
-// rótulos repetidos do acervo antigo, o Forró empata com Pagode e Hip-Hop em
-// 7 músicas, e um corte em oito deixaria um de fora mantendo dois com a mesma
-// contagem. Os nove cobrem 109 das 129 músicas; o resto fica a um toque.
-const PRINCIPAIS = 9
-
 function quandoPublicou(iso: string): string {
   const dias = Math.floor((Date.now() - parseDbDate(iso).getTime()) / 86_400_000)
   if (dias <= 0) return "hoje"
@@ -538,11 +532,14 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: {
           (já tinha teto de 3 linhas e um "ver todas" só pra isso). Agora
           cada ritmo é uma porta, e a tela cabe de uma vez.
 
-          Nove banners, não oito: unificando os ritmos repetidos do acervo
-          antigo (ver lib/ritmo.ts), o Forró sobe de 5 pra 7 e EMPATA com
-          Pagode e Hip-Hop. Cortar em oito deixaria um de fora mantendo
-          dois com a contagem idêntica. Os nove cobrem 109 das 129; o resto
-          abre no "Ver todos os ritmos".
+          TODOS os ritmos aparecem, no mesmo formato. Já foram nove banners
+          mais um "Ver todos", e depois nove banners mais a cauda em
+          pastilhas menores — o Audrei viu as duas e pediu padrão único
+          (2026-10-27). O mural fica mais alto; em troca, nenhum ritmo
+          depende de a pessoa descobrir que havia mais.
+
+          A ordem é por quantidade de músicas (ver /api/catalog), então os
+          maiores continuam aparecendo primeiro.
 
           Tocar num banner aplica o filtro do ritmo — e aí AbaMusicas troca
           a tela pela lista daquele ritmo, o mesmo caminho das pílulas. O
@@ -557,7 +554,7 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: {
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
             {(() => {
-              const visiveis = ritmos.slice(0, PRINCIPAIS)
+              const visiveis = ritmos
               return visiveis.map((r, i) => (
               <button
                 key={r.nome}
@@ -604,29 +601,6 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: {
             })()}
           </div>
 
-          {/* A CAUDA, sempre à vista.
-              O Audrei pediu 100% dos ritmos — o Funk, com 1 música, estava
-              atrás de um "Ver todos" que ninguém abria. Mas 20 banners
-              inteiros fariam o mural virar o bloco mais longo da tela, que é
-              justamente o que ele veio resolver.
-              Então a cauda aparece como PASTILHA: mesmo destino ao toque, sem
-              capa e sem altura de banner. A diferença de tamanho também é
-              honesta — um ritmo de 1 música não é a mesma porta que um de 13. */}
-          {ritmos.length > PRINCIPAIS && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
-              {ritmos.slice(PRINCIPAIS).map((r) => (
-                <button
-                  key={r.nome}
-                  type="button"
-                  onClick={() => setFiltro({ tipo: "estilo", valor: r.nome })}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.07] hover:border-white/25 transition-colors"
-                >
-                  <span className="text-[13px] font-medium text-white/80 truncate">{r.rotulo}</span>
-                  <span className="text-[13px] text-white/35 tabular-nums shrink-0">{r.total}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
