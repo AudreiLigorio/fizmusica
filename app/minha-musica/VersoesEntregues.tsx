@@ -10,8 +10,8 @@ type StepKey = "principal" | "fotos" | "surpresa" | "player"
 
 // Estado entregue com as 2 versões do Suno. A barra de passos vira NAVEGAÇÃO:
 // clicar abre o conteúdo do passo logo abaixo (um de cada vez).
-// Ordem deliberada: Principal → Fotos → Surpresa → Player — a "surpresa" vem antes
-// do player porque é nela que o cliente entende para que serve o QR Code.
+// Ordem deliberada: Música → Fotos → QR Code → Player — o QR Code vem antes
+// do player porque é nele que o cliente entende para que serve o QR Code.
 export default function VersoesEntregues({
   orderId,
   tracks,
@@ -98,16 +98,23 @@ export default function VersoesEntregues({
   }
 
   // A barra só oferece o que o plano entrega: aba de fotos some em plano sem
-  // fotos, e "Surpresa" (o QR pra colar no presente) some em plano sem QR.
+  // fotos, e o QR Code some em plano sem QR.
+  //
+  // Rótulos nomeiam a COISA, não o papel dela (Audrei, 2026-10-27): "Música"
+  // em vez de "Principal" e "QR Code" em vez de "Surpresa". "Principal" só
+  // fazia sentido pra quem já sabia que existem duas versões e uma é a
+  // escolhida; "Surpresa" descrevia o uso que a pessoa pretende dar, não o
+  // que ela encontra ao tocar. As `key` continuam as mesmas — são estado
+  // interno, e trocá-las não mudaria nada na tela.
   const steps: { key: StepKey; icon: string; label: string; done: boolean; nudge?: boolean }[] = [
-    { key: "principal", icon: "⭐", label: "Principal", done: true },
+    { key: "principal", icon: "⭐", label: "Música", done: true },
     // Fotos somem junto com o link: o expurgo apaga os arquivos no mesmo
     // evento, e sem o player público não há mais onde elas apareceriam.
     ...(features.fotos > 0 && linkAtivo
       ? [{ key: "fotos" as const, icon: "📸", label: "Fotos", done: hasPhotos, nudge: !hasPhotos }]
       : []),
     ...(features.qrcode && linkAtivo
-      ? [{ key: "surpresa" as const, icon: "🎁", label: "Surpresa", done: false }]
+      ? [{ key: "surpresa" as const, icon: "🎁", label: "QR Code", done: false }]
       : []),
     { key: "player",    icon: "▶",  label: "Player",    done: false },
   ]
