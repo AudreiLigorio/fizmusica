@@ -267,7 +267,19 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, mura
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`text-sm font-medium truncate ${isPlaying ? "text-pink-300" : ""}`}>{it.title}</p>
-                    <p className="text-[13px] text-white/40 truncate">{it.occasion}</p>
+                    {/* Autor ANTES da ocasião: numa linha que trunca, o que vem
+                        primeiro é o que sobrevive — e aqui o nome é o que o
+                        Audrei quis ver. A ocasião já aparece inteira na grade
+                        de capas, esta linha é o resumo.
+                        O apelido só chega pra quem está logado e só de quem
+                        ligou "Mostrar meu apelido" (ver /api/catalog); sem
+                        ele vale o rótulo neutro, igual à grade. */}
+                    <p className="text-[13px] text-white/45 truncate">
+                      <span className={it.authorApelido ? "" : "italic text-white/35"}>
+                        {it.authorApelido ?? "Membro da Rede"}
+                      </span>
+                      <span className="text-white/30"> · {it.occasion}</span>
+                    </p>
                   </div>
                   <span className="text-[13px] text-white/45 tabular-nums shrink-0">
                     {(it.palmas ?? 0).toLocaleString("pt-BR")} 👏
@@ -454,7 +466,12 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, mura
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className={`text-sm font-medium truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
-                    <p className="text-[13px] text-white/35 truncate">{it.occasion}</p>
+                    <p className="text-[13px] text-white/45 truncate">
+                      <span className={it.authorApelido ? "" : "italic text-white/35"}>
+                        {it.authorApelido ?? "Membro da Rede"}
+                      </span>
+                      <span className="text-white/30"> · {it.occasion}</span>
+                    </p>
                   </div>
                   <span className="text-[13px] text-white/40 tabular-nums shrink-0">
                     {formatarPlays(it.plays ?? 0)}
