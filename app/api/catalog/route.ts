@@ -1,5 +1,6 @@
 import { tituloNeutro, rotuloOcasiao } from "@/lib/tituloPublico"
 import { dbTime } from "@/lib/date"
+import { corDoRitmo, nomeDoRitmo, ritmosDa, rotuloDoRitmo } from "@/lib/ritmo"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
@@ -406,18 +407,27 @@ export async function GET(req: NextRequest) {
   // Contadas sobre o resultado da BUSCA, mas ANTES do filtro de
   // ocasião/estilo: senão clicar em "Rock" zeraria todas as outras pílulas e
   // não haveria como voltar.
+  // Estilos contados pelo nome UNIFICADO (ver lib/ritmo.ts): o emoji faz parte
+  // do texto gravado, então "🎵 Forró" e "🪗 Forró" contavam como dois ritmos.
+  // A contagem e o filtro têm que usar a mesma chave — se o filtro unificasse
+  // e a faceta não, a pílula prometeria 5 e a lista entregaria 7, que é o erro
+  // de "promete 6 e entrega 9" já corrigido uma vez (78faf4d).
   const ocasioes: Record<string, number> = {}
   const estilos: Record<string, number> = {}
   for (const i of porBusca) {
     ocasioes[i.occasion] = (ocasioes[i.occasion] ?? 0) + 1
-    for (const e of (i.musicalStyle ?? "").split(",").map((x) => x.trim()).filter(Boolean)) {
+    for (const e of ritmosDa(i.musicalStyle)) {
       estilos[e] = (estilos[e] ?? 0) + 1
     }
   }
 
+  // O filtro aceita tanto o nome puro ("Forró", vindo do mural) quanto o
+  // rótulo com emoji ("🎵 Forró", vindo de link antigo ou da pílula): os dois
+  // lados passam pela mesma normalização.
+  const estiloAlvo = estilo ? nomeDoRitmo(estilo) : null
   const filtrados = porBusca.filter((i) => {
     if (ocasiao && i.occasion !== ocasiao) return false
-    if (estilo && !(i.musicalStyle ?? "").split(",").map((x) => x.trim()).includes(estilo)) return false
+    if (estiloAlvo && !ritmosDa(i.musicalStyle).includes(estiloAlvo)) return false
     return true
   })
 
@@ -508,12 +518,46 @@ export async function GET(req: NextRequest) {
     if (recentes.length === 12) break
   }
 
+  // ── Mural de ritmos ───────────────────────────────────────────────────
+  //
+  // Substitui a grade embaralhada de "todas as músicas": 129 cartões soltos
+  // viravam rolagem sem fim e sem critério. Aqui cada ritmo é uma porta.
+  //
+  // Vem do catálogo INTEIRO (como o Top 10 e o Em alta), não da página nem da
+  // busca — é um índice do acervo, não um recorte do que está na tela.
+  //
+  // A capa do banner é a de uma música REAL do ritmo: a mais aplaudida,
+  // caindo pra mais ouvida e depois pra mais recente, então nunca fica sem
+  // arte. Assim o mural não depende de nenhum arquivo em /public (que tem
+  // cache longo e exige nome novo a cada troca) e se renova sozinho conforme
+  // o acervo cresce.
+  const porRitmo = new Map<string, typeof items>()
+  for (const i of items) {
+    for (const r of ritmosDa(i.musicalStyle)) {
+      const lista = porRitmo.get(r)
+      if (lista) lista.push(i)
+      else porRitmo.set(r, [i])
+    }
+  }
+
+  const ritmos = [...porRitmo.entries()]
+    .map(([nome, musicas]) => {
+      const capa = [...musicas].sort((a, b) =>
+        (b.palmas ?? 0) - (a.palmas ?? 0)
+        || (b.plays ?? 0) - (a.plays ?? 0)
+        || dbTime(b.publishedAt ?? b.createdAt) - dbTime(a.publishedAt ?? a.createdAt),
+      ).find((m) => m.imageUrl)?.imageUrl ?? null
+      return { nome, rotulo: rotuloDoRitmo(nome), cor: corDoRitmo(nome), total: musicas.length, capa }
+    })
+    .sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome, "pt-BR"))
+
   return NextResponse.json(
     {
       items: pagina,
       top10,
       emAlta,
       recentes,
+      ritmos,
       total: ordenados.length,
       // Quantas músicas a busca encontrou ANTES do filtro de ocasião/estilo.
       //

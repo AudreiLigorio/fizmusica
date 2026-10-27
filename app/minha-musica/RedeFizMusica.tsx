@@ -32,6 +32,12 @@ function formatarPlays(n: number): string {
 // Passa pelo `parseDbDate` porque `publishedAt` é `timestamp without time zone`
 // e chega sem fuso — lido direto pelo `new Date` ele adianta ~3h e uma música
 // publicada hoje de manhã podia aparecer como "amanhã".
+// Quantos banners o mural mostra recolhido. Nove, não oito: unificando os
+// rótulos repetidos do acervo antigo, o Forró empata com Pagode e Hip-Hop em
+// 7 músicas, e um corte em oito deixaria um de fora mantendo dois com a mesma
+// contagem. Os nove cobrem 109 das 129 músicas; o resto fica a um toque.
+const PRINCIPAIS = 9
+
 function quandoPublicou(iso: string): string {
   const dias = Math.floor((Date.now() - parseDbDate(iso).getTime()) / 86_400_000)
   if (dias <= 0) return "hoje"
@@ -44,8 +50,15 @@ function quandoPublicou(iso: string): string {
   return meses === 1 ? "há 1 mês" : `há ${meses} meses`
 }
 
-export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { onPlaylistsChanged?: () => void; onPrecisaLogin?: () => void }) {
-  const { items, top10, emAlta, recentes, alternarFavorito, temMais, carregando, carregarMais } = useCatalogo()
+export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, muralAberto = false, onMuralAberto }: {
+  onPlaylistsChanged?: () => void
+  onPrecisaLogin?: () => void
+  // Vêm de AbaMusicas porque este componente desmonta ao entrar num ritmo —
+  // ver o comentário lá.
+  muralAberto?: boolean
+  onMuralAberto?: (v: boolean) => void
+}) {
+  const { items, top10, emAlta, recentes, ritmos, setFiltro, alternarFavorito } = useCatalogo()
   const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
@@ -140,17 +153,11 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
   }
 
   // Este componente só existe no modo NAVEGAÇÃO (ver AbaMusicas): com busca
-  // ou filtro ativo a tela troca pela lista de resultados. Então aqui não há
-  // mais filtragem — os itens vêm prontos do servidor, já paginados.
-  // Scroll infinito. `carregando` entra na dependência pra não disparar duas
-  // páginas ao mesmo tempo enquanto a primeira ainda está vindo.
-  // Teto de 3 linhas na WEB. No mobile a grade rola pro lado (2 linhas em
-  // `overflow-x-auto`), então lá não há altura a limitar e nada muda.
+  // ou filtro ativo a tela troca pela lista de resultados.
   //
-  // Sem o teto, 97 músicas viravam 14 linhas — ~2.856px, mais de 3 telas de
-  // rolagem antes de a playlist do cliente aparecer. Ela ficava inalcançável
-  // na prática.
-  const [verTudo, setVerTudo] = useState(false)
+  // Mural recolhido nos ritmos principais. Aberto, mostra os 20 — e a cauda
+  // é mesmo cauda: do décimo em diante são ritmos de 1 a 4 músicas, que como
+  // banner prometem mais do que entregam.
 
   // Setas do carrossel "Mais recentes". No celular o dedo arrasta e elas não
   // aparecem; no desktop, sem elas a raia dependia da barra de rolagem
@@ -187,21 +194,6 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
     el.scrollBy({ left: direcao * el.clientWidth * 0.8, behavior: "smooth" })
   }
 
-  const sentinelaRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    const alvo = sentinelaRef.current
-    if (!alvo || !temMais || carregando) return
-    // Recolhido, carregar mais é trabalho jogado fora: os itens novos
-    // entrariam num container que não os mostra.
-    if (!verTudo && typeof window !== "undefined" && window.innerWidth >= 640) return
-    const obs = new IntersectionObserver(
-      (entradas) => { if (entradas[0]?.isIntersecting) carregarMais() },
-      { rootMargin: "400px" },
-    )
-    obs.observe(alvo)
-    return () => obs.disconnect()
-  }, [temMais, carregando, carregarMais, verTudo])
-
   const itensBusca = items ?? []
 
   // Converte um item da Rede na faixa que o player entende. Existe porque a
@@ -222,33 +214,11 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
 
   if (!items || items.length === 0) return null
 
-  // Este componente só existe no modo NAVEGAÇÃO agora: quando há busca ou
-  // filtro ativo, a tela troca pela lista de resultados (ResultadosBusca), e
-  // as pílulas moram junto da busca (FiltrosMusica). Por isso aqui não há
-  // mais agrupamento nem estado de filtro — a raia mostra o catálogo inteiro.
+  // A prateleira de Favoritas sobreviveu à grade: ela é a única parte do
+  // antigo bloco que mostrava música solta, e é de onde se DESfavorita.
+  // Limite conhecido, herdado: ela enxerga só a primeira página do catálogo,
+  // então favorito que esteja fora das 40 primeiras não aparece aqui.
   const favoritados = itensBusca.filter((it) => it.favorited)
-  // Favoritada NÃO repete na grade: ela já tem lugar próprio na prateleira
-  // de cima, e ver o mesmo cartão duas vezes na mesma tela fazia a Rede
-  // parecer menor do que é. O que sobra já vem embaralhado do servidor, então
-  // o espaço liberado é preenchido por outras músicas.
-  //
-  // Isto obriga a prateleira de Favoritas a ter o coração: sem ela na grade,
-  // era o único lugar de onde dava pra desfavoritar — e não tinha o botão.
-  const visiveis = itensBusca.filter((it) => !it.favorited)
-
-  // As duas raias do mobile, montadas AQUI e a partir da posição em
-  // `itensBusca` (a lista completa), não da posição em `visiveis`.
-  //
-  // A diferença importa: favoritar remove um cartão de `visiveis`, e se a
-  // raia viesse do índice filtrado, todos os cartões seguintes trocariam de
-  // linha no mesmo instante — a Rede inteira dava um pulo a cada coração.
-  // A posição em `itensBusca` não muda quando o favorito liga ou desliga, e
-  // a paginação só acrescenta no fim.
-  const raias = [
-    itensBusca.filter((it, i) => i % 2 === 0 && !it.favorited),
-    itensBusca.filter((it, i) => i % 2 === 1 && !it.favorited),
-  ]
-
   return (
     <div className="mb-9">
       {/* O título "SpotFiz", a descrição e a contagem moram no TOPO da aba
@@ -544,153 +514,90 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
         </div>
       )}
 
-      {/* Pílulas movidas pra FiltrosMusica, logo abaixo da busca. */}
+      {/* ── MURAL DE RITMOS ──────────────────────────────────────────
+          Substituiu a grade embaralhada de "todas as músicas".
 
-      {/* `max-h` só a partir de sm: no mobile a grade é horizontal e não tem
-          altura pra limitar. 3 linhas = 3x(128 da capa + ~62 de texto) mais
-          os vãos. Todas as linhas de texto têm `truncate`, então a altura da
-          linha é uniforme e o corte cai sempre entre linhas. */}
-      <div className={`relative ${verTudo ? "" : "sm:max-h-[38rem] sm:overflow-hidden"}`}>
-      {/* MOBILE: DUAS raias que rolam pro lado de FORMA INDEPENDENTE.
-          Antes era uma grade `grid-flow-col` de 2 linhas: dava as duas
-          linhas, mas as duas andavam grudadas num arrasto só, e o Audrei
-          achou ruim de usar. Duas raias separadas mantêm as duas linhas e
-          devolvem o controle de cada uma.
+          A grade era 129 cartões soltos em ordem aleatória — rolagem sem
+          fim e sem critério, e a playlist do cliente ficava longe demais
+          (já tinha teto de 3 linhas e um "ver todas" só pra isso). Agora
+          cada ritmo é uma porta, e a tela cabe de uma vez.
 
-          A divisão é por PARIDADE do índice na lista completa (ver
-          `raias`, acima), não pela metade: a Rede pagina e acrescenta
-          itens no fim, e cortar ao meio faria os cartões pularem de linha
-          a cada página carregada.
+          Nove banners, não oito: unificando os ritmos repetidos do acervo
+          antigo (ver lib/ritmo.ts), o Forró sobe de 5 pra 7 e EMPATA com
+          Pagode e Hip-Hop. Cortar em oito deixaria um de fora mantendo
+          dois com a contagem idêntica. Os nove cobrem 109 das 129; o resto
+          abre no "Ver todos os ritmos".
 
-          `sm:contents` some com as duas raias no desktop — os cartões
-          viram filhos diretos do container, que volta a ser o `flex-wrap`
-          de sempre com o teto de 3 linhas. */}
-      <div className="flex flex-col gap-3.5 sm:flex-row sm:flex-wrap sm:gap-3.5 pb-2">
-        {raias.map((raia, n) => (
-          <div
-            key={n}
-            className="flex gap-3.5 overflow-x-auto -mx-5 px-5 sm:contents"
-          >
-            {raia.map((it) => {
-          const isPlaying = nowPlaying?.id === it.orderId && playing
-          return (
-            <div key={it.orderId} className="shrink-0 w-32">
-              <div className="relative w-32 h-32 rounded-xl overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => playOuPausa(paraFaixa(it), visiveis.map(paraFaixa))}
-                  className="block w-full h-full"
-                >
-                  <div className="w-full h-full bg-cover bg-center" style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }} />
-                  {isPlaying && <div className="absolute inset-0 bg-black/35 flex items-center justify-center text-2xl">❚❚</div>}
-                </button>
-                <button
-                  onClick={() => favoritar(it.orderId)}
-                  aria-label={it.favorited ? "Remover dos favoritos" : "Favoritar"}
-                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-sm transition-transform hover:scale-110"
-                >
-                  {it.favorited ? "❤️" : "🤍"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => abrirAdicionar(it.orderId)}
-                  aria-label="Adicionar à playlist"
-                  data-zona-escura
-                  className="absolute top-1.5 right-9 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white text-sm font-bold transition-transform hover:scale-110"
-                >
-                  +
-                </button>
-              </div>
-              <p className={`text-sm font-medium mt-2 truncate ${isPlaying ? "text-fuchsia-300" : ""}`}>{it.title}</p>
-              {/* Apelido em LINHA PRÓPRIA, não "ocasião | apelido" na mesma.
-                  O card tem 128px e a ocasião sozinha já truncava ("Já tenho a
-                  composição da…") — inline, o apelido virava "| Lig…", que é
-                  pior que não mostrar. Na mesma linha só funciona no player,
-                  que tem a largura da tela.
+          Tocar num banner aplica o filtro do ritmo — e aí AbaMusicas troca
+          a tela pela lista daquele ritmo, o mesmo caminho das pílulas. O
+          endereço guarda o ritmo (ver CatalogoContext), então Voltar traz
+          o mural de novo em vez de sair da aba. */}
+      {ritmos.length > 0 && (
+        <div className="mb-5">
+          <p className="text-sm font-extrabold uppercase tracking-wider mb-2.5">
+            <span className="text-white/90">Navegue por</span>{" "}
+            <span style={{ color: "#f0196b" }}>ritmo</span>
+          </p>
 
-                  Só vem da API pra quem está logado, e só de quem ligou
-                  "Mostrar meu apelido na Rede" (opt-in separado do
-                  consentimento de publicação). Nulo na maioria dos cards, e
-                  isso é o esperado — não é falta de dado. */}
-              {/* Ocasião e reproduções na MESMA linha: o cartão tem 128px
-                  e cada linha nova empurra a grade inteira pra baixo. A
-                  contagem é curta e alinha à direita, então cabe sem
-                  disputar espaço com a ocasião, que trunca.
-                  Sem reprodução nenhuma o número não aparece — "0" em toda
-                  a grade seria ruído, não informação. */}
-              <div className="flex items-baseline gap-1.5">
-                <p className="text-[13px] text-white/40 truncate flex-1 min-w-0">{it.occasion}</p>
-                {(it.plays ?? 0) > 0 && (
-                  <span className="text-[13px] text-white/30 tabular-nums shrink-0"
-                        title={`${it.plays} reproduç${it.plays === 1 ? "ão" : "ões"}`}>
-                    ▶ {formatarPlays(it.plays ?? 0)}
-                  </span>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {(() => {
+              const visiveis = muralAberto ? ritmos : ritmos.slice(0, PRINCIPAIS)
+              return visiveis.map((r, i) => (
+              <button
+                key={r.nome}
+                type="button"
+                onClick={() => setFiltro({ tipo: "estilo", valor: r.nome })}
+                data-zona-escura
+                // Último banner ocupa a linha inteira quando a conta é ímpar
+                // e a grade tem duas colunas (tudo abaixo de lg). Recolhido
+                // são nove, e o nono ficava sozinho com um buraco do lado —
+                // que lê como falha de carregamento, não como fim da lista.
+                // Em três colunas nove fecham certinho, então lá não se mexe.
+                className={`relative h-24 rounded-xl overflow-hidden text-left p-3 transition-transform hover:scale-[1.02] active:scale-[0.98] ${
+                  i === visiveis.length - 1 && visiveis.length % 2 === 1 ? "col-span-2 lg:col-span-1" : ""
+                }`}
+                style={{ background: r.cor }}
+              >
+                {/* `pr-12` reserva o canto da capa inclinada: sem isso nome
+                    comprido ("🙌 Gospel Soul") corria por baixo dela e era
+                    cortado pelo overflow do banner. Com a reserva ele quebra
+                    em duas linhas, que cabem na altura. */}
+                <span className="relative z-10 block pr-12 text-[15px] font-bold leading-tight text-white drop-shadow-sm">
+                  {r.rotulo}
+                </span>
+                {/* /85 e não /70: nos banners claros (Sertanejo, Forró) o
+                    branco rebaixado encostava no limite de contraste, e a
+                    tela já carrega dívida demais nesse ponto. */}
+                <span className="relative z-10 block text-[11px] font-medium text-white/85 mt-0.5">
+                  {r.total} {r.total === 1 ? "música" : "músicas"}
+                </span>
+                {/* Capa de uma música REAL do ritmo, inclinada e saindo pelo
+                    canto — é o que dá identidade ao banner sem depender de
+                    arte fixa em /public (que tem cache longo e exigiria nome
+                    novo a cada troca). Ritmo sem capa nenhuma simplesmente
+                    não ganha a miniatura; o banner continua legível. */}
+                {r.capa && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-2 -right-3 w-[4.5rem] h-[4.5rem] rounded-md bg-cover bg-center shadow-lg rotate-[25deg]"
+                    style={{ backgroundImage: `url(${r.capa})` }}
+                  />
                 )}
-              </div>
-              {/* Sem apelido o cartão ficava com essa linha VAZIA, e a
-                  ausência lia como defeito ("não vi o nome de quem
-                  publicou" — Audrei, 2026-09-02). Hoje é o esperado: só 1
-                  perfil no sistema inteiro preencheu apelido e ligou o
-                  opt-in, e as músicas desse perfil são justamente as que a
-                  Rede esconde de quem é o dono delas.
-                  O rótulo neutro torna o estado legível SEM revelar
-                  identidade — publication_consent autoriza publicar a obra,
-                  não expor quem encomendou. */}
-              <p className={`text-[13px] truncate ${it.authorApelido ? "text-white/55" : "text-white/25 italic"}`}
-                 title={it.authorApelido ?? "Este autor não escolheu aparecer na Rede"}>
-                {it.authorApelido ?? "Membro da Rede"}
-              </p>
-            </div>
-          )
-            })}
+              </button>
+              ))
+            })()}
           </div>
-        ))}
-      </div>
 
-      {/* Degradê no corte: sem ele a linha seguinte fica cortada e parece
-          bug, em vez de "tem mais coisa aqui".
-          Altura CURTA (28px) de propósito: medido, o teto deixa 3 linhas
-          inteiras e ~11px da quarta. Um degradê de 64px cobriria também o
-          rodapé da 3ª linha, apagando o nome do autor de cartões que estão
-          inteiros na tela. */}
-      {!verTudo && (
-        <div className="hidden sm:block pointer-events-none absolute inset-x-0 bottom-0 h-7"
-             style={{ background: "linear-gradient(to bottom, transparent, #07060d)" }} />
-      )}
-      </div>
-
-      {!verTudo && (
-        <div className="hidden sm:flex justify-center mt-3">
-          <button
-            onClick={() => setVerTudo(true)}
-            className="px-5 py-2 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 transition-colors"
-          >
-            Ver todas as músicas
-          </button>
-        </div>
-      )}
-
-      {/* Paginação. A Rede vem em páginas de 40 do servidor.
-          O botão sozinho não bastava: no celular são 40 cartões de rolagem
-          até chegar nele, e o Audrei relatou "não estou vendo paginação no
-          mobile e nem todas as músicas aparecem" — ele nunca chegou ao fim
-          da lista. Agora a próxima página entra sozinha quando a sentinela
-          abaixo se aproxima da tela (400px antes, pra a lista já estar
-          pronta quando o dedo chegar lá).
-          O botão CONTINUA como alternativa: se o observer não disparar
-          (aba em segundo plano, navegador antigo, alguém que rola muito
-          rápido), ainda dá pra pedir a próxima página no clique. */}
-      <div ref={sentinelaRef} aria-hidden="true" className="h-px" />
-
-      {temMais && (
-        <div className="flex justify-center mt-5">
-          <button
-            onClick={carregarMais}
-            disabled={carregando}
-            className="px-6 py-2.5 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 disabled:opacity-50 transition-colors"
-          >
-            {carregando ? "Carregando…" : "Mostrar mais"}
-          </button>
+          {ritmos.length > PRINCIPAIS && (
+            <div className="flex justify-center mt-3">
+              <button
+                onClick={() => onMuralAberto?.(!muralAberto)}
+                className="px-5 py-2 rounded-full text-sm font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 transition-colors"
+              >
+                {muralAberto ? "Ver menos" : `Ver todos os ritmos · ${ritmos.length}`}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

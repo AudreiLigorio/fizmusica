@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { nomeDoRitmo, ritmosDa } from "@/lib/ritmo"
 
 // O catálogo da Rede virou dado compartilhado da aba Músicas.
 //
@@ -45,7 +46,18 @@ export type Filtro = { tipo: "ocasiao" | "estilo"; valor: string } | null
 
 export type Facetas = {
   ocasioes: [string, number][]
+  // Chave = nome do ritmo UNIFICADO, sem emoji (ver lib/ritmo.ts). Quem
+  // exibir passa por `rotuloDoRitmo` pra pôr o emoji atual.
   estilos: [string, number][]
+}
+
+// Um banner do mural de ritmos. `capa` é a capa de uma música real do ritmo.
+export type Ritmo = {
+  nome: string
+  rotulo: string
+  cor: string
+  total: number
+  capa: string | null
 }
 
 type Ctx = {
@@ -59,6 +71,8 @@ type Ctx = {
   // Últimas publicadas, UMA POR AUTOR (ver /api/catalog). Também é da Rede
   // inteira, então vive aqui junto dos outros dois.
   recentes: CatalogItem[]
+  // Mural de ritmos — o índice do acervo que substituiu a grade embaralhada.
+  ritmos: Ritmo[]
   total: number
   temMais: boolean
   // Total da BUSCA, sem o filtro de ocasião/estilo — é o que a pílula
@@ -77,25 +91,46 @@ type Ctx = {
 const VAZIO: Facetas = { ocasioes: [], estilos: [] }
 
 const CatalogoCtx = createContext<Ctx>({
-  items: null, top10: [], emAlta: [], recentes: [], total: 0, totalDaBusca: 0, temMais: false, carregando: false, facetas: VAZIO,
+  items: null, top10: [], emAlta: [], recentes: [], ritmos: [], total: 0, totalDaBusca: 0, temMais: false, carregando: false, facetas: VAZIO,
   busca: "", filtro: null,
   setBusca: () => {}, setFiltro: () => {}, carregarMais: () => {}, alternarFavorito: () => {},
 })
 
 const POR_PAGINA = 40
 
+// ── Filtro no endereço ───────────────────────────────────────────────────
+//
+// Entrar num ritmo pelo mural troca a tela inteira pela lista daquele ritmo.
+// Enquanto isso era só estado de componente, o botão Voltar do Android — e o
+// app é TWA, então é o botão de verdade do aparelho — não desfazia a entrada:
+// saía da aba Músicas, ou do app. Pondo o filtro na URL, Voltar devolve o
+// mural, e o link do ritmo passa a ser compartilhável de brinde.
+function filtroDaUrl(): Filtro {
+  if (typeof window === "undefined") return null
+  const qs = new URLSearchParams(window.location.search)
+  const estilo = qs.get("estilo")
+  if (estilo) return { tipo: "estilo", valor: estilo }
+  const ocasiao = qs.get("ocasiao")
+  if (ocasiao) return { tipo: "ocasiao", valor: ocasiao }
+  return null
+}
+
 export function CatalogoProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CatalogItem[] | null>(null)
   const [top10, setTop10] = useState<CatalogItem[]>([])
   const [emAlta, setEmAlta] = useState<CatalogItem[]>([])
   const [recentes, setRecentes] = useState<CatalogItem[]>([])
+  const [ritmos, setRitmos] = useState<Ritmo[]>([])
   const [total, setTotal] = useState(0)
   const [temMais, setTemMais] = useState(false)
   const [totalDaBusca, setTotalDaBusca] = useState(0)
   const [carregando, setCarregando] = useState(false)
   const [facetas, setFacetas] = useState<Facetas>(VAZIO)
   const [busca, setBusca] = useState("")
-  const [filtro, setFiltro] = useState<Filtro>(null)
+  // Nasce já lendo o endereço, não `null` seguido de correção: começar vazio
+  // dispararia uma consulta do catálogo inteiro antes da consulta filtrada, a
+  // cada link de ritmo aberto.
+  const [filtro, setFiltro] = useState<Filtro>(filtroDaUrl)
 
   // Semente fixa por visita: o servidor embaralha com ela, então a ordem é a
   // mesma entre as páginas (sem repetir nem pular música) e muda na próxima
@@ -126,7 +161,12 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
     setItems((prev) => (desde === 0 ? (d.items ?? []) : [...(prev ?? []), ...(d.items ?? [])]))
     // Só na primeira página: o ranking é o mesmo em todas, e sobrescrever a
     // cada "mostrar mais" faria a lista piscar sem motivo.
-    if (desde === 0) { setTop10(d.top10 ?? []); setEmAlta(d.emAlta ?? []); setRecentes(d.recentes ?? []) }
+    // Só na primeira página: as prateleiras e o mural são os mesmos em todas,
+    // e o servidor os monta sobre o catálogo inteiro (não sobre a busca nem o
+    // filtro), então nunca vêm recortados.
+    if (desde === 0) {
+      setTop10(d.top10 ?? []); setEmAlta(d.emAlta ?? []); setRecentes(d.recentes ?? []); setRitmos(d.ritmos ?? [])
+    }
     setTotal(d.total ?? 0)
     setTotalDaBusca(d.totalDaBusca ?? d.total ?? 0)
     setTemMais(!!d.temMais)
@@ -140,6 +180,33 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
     const t = setTimeout(() => { buscar(0, busca, filtro) }, busca ? 300 : 0)
     return () => clearTimeout(t)
   }, [busca, filtro, buscar])
+
+  // Escolher um filtro é uma IDA: grava no endereço com pushState, não
+  // replaceState. É de propósito diferente das abas (page.tsx), que usam
+  // replaceState porque trocar de aba é estado de tela, não navegação.
+  const aplicarFiltro = useCallback((f: Filtro) => {
+    setFiltro(f)
+    if (typeof window === "undefined") return
+    const qs = new URLSearchParams(window.location.search)
+    qs.delete("estilo")
+    qs.delete("ocasiao")
+    if (f?.tipo === "estilo") qs.set("estilo", f.valor)
+    if (f?.tipo === "ocasiao") qs.set("ocasiao", f.valor)
+    const destino = qs.toString() ? `${window.location.pathname}?${qs}` : window.location.pathname
+    window.history.pushState(null, "", destino)
+    // Tela nova começa no topo — a lista do ritmo entra no lugar do mural, e
+    // sem isto ela abriria na altura em que o dedo estava.
+    window.scrollTo({ top: 0 })
+  }, [])
+
+  // Voltar/avançar do navegador (e o botão físico no app) mandam aqui. Mexe
+  // só no estado: a URL já é a que o navegador restaurou, então empurrar de
+  // novo criaria uma entrada a cada volta e prenderia a pessoa na tela.
+  useEffect(() => {
+    const aoVoltar = () => setFiltro(filtroDaUrl())
+    window.addEventListener("popstate", aoVoltar)
+    return () => window.removeEventListener("popstate", aoVoltar)
+  }, [])
 
   const carregarMais = useCallback(() => {
     if (carregando || !temMais) return
@@ -155,8 +222,8 @@ export function CatalogoProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CatalogoCtx.Provider value={{
-      items, top10, emAlta, recentes, total, totalDaBusca, temMais, carregando, facetas, busca, filtro,
-      setBusca, setFiltro, carregarMais, alternarFavorito,
+      items, top10, emAlta, recentes, ritmos, total, totalDaBusca, temMais, carregando, facetas, busca, filtro,
+      setBusca, setFiltro: aplicarFiltro, carregarMais, alternarFavorito,
     }}>
       {children}
     </CatalogoCtx.Provider>
@@ -242,5 +309,7 @@ export function mesclar(
 export function casaFiltroCliente(ocasiao: string, estilo: string | null, filtro: Filtro): boolean {
   if (!filtro) return true
   if (filtro.tipo === "ocasiao") return ocasiao === filtro.valor
-  return (estilo ?? "").split(",").map((x) => x.trim()).includes(filtro.valor)
+  // Pelo nome unificado, igual ao servidor: a música do cliente gravada com o
+  // emoji antigo ("🪗 Forró") tem que entrar no mesmo ritmo do mural.
+  return ritmosDa(estilo).includes(nomeDoRitmo(filtro.valor))
 }

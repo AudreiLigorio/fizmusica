@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useCatalogo } from "./CatalogoContext"
 import type { LibraryTrack } from "./MinhasMusicas"
 import { combina } from "@/lib/busca"
+import { ritmosDa, rotuloDoRitmo } from "@/lib/ritmo"
 
 // Pílulas de ocasião e estilo, logo abaixo da busca.
 //
@@ -32,8 +33,10 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
   }
 
   const ocasioes = somar(facetas.ocasioes, (t) => [t.occasion])
-  const estilos = somar(facetas.estilos, (t) =>
-    (t.musicalStyle ?? "").split(",").map((s) => s.trim()).filter(Boolean))
+  // Pelo nome unificado: as facetas já vêm assim do servidor, e somar as
+  // músicas do cliente com o rótulo cru criaria de volta o ritmo duplicado
+  // ("Forró" do servidor + "🪗 Forró" do cliente) como duas pílulas.
+  const estilos = somar(facetas.estilos, (t) => ritmosDa(t.musicalStyle))
 
   // Contagem da pílula "Todas", desligada por enquanto (ver abaixo). Se
   // voltar: usar `totalDaBusca + minhasNaBusca.length`, nunca `total` — a
@@ -65,7 +68,9 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
           titulo="Por estilo"
           itens={estilos.map(([valor]) => ({
             chave: valor,
-            label: valor,
+            // O emoji vem da lista oficial na hora de exibir — o guardado no
+            // banco pode ser de uma versão antiga da lista.
+            label: rotuloDoRitmo(valor),
             ativa: filtro?.tipo === "estilo" && filtro.valor === valor,
             onClick: () => setFiltro({ tipo: "estilo" as const, valor }),
           }))}

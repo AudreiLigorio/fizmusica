@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import BuscaMusicas from "./BuscaMusicas"
 import FiltrosMusica from "./FiltrosMusica"
 import ResultadosBusca from "./ResultadosBusca"
@@ -50,6 +50,13 @@ export default function AbaMusicas({
 }) {
   const { busca, setBusca, filtro, total } = useCatalogo()
   const noApp = useNoAppPlay() === true
+
+  // "Ver todos os ritmos" mora AQUI, não dentro da Rede: entrar num ritmo
+  // desmonta a Rede (a tela vira lista de resultados), então o mural voltava
+  // recolhido no Voltar — e quem tinha aberto justamente pra alcançar um
+  // ritmo da cauda precisava abrir de novo a cada ida e volta. Este
+  // componente fica montado nos dois modos.
+  const [muralAberto, setMuralAberto] = useState(false)
 
   const modoResultado = !!busca.trim() || !!filtro
   useEffect(() => { onModoResultado?.(modoResultado) }, [modoResultado, onModoResultado])
@@ -107,7 +114,12 @@ export default function AbaMusicas({
           {/* Rede primeiro (pedido do Audrei): descoberta puxa mais que a
               própria biblioteca, que já é o conteúdo principal da aba
               Pedidos. Mesma ordem nas duas telas. */}
-          <RedeFizMusica onPlaylistsChanged={onPlaylistsChanged} onPrecisaLogin={onPrecisaLogin} />
+          <RedeFizMusica
+            onPlaylistsChanged={onPlaylistsChanged}
+            onPrecisaLogin={onPrecisaLogin}
+            muralAberto={muralAberto}
+            onMuralAberto={setMuralAberto}
+          />
           {children}
         </>
       )}

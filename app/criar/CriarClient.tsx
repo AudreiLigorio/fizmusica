@@ -59,6 +59,7 @@ import { track } from "@/lib/track"
 import { useNoAppPlay } from "@/lib/canal"
 import { TabBarMobile } from "@/app/minha-musica/AreaTabs"
 import { confirmar } from "@/app/components/Dialogo"
+import { RITMOS } from "@/lib/ritmo"
 
 const SESSION_KEY = "fizmusica_session_id"
 
@@ -1367,16 +1368,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
-                  {[
-                    "🎤 Sertanejo", "🎶 Pagode",   "💖 Pop",
-                    "🎵 Forró",     "🎸 Rock",    "🎹 MPB",
-                    "🙏 Gospel",    "🎧 Funk",    "🔥 Trap",
-                    "🎙️ Rap",       "💃 Dance",   "🎷 Jazz",
-                    "🎉 Axé",       "🤘 Metal",   "🎤 Hip-Hop",
-                    "⚡ Heavy Metal","🤠 Country", "🌿 Reggae",
-                    "🇰🇷 K-Pop",    "🌎 Internacional",
-                    "🌹 R&B",       "🇧🇷 Samba",  "🙌 Gospel Soul",
-                  ].map((item) => (
+                  {/* Lista em lib/ritmo.ts, compartilhada com o catálogo.
+                      Era um literal solto aqui, e o emoji faz parte do texto
+                      GRAVADO em musicalStyle: quando o emoji de um ritmo
+                      mudava, os pedidos antigos seguiam com o velho e o
+                      catálogo passava a enxergar dois ritmos onde há um
+                      ("🎵 Forró" e "🪗 Forró"). Uma lista só impede novas
+                      divergências; as antigas o lib unifica na leitura. */}
+                  {RITMOS.map((item) => (
                     <button
                       key={item}
                       onClick={() => clicarEstilo(item)}
