@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useCatalogo } from "./CatalogoContext"
 import type { LibraryTrack } from "./MinhasMusicas"
 import { combina } from "@/lib/busca"
-import { ritmosDa, rotuloDoRitmo } from "@/lib/ritmo"
+import { RITMOS, nomeDoRitmo, ritmosDa, rotuloDoRitmo } from "@/lib/ritmo"
 
 // Pílulas de ocasião e estilo, logo abaixo da busca.
 //
@@ -32,7 +32,13 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
     return [...m.entries()].sort((a, b) => b[1] - a[1])
   }
 
+  // Mesma limpeza do servidor (ver /api/catalog): ocasião que é nome de ritmo
+  // fica de fora. Precisa valer aqui também porque as músicas DO CLIENTE são
+  // somadas depois das facetas — uma delas com ocasião "Gospel" traria a
+  // pílula de volta.
+  const nomesDeRitmo = new Set([...RITMOS.map(nomeDoRitmo), ...facetas.estilos.map(([n]) => n)])
   const ocasioes = somar(facetas.ocasioes, (t) => [t.occasion])
+    .filter(([nome]) => !nomesDeRitmo.has(nomeDoRitmo(nome)))
   // Pelo nome unificado: as facetas já vêm assim do servidor, e somar as
   // músicas do cliente com o rótulo cru criaria de volta o ritmo duplicado
   // ("Forró" do servidor + "🪗 Forró" do cliente) como duas pílulas.

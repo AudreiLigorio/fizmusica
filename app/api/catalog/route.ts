@@ -1,6 +1,6 @@
 import { tituloNeutro, rotuloOcasiao } from "@/lib/tituloPublico"
 import { dbTime } from "@/lib/date"
-import { corDoRitmo, nomeDoRitmo, ritmosDa, rotuloDoRitmo } from "@/lib/ritmo"
+import { RITMOS, corDoRitmo, nomeDoRitmo, ritmosDa, rotuloDoRitmo } from "@/lib/ritmo"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
@@ -425,6 +425,24 @@ export async function GET(req: NextRequest) {
   // rótulo com emoji ("🎵 Forró", vindo de link antigo ou da pílula): os dois
   // lados passam pela mesma normalização.
   const estiloAlvo = estilo ? nomeDoRitmo(estilo) : null
+  // Ocasião que na verdade é RITMO sai da lista de ocasiões.
+  //
+  // As músicas da vitrine da casa (context "Vitrine Fiz Música") gravam o
+  // gênero no lugar da ocasião, então "Rock", "Samba", "MPB", "Axé" e mais
+  // seis apareciam entre "Dia dos Pais" e "Pedido em Namoro" — 10 das 32
+  // pílulas de ocasião eram ritmo. Pedido do Audrei: nesse filtro, só ocasião.
+  //
+  // Compara com os ritmos DO ACERVO, não só com a lista oficial: "Pop Rock"
+  // saiu da lista do wizard e continua no catálogo, e pela lista oficial
+  // sozinha ele escaparia.
+  //
+  // As músicas não somem da Rede — elas continuam no mural, pelo ritmo, e na
+  // busca. O que sai é a pílula.
+  const nomesDeRitmo = new Set([...RITMOS.map(nomeDoRitmo), ...Object.keys(estilos)])
+  for (const nome of Object.keys(ocasioes)) {
+    if (nomesDeRitmo.has(nomeDoRitmo(nome))) delete ocasioes[nome]
+  }
+
   const filtrados = porBusca.filter((i) => {
     if (ocasiao && i.occasion !== ocasiao) return false
     if (estiloAlvo && !ritmosDa(i.musicalStyle).includes(estiloAlvo)) return false
