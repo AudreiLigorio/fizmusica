@@ -354,9 +354,31 @@ export default function LetraPanel({
               value={instrucao}
               onChange={(e) => setInstrucao(e.target.value)}
               disabled={busy !== null || semRevisoes}
-              placeholder="O que você quer ajustar? (opcional)"
+              placeholder="O que você quer ajustar na letra?"
               className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-fuchsia-500/60 transition-colors mb-2 disabled:opacity-50"
             />
+
+            {/* Exemplos abaixo do campo, não dentro dele: num <input> de uma
+                linha o texto é truncado, e aqui ele quebra e aparece inteiro.
+                Medido nas larguras reais — o placeholder antigo ("O que você
+                quer ajustar? (opcional)", 230px) era o único que não cabia num
+                aparelho de 320px; o atual tem 213px e cabe em todos.
+
+                São exemplos de TEXTO de propósito. O exemplo é a parte mais
+                lida de um campo, e o pedido que essa caixa NÃO atende é
+                justamente o de som ("mais animada"): ele vai pro compositor
+                de letra e volta com as mesmas notas e outras palavras. Quem
+                quer mexer no som tem o cartão "Como sua música vai soar", no
+                passo seguinte.
+
+                Escondido quando a cota acaba: ali o campo está desabilitado e
+                a linha ao lado já diz pra ajustar à mão — manter exemplos de
+                pedido à IA seria convidar pro que não dá mais pra fazer. */}
+            {!semRevisoes && (
+              <p className="text-[13px] text-white/45 mb-2">
+                Ex.: trocar o 2º verso, incluir o nome da nossa filha, deixar o refrão mais curto.
+              </p>
+            )}
             <div className="flex items-center justify-between gap-3">
               <span className={`text-sm ${semRevisoes ? "text-white/30" : "text-fuchsia-300/80"}`}>
                 {semRevisoes ? "Sem revisões com IA — ajuste à mão e aprove" : `${state.reprocessLeft} de 3 revisões restantes`}
