@@ -109,14 +109,29 @@ export default function AreaPublica({ abaInicial }: { abaInicial: Aba }) {
                   <p className="text-white/50 text-sm mb-4">Aqui você acompanha as músicas que lançar na Rede.</p>
                   <div className="rounded-2xl p-5 text-center border border-fuchsia-500/25"
                        style={{ background: "linear-gradient(160deg, rgba(240,25,107,0.10), rgba(217,70,239,0.06))" }}>
+                    {/* Convite, não constatação. Era "Sua carreira ainda não
+                        começou" — abria dizendo o que a pessoa NÃO tem.
+
+                        Os nomes dos níveis e o teto do desconto saem da tabela
+                        `loyalty_levels` (hoje: Cantor de Chuveiro → Popstar,
+                        desconto digital até 25%). Estão escritos à mão aqui
+                        porque esta é a tela do VISITANTE, sem sessão pra
+                        consultar a carreira — se o admin mexer nos níveis,
+                        este texto precisa acompanhar.
+
+                        Sem promessa de brinde: não existe nenhum no sistema, e
+                        anunciar o que não se entrega é propaganda enganosa
+                        (CDC). O que vende aqui já é real — a escada termina em
+                        "Popstar", e isso basta. */}
                     <div className="text-3xl mb-2">🎤</div>
-                    <p className="text-base font-bold">Sua carreira ainda não começou</p>
+                    <p className="text-base font-bold">De cantor de chuveiro a Popstar</p>
                     <p className="text-sm text-white/60 leading-relaxed mt-1.5 max-w-sm mx-auto">
-                      Toda carreira começa com a primeira música. Crie a sua, publique na Rede e veja as
-                      pessoas ouvindo e aplaudindo. Quanto mais você lança, mais desconto ganha na próxima.
+                      Lance sua primeira música na Rede e veja gente de verdade ouvindo e aplaudindo.
+                      Cada lançamento sobe o seu nível — e quanto mais alto, <strong className="text-white/80">maior o
+                      desconto na próxima</strong>. As mais aplaudidas vão parar no Top 10, à vista de todo mundo.
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-                      {["👏 Palmas", "▶ Reproduções", "🏆 Top 10"].map((x) => (
+                      {["👏 Palmas", "▶ Reproduções", "🏆 Top 10", "💿 Até 25% de desconto"].map((x) => (
                         <span key={x} className="text-[13px] px-2.5 py-1 rounded-full border border-white/10 bg-white/[0.04] text-white/60">{x}</span>
                       ))}
                     </div>
