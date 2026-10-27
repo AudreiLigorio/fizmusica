@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import FotosPanel from "./FotosPanel"
 import type { PlanFeatures } from "@/lib/planFeatures"
 
@@ -106,7 +106,7 @@ export default function VersoesEntregues({
   // escolhida; "Surpresa" descrevia o uso que a pessoa pretende dar, não o
   // que ela encontra ao tocar. As `key` continuam as mesmas — são estado
   // interno, e trocá-las não mudaria nada na tela.
-  const steps: { key: StepKey; icon: string; label: string; done: boolean; nudge?: boolean }[] = [
+  const steps: { key: StepKey; icon: ReactNode; label: string; done: boolean; nudge?: boolean }[] = [
     { key: "principal", icon: "⭐", label: "Música", done: true },
     // Fotos somem junto com o link: o expurgo apaga os arquivos no mesmo
     // evento, e sem o player público não há mais onde elas apareceriam.
@@ -114,7 +114,23 @@ export default function VersoesEntregues({
       ? [{ key: "fotos" as const, icon: "📸", label: "Fotos", done: hasPhotos, nudge: !hasPhotos }]
       : []),
     ...(features.qrcode && linkAtivo
-      ? [{ key: "surpresa" as const, icon: "🎁", label: "QR Code", done: false }]
+      ? [{
+          key: "surpresa" as const,
+          // SVG em vez de emoji: o rótulo virou "QR Code" e não existe emoji
+          // de QR — o 🎁 era herança de quando a aba se chamava "Surpresa" e
+          // passou a nomear o embrulho, não o que está dentro. Monocromático,
+          // como o ✓ que ocupa este mesmo lugar nas abas concluídas.
+          icon: (
+            <svg viewBox="0 0 24 24" fill="currentColor" fillRule="evenodd" className="w-4 h-4" aria-hidden="true">
+              <path d="M3 3h8v8H3V3zm2 2v4h4V5H5z" />
+              <path d="M13 3h8v8h-8V3zm2 2v4h4V5h-4z" />
+              <path d="M3 13h8v8H3v-8zm2 2v4h4v-4H5z" />
+              <path d="M13 13h3v3h-3zM18 13h3v3h-3zM13 18h3v3h-3zM18 18h3v3h-3z" />
+            </svg>
+          ),
+          label: "QR Code",
+          done: false,
+        }]
       : []),
     { key: "player",    icon: "▶",  label: "Player",    done: false },
   ]
@@ -144,7 +160,7 @@ export default function VersoesEntregues({
                   falta isso
                 </span>
               )}
-              <span className="text-base leading-none mb-1">{s.done && !isActive ? "✓" : s.icon}</span>
+              <span className="flex items-center justify-center h-4 text-base leading-none mb-1">{s.done && !isActive ? "✓" : s.icon}</span>
               <span className={`text-[13px] font-medium leading-tight ${
                 isActive ? "text-pink-100" : s.nudge ? "text-pink-200" : s.done ? "text-green-300" : "text-white/70"
               }`}>{s.label}</span>
