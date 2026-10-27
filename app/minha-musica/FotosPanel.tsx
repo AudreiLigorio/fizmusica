@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from "react"
 import PhotoCropModal from "@/app/components/PhotoCropModal"
 
-type Photo = { id: string; url: string; is_cover: boolean; sort_order: number }
+// `storage_path` chega só pra reconhecer a capa gerada pela IA — ela mora na
+// mesma tabela das fotos do cliente (ver lib/suno/ingest.ts).
+type Photo = { id: string; url: string; is_cover: boolean; sort_order: number; oculta?: boolean; storage_path?: string | null }
+
+const ehCapaDaIA = (p: Photo) => (p.storage_path ?? "").includes("suno-cover")
 
 const DEFAULT_MAX = 10 // usado só até a resposta do servidor chegar com o limite real
 
@@ -39,6 +43,20 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
   }
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [token])
+
+  // Mostra/esconde no player. Não apaga: o arquivo e a linha ficam, então dá
+  // pra trazer de volta — era isso que faltava quando a capa tinha só o "×".
+  async function alternarExibicao(p: Photo) {
+    setPhotos((prev) => prev.map((x) => (x.id === p.id ? { ...x, oculta: !x.oculta } : x)))
+    const res = await fetch(`/api/pedido/${token}/fotos`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ photoId: p.id, oculta: !p.oculta }),
+    }).catch(() => null)
+    // Desfaz o otimismo se o servidor recusar — senão a tela mente.
+    if (!res?.ok) setPhotos((prev) => prev.map((x) => (x.id === p.id ? { ...x, oculta: p.oculta } : x)))
+    onChange?.()
+  }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
@@ -147,12 +165,32 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
               return (
                 <div key={p.id} className="relative rounded-xl overflow-hidden border-2 border-white/10" style={{ aspectRatio: "1/1" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt="" className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => remove(p.id)}
-                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white text-sm font-bold flex items-center justify-center transition-colors"
-                    title="Remover foto"
-                  >×</button>
+                  <img src={p.url} alt="" className={`w-full h-full object-cover ${p.oculta ? "opacity-30 grayscale" : ""}`} />
+                  {/* A capa da IA NÃO tem "×" — tem interruptor.
+                      Apagar levava o arquivo junto e não havia volta pela
+                      tela; só uma nova geração da música recriaria a cópia.
+                      As fotos do cliente seguem com o "×": essas ele pode
+                      reenviar quando quiser. */}
+                  {ehCapaDaIA(p) ? (
+                    <button
+                      onClick={() => alternarExibicao(p)}
+                      className="absolute top-1 right-1 h-6 px-2 rounded-full bg-black/60 hover:bg-black/80 text-white text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors"
+                      title={p.oculta ? "Mostrar a capa no player" : "Esconder a capa do player"}
+                    >
+                      {p.oculta ? "👁️ Mostrar" : "🙈 Esconder"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => remove(p.id)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 hover:bg-red-600 text-white text-sm font-bold flex items-center justify-center transition-colors"
+                      title="Remover foto"
+                    >×</button>
+                  )}
+                  {ehCapaDaIA(p) && (
+                    <span className="absolute bottom-1 left-1 text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-black/60 text-white/80">
+                      capa gerada
+                    </span>
+                  )}
                   {!p.is_cover && reorderableCount > 1 && (
                     <div className="absolute bottom-1 inset-x-1 flex justify-between">
                       <button

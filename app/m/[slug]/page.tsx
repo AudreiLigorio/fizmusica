@@ -67,6 +67,10 @@ export default async function PublicMusicPage({ params }: { params: Promise<{ sl
     .from("order_photos")
     .select("id, url, is_cover, sort_order")
     .eq("orderId", music.orderId)
+    // Foto escondida pelo cliente não vai pro player (migração 070). O corte é
+    // aqui, no servidor: o player é a tela de QUEM RECEBE, e o que foi
+    // escondido não deve nem sair daqui.
+    .eq("oculta", false)
     .order("is_cover", { ascending: false })
     .order("sort_order", { ascending: true })
 

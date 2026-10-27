@@ -180,6 +180,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Params }) {
   const { photoId } = body
   if (!photoId) return NextResponse.json({ error: "Foto não informada." }, { status: 400 })
 
+  // Liga/desliga a exibição da foto no player (migração 070).
+  // Existe por causa da capa da IA: ela aparece no meio das fotos do cliente e
+  // era apagável como qualquer outra — sem volta, porque o arquivo saía do
+  // storage junto e só uma nova geração da música recriaria a cópia.
+  if (typeof body.oculta === "boolean") {
+    const { data: alvo } = await supabase
+      .from("order_photos").select("id").eq("id", photoId).eq("orderId", order.id).maybeSingle()
+    if (!alvo) return NextResponse.json({ error: "Foto não encontrada." }, { status: 404 })
+    await supabase.from("order_photos").update({ oculta: body.oculta }).eq("id", photoId)
+    await logOrderEvent(supabase, order.id, body.oculta ? "foto_ocultada" : "foto_exibida")
+    return NextResponse.json({ ok: true })
+  }
+
   // Confirma que a foto pertence a este pedido
   const { data: target } = await supabase
     .from("order_photos")
@@ -215,6 +228,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
     .eq("orderId", order.id)
     .maybeSingle()
   if (!img) return NextResponse.json({ error: "Foto não encontrada." }, { status: 404 })
+
+  // A capa da IA não se apaga — se esconde. Apagar levava o arquivo junto e
+  // não havia como trazer de volta pela tela. A trava fica aqui, e não só no
+  // botão, porque a mesma rota serve as DUAS telas de fotos (painel do app e
+  // link por token).
+  if ((img.storage_path ?? "").includes("suno-cover")) {
+    return NextResponse.json(
+      { error: "A capa gerada não é apagada — use o botão de mostrar/ocultar." },
+      { status: 409 },
+    )
+  }
 
   await supabase.storage.from(BUCKET).remove([img.storage_path])
   const { error } = await supabase.from("order_photos").delete().eq("id", photoId).eq("orderId", order.id)

@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabase
     .from("orders")
-    .select(`id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_token, is_revision, sharing_term_accepted_at, lyricsApproved, estilo_termo_removido, productId, sunoStatus, sunoTracks, publication_consent, rede_oculta, shipping_name, shipping_cep, shipping_address, shipping_number, shipping_complement, shipping_neighborhood, shipping_city, shipping_state, shipping_phone, products(name, price, ${PLAN_FEATURE_COLUMNS}), payments(amount, mpStatus, paidAt), order_photos(id), order_answers(question, answer, position)`)
+    .select(`id, nome, email, whatsapp, context, subcategory, musicalStyle, voiceType, emotion, honoreeName, status, paymentStatus, createdAt, photo_token, is_revision, sharing_term_accepted_at, lyricsApproved, estilo_termo_removido, productId, sunoStatus, sunoTracks, publication_consent, rede_oculta, shipping_name, shipping_cep, shipping_address, shipping_number, shipping_complement, shipping_neighborhood, shipping_city, shipping_state, shipping_phone, products(name, price, ${PLAN_FEATURE_COLUMNS}), payments(amount, mpStatus, paidAt), order_photos(id, storage_path), order_answers(question, answer, position)`)
     .or(filter)
     .order("createdAt", { ascending: false })
 
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     // Renomeia sunoStatus/sunoTracks para nomes neutros na resposta — a chave literal
     // do JSON é o único lugar onde "suno" chegaria ao cliente (via DevTools/Network).
     const { order_photos, order_answers, sunoStatus, sunoTracks, payments, ...rest } = o as typeof o & {
-      order_photos?: { id: string }[]
+      order_photos?: { id: string; storage_path: string | null }[]
       order_answers?: { question: string; answer: string; position: number }[]
       sunoStatus?: string | null
       sunoTracks?: unknown
@@ -142,7 +142,15 @@ export async function GET(req: NextRequest) {
       linkPrazoDias,
       lyrics,
       lyricsLrc,
-      photoCount: Array.isArray(order_photos) ? order_photos.length : 0,
+      // Conta só as fotos DO CLIENTE. A capa gerada pela IA também vive em
+      // `order_photos` (ver lib/suno/ingest.ts), e contá-la fazia o aviso
+      // "falta isso" nunca aparecer — justamente em quem pagou por fotos e
+      // não mandou nenhuma, que é a única pessoa a quem o aviso serve.
+      // O marcador é o caminho do arquivo, não `is_cover`: a tela por token
+      // marca a PRIMEIRA foto do cliente como capa quando não há a da IA.
+      photoCount: Array.isArray(order_photos)
+        ? order_photos.filter((f) => !(f.storage_path ?? "").includes("suno-cover")).length
+        : 0,
       features,
       answers,
       payments: paymentRow,

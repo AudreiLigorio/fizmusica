@@ -12,6 +12,8 @@ export type OrderEventType =
   | "letra_previa_descartada"
   | "foto_enviada"
   | "foto_removida"
+  | "foto_ocultada"
+  | "foto_exibida"
   | "capa_definida"
   | "versao_principal_alterada"
   | "termo_entrega_aceito"

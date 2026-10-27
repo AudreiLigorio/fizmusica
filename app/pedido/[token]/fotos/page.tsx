@@ -8,7 +8,11 @@ import Header from "@/app/components/Header"
 import Footer from "@/app/components/Footer"
 import PhotoCropModal from "@/app/components/PhotoCropModal"
 
-type Photo = { id: string; url: string; is_cover: boolean; sort_order: number }
+// `storage_path` chega só pra reconhecer a capa gerada pela IA, que mora na
+// mesma tabela das fotos do cliente (ver lib/suno/ingest.ts).
+type Photo = { id: string; url: string; is_cover: boolean; sort_order: number; oculta?: boolean; storage_path?: string | null }
+
+const ehCapaDaIA = (p: Photo) => (p.storage_path ?? "").includes("suno-cover")
 
 const DEFAULT_MAX = 10 // usado só até a resposta do servidor chegar com o limite real
 
@@ -159,12 +163,17 @@ export default function FotosPage() {
                       </span>
                     )}
 
-                    {/* Botão remover — sempre visível, canto superior direito */}
-                    <button
-                      onClick={() => remove(p.id)}
-                      className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white text-base font-bold flex items-center justify-center transition-colors backdrop-blur-sm"
-                      title="Remover foto"
-                    >×</button>
+                    {/* Botão remover — some na capa gerada pela IA, que não se
+                        apaga (o servidor recusa, ver a rota): apagar levava o
+                        arquivo junto e não havia como trazer de volta pela
+                        tela. Esconder/mostrar fica no painel do app. */}
+                    {!ehCapaDaIA(p) && (
+                      <button
+                        onClick={() => remove(p.id)}
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/60 hover:bg-red-600 text-white text-base font-bold flex items-center justify-center transition-colors backdrop-blur-sm"
+                        title="Remover foto"
+                      >×</button>
+                    )}
                   </div>
 
                   {/* Botão definir capa — abaixo da foto, sempre visível */}

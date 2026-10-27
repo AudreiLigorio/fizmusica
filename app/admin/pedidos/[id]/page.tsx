@@ -21,6 +21,8 @@ const EVENT_LABELS: Record<string, { icon: string; label: string }> = {
   letra_previa_descartada:    { icon: "🧹", label: "Prévia descartada (história editada)" },
   foto_enviada:               { icon: "📸", label: "Foto enviada" },
   foto_removida:               { icon: "🗑️", label: "Foto removida" },
+  foto_ocultada:               { icon: "🙈", label: "Capa escondida do player" },
+  foto_exibida:                { icon: "👁️", label: "Capa de volta ao player" },
   capa_definida:               { icon: "⭐", label: "Capa definida" },
   versao_principal_alterada:   { icon: "🎵", label: "Versão principal alterada" },
   termo_entrega_aceito:        { icon: "🔒", label: "Termo de entrega aceito" },
