@@ -258,6 +258,9 @@ export type Unificada = {
   // usa isso pra decidir favoritar e compartilhar — antes ele procurava a
   // faixa na lista carregada, que é paginada, e os botões sumiam.
   publico: boolean
+  // Já está nos favoritos. Só faz sentido nas músicas da Rede: as do próprio
+  // cliente nem entram no catálogo, então não há o que favoritar.
+  favorited: boolean
 }
 
 type TrackDoCliente = {
@@ -285,6 +288,7 @@ export function mesclar(
       id: t.id, title: t.title, occasion: t.occasion, musicalStyle: t.musicalStyle,
       imageUrl: t.imageUrl, audioUrl: t.audioUrl as string, lyrics: t.lyrics,
       lyricsLrc: t.lyricsLrc, apelido: meuApelido, minha: true, publico: !!t.publico,
+      favorited: false,
     }))
 
   // Música sua publicada na Rede está nas duas listas — aparecer duas vezes
@@ -296,6 +300,7 @@ export function mesclar(
       id: i.orderId, title: i.title, occasion: i.occasion, musicalStyle: i.musicalStyle,
       imageUrl: i.imageUrl, audioUrl: i.audioUrl, lyrics: i.lyrics ?? null,
       lyricsLrc: i.lyricsLrc ?? null, apelido: i.authorApelido, minha: false, publico: true,
+      favorited: i.favorited,
     }))
 
   // As do cliente primeiro: quem procura algo que tem em casa espera achar o

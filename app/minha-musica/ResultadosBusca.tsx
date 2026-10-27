@@ -1,7 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
+import AddToPlaylistModal from "./AddToPlaylistModal"
+import CreatePlaylistModal from "./CreatePlaylistModal"
+import { useToast } from "./ToastContext"
 import { combina, normalizar } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
 import type { LibraryTrack } from "./MinhasMusicas"
@@ -56,15 +60,95 @@ function Realce({ texto, termo }: { texto: string; termo: string }) {
   )
 }
 
+type Playlist = { id: string; nome: string; track_order_ids: string[] }
+
 export default function ResultadosBusca({
   minhas = [],
   meuApelido = null,
+  onPlaylistsChanged,
+  onPrecisaLogin,
 }: {
   minhas?: LibraryTrack[]
   meuApelido?: string | null
+  onPlaylistsChanged?: () => void
+  onPrecisaLogin?: () => void
 }) {
-  const { items: rede, busca, filtro, temMais, carregando, carregarMais } = useCatalogo()
+  const { items: rede, busca, filtro, temMais, carregando, carregarMais, alternarFavorito } = useCatalogo()
   const { track: nowPlaying, playing, playOuPausa } = usePlayer()
+  const { showToast } = useToast()
+
+  // Favoritar e montar playlist DIRETO na linha.
+  //
+  // Antes só dava pra fazer as duas coisas dentro do player: era preciso tocar
+  // a música, esperar o player abrir e só então achar os botões. Numa lista de
+  // 21 resultados de um ritmo, guardar três músicas custava abrir três vezes.
+  //
+  // O código espelha o de RedeFizMusica (mesmo fluxo, mesmos modais). É a
+  // QUARTA cópia no projeto — MiniPlayer e MinhasMusicas têm as suas —, e
+  // unificar as quatro num hook é dívida anotada, não feita aqui: as outras
+  // três funcionam e ficam atrás do login, onde eu não consigo testar.
+  const [playlists, setPlaylists] = useState<Playlist[] | null>(null)
+  const [addingTrackId, setAddingTrackId] = useState<string | null>(null)
+  const [creatingPlaylistOpen, setCreatingPlaylistOpen] = useState(false)
+  const [pendingOrderId, setPendingOrderId] = useState<string | undefined>(undefined)
+
+  async function authHeaders() {
+    const { data: { session } } = await supabase.auth.getSession()
+    return { Authorization: `Bearer ${session?.access_token ?? ""}`, "Content-Type": "application/json" }
+  }
+
+  async function carregarPlaylists() {
+    try {
+      const res = await fetch("/api/playlists", { headers: await authHeaders() })
+      const d = await res.json().catch(() => ({}))
+      const lista: Playlist[] = d.playlists ?? []
+      setPlaylists(lista)
+      return lista
+    } catch {
+      setPlaylists([])
+      return [] as Playlist[]
+    }
+  }
+
+  async function abrirAdicionar(orderId: string) {
+    // Sem conta o botão CONVIDA em vez de sumir — mesma regra da Rede.
+    if (onPrecisaLogin) { onPrecisaLogin(); return }
+    const lista = await carregarPlaylists()
+    // Uma playlist só? Adiciona direto: o popup de escolher só faz sentido
+    // quando há de fato uma escolha.
+    if (lista.length === 1) adicionarNaPlaylist(lista[0].id, orderId)
+    else setAddingTrackId(orderId)
+  }
+
+  async function adicionarNaPlaylist(playlistId: string, orderId: string) {
+    await fetch(`/api/playlists/${playlistId}`, {
+      method: "PATCH", headers: await authHeaders(), body: JSON.stringify({ addOrderId: orderId }),
+    })
+    await carregarPlaylists()
+    onPlaylistsChanged?.()
+    showToast("Adicionado com sucesso ✓")
+  }
+
+  async function confirmarCriarPlaylist(nome: string) {
+    setCreatingPlaylistOpen(false)
+    const res = await fetch("/api/playlists", {
+      method: "POST", headers: await authHeaders(), body: JSON.stringify({ nome, orderId: pendingOrderId }),
+    })
+    if (!res.ok) { const j = await res.json().catch(() => ({})); showToast(j.error ?? "Não foi possível criar a playlist."); return }
+    await carregarPlaylists()
+    onPlaylistsChanged?.()
+    showToast("Adicionado com sucesso ✓")
+  }
+
+  async function favoritar(orderId: string) {
+    if (onPrecisaLogin) { onPrecisaLogin(); return }
+    // Otimista: o contexto alterna e a lista reflete na hora — `linhas` sai de
+    // `items`, então o coração acompanha sem esperar o servidor.
+    alternarFavorito(orderId)
+    await fetch("/api/catalog/favorite", {
+      method: "POST", headers: await authHeaders(), body: JSON.stringify({ orderId }),
+    }).catch(() => {})
+  }
 
   // As músicas da REDE já vêm buscadas e filtradas do servidor (desde a
   // paginação) — refiltrar aqui esconderia resultado válido. Só as do
@@ -106,9 +190,17 @@ export default function ResultadosBusca({
           // procura, então é o que precisa aparecer pra explicar o resultado.
           const contexto = [l.occasion, l.musicalStyle].filter(Boolean) as string[]
           return (
-            <button
+            // Linha = DIV, não <button>.
+            // Favoritar e "+" são botões, e botão dentro de botão é HTML
+            // inválido: o clique de dentro dispararia o de fora e tocaria a
+            // música a cada tentativa de guardar. Mesma razão das capinhas.
+            <div
               key={l.id}
+              className="w-full flex items-center gap-2 px-1 py-2 rounded-xl hover:bg-white/[0.04] transition-colors"
+            >
+            <button
               type="button"
+              className="flex items-center gap-3.5 flex-1 min-w-0 text-left"
               onClick={() => playOuPausa(
                 {
                   id: l.id, title: l.title, occasion: l.occasion, audioUrl: l.audioUrl,
@@ -124,7 +216,6 @@ export default function ResultadosBusca({
                   publico: x.publico, minha: x.minha,
                 })),
               )}
-              className="w-full flex items-center gap-3.5 px-1 py-2 rounded-xl hover:bg-white/[0.04] transition-colors text-left"
             >
               {/* Gradiente SEMPRE por baixo da foto (duas camadas de
                   background-image, a primeira em cima). Capas antigas apontam
@@ -163,24 +254,62 @@ export default function ResultadosBusca({
                       <Realce texto={c} termo={busca} />
                     </span>
                   ))}
-                  {/* Apelido no fim, e só nas músicas de OUTRAS pessoas: em
-                      "Sua música" o autor é quem está olhando. Nulo na maioria
-                      dos casos — o apelido exige opt-in e só vem pra logado. */}
-                  {!l.minha && l.apelido && (
-                    <>
-                      <span className="text-white/20"> | </span>
-                      <span className="text-white/55">{l.apelido}</span>
-                    </>
-                  )}
+                  {/* O apelido saía TAMBÉM aqui no fim. Desde que o nome
+                      passou a abrir a linha (4995d2a), isso o repetia:
+                      "Maurício · Composição autoral · 🎸 Rock | Maurício". */}
                 </p>
               </div>
             </button>
+
+            {/* Favoritar só nas músicas da REDE: as do próprio cliente não
+                entram no catálogo, então não haveria o que favoritar — e o
+                coração ficaria sempre apagado, parecendo defeito. */}
+            <div className="flex items-center gap-1 shrink-0">
+              {!l.minha && (
+                <button
+                  type="button"
+                  onClick={() => favoritar(l.id)}
+                  aria-label={l.favorited ? `Remover ${l.title} dos favoritos` : `Favoritar ${l.title}`}
+                  title={l.favorited ? "Remover dos favoritos" : "Favoritar"}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm hover:bg-white/10 transition-colors"
+                >
+                  {l.favorited ? "❤️" : "🤍"}
+                </button>
+              )}
+              {/* SEM `data-zona-escura`, ao contrário do "+" das capinhas: lá
+                  ele fica SOBRE a capa, escura nos dois temas; aqui fica sobre
+                  o fundo da página. Com a marca, o tema claro deixava de
+                  converter o branco e o "+" sumia no branco — visto na tela. */}
+              <button
+                type="button"
+                onClick={() => abrirAdicionar(l.id)}
+                aria-label={`Adicionar ${l.title} a uma playlist`}
+                title="Adicionar a uma playlist"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-base font-bold text-white/60 hover:bg-white/10 transition-colors"
+              >
+                +
+              </button>
+            </div>
+            </div>
           )
         })}
       </div>
 
       {/* Paginação: a Rede vem em páginas de 40 do servidor. Sem isso, um
           catálogo de milhares viria inteiro numa requisição só. */}
+      <AddToPlaylistModal
+        open={!!addingTrackId}
+        playlists={playlists}
+        onClose={() => setAddingTrackId(null)}
+        onAdd={(playlistId) => { if (addingTrackId) adicionarNaPlaylist(playlistId, addingTrackId) }}
+        onCreateNew={() => { setPendingOrderId(addingTrackId ?? undefined); setCreatingPlaylistOpen(true) }}
+      />
+      <CreatePlaylistModal
+        open={creatingPlaylistOpen}
+        onClose={() => setCreatingPlaylistOpen(false)}
+        onCreate={confirmarCriarPlaylist}
+      />
+
       {temMais && (
         <div className="flex justify-center mt-6">
           <button

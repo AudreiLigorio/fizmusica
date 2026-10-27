@@ -122,7 +122,12 @@ export default function AbaMusicas({
       )}
 
       {modoResultado ? (
-        <ResultadosBusca minhas={minhas} meuApelido={meuApelido} />
+        <ResultadosBusca
+          minhas={minhas}
+          meuApelido={meuApelido}
+          onPlaylistsChanged={onPlaylistsChanged}
+          onPrecisaLogin={onPrecisaLogin}
+        />
       ) : (
         <>
           {/* Faixa de carreira ANTES da Rede: é a primeira coisa da aba,
