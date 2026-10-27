@@ -259,9 +259,13 @@ export default function VersoesEntregues({
           {/* Sem o "Opcional —" na frente (Audrei, 2026-10-27): a frase abria
               avisando o que ela NÃO é, e o aviso vinha antes da ideia. A aba
               inteira já é opcional — quem não quer o QR simplesmente não entra
-              aqui. Agora começa pelo convite. */}
+              aqui. Agora começa pelo convite.
+
+              Logo abaixo dela havia um segundo título, "Agora a surpresa — o
+              QR vira presente": dois recados seguidos dizendo a mesma coisa, e
+              o segundo em destaque. Saiu também — esta frase apresenta a ideia
+              e os três passos abaixo mostram como fazer. */}
           <p className="text-white/55 text-sm text-center mb-3 leading-relaxed">Surpreenda colando o QR num presente físico: uma caixa, um cartão, um quadro, um buquê ou uma lembrancinha.</p>
-          <p className="text-center text-sm font-semibold text-pink-200 mb-3">Agora a surpresa — o QR vira presente</p>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
               { icon: "🖨️", t: "Imprime o QR" },
