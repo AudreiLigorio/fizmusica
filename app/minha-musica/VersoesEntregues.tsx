@@ -356,7 +356,11 @@ export default function VersoesEntregues({
             {principalUrl && features.download && (
               <a href={`/api/orders/${orderId}/musica/download`} download
                 className="flex flex-col items-center justify-center gap-1 py-3 rounded-lg text-[13px] font-semibold border border-white/15 text-white/75 hover:bg-white/5 transition-colors">
-                <span className="text-base leading-none">⬇</span> Baixar
+                {/* "Baixar MP3", não só "Baixar": nomeia o arquivo que a
+                    pessoa está procurando — e é como a outra tela de entrega
+                    (page.tsx, entrega legada) já chamava. Os dois nomes
+                    conviviam. */}
+                <span className="text-base leading-none">⬇</span> Baixar MP3
               </a>
             )}
             {linkAtivo && (
