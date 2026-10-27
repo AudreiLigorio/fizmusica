@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
+import { createPortal } from "react-dom"
 
 const CROP_SIZE   = 480  // px do canvas de edição (UI leve)
 const OUTPUT_SIZE = 1440 // px do arquivo exportado (nitidez no player, evita quadriculado)
@@ -58,6 +59,18 @@ export default function PhotoCropModal({
     s.oy = Math.max(Math.min(s.oy, maxOy), minOy)
   }
 
+  // Quantas unidades do canvas vale 1 pixel arrastado na tela.
+  //
+  // O canvas tem 480 de buffer mas agora é EXIBIDO menor (ver o `style` do
+  // container). Somar o delta do dedo direto em `ox` fazia a foto correr mais
+  // que o dedo — num celular de 360px, 1,45x mais. Já era assim antes desta
+  // mudança, porque `maxWidth: 100%` também encolhia o canvas; só ficava mais
+  // disfarçado.
+  function fator() {
+    const l = canvasRef.current?.getBoundingClientRect().width
+    return l ? CROP_SIZE / l : 1
+  }
+
   function onMouseDown(e: React.MouseEvent) {
     const s = stateRef.current
     s.dragging = true; s.lastX = e.clientX; s.lastY = e.clientY
@@ -65,7 +78,8 @@ export default function PhotoCropModal({
   function onMouseMove(e: React.MouseEvent) {
     const s = stateRef.current
     if (!s.dragging) return
-    s.ox += e.clientX - s.lastX; s.oy += e.clientY - s.lastY
+    const f = fator()
+    s.ox += (e.clientX - s.lastX) * f; s.oy += (e.clientY - s.lastY) * f
     s.lastX = e.clientX; s.lastY = e.clientY
     clamp(s); draw()
   }
@@ -91,7 +105,8 @@ export default function PhotoCropModal({
     e.preventDefault()
     const s = stateRef.current
     if (e.touches.length === 1 && s.dragging) {
-      s.ox += e.touches[0].clientX - s.lastX; s.oy += e.touches[0].clientY - s.lastY
+      const f = fator()
+      s.ox += (e.touches[0].clientX - s.lastX) * f; s.oy += (e.touches[0].clientY - s.lastY) * f
       s.lastX = e.touches[0].clientX; s.lastY = e.touches[0].clientY
       clamp(s); draw()
     } else if (e.touches.length === 2) {
@@ -131,15 +146,38 @@ export default function PhotoCropModal({
     out.toBlob((blob) => { if (blob) onConfirm(blob) }, "image/jpeg", 0.95)
   }
 
-  return (
+  // Em PORTAL no <body>.
+  //
+  // O modal é montado dentro do painel de fotos, que por sua vez vive dentro
+  // do cartão do pedido. Qualquer ancestral com `transform`, `filter` ou
+  // `isolate` cria um contexto de empilhamento, e aí o `z-[60]` passa a valer
+  // só dentro daquele ancestral — a barra de abas do celular (`z-40`, na raiz)
+  // pode desenhar POR CIMA do modal. Foi o que apareceu no relato do Audrei:
+  // a barra inteira, colorida e nítida, sobre um fundo que deveria cobri-la.
+  // No body não há ancestral nenhum pra prender o modal.
+  const conteudo = (
     <div className="fixed inset-0 z-[60] bg-black/90 flex flex-col items-center justify-center p-4">
-      <div className="bg-[#15131d] rounded-3xl overflow-hidden w-full max-w-sm">
+      {/* `max-h-full` + `overflow-y-auto`: rede de segurança. Se um aparelho
+          muito baixo ainda não couber, o cartão rola — em vez de cortar os
+          botões sem deixar alcançá-los, que é o que acontecia (o
+          `justify-center` empurra o excesso pros dois lados e nada rola). */}
+      <div className="bg-[#15131d] rounded-3xl overflow-hidden overflow-y-auto max-h-full w-full max-w-sm">
         <div className="px-5 pt-5 pb-2 text-center">
           <p className="font-bold text-lg">Ajustar foto</p>
           <p className="text-white/40 text-sm mt-1">Arraste para reposicionar · Pinça para zoom</p>
         </div>
 
-        <div className="relative mx-auto overflow-hidden" style={{ width: CROP_SIZE, height: CROP_SIZE, maxWidth: "100%", touchAction: "none" }}>
+        {/* Quadrado que CABE na tela, em vez de 480x480 fixos.
+            Eram 480 de altura cravados: com o cabeçalho e os botões, o cartão
+            dava 638px — medido. Na web mobile de um iPhone SE sobram ~553px
+            de área útil depois da barra do navegador, então os 76px dos
+            botões ficavam inteiramente fora da tela.
+            `aspectRatio` no lugar de `height` mantém o quadrado enquanto a
+            largura encolhe; antes só a largura obedecia ao `maxWidth` e o
+            recorte deixava de ser quadrado no celular.
+            O 16rem reserva cabeçalho (~80), botões (~76) e as margens. */}
+        <div className="relative mx-auto overflow-hidden"
+             style={{ width: `min(${CROP_SIZE}px, 100%, calc(100dvh - 16rem))`, aspectRatio: "1", touchAction: "none" }}>
           <canvas
             ref={canvasRef}
             width={CROP_SIZE}
@@ -181,4 +219,7 @@ export default function PhotoCropModal({
       </div>
     </div>
   )
+
+  // `document` só existe no cliente; no servidor não renderiza nada.
+  return typeof document === "undefined" ? null : createPortal(conteudo, document.body)
 }
