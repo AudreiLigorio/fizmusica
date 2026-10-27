@@ -769,12 +769,25 @@ function MinhaMusicaContent() {
                 onChange={(e) => setPubChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
                 className="w-4 h-4 mt-0.5 accent-fuchsia-500 shrink-0"
               />
+              {/* Texto encurtado (Audrei, 2026-10-27: "as pessoas reclamaram
+                  que tinha muito aceite"). Eram ~60 palavras num aceite que é
+                  opcional — o volume de texto é parte do que faz a tela
+                  parecer um cartório.
+
+                  O que NÃO podia encurtar: a fórmula "autorizo a Fiz Música a
+                  divulgar a música e a letra" é a do termo 07, e o aviso de
+                  que a obra pode conter nomes e a história real é o que torna
+                  o consentimento informado — é dado de terceiro.
+
+                  "Revogar" saiu: é palavra de contrato e não diz o que fazer.
+                  No lugar, os DOIS lugares reais onde se desfaz isso, ambos
+                  com botão "Tirar da Rede". */}
               <span className="text-sm text-white/60 leading-relaxed">
                 <strong className="text-fuchsia-200">Opcional:</strong> autorizo a Fiz Música a divulgar{" "}
-                <strong className="text-white/80">minha música e a letra</strong> no SpotFiz, que podem conter
-                nomes e a história real como parte do conteúdo.{" "}
-                <strong className="text-white/80">As fotos que enviei não aparecem na Rede</strong> — só a capa gerada
-                automaticamente. Posso revogar quando quiser.{" "}
+                <strong className="text-white/80">minha música e a letra</strong> no SpotFiz — pode conter nomes e a
+                história real. <strong className="text-white/80">Suas fotos não aparecem</strong>, só a capa.
+                Dá pra <strong className="text-white/80">despublicar quando quiser</strong>, no seu pedido ou em
+                SpotFiz › Minhas músicas publicadas.{" "}
                 <a href="/legal/autorizacao-de-publicacao" className="text-fuchsia-300 underline">Ler o termo</a>.
               </span>
             </label>
