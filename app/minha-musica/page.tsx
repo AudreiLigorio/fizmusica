@@ -11,7 +11,6 @@ import QRModal from "@/app/components/QRModal"
 import PreparoFlow from "./PreparoFlow"
 import DetalhesPedido from "./DetalhesPedido"
 import AjudaCliente from "./AjudaCliente"
-import PublicacaoConsent from "./PublicacaoConsent"
 import EscolherVersao from "./EscolherVersao"
 import VersoesEntregues from "./VersoesEntregues"
 import DatasEspeciais from "./DatasEspeciais"
@@ -925,9 +924,36 @@ function MinhaMusicaContent() {
           )}
         </div>
 
-        {/* Autorização opcional de divulgação — após a música entregue */}
-        {delivered && order.slug && termAccepted && (
-          <PublicacaoConsent orderId={order.id} initial={!!order.publication_consent} />
+        {/* O CONVITE a publicar saiu daqui (Audrei, 2026-10-27).
+            Era o bloco "Quer ajudar mais pessoas a se emocionarem?", que
+            ficava FORA das abas e por isso reaparecia embaixo de Principal,
+            Fotos, Surpresa e Player — quatro vezes o mesmo pedido, numa tela
+            em que o cliente foi ouvir a música. E desde o aceite da entrega
+            marcar a publicação junto, ele é redundante: quem chegou aqui já
+            decidiu, de um jeito ou de outro.
+
+            Quem não publicou e mudar de ideia depois encontra o convite em
+            SpotFiz › Minhas músicas publicadas, que tem o texto completo do
+            termo — publicar continua exigindo o aceite próprio, não um
+            interruptor.
+
+            O que FICA é a saída, numa linha: o termo 07 e o texto do aceite
+            prometem que dá pra despublicar "no seu pedido", e o botão da
+            capinha não existe no cartão inteiro — que é justamente como o
+            pedido aparece logo depois de liberado, o momento em que alguém
+            mais provavelmente se arrepende de ter exposto o nome de quem
+            homenageou. */}
+        {delivered && order.slug && termAccepted && !!order.publication_consent && !order.rede_oculta && (
+          <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-white/5">
+            <p className="text-[13px] font-semibold text-green-300">🌐 Na Rede</p>
+            <button
+              onClick={() => tirarDaRede(order.id, order.musicName?.trim() || order.subcategory)}
+              disabled={saindoDaRede === order.id}
+              className="text-[13px] text-white/50 hover:text-white underline underline-offset-2 disabled:opacity-40 transition-colors"
+            >
+              {saindoDaRede === order.id ? "Tirando…" : "Tirar da Rede"}
+            </button>
+          </div>
         )}
 
         {/* Convite a indicar, no pico emocional: a música acabou de ficar
