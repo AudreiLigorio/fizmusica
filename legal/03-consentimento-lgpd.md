@@ -1,8 +1,10 @@
 # Consentimento para Tratamento de Dados Pessoais (Checkout / Formulário)
 
-Última atualização: 10 de outubro de 2026
+Última atualização: 27 de outubro de 2026
 
-Este documento reúne **todos** os pontos em que a plataforma pede consentimento, o que cada um cobre e onde se revoga. Cada consentimento é coletado em **caixa própria**, nunca agrupado com outro.
+Este documento reúne **todos** os pontos em que a plataforma pede consentimento, o que cada um cobre e onde se revoga. Cada consentimento é coletado em **caixa própria**, com texto próprio e revogação independente.
+
+> **Exceção, a partir de 27 de outubro de 2026:** a caixa de **publicação no SpotFiz** é marcada automaticamente quando o Cliente aceita o Termo de Entrega Digital. Ela continua sendo uma caixa separada, com texto próprio, visível e **desmarcável antes de confirmar** — mas não exige um segundo clique para ser concedida. Ver a seção correspondente abaixo.
 
 ---
 
@@ -26,7 +28,7 @@ Este documento reúne **todos** os pontos em que a plataforma pede consentimento
 
 > ☐ Li e aceito o [Termo de Entrega Digital](09-termo-de-entrega-digital.md) e entendo que o **compartilhamento da música é de minha responsabilidade**.
 
-### Publicação no SpotFiz (opcional — caixa separada, desmarcada)
+### Publicação no SpotFiz (opcional — caixa separada, marcada junto com a entrega)
 
 > ☐ Autorizo a Fiz Música a divulgar **minha música e a letra** no SpotFiz, que podem conter nomes e a história real como parte do conteúdo. Ela ganha um **endereço público** que qualquer pessoa pode abrir e compartilhar. As fotos que enviei **não aparecem na Rede** — só a capa gerada automaticamente. Posso revogar quando quiser.
 
@@ -36,7 +38,13 @@ O texto também não repete que o compartilhamento é responsabilidade do Client
 
 A menção ao **endereço público** está na caixa, e não só no termo, porque é o ponto em que a consequência da autorização sai da plataforma: a partir dele a obra pode circular por qualquer canal, sem conta. Consentimento sobre algo que atravessa essa fronteira precisa ser dado com a informação à vista.
 
-Apresentado **na mesma tela** do Termo de Entrega, mas como aceite **independente**: aceitar a entrega não publica a música, e recusar a publicação não impede a entrega.
+Apresentado **na mesma tela** do Termo de Entrega. A caixa abre desmarcada e **é marcada automaticamente** quando o Cliente aceita o Termo de Entrega: na prática, **aceitar a entrega sem mais nenhuma ação publica a música**. Para não publicar, o Cliente **desmarca a caixa** antes de confirmar — recusar a publicação **não** impede a entrega, e o botão funciona com ela desmarcada.
+
+Uma vez desmarcada pelo Cliente, a caixa **não volta a ser marcada** por nenhuma ação posterior na mesma tela: a automação nunca sobrepõe uma escolha explícita.
+
+Os dois aceites seguem **independentes quanto ao objeto e à revogação** — o Cliente pode desfazer a publicação a qualquer momento sem perder o acesso à música.
+
+> **Registro de avaliação:** esta mudança foi adotada em 27 de outubro de 2026 a pedido da Fiz Música, após relatos de clientes sobre o número de aceites na tela de entrega. Ela **reduz o grau de afirmação** do consentimento de publicação, que deixa de exigir ação própria do titular. A caixa permanece separada, visível, com texto próprio, desmarcável antes da confirmação e revogável depois — mas a validade desse consentimento como manifestação "livre, informada e inequívoca" (LGPD, art. 5º, XII) **depende de avaliação jurídica**, recomendada no README deste conjunto.
 
 ### Assinatura do autor na Rede
 
@@ -52,7 +60,7 @@ Ao cadastrar uma data, o Cliente autoriza o envio de lembretes por e-mail sobre 
 
 ## Recomendações de implementação
 
-- A caixa de **consentimento principal** deve ser **obrigatória** (não pré-marcada) para concluir o pedido.
+- A caixa de **consentimento principal** (checkout) deve ser **obrigatória** e **não pré-marcada** para concluir o pedido. Isso vale para o consentimento principal e para o Termo de Entrega — **não** para a caixa opcional de publicação, que desde 27/10/2026 é marcada junto com o Termo de Entrega.
 - Registrar a **data/hora e a versão** dos documentos aceitos junto ao pedido (prova de consentimento — LGPD).
 - O consentimento de **fotos** é específico e pode ser coletado no momento do upload, na área do cliente.
 - Manter links visíveis para Termos de Uso e Política de Privacidade.

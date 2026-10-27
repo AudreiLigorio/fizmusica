@@ -1,6 +1,6 @@
 # Termo de Autorização de Publicação e Uso de Conteúdo (Opcional)
 
-Última atualização: 10 de outubro de 2026
+Última atualização: 27 de outubro de 2026
 
 ## 1. Objeto
 
@@ -64,7 +64,11 @@ Esta autorização é **opcional**, **não é requisito** para a contratação, 
 
 ### 4.1. Momento da coleta
 
-A autorização é apresentada ao Cliente **junto com o Termo de Entrega Digital**, quando a música fica pronta, em **caixa de marcação própria e separada**, desmarcada por padrão. Aceitar o Termo de Entrega — que é obrigatório para liberar o acesso à música — **não** concede esta autorização: são dois aceites independentes, e o Cliente pode aceitar um sem o outro.
+A autorização é apresentada ao Cliente **junto com o Termo de Entrega Digital**, quando a música fica pronta, em **caixa de marcação própria e separada**. A caixa aparece **desmarcada** quando a tela abre e **é marcada automaticamente** no momento em que o Cliente aceita o Termo de Entrega Digital.
+
+O Cliente **pode desmarcá-la** antes de confirmar, e a Obra não será publicada: a publicação **não é requisito** para receber, ouvir, baixar ou compartilhar a música, e o botão de liberação funciona com a caixa desmarcada. Se o Cliente desmarcar esta caixa, ela **não volta a ser marcada** por nenhuma ação posterior na mesma tela.
+
+São, portanto, **dois aceites distintos**, com objetos distintos e revogáveis de forma independente — mas **não são mais dois cliques**: aceitar o Termo de Entrega marca também esta autorização, e cabe ao Cliente desmarcá-la se não a desejar.
 
 A autorização também pode ser concedida ou retirada depois, a qualquer momento, na Área do Cliente.
 

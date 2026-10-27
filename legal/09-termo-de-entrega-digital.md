@@ -1,6 +1,6 @@
 # Termo de Entrega Digital — Acesso, Download e Compartilhamento
 
-Última atualização: 10 de outubro de 2026
+Última atualização: 27 de outubro de 2026
 
 ## 1. Acesso ao Pedido e à Área do Cliente
 
@@ -55,7 +55,11 @@ O prazo vigente é o indicado neste documento e na Área do Cliente, e pode ser 
 
 Este Termo é apresentado quando a música fica pronta e o seu **aceite é obrigatório** para liberar o acesso ao áudio, ao download e ao compartilhamento.
 
-Na mesma tela é apresentada, em **caixa separada e desmarcada por padrão**, a [Autorização de Publicação](07-autorizacao-de-publicacao.md) no SpotFiz. São dois aceites **independentes**: aceitar este Termo **não** publica a música, e recusar a publicação **não** impede a entrega. O Cliente pode aceitar um sem o outro, e mudar de ideia depois na Área do Cliente.
+Na mesma tela é apresentada, em **caixa separada**, a [Autorização de Publicação](07-autorizacao-de-publicacao.md) no SpotFiz. Essa caixa aparece desmarcada e **é marcada junto** quando o Cliente aceita este Termo — ou seja, **aceitar este Termo, sem mais nenhuma ação, publica a música no SpotFiz**.
+
+Para **não** publicar, basta **desmarcar** essa caixa antes de confirmar: recusar a publicação **não** impede a entrega, e o botão de liberação funciona do mesmo jeito. Desmarcada pelo Cliente, ela não volta a ser marcada sozinha.
+
+Os dois aceites continuam **independentes** quanto ao objeto e à revogação: o Cliente pode manter um e desfazer o outro, e pode mudar de ideia depois na Área do Cliente, em **Pedidos** ou em **SpotFiz › Minhas músicas publicadas**.
 
 ## 7. Limitação de Responsabilidade
 

@@ -1,6 +1,6 @@
 # Política de Privacidade — Fiz Música
 
-Última atualização: 10 de outubro de 2026
+Última atualização: 27 de outubro de 2026
 
 ## 1. Apresentação
 
@@ -55,7 +55,7 @@ Tratamentos que dependem de **consentimento específico**, cada um coletado em s
 | Tratamento | Consentimento | Onde se revoga |
 |---|---|---|
 | Fotos exibidas no player da própria música | No envio das fotos | Removendo as fotos na Área do Cliente |
-| Publicação da música e da letra no SpotFiz e em marketing | Caixa própria, desmarcada por padrão, apresentada junto ao Termo de Entrega | Desmarcando na Área do Cliente |
+| Publicação da música e da letra no SpotFiz e em marketing | Caixa própria, apresentada junto ao Termo de Entrega e **marcada junto com ele**; o Cliente pode desmarcá-la antes de confirmar | Desmarcando na Área do Cliente, em Pedidos ou em SpotFiz › Minhas músicas publicadas |
 | Exibição do apelido do autor na Rede | Opção "Mostrar meu apelido no SpotFiz", desligada por padrão | Desligando no perfil |
 | Lembretes de datas especiais | Ao cadastrar a data | Removendo a data na Área do Cliente |
 

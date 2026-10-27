@@ -1,6 +1,6 @@
 # Termo de Licença, Direitos Autorais e Utilização de Histórias
 
-Última atualização: 10 de outubro de 2026
+Última atualização: 27 de outubro de 2026
 
 ## 1. Aceitação
 
@@ -63,7 +63,7 @@ A Fiz Música poderá, a seu exclusivo critério: publicar, licenciar, distribui
 
 O uso da obra em peça publicitária que **identifique** o Cliente ou o homenageado segue dependendo da Autorização de Publicação (documento 07), conforme a fronteira do item 10.
 
-**SpotFiz** (antes “Rede Fiz Música”)**.** Apesar da amplitude deste item, a Fiz Música **não publica** a obra do Cliente no SpotFiz — o catálogo interno onde outros usuários ouvem — **sem a autorização específica** do documento 07. Essa autorização é opcional, é pedida separadamente e o Cliente pode retirá-la sozinho a qualquer momento, com efeito em até 1 minuto. Na prática, a publicação na Rede é decisão do Cliente, não da Fiz Música.
+**SpotFiz** (antes “Rede Fiz Música”)**.** Apesar da amplitude deste item, a Fiz Música **não publica** a obra do Cliente no SpotFiz — o catálogo interno onde outros usuários ouvem — **sem a autorização específica** do documento 07. Essa autorização é opcional e tem caixa própria na tela de entrega, marcada junto com o Termo de Entrega Digital — o Cliente a desmarca ali se não quiser publicar, e pode retirá-la sozinho depois, a qualquer momento, com efeito em até 1 minuto. A publicação na Rede segue sendo **decisão do Cliente**, que pode recusá-la antes de confirmar e desfazê-la quando quiser.
 
 ## 10. Utilização de Nomes e Elementos Identificáveis
 

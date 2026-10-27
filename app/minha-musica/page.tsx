@@ -197,14 +197,25 @@ function MinhaMusicaContent() {
 
   // Autorização de publicação marcada no MESMO portão da entrega.
   //
-  // Estado separado do `termChecked` de propósito: são dois aceites, não um.
-  // O termo de entrega é OBRIGATÓRIO (sem ele o cliente não ouve o que
-  // pagou); a publicação é OPCIONAL. Fundir os dois num clique só faria o
-  // opcional deixar de ser livre — a pessoa teria que autorizar a divulgação
-  // pra receber o produto, e consentimento assim não vale (LGPD pede
-  // específico e granular). Juntar o MOMENTO resolve a vida do cliente;
-  // juntar o ACEITE criaria um problema.
+  // Estado separado do `termChecked` porque continuam sendo DOIS aceites: o
+  // termo de entrega é obrigatório (sem ele o cliente não ouve o que pagou) e
+  // a publicação é opcional — dá pra desmarcar e receber a música do mesmo
+  // jeito, e o botão nunca exige a segunda caixa.
+  //
+  // O que mudou em 2026-10-27 (decisão do Audrei, depois de clientes
+  // reclamarem de "muito aceite"): marcar o termo obrigatório passa a marcar
+  // a publicação junto. Os documentos 02, 03, 07 e 09 foram reescritos no
+  // mesmo commit, porque os quatro afirmavam o contrário — documento que
+  // descreve um comportamento que o sistema não tem é pior que documento
+  // nenhum.
+  //
+  // `pubTouched` existe pra que o automático NUNCA passe por cima de uma
+  // escolha explícita: se o cliente desmarcar a publicação e depois mexer no
+  // termo de entrega, a caixa continua desmarcada. Sem isso a tela
+  // responderia "não" com "sim", que é o único jeito de essa automação virar
+  // de fato um consentimento falso.
   const [pubChecked, setPubChecked] = useState<Record<string, boolean>>({})
+  const [pubTouched, setPubTouched] = useState<Record<string, boolean>>({})
 
   // Depois de uma ação que muda DRASTICAMENTE o tamanho do card (aprovar a
   // letra, escolher a versão, aceitar o termo), só recarregar não basta: a
@@ -747,7 +758,13 @@ function MinhaMusicaContent() {
               <input
                 type="checkbox"
                 checked={!!termChecked[order.id]}
-                onChange={(e) => setTermChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
+                onChange={(e) => {
+                  const marcado = e.target.checked
+                  setTermChecked((p) => ({ ...p, [order.id]: marcado }))
+                  // Marca a publicação junto — só ao MARCAR, e só enquanto o
+                  // cliente não tiver mexido nela por conta própria.
+                  if (marcado && !pubTouched[order.id]) setPubChecked((p) => ({ ...p, [order.id]: true }))
+                }}
                 className="w-4 h-4 mt-0.5 accent-pink-500 shrink-0"
               />
               <span className="text-sm text-white/60 leading-relaxed">
@@ -766,7 +783,10 @@ function MinhaMusicaContent() {
               <input
                 type="checkbox"
                 checked={!!pubChecked[order.id]}
-                onChange={(e) => setPubChecked((p) => ({ ...p, [order.id]: e.target.checked }))}
+                onChange={(e) => {
+                  setPubTouched((p) => ({ ...p, [order.id]: true }))
+                  setPubChecked((p) => ({ ...p, [order.id]: e.target.checked }))
+                }}
                 className="w-4 h-4 mt-0.5 accent-fuchsia-500 shrink-0"
               />
               {/* Texto encurtado (Audrei, 2026-10-27: "as pessoas reclamaram
