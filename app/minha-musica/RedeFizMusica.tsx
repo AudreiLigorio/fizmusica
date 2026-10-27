@@ -524,6 +524,12 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin, mura
                     </button>
                   </div>
                   <p className={`text-sm font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{it.title}</p>
+                  {/* Autor também aqui: era o último cartão do SpotFiz que
+                      mostrava só o título. */}
+                  <p className={`text-[13px] truncate ${it.authorApelido ? "text-white/55" : "text-white/25 italic"}`}
+                     title={it.authorApelido ?? "Este autor não escolheu aparecer na Rede"}>
+                    {it.authorApelido ?? "Membro da Rede"}
+                  </p>
                 </div>
               )
             })}

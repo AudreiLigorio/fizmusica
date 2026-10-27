@@ -175,6 +175,15 @@ export default function MinhasPlaylists({ version, embedded, busca = "" }: { ver
                       </button>
                     </div>
                     <p className={`text-sm font-medium mt-2 truncate transition-colors ${isPlaying ? "text-fuchsia-300" : "group-hover:text-fuchsia-300"}`}>{t.title}</p>
+                    {/* Quem publicou. A playlist mistura música sua com música
+                        de outras pessoas, então aqui o nome não é enfeite — é
+                        o que diferencia uma da outra. `minha` ganha rótulo
+                        próprio: repetir o apelido do dono da conta nas
+                        músicas dele seria dizer o óbvio. */}
+                    <p className={`text-[13px] truncate ${t.minha ? "text-white/40" : t.apelido ? "text-white/55" : "text-white/25 italic"}`}
+                       title={t.minha ? "Sua música" : (t.apelido ?? "Este autor não escolheu aparecer na Rede")}>
+                      {t.minha ? "Sua música" : (t.apelido ?? "Membro da Rede")}
+                    </p>
                   </div>
                 )
               })}

@@ -145,14 +145,17 @@ export default function ResultadosBusca({
                 <p className={`text-sm font-medium truncate ${tocando ? "text-fuchsia-300" : ""}`}>
                   <Realce texto={l.title} termo={busca} />
                 </p>
-                {/* Origem PRIMEIRO e curta ("Da Rede", não "Rede Fiz Música"):
-                    a linha trunca no fim, e saber de quem é a música não pode
-                    ser justo a parte cortada. Ocasião e estilo vêm depois —
-                    se algo se perder, que seja o fim do estilo, que já aparece
-                    destacado quando foi ele que casou com a busca. */}
+                {/* Quem publicou PRIMEIRO: a linha trunca no fim, e saber de
+                    quem é a música não pode ser justo a parte cortada. Ocasião
+                    e estilo vêm depois — se algo se perder, que seja o fim do
+                    estilo, que já aparece destacado quando foi ele que casou
+                    com a busca.
+                    O nome substituiu o rótulo "Da Rede": ele diz a mesma coisa
+                    (não é sua) e diz mais. Nas suas músicas continua "Sua
+                    música", que é a distinção que importa na busca. */}
                 <p className="text-[13px] text-white/40 truncate mt-0.5">
-                  <span className={l.minha ? "text-white/60" : "text-fuchsia-300/60"}>
-                    {l.minha ? "Sua música" : "Da Rede"}
+                  <span className={l.minha ? "text-white/60" : l.apelido ? "text-fuchsia-300/70" : "text-fuchsia-300/45 italic"}>
+                    {l.minha ? "Sua música" : (l.apelido ?? "Membro da Rede")}
                   </span>
                   {contexto.map((c, i) => (
                     <span key={i}>
