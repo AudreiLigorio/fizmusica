@@ -106,12 +106,20 @@ export default function FotosPanel({ token, onChange }: { token: string; onChang
         <p className="text-pink-200 font-semibold text-sm">📸 Suas fotos <span className="text-white/40 font-normal text-sm">(opcional)</span></p>
         <span className="text-white/30 text-[13px]">{photos.length}/{max}</span>
       </div>
+      {/* A Política de Privacidade saiu daqui (Audrei, 2026-10-27): ela JÁ foi
+          aceita no início, na caixa do wizard, que lista Termos, Privacidade,
+          Licença e Reembolso. Repetir o link num segundo aceite não acrescenta
+          nada — é texto jurídico cobrando atenção duas vezes pela mesma coisa.
+
+          O que FICA não tem equivalente lá atrás: quando o cliente marcou
+          aquela caixa, nenhuma foto existia, então ninguém podia declarar nada
+          sobre as pessoas retratadas. A declaração e os termos de Conteúdo
+          Enviado só podem ser dados aqui, e é o que os documentos 02 e 03
+          dizem — "consentimento de fotos: no envio das fotos". */}
       <p className="text-white/45 text-sm mb-4 leading-relaxed">
         Aparecem no player enquanto a música toca. Ao enviar, você declara ter o
         consentimento das pessoas retratadas e concorda com os{" "}
-        <a href="/legal/direitos-autorais" className="underline hover:text-white/70">termos de Conteúdo Enviado</a>{" "}
-        e a{" "}
-        <a href="/legal/politica-de-privacidade" className="underline hover:text-white/70">Política de Privacidade</a>.
+        <a href="/legal/direitos-autorais" className="underline hover:text-white/70">termos de Conteúdo Enviado</a>.
       </p>
 
       {error && (
