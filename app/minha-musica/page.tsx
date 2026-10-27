@@ -28,6 +28,7 @@ import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "
 import CarreiraPainel from "./CarreiraPainel"
 import AreaPublica from "./AreaPublica"
 import MinhaCarreira from "./MinhaCarreira"
+import { confirmar } from "@/app/components/Dialogo"
 import ExcluirConta from "./ExcluirConta"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
@@ -327,14 +328,23 @@ function MinhaMusicaContent() {
   // Endereço mudando por fora (Voltar/Avançar do navegador, link direto).
   useEffect(() => { setAba(abaDaUrl) }, [abaDaUrl])
 
-  // Selo "Na Rede": tirar é DOIS toques, não um. Não é modal — o primeiro
-  // toque troca o rótulo pra "Tirar?" e o segundo confirma; some sozinho em
-  // 3s se a pessoa não seguir. Num selo de 128px, um window.confirm seria
-  // desproporcional e um modal, exagero.
-  const [confirmandoSaida, setConfirmandoSaida] = useState<string | null>(null)
+  // Sair da Rede pela prateleira de Pedidos.
+  //
+  // Era um selo de 128px com confirmação por DOIS TOQUES ("Na Rede" →
+  // "Tirar?"), porque num selo daquele tamanho um diálogo seria
+  // desproporcional. O cartão passou a ter a largura e o botão de "Minhas
+  // músicas publicadas" (pedido do Audrei: mesmo formato), então agora usa a
+  // MESMA confirmação de lá — texto que diz o que acontece, em vez de um
+  // rótulo que troca sozinho e some em 3s.
   const [saindoDaRede, setSaindoDaRede] = useState<string | null>(null)
 
-  async function tirarDaRede(orderId: string) {
+  async function tirarDaRede(orderId: string, titulo: string) {
+    if (!(await confirmar({
+      titulo: `Tirar “${titulo}” da Rede?`,
+      mensagem: "Ela some da Rede e o link público para de funcionar. Você pode publicar de novo quando quiser.",
+      botao: "Tirar da Rede",
+      perigo: true,
+    }))) return
     setSaindoDaRede(orderId)
     const { data: { session } } = await supabase.auth.getSession()
     await fetch(`/api/orders/${orderId}/publicacao`, {
@@ -343,7 +353,6 @@ function MinhaMusicaContent() {
       body: JSON.stringify({ consent: false }),
     }).catch(() => {})
     setSaindoDaRede(null)
-    setConfirmandoSaida(null)
     // Recarrega em vez de mexer no estado local: o selo some porque o dado
     // mudou de verdade, não porque a tela fingiu que mudou.
     await loadOrders()
@@ -1165,15 +1174,25 @@ function MinhaMusicaContent() {
                   // como aviso de erro e como cobrança. Estado positivo ganha
                   // selo; o padrão não ganha nada.
                   const naRede = !!order.publication_consent && !order.rede_oculta
-                  const confirmando = confirmandoSaida === order.id
+                  const titulo = order.musicName?.trim() || order.subcategory
                   return (
-                    <div key={order.id} className={`relative shrink-0 w-32 group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}>
+                    // Mesmo formato de "Minhas músicas publicadas" (pedido do
+                    // Audrei): cartão com moldura, capa quadrada, e o estado
+                    // da Rede como LINHA DE TEXTO abaixo do título, não como
+                    // etiqueta sobre a capa.
+                    //
+                    // A etiqueta antiga ficava no canto superior direito da
+                    // capa, e a de entrega no esquerdo: numa capa de 128px as
+                    // duas se encontravam no meio e "✓ Entregue" aparecia
+                    // cortado em "✓ Entr". O cartão agora tem a largura do
+                    // outro (w-44) e cada informação tem lugar próprio.
+                    <div key={order.id} className={`relative shrink-0 w-44 rounded-2xl border border-white/10 bg-white/[0.03] p-2.5 flex flex-col group ${abandonado ? "opacity-60 hover:opacity-90" : ""}`}>
                     <button
                       onClick={() => setOpenDetailOrderId(order.id)}
                       className="w-full text-left"
                     >
                       <div
-                        className="relative w-32 h-32 rounded-xl flex items-center justify-center text-2xl bg-cover bg-center"
+                        className="relative w-full aspect-square rounded-xl flex items-center justify-center text-2xl bg-cover bg-center"
                         style={{ background: principal?.imageUrl ? `url(${principal.imageUrl}) center/cover` : abandonado ? "linear-gradient(135deg,#3a3a3a,#1f1f1f)" : "linear-gradient(135deg,#3a1440,#7a1f5c)" }}
                       >
                         {!principal?.imageUrl && (abandonado ? "💳" : "🎁")}
@@ -1195,13 +1214,25 @@ function MinhaMusicaContent() {
                           Na 2ª linha entra a ocasião, não mais o plano: ela
                           diz mais sobre a música, e o plano continua visível
                           no cartão que abre ao tocar. */}
-                      <p className="text-sm font-medium mt-1.5 truncate group-hover:text-fuchsia-300 transition-colors">
-                        {order.musicName?.trim() || order.subcategory}
+                      <p className="text-sm font-medium mt-2 truncate group-hover:text-fuchsia-300 transition-colors">
+                        {titulo}
                       </p>
                       <p className="text-[13px] text-white/40 truncate">
                         {order.musicName?.trim() ? order.subcategory : order.products?.name}
                       </p>
                     </button>
+
+                    {/* Linha de estado SÓ quando a música ESTÁ na Rede.
+                        Mostrar também o "não publicada" encheria a prateleira
+                        de etiqueta cinza — publicar é opt-in e vem desligado,
+                        então a maioria cairia nesse estado. Uma fileira de
+                        negativas lê como aviso de erro e como cobrança.
+                        Estado positivo ganha selo; o padrão não ganha nada. */}
+                    {naRede && (
+                      <p className="text-[11px] uppercase tracking-wide font-bold mt-1 text-green-300">
+                        🌐 Na Rede
+                      </p>
+                    )}
 
                     {/* Botão IRMÃO da capinha, não filho: botão dentro de
                         botão é HTML inválido e o clique de dentro dispararia
@@ -1214,25 +1245,22 @@ function MinhaMusicaContent() {
                         toque de etiqueta contradiz isso. Revogar é o
                         contrário: o termo promete que o cliente tira "a
                         qualquer momento e por conta própria". Facilitar a
-                        saída é obrigação; facilitar a entrada é risco. */}
+                        saída é obrigação; facilitar a entrada é risco.
+
+                        `mt-auto` encosta o botão no rodapé do cartão: numa
+                        fileira onde só parte das músicas está na Rede, os
+                        cartões têm alturas diferentes e sem isso o botão
+                        flutuaria em alturas distintas. */}
                     {naRede && (
-                      <button
-                        onClick={() => {
-                          if (confirmando) { tirarDaRede(order.id); return }
-                          setConfirmandoSaida(order.id)
-                          setTimeout(() => setConfirmandoSaida((a) => (a === order.id ? null : a)), 3000)
-                        }}
-                        disabled={saindoDaRede === order.id}
-                        title={confirmando ? "Toque de novo pra tirar da Rede" : "Publicada no SpotFiz — toque pra tirar"}
-                        aria-label={confirmando ? "Confirmar: tirar do SpotFiz" : "Publicada no SpotFiz. Tocar para tirar"}
-                        className={`absolute top-1.5 right-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full backdrop-blur transition-colors disabled:opacity-50 ${
-                          confirmando
-                            ? "bg-red-500/90 text-white"
-                            : "bg-black/55 text-fuchsia-200 hover:bg-black/75"
-                        }`}
-                      >
-                        {saindoDaRede === order.id ? "…" : confirmando ? "Tirar?" : "♫ Na Rede"}
-                      </button>
+                      <div className="mt-auto pt-3">
+                        <button
+                          onClick={() => tirarDaRede(order.id, titulo)}
+                          disabled={saindoDaRede === order.id}
+                          className="w-full py-2 rounded-xl text-[13px] font-semibold border border-white/15 text-white/70 hover:text-white hover:border-white/35 disabled:opacity-40 transition-colors"
+                        >
+                          {saindoDaRede === order.id ? "Tirando…" : "Tirar da Rede"}
+                        </button>
+                      </div>
                     )}
                     </div>
                   )
@@ -1246,7 +1274,7 @@ function MinhaMusicaContent() {
                           <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Entregues</span>
                           <span className="h-px flex-1 bg-white/10" />
                         </div>
-                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
+                        <div className="flex items-start gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
                           {producedShelf.map(tile)}
                         </div>
                       </>
@@ -1258,7 +1286,7 @@ function MinhaMusicaContent() {
                           <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Pendentes</span>
                           <span className="h-px flex-1 bg-white/10" />
                         </div>
-                        <div className="flex gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
+                        <div className="flex items-start gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
                           {pendingShelf.map(tile)}
                         </div>
                       </>
