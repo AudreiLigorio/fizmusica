@@ -44,7 +44,11 @@ O **SpotFiz** (antes chamado “Rede Fiz Música”, também referido como “Re
 
 A plataforma registra o **número de reproduções** de cada Obra publicada, exibido junto a ela e usado para compor um **ranking das mais ouvidas**. Essa contagem é agregada e não identifica quem ouviu.
 
-**Apelido do autor.** O apelido do Cliente **só aparece** na Rede se ele tiver ativado, separadamente, a opção "Mostrar meu apelido no SpotFiz" no seu perfil. Essa é uma escolha distinta desta autorização, desligada por padrão, e pode ser desativada a qualquer momento.
+**Apelido do autor.** Ao conceder esta autorização, a obra passa a aparecer **assinada**. Quem ainda não escolheu um apelido recebe um automático — o **primeiro nome** da conta, nunca o nome completo —, já visível no SpotFiz. O nome é **mostrado na própria tela do aceite**, antes de confirmar.
+
+Quem já escolheu um apelido mantém a escolha, inclusive quem desligou a exibição: nesse caso a obra é publicada **sem assinatura**. O apelido pode ser trocado, e a exibição desligada, a qualquer momento em **Carreira › Meu apelido** — com efeito imediato sobre todas as músicas do Cliente.
+
+Nenhum outro dado cadastral é exibido: nem nome completo, nem e-mail, nem telefone.
 
 ### 3.2. Canais de marketing
 

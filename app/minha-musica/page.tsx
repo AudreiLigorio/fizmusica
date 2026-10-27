@@ -28,6 +28,7 @@ import CarreiraPainel from "./CarreiraPainel"
 import AreaPublica from "./AreaPublica"
 import MinhaCarreira from "./MinhaCarreira"
 import { confirmar } from "@/app/components/Dialogo"
+import { apelidoPadrao } from "@/lib/apelido"
 import ExcluirConta from "./ExcluirConta"
 import { dbTime } from "@/lib/date"
 import type { PlanFeatures } from "@/lib/planFeatures"
@@ -327,6 +328,20 @@ function MinhaMusicaContent() {
   // Apelido do próprio cliente — nas músicas dele o apelido aparece sempre,
   // sem depender do mostrar_apelido (aquele controla só o que OUTROS veem).
   const [meuApelido, setMeuApelido] = useState<string | null>(null)
+
+  // Com que nome a música vai aparecer assinada na Rede, SE for publicada.
+  //
+  // Precisa ser dito ANTES do aceite. Quem autoriza a publicação e ainda não
+  // escolheu apelido ganha um automático — o primeiro nome da conta — e ele
+  // já nasce visível (ver /api/orders/[id]/publicacao). Hoje esse aceite vem
+  // marcado junto com o Termo de Entrega: sem este aviso, a pessoa publicaria
+  // o próprio nome num clique, sem nunca ter visto o nome.
+  //
+  // `null` quando não há o que assinar: cliente que já escolheu apelido e
+  // DESLIGOU "mostrar meu apelido" segue anônimo, e prometer assinatura ali
+  // seria mentira.
+  const [assinaturaNaRede, setAssinaturaNaRede] = useState<string | null>(null)
+
   useEffect(() => {
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -334,6 +349,12 @@ function MinhaMusicaContent() {
       const d = await fetch("/api/perfil", { headers: { Authorization: `Bearer ${session.access_token}` } })
         .then((r) => r.json()).catch(() => ({}))
       setMeuApelido(d.apelido ?? null)
+      const u = session.user
+      setAssinaturaNaRede(
+        d.apelido?.trim()
+          ? (d.mostrarApelido ? d.apelido.trim() : null)
+          : apelidoPadrao(u.user_metadata?.full_name as string | undefined, u.email),
+      )
     })()
   }, [])
 
@@ -841,6 +862,18 @@ function MinhaMusicaContent() {
                 Dá pra <strong className="text-white/80">despublicar quando quiser</strong>, no seu pedido ou em
                 SpotFiz › Minhas músicas publicadas.{" "}
                 <a href="/legal/autorizacao-de-publicacao" className="text-fuchsia-300 underline">Ler o termo</a>.
+                {/* A assinatura sai AQUI, antes do aceite — e não num segundo
+                    passo. O pedido do Audrei é que uma autorização só deixe
+                    tudo pronto; informar não custa um clique a mais, custa uma
+                    linha. Some quando não há o que assinar (quem desligou
+                    "mostrar meu apelido" publica anônimo). O nome é editável
+                    em Carreira › Meu apelido. */}
+                {assinaturaNaRede && (
+                  <span className="block mt-1.5 text-white/50">
+                    Vai aparecer assinada como <strong className="text-white/80">{assinaturaNaRede}</strong> — dá pra
+                    trocar em Carreira › Meu apelido.
+                  </span>
+                )}
               </span>
             </label>
             <button
