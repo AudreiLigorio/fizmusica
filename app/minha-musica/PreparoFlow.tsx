@@ -192,8 +192,12 @@ export default function PreparoFlow({
               {approving ? "Gerando…" : "✅ Aprovar e gerar minha música"}
             </button>
           </div>
+          {/* `canApprove` agora significa só "tem letra" (ver LetraPanel), então
+              esta linha deixou de ser sobre revisão da IA — editar à mão não
+              trava mais nada. O texto antigo mandaria pedir revisão num caso
+              em que o problema é simplesmente não haver letra. */}
           {!letra.canApprove && (
-            <p className="text-yellow-400/70 text-[13px] mt-2">Revise a letra acima (peça uma revisão à IA) antes de gerar.</p>
+            <p className="text-yellow-400/70 text-[13px] mt-2">Gere ou escreva a letra acima antes de gerar a música.</p>
           )}
         </div>
       )}

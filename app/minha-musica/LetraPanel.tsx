@@ -114,11 +114,8 @@ export default function LetraPanel({
   useEffect(() => {
     if (!flowMode || !onState || !state) return
     const has = !!text.trim()
-    const semRev = state.reprocessLeft <= 0
-    // Compara SEM as marcações de bloco: marcar um solo é escolha de arranjo,
-    // não edição de verso — não pode exigir revisão da IA (ver semBlocos).
-    const edit = semBlocos(text) !== semBlocos(lastAiText)
-    onState({ lyrics: text, canApprove: has && (!edit || semRev) })
+    // Basta TER letra. Editar à mão não trava mais o avanço — ver `podeAprovar`.
+    onState({ lyrics: text, canApprove: has })
   }, [text, lastAiText, state, flowMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function gerar() {
@@ -233,8 +230,21 @@ export default function LetraPanel({
 
   const hasLyrics = !!text.trim()
   const semRevisoes = state.reprocessLeft <= 0
+  // Compara SEM as marcações de bloco: marcar um solo é escolha de arranjo,
+  // não edição de verso (ver semBlocos).
   const editado = semBlocos(text) !== semBlocos(lastAiText)
-  const podeAprovar = !editado || semRevisoes
+
+  // Basta ter letra. Era `!editado || semRevisoes`: quem editasse à mão ficava
+  // impedido de avançar enquanto tivesse revisão sobrando, e o único botão
+  // vivo era "Pedir revisão à IA" — que REESCREVE a letra inteira. Ou seja,
+  // quem trouxesse a própria letra pronta caía num beco cujo único caminho
+  // destruía o que ela escreveu.
+  //
+  // A regra também se contradizia: se letra editada à mão fosse arriscada
+  // para a produção, seria arriscada igualmente com 0 revisões restantes — e
+  // ali ela passava direto. O portão não garantia qualidade, só adiava, e
+  // cobrava uma chamada de IA por isso.
+  const podeAprovar = hasLyrics
 
   return (
     <>
@@ -323,7 +333,10 @@ export default function LetraPanel({
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={14}
-            disabled={busy === "gerar" || busy === "reprocessar" || semRevisoes}
+            // Sem `semRevisoes`: acabar a cota de IA travava justamente o
+            // ajuste à mão — e é nesse estado que a própria tela diz "ajuste
+            // à mão e aprove" (abaixo). A frase virou verdade.
+            disabled={busy === "gerar" || busy === "reprocessar"}
             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm leading-relaxed outline-none focus:border-fuchsia-500/60 transition-colors whitespace-pre-wrap disabled:opacity-80"
             placeholder="A letra aparece aqui…"
           />
@@ -360,10 +373,19 @@ export default function LetraPanel({
             </div>
           </div>
 
-          {editado && !semRevisoes && (
-            <p className="text-yellow-400/80 text-sm mt-3">
-              Você editou a letra — peça uma revisão à IA antes de continuar.
-            </p>
+          {/* Confirmação da escolha, não aviso de erro: a pessoa editou à mão
+              e vai seguir com a versão dela. Antes isto era amarelo e dizia
+              "peça uma revisão à IA antes de continuar" — era o rótulo de um
+              bloqueio que não existe mais. Sinalizar continua valendo: ela
+              precisa saber que a IA NÃO vai passar por cima do que digitou, e
+              que a conferência é dela. */}
+          {editado && (
+            <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3">
+              <p className="text-sm font-semibold text-white/80">✍️ Letra editada por você</p>
+              <p className="text-[13px] text-white/50 mt-0.5">
+                A música será feita com a sua versão, sem revisão da IA. Confira o texto antes de continuar.
+              </p>
+            </div>
           )}
 
           {/* No modo fluxo, a aprovação fica no passo final (página). Aqui só geramos/revisamos. */}
