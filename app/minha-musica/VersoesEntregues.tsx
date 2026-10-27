@@ -8,6 +8,20 @@ type Track = { audioId: string; audioUrl: string; imageUrl: string | null; title
 
 type StepKey = "principal" | "fotos" | "surpresa" | "player"
 
+// Clave de sol — contorno extraído da fonte Bravura (Steinberg), licenciada
+// sob a SIL Open Font License 1.1, e normalizado para um viewBox 24x24.
+//
+// Por que não o caractere 𝄞 (U+1D11E): ele vive no bloco de símbolos
+// musicais, que falta em muitas fontes de Android — no app (TWA) viraria um
+// quadradinho. E por que não a clave do sistema, que é a mais bonita no Mac:
+// ela vem da Apple Symbols, proprietária, e o desenho iria parar dentro de um
+// produto comercial.
+//
+// Fica aqui fora do componente porque é um bloco de ~1,8 KB de curvas: dentro
+// da lista de abas, ele soterraria as outras três.
+const CLAVE_DE_SOL = "M12.51 9.56C12.48 9.41 12.51 9.39 12.58 9.32C12.78 9.13 13.05 8.87 13.28 8.6C14.34 7.45 14.96 5.96 14.96 4.55C14.96 3.46 14.66 2.38 14.15 1.63C13.96 1.35 13.63 1 13.5 1C13.32 1 12.93 1.33 12.68 1.6C11.76 2.63 11.46 4.19 11.46 5.5C11.46 6.22 11.54 7.04 11.63 7.55C11.66 7.7 11.67 7.73 11.52 7.85C10.72 8.52 9.85 9.28 9.2 10.08C8.34 11.16 7.8 12.33 7.8 13.67C7.8 15.85 9.29 17.91 12.36 17.91C12.65 17.91 12.97 17.89 13.22 17.84C13.36 17.81 13.38 17.8 13.41 17.95C13.56 18.79 13.75 19.88 13.75 20.47C13.75 22.32 12.49 22.55 11.76 22.55C11.08 22.55 10.75 22.35 10.75 22.19C10.75 22.1 10.87 22.06 11.15 21.97C11.54 21.86 11.99 21.52 11.99 20.79C11.99 20.11 11.56 19.52 10.79 19.52C9.95 19.52 9.45 20.18 9.45 20.96C9.45 21.77 9.94 23 11.83 23C12.67 23 14.3 22.62 14.3 20.49C14.3 19.78 14.07 18.59 13.94 17.81C13.91 17.66 13.92 17.68 14.1 17.6C15.36 17.1 16.2 16.03 16.2 14.62C16.2 13.01 15.03 11.6 13.18 11.6C12.86 11.6 12.86 11.6 12.82 11.37ZM13.69 2.94C14.1 2.94 14.44 3.28 14.44 3.97C14.44 4.83 14.02 5.64 13.05 6.61C12.85 6.81 12.54 7.1 12.26 7.35C12.17 7.43 12.12 7.41 12.09 7.25C12.04 6.93 12.02 6.5 12.02 6.1C12.02 4.14 12.92 2.94 13.69 2.94ZM12.32 11.47C12.36 11.71 12.36 11.7 12.13 11.77C11.03 12.15 10.31 13.14 10.31 14.21C10.31 15.33 10.9 16.13 11.76 16.42C11.86 16.46 12.01 16.5 12.09 16.5C12.19 16.5 12.24 16.44 12.24 16.36C12.24 16.27 12.14 16.23 12.06 16.2C11.53 15.97 11.15 15.43 11.15 14.86C11.15 14.14 11.64 13.6 12.41 13.39C12.61 13.34 12.63 13.35 12.66 13.49L13.28 17.22C13.31 17.36 13.3 17.36 13.11 17.4C12.91 17.44 12.66 17.46 12.41 17.46C10.21 17.46 8.8 16.25 8.8 14.51C8.8 13.77 8.92 12.78 9.96 11.6C10.72 10.76 11.29 10.3 11.88 9.82C12.01 9.72 12.03 9.73 12.06 9.87ZM13.18 13.47C13.16 13.32 13.17 13.28 13.32 13.29C14.34 13.38 15.18 14.23 15.18 15.33C15.18 16.12 14.7 16.76 14 17.11C13.85 17.19 13.82 17.19 13.8 17.04Z"
+
+
 // Estado entregue com as 2 versões do Suno. A barra de passos vira NAVEGAÇÃO:
 // clicar abre o conteúdo do passo logo abaixo (um de cada vez).
 // Ordem deliberada: Música → Fotos → QR Code → Player — o QR Code vem antes
@@ -109,17 +123,12 @@ export default function VersoesEntregues({
   const steps: { key: StepKey; icon: ReactNode; label: string; done: boolean; nudge?: boolean }[] = [
     {
       key: "principal",
-      // Clave de sol desenhada à mão em SVG (Audrei, 2026-10-27). NÃO é o
-      // caractere 𝄞 (U+1D11E): ele vive no bloco de símbolos musicais, que
-      // falta em muitas fontes de Android — no app viraria um quadradinho.
-      // Traçado, não preenchido: a clave é um gesto de caneta, e em 16px um
-      // desenho vazado fica mais legível que uma mancha cheia.
+      // Preenchida, não traçada: é o desenho tipográfico, com a curva
+      // grossa e as pontas finas — foi o que o Audrei escolheu, entre a
+      // versão que eu havia desenhado à mão e esta.
       icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}
-             strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
-          <path d="M12.4 21c-1.7.4-3.1-.6-3.1-2.1 0-1.2 1-2 2.1-1.7" />
-          <path d="M14.2 2.6c-2.4 2.2-3.6 4.5-3.6 6.8 0 2.5 1.8 4.4 3 6.5 1.3 2.2 1.4 4.6-1.2 5.8" />
-          <path d="M14.2 2.6c1.6 2.4 2.1 5.2 1.4 8-.7 2.8-3 4.6-4.7 3.7-1.6-.8-1.5-3 .5-4.4 1.8-1.3 4-1.7 5.5-1.1" />
+        <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4" aria-hidden="true">
+          <path d={CLAVE_DE_SOL} />
         </svg>
       ),
       label: "Música",
