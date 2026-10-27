@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { CatalogItem } from "./CatalogoContext"
 import { supabase } from "@/lib/supabase"
 import { usePlayer } from "./PlayerContext"
@@ -10,6 +10,7 @@ import { useToast } from "./ToastContext"
 import { combina } from "@/lib/busca"
 import { gradienteDaCapa } from "@/lib/capaGradiente"
 import { useCatalogo } from "./CatalogoContext"
+import { parseDbDate } from "@/lib/date"
 
 // Rede Fiz Música: músicas de outros clientes que autorizaram divulgação.
 // Nunca mostra o nome do homenageado (dado de terceiro sem consentimento
@@ -24,8 +25,27 @@ function formatarPlays(n: number): string {
   return String(n)
 }
 
+// Rótulo de quando a música foi publicada, para a raia "Mais recentes" — é a
+// única informação que justifica a prateleira, então o cartão precisa mostrar.
+// Relativo em vez de data: "há 3 dias" responde "isso é novo?" sem a pessoa ter
+// que fazer a conta a partir de "22/10".
+// Passa pelo `parseDbDate` porque `publishedAt` é `timestamp without time zone`
+// e chega sem fuso — lido direto pelo `new Date` ele adianta ~3h e uma música
+// publicada hoje de manhã podia aparecer como "amanhã".
+function quandoPublicou(iso: string): string {
+  const dias = Math.floor((Date.now() - parseDbDate(iso).getTime()) / 86_400_000)
+  if (dias <= 0) return "hoje"
+  if (dias === 1) return "ontem"
+  if (dias < 7) return `há ${dias} dias`
+  const semanas = Math.floor(dias / 7)
+  if (semanas === 1) return "há 1 semana"
+  if (dias < 30) return `há ${semanas} semanas`
+  const meses = Math.floor(dias / 30)
+  return meses === 1 ? "há 1 mês" : `há ${meses} meses`
+}
+
 export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { onPlaylistsChanged?: () => void; onPrecisaLogin?: () => void }) {
-  const { items, top10, emAlta, alternarFavorito, temMais, carregando, carregarMais } = useCatalogo()
+  const { items, top10, emAlta, recentes, alternarFavorito, temMais, carregando, carregarMais } = useCatalogo()
   const { track: nowPlaying, playing, playOuPausa } = usePlayer()
   const { showToast } = useToast()
 
@@ -131,6 +151,41 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
   // rolagem antes de a playlist do cliente aparecer. Ela ficava inalcançável
   // na prática.
   const [verTudo, setVerTudo] = useState(false)
+
+  // Setas do carrossel "Mais recentes". No celular o dedo arrasta e elas não
+  // aparecem; no desktop, sem elas a raia dependia da barra de rolagem
+  // horizontal (que o macOS esconde) ou de shift+roda — ou seja, metade das
+  // 12 músicas ficaria invisível justamente na prateleira criada pra dar
+  // vitrine a quem publicou. Cada seta anda uma "tela" da raia.
+  const raiaRecentesRef = useRef<HTMLDivElement>(null)
+  const [setas, setSetas] = useState({ esq: false, dir: false })
+
+  const medirSetas = useCallback(() => {
+    const el = raiaRecentesRef.current
+    if (!el) return
+    // Margem de 2px: com zoom do navegador o scrollWidth vem fracionário e a
+    // seta da direita ficava acesa pra sempre no fim da raia.
+    const esq = el.scrollLeft > 2
+    const dir = el.scrollLeft + el.clientWidth < el.scrollWidth - 2
+    // Só troca o estado quando MUDA de verdade. Isto roda no onScroll, que
+    // dispara a cada quadro do arrasto — devolver um objeto novo toda vez
+    // re-renderizaria os 12 cartões dezenas de vezes por rolagem.
+    setSetas((s) => (s.esq === esq && s.dir === dir ? s : { esq, dir }))
+  }, [])
+
+  // Remede quando a raia chega (ela nasce vazia e só preenche depois do fetch)
+  // e quando a janela muda de tamanho.
+  useEffect(() => {
+    medirSetas()
+    window.addEventListener("resize", medirSetas)
+    return () => window.removeEventListener("resize", medirSetas)
+  }, [recentes.length, medirSetas])
+
+  function rolarRecentes(direcao: -1 | 1) {
+    const el = raiaRecentesRef.current
+    if (!el) return
+    el.scrollBy({ left: direcao * el.clientWidth * 0.8, behavior: "smooth" })
+  }
 
   const sentinelaRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -250,6 +305,143 @@ export default function RedeFizMusica({ onPlaylistsChanged, onPrecisaLogin }: { 
                 </button>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── MAIS RECENTES ────────────────────────────────────────────
+          Última publicada de cada autor, em ordem de data/hora. É a única
+          prateleira sem mérito acumulado: as outras duas exigem palmas ou
+          reproduções, que música nova não tem, e a grade grande é
+          embaralhada — sem esta raia, publicar não garantia vitrine nenhuma.
+
+          A regra de UMA POR AUTOR mora no servidor (ver /api/catalog) junto
+          da medição que a motivou.
+
+          CARROSSEL em vez de grade, nas duas larguras: a raia são 12 cartões
+          de 128px, e deixar quebrar linha no desktop acrescentaria uma
+          segunda fileira de ~190px de altura empurrando o Top 10 e a
+          playlist do cliente pra baixo. Pedido do Audrei: "arrastar para o
+          lado tipo carrossel, para não ocupar". Por isso NÃO tem
+          `sm:flex-wrap` como a raia de Favoritas.
+
+          Sem numeração, ao contrário do Top 10 e do Em alta: lá a posição é
+          a informação ("1ª em palmas"); aqui "1º lugar" só quer dizer que
+          publicou por último, e numerar fingiria um ranking que não existe. */}
+      {recentes.length > 0 && (
+        <div className="mb-5 pb-5 border-b border-white/5">
+          <p className="text-sm font-extrabold uppercase tracking-wider mb-2.5">
+            <span style={{ color: "#22d3ee" }}>Mais recentes</span>{" "}
+            <span className="text-white/90">acabaram de chegar</span>
+          </p>
+
+          <div className="relative">
+            <div
+              ref={raiaRecentesRef}
+              onScroll={medirSetas}
+              // `snap` dá o encaixe de carrossel no arrasto do dedo, em vez de
+              // parar com um cartão cortado no meio.
+              // `-mx-5 px-5` faz a raia sangrar até as bordas da tela: sem
+              // isso o primeiro e o último cartão ficam com uma faixa morta do
+              // lado e a raia parece ter acabado antes do fim.
+              // `scroll-pl-5` acompanha o `px-5`: sem ele o encaixe do snap
+              // alinha o cartão à borda do scrollport IGNORANDO o padding, e a
+              // raia nascia com `scrollLeft: 20` — o primeiro cartão colado na
+              // beira da tela enquanto o título e o Top 10 respeitavam a
+              // margem. Medido aqui, não é teoria.
+              className="flex gap-3.5 overflow-x-auto snap-x snap-mandatory scroll-pl-5 sm:scroll-pl-0 pb-2 -mx-5 px-5 sm:mx-0 sm:px-0"
+            >
+              {recentes.map((it) => {
+                const isPlaying = nowPlaying?.id === it.orderId && playing
+                return (
+                  <div key={it.orderId} className="shrink-0 w-32 snap-start group">
+                    <div className="relative w-32 h-32 rounded-xl overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => playOuPausa(paraFaixa(it), recentes.map(paraFaixa))}
+                        className="block w-full h-full"
+                        aria-label={`Tocar ${it.title}`}
+                      >
+                        <div
+                          className="w-full h-full bg-cover bg-center"
+                          style={it.imageUrl ? { backgroundImage: `url(${it.imageUrl})` } : { background: gradienteDaCapa(it.orderId) }}
+                        />
+                        {isPlaying && <div className="absolute inset-0 bg-black/35 flex items-center justify-center text-2xl">❚❚</div>}
+                      </button>
+                      <button
+                        onClick={() => favoritar(it.orderId)}
+                        aria-label={it.favorited ? "Remover dos favoritos" : "Favoritar"}
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-sm transition-transform hover:scale-110"
+                      >
+                        {it.favorited ? "❤️" : "🤍"}
+                      </button>
+                      {/* `data-zona-escura` obrigatório: o "+" é texto branco
+                          sobre a capa, e a camada do tema claro escurece
+                          `.text-white` — sem a marca o sinal desaparecia
+                          (consertado em 08f4192, mesma causa). */}
+                      <button
+                        type="button"
+                        onClick={() => abrirAdicionar(it.orderId)}
+                        aria-label="Adicionar à playlist"
+                        data-zona-escura
+                        className="absolute top-1.5 right-9 w-7 h-7 rounded-full bg-black/50 backdrop-blur flex items-center justify-center text-white text-sm font-bold transition-transform hover:scale-110"
+                      >
+                        +
+                      </button>
+                      {/* A data fica SOBRE A CAPA, não nas linhas de texto.
+                          O cartão tem 128px e cabem ~20 caracteres por linha:
+                          dividindo com a ocasião ela virava "Composiçã…", e
+                          dividindo com o autor virava "Memb… há 1 semana". Na
+                          capa ela não disputa espaço com ninguém — e nesta
+                          prateleira a data é justamente o que justifica a
+                          música estar ali. */}
+                      {it.publishedAt && (
+                        <span
+                          data-zona-escura
+                          className="absolute bottom-1.5 left-1.5 rounded-full bg-black/65 backdrop-blur px-2 py-0.5 text-[11px] font-medium text-white"
+                        >
+                          {quandoPublicou(it.publishedAt)}
+                        </span>
+                      )}
+                    </div>
+                    <p className={`text-sm font-medium mt-2 truncate transition-colors ${isPlaying ? "text-cyan-300" : "group-hover:text-cyan-300"}`}>
+                      {it.title}
+                    </p>
+                    <p className="text-[13px] text-white/40 truncate">{it.occasion}</p>
+                    <p className={`text-[13px] truncate ${it.authorApelido ? "text-white/55" : "text-white/25 italic"}`}
+                       title={it.authorApelido ?? "Este autor não escolheu aparecer na Rede"}>
+                      {it.authorApelido ?? "Membro da Rede"}
+                    </p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Só no desktop — ver o comentário em `setas`. `-translate-y-1/2`
+                centra na altura da CAPA (128px), não do cartão inteiro, senão
+                a seta desce pra cima do nome do autor. */}
+            {setas.esq && (
+              <button
+                type="button"
+                onClick={() => rolarRecentes(-1)}
+                aria-label="Ver as anteriores"
+                data-zona-escura
+                className="hidden sm:flex absolute left-0 top-16 -translate-y-1/2 w-9 h-9 rounded-full bg-black/70 backdrop-blur items-center justify-center text-white text-lg hover:bg-black/90 transition-colors"
+              >
+                ‹
+              </button>
+            )}
+            {setas.dir && (
+              <button
+                type="button"
+                onClick={() => rolarRecentes(1)}
+                aria-label="Ver as próximas"
+                data-zona-escura
+                className="hidden sm:flex absolute right-0 top-16 -translate-y-1/2 w-9 h-9 rounded-full bg-black/70 backdrop-blur items-center justify-center text-white text-lg hover:bg-black/90 transition-colors"
+              >
+                ›
+              </button>
+            )}
           </div>
         </div>
       )}

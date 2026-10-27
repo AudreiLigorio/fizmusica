@@ -1,4 +1,5 @@
 import { tituloNeutro, rotuloOcasiao } from "@/lib/tituloPublico"
+import { dbTime } from "@/lib/date"
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createServerClient } from "@/lib/supabase"
@@ -97,6 +98,20 @@ type ItemBase = {
   // banco.
   palmas: number
   createdAt: string
+  // Quando a música foi PUBLICADA, que não é quando o pedido foi feito: a
+  // mediana entre as duas é zero, mas 13 músicas do acervo levaram mais de 7
+  // dias (a maior, 26). Ordenar "mais recentes" por `createdAt` já colocaria a
+  // raia fora de ordem hoje.
+  publishedAt: string | null
+  // Chave de agrupamento por AUTOR, calculada aqui pra que o e-mail não entre
+  // no cache nem chegue perto da resposta. Cai pro e-mail porque checkout sem
+  // conta não tem userId, e pro id do pedido no último caso — aí cada pedido
+  // conta como um autor, que é o certo: dois anônimos distintos não são a
+  // mesma pessoa.
+  autorKey: string
+  // Revisão é pedido DUPLICADO do mesmo cliente (ver lib/revision.ts): entrar
+  // na raia faria a mesma música voltar como novidade.
+  isRevision: boolean
 }
 
 const TTL_MS = 60_000
@@ -146,14 +161,16 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; emAlta: string[]; er
   if (cache && Date.now() - cache.em < TTL_MS) return { itens: cache.itens, emAlta: cache.emAlta }
 
   const supabase = createServerClient()
-  type OrderRow = { id: string; context: string | null; subcategory: string; musicalStyle: string | null; sunoTracks: unknown; createdAt: string; userId: string | null }
+  type OrderRow = { id: string; context: string | null; subcategory: string; musicalStyle: string | null; sunoTracks: unknown; createdAt: string; userId: string | null; email: string | null; is_revision: boolean | null }
   const { linhas: orders, erro: error } = await todasAsLinhas<OrderRow>((de, ate) =>
     supabase
       .from("orders")
       // Sem join com products: ele só existia pra decidir se a letra vinha
       // sincronizada, e a letra saiu daqui (vai por /api/catalog/letra, que
       // aplica a mesma trava). Uma tabela a menos na consulta mais cara da tela.
-      .select("id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId")
+      // `email` entra só pra virar `autorKey` abaixo e é DESCARTADO ali — ele
+      // não existe no `ItemBase`, então não fica no cache nem sai na resposta.
+      .select("id, context, subcategory, musicalStyle, sunoTracks, createdAt, userId, email, is_revision")
       .eq("publication_consent", true)
       .eq("status", "DELIVERED")
       // Tirada da Rede pelo admin após denúncia (migração 066).
@@ -218,16 +235,17 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; emAlta: string[]; er
   }
 
   const ids = (orders ?? []).map((o) => o.id)
-  type MusicRow = { orderId: string; slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean | null }
+  type MusicRow = { orderId: string; slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean | null; publishedAt: string | null }
   const gm = await porLotesDeIds<MusicRow>(ids, (lote) =>
-    supabase.from("generated_music").select("orderId, slug, mp3Url, musicName, musicNameConfirmed").in("orderId", lote),
+    supabase.from("generated_music").select("orderId, slug, mp3Url, musicName, musicNameConfirmed, publishedAt").in("orderId", lote),
   )
-  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean }> = {}
+  const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; musicName: string | null; musicNameConfirmed: boolean; publishedAt: string | null }> = {}
   for (const g of gm ?? []) musicByOrder[g.orderId as string] = {
     slug: g.slug ?? null,
     mp3Url: g.mp3Url ?? null,
     musicName: g.musicName ?? null,
     musicNameConfirmed: !!g.musicNameConfirmed,
+    publishedAt: g.publishedAt ?? null,
   }
 
   type Track = { audioUrl: string; imageUrl: string | null; title: string | null }
@@ -258,6 +276,9 @@ async function catalogoBase(): Promise<{ itens: ItemBase[]; emAlta: string[]; er
         playsRecentes: playsPorPedido[o.id]?.recentes ?? 0,
         palmas: palmasPorPedido[o.id] ?? 0,
         createdAt: o.createdAt as string,
+        publishedAt: music.publishedAt,
+        autorKey: dono ?? (o.email?.trim() ? `email:${o.email.trim().toLowerCase()}` : `pedido:${o.id}`),
+        isRevision: !!o.is_revision,
       }
     })
     .filter((x): x is ItemBase => x !== null)
@@ -355,6 +376,9 @@ export async function GET(req: NextRequest) {
       palmas: b.palmas,
       favorited: favoriteSet.has(b.orderId),
       createdAt: b.createdAt,
+      // Data de publicação: é o que a raia "Mais recentes" mostra no cartão.
+      // Sem ela a raia diria "mais recentes" sem nada que comprove.
+      publishedAt: b.publishedAt,
     }
   })
 
@@ -448,11 +472,48 @@ export async function GET(req: NextRequest) {
     .filter((x): x is NonNullable<typeof x> => !!x)
     .slice(0, 10)
 
+  // ── Mais recentes ─────────────────────────────────────────────────────
+  //
+  // Existe porque as outras duas prateleiras dependem de ACÚMULO (palmas por
+  // ouvinte, reproduções): música recém-publicada entra nas duas com zero e
+  // não aparece em nenhuma. E a grade principal é embaralhada, então a música
+  // nova cai em posição aleatória entre 129 — na prática, invisível. Esta é a
+  // única prateleira onde publicar já garante vitrine.
+  //
+  // UMA POR AUTOR, e isso não é detalhe: medido no acervo real, uma raia de 12
+  // só por data traria 6 autores em 12 vagas, com UM deles ocupando 6 — e a
+  // maior sequência já ocorrida é de 9 publicações seguidas da mesma pessoa.
+  // Quem publica muito tomaria a prateleira e o objetivo ("todos terem a
+  // condição de ser ouvida") viraria o contrário. Com a regra, as 12 vagas
+  // viram 12 pessoas; há 22 autores elegíveis, então sobra folga.
+  //
+  // Tirar as revisões sozinho NÃO resolve: sem elas o maior ocupante subia de
+  // 6 pra 7 (a vaga liberada ia pro mesmo autor). Elas ficam fora por outro
+  // motivo — revisão é pedido duplicado, e a mesma música voltaria como
+  // novidade dando duas vezes a vez a quem já teve.
+  const ordemRecentes = [...items]
+    .filter((i) => {
+      const b = indicePorId.get(i.orderId)
+      return !!b?.publishedAt && !b.isRevision
+    })
+    .sort((a, b) => dbTime(indicePorId.get(b.orderId)!.publishedAt!) - dbTime(indicePorId.get(a.orderId)!.publishedAt!))
+
+  const autoresVistos = new Set<string>()
+  const recentes: typeof items = []
+  for (const i of ordemRecentes) {
+    const chave = indicePorId.get(i.orderId)!.autorKey
+    if (autoresVistos.has(chave)) continue
+    autoresVistos.add(chave)
+    recentes.push(i)
+    if (recentes.length === 12) break
+  }
+
   return NextResponse.json(
     {
       items: pagina,
       top10,
       emAlta,
+      recentes,
       total: ordenados.length,
       // Quantas músicas a busca encontrou ANTES do filtro de ocasião/estilo.
       //
