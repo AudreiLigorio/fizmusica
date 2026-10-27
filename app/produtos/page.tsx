@@ -111,7 +111,6 @@ function ProdutosContent() {
   // Campo de cupom recolhido por padrão: aberto no topo, ele manda quem não tem
   // cupom sair da página pra procurar um (padrão conhecido de perda de venda).
   // Com banner de campanha na tela, abre sozinho — ali o código está à vista.
-  const [cupomAberto, setCupomAberto]       = useState(false)
   const [appliedCoupon, setAppliedCoupon]   = useState<{ code: string; discount: number; finalTotal: number } | null>(null)
   const [couponMsg, setCouponMsg]           = useState("")
   const [checkingCoupon, setCheckingCoupon] = useState(false)
@@ -342,7 +341,17 @@ function ProdutosContent() {
             )}
 
             {/* Cupom de desconto — topo, abaixo do banner. Vale para os dois produtos.
-                Sem banner, aparece só como link até a pessoa pedir. */}
+
+                Campo SEMPRE ABERTO. Era um link ("🎟️ Tenho um cupom de
+                desconto") que abria a caixa no toque, e clientes relataram
+                não achar onde usar o cupom (Audrei, 2026-10-26) — o que
+                custa caro justamente em quem recebeu um código e vem decidido
+                a usar. Um link sublinhado no meio de uma tela de preços não
+                se parece com campo.
+
+                Aplicar continua sendo ação do cliente: o campo aberto não
+                preenche nem aplica nada sozinho, inclusive quando há banner
+                de promoção. */}
             {!loading && (
               <div className="mb-6 lg:mb-10">
                 {appliedCoupon ? (
@@ -362,13 +371,6 @@ function ProdutosContent() {
                       Remover
                     </button>
                   </div>
-                ) : !promoCoupon && !cupomAberto ? (
-                  <button
-                    onClick={() => setCupomAberto(true)}
-                    className="text-sm text-white/70 hover:text-white underline underline-offset-4"
-                  >
-                    🎟️ Tenho um cupom de desconto
-                  </button>
                 ) : (
                   <div className="rounded-2xl px-4 py-3.5"
                        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
