@@ -4,9 +4,14 @@ import { useState } from "react"
 import { useCatalogo } from "./CatalogoContext"
 import type { LibraryTrack } from "./MinhasMusicas"
 import { combina } from "@/lib/busca"
-import { RITMOS, nomeDoRitmo, ritmosDa, rotuloDoRitmo } from "@/lib/ritmo"
+import { RITMOS, nomeDoRitmo } from "@/lib/ritmo"
 
-// Pílulas de ocasião e estilo, logo abaixo da busca.
+// Pílulas de OCASIÃO, logo abaixo da busca.
+//
+// A fileira "Por estilo" saiu em 2026-10-26: o mural de ritmos na Rede faz a
+// mesma coisa com mais clareza, e manter as duas era oferecer o mesmo caminho
+// duas vezes na mesma tela. O filtro por estilo CONTINUA existindo — é o que
+// o mural aciona, e o que `?estilo=` no endereço carrega.
 //
 // Antes viviam dentro do cartão "Rede Fiz Música", no meio da tela. Subiram
 // porque fazem a mesma coisa que a busca — reduzir o que você está vendo — e
@@ -39,11 +44,6 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
   const nomesDeRitmo = new Set([...RITMOS.map(nomeDoRitmo), ...facetas.estilos.map(([n]) => n)])
   const ocasioes = somar(facetas.ocasioes, (t) => [t.occasion])
     .filter(([nome]) => !nomesDeRitmo.has(nomeDoRitmo(nome)))
-  // Pelo nome unificado: as facetas já vêm assim do servidor, e somar as
-  // músicas do cliente com o rótulo cru criaria de volta o ritmo duplicado
-  // ("Forró" do servidor + "🪗 Forró" do cliente) como duas pílulas.
-  const estilos = somar(facetas.estilos, (t) => ritmosDa(t.musicalStyle))
-
   // Contagem da pílula "Todas", desligada por enquanto (ver abaixo). Se
   // voltar: usar `totalDaBusca + minhasNaBusca.length`, nunca `total` — a
   // pílula promete o que aparece ao LIMPAR o filtro, então não pode vir
@@ -68,20 +68,6 @@ export default function FiltrosMusica({ minhas = [] }: { minhas?: LibraryTrack[]
           })),
         ]}
       />
-
-      {estilos.length > 0 && (
-        <Linha
-          titulo="Por estilo"
-          itens={estilos.map(([valor]) => ({
-            chave: valor,
-            // O emoji vem da lista oficial na hora de exibir — o guardado no
-            // banco pode ser de uma versão antiga da lista.
-            label: rotuloDoRitmo(valor),
-            ativa: filtro?.tipo === "estilo" && filtro.valor === valor,
-            onClick: () => setFiltro({ tipo: "estilo" as const, valor }),
-          }))}
-        />
-      )}
     </div>
   )
 }

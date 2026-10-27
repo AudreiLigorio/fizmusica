@@ -11,6 +11,7 @@ import ResumeMusicBanner from "@/app/components/ResumeMusicBanner"
 import { useNoAppPlay } from "@/lib/canal"
 import { useCatalogo, casaFiltroCliente } from "./CatalogoContext"
 import { combina } from "@/lib/busca"
+import { rotuloDoRitmo } from "@/lib/ritmo"
 import type { LibraryTrack } from "./MinhasMusicas"
 
 // A aba Músicas, compartilhada pela área logada e pela visão do visitante.
@@ -48,7 +49,7 @@ export default function AbaMusicas({
   // entre as duas telas (biblioteca do cliente x convite pra criar conta).
   children?: React.ReactNode
 }) {
-  const { busca, setBusca, filtro, total } = useCatalogo()
+  const { busca, setBusca, filtro, setFiltro, total } = useCatalogo()
   const noApp = useNoAppPlay() === true
 
   // "Ver todos os ritmos" mora AQUI, não dentro da Rede: entrar num ritmo
@@ -100,6 +101,32 @@ export default function AbaMusicas({
       {/* Pílulas logo abaixo da busca: filtrar e buscar são a mesma ação
           (reduzir o que está na tela), então moram juntos. */}
       <FiltrosMusica minhas={minhas} />
+
+      {/* Cabeçalho do recorte ativo.
+          Nasceu junto com a saída da fileira "Por estilo": a pílula acesa era
+          o ÚNICO lugar que dizia em que ritmo a pessoa estava e o único jeito
+          de sair dele sem o botão Voltar. Tirar a fileira sem repor isto
+          deixaria quem entra pelo mural numa lista sem nome e sem porta.
+          Só para filtro — a busca já mostra a contagem dentro do campo. */}
+      {modoResultado && filtro && (
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={() => setFiltro(null)}
+            aria-label={filtro.tipo === "estilo" ? "Voltar para todos os ritmos" : "Limpar o filtro de ocasião"}
+            className="shrink-0 w-9 h-9 rounded-full border border-white/15 flex items-center justify-center text-lg text-white/70 hover:text-white hover:border-white/35 transition-colors"
+          >
+            ‹
+          </button>
+          <div className="min-w-0">
+            <p className="text-base font-bold truncate">
+              {filtro.tipo === "estilo" ? rotuloDoRitmo(filtro.valor) : filtro.valor}
+            </p>
+            <p className="text-[13px] text-white/45">
+              {total + minhasNoResultado} {total + minhasNoResultado === 1 ? "música" : "músicas"}
+            </p>
+          </div>
+        </div>
+      )}
 
       {modoResultado ? (
         <ResultadosBusca minhas={minhas} meuApelido={meuApelido} />
