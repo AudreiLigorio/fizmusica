@@ -266,22 +266,47 @@ export default function VersoesEntregues({
               o segundo em destaque. Saiu também — esta frase apresenta a ideia
               e os três passos abaixo mostram como fazer. */}
           <p className="text-white/55 text-sm text-center mb-3 leading-relaxed">Surpreenda colando o QR num presente físico: uma caixa, um cartão, um quadro, um buquê ou uma lembrancinha.</p>
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          {/* Passo a passo de verdade, em lista numerada — antes eram três
+              ícones lado a lado com um rótulo de duas palavras ("Imprime o
+              QR", "Cola no presente", "Aponta e ouve"). Numa coluna de ~100px
+              não cabia explicar nada, e o terceiro passo, que é o desfecho
+              inteiro da surpresa, virava "Aponta e ouve" — sem dizer que a
+              pessoa vê o player com as fotos e a música tocando.
+
+              Vertical porque instrução se lê de cima pra baixo, e porque só
+              assim cada passo tem linha pra explicar o que fazer. */}
+          <ol className="space-y-3 mb-4">
             {[
-              { icon: "🖨️", t: "Imprime o QR" },
-              { icon: "🎁", t: "Cola no presente" },
-              { icon: "❤️", t: "Aponta e ouve" },
+              { icon: "🖨️", t: "Imprima o QR Code", d: "Toque no botão abaixo para gerar e imprimir." },
+              { icon: "🎁", t: "Cole no presente", d: "No presente da sua preferência — é ali que a surpresa fica escondida." },
+              {
+                icon: "📱",
+                t: "A pessoa aponta a câmera",
+                // Só promete fotos quando o plano tem fotos — mesma condição
+                // do texto da aba Player, logo abaixo.
+                d: `O celular abre o player com ${features.fotos > 0 ? "as suas fotos e " : "a capa e "}a música tocando.`,
+              },
             ].map((m, i) => (
-              <div key={i} className="text-center">
-                <div className="text-xl mb-1">{m.icon}</div>
-                <div className="text-[13px] text-white/55 leading-tight">{m.t}</div>
-              </div>
+              <li key={i} className="flex items-start gap-3">
+                <span className="shrink-0 w-6 h-6 rounded-full bg-pink-500/20 text-pink-200 text-[13px] font-bold flex items-center justify-center">
+                  {i + 1}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white/85 leading-snug">
+                    <span className="mr-1.5" aria-hidden="true">{m.icon}</span>{m.t}
+                  </p>
+                  <p className="text-[13px] text-white/50 leading-relaxed">{m.d}</p>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
           <button onClick={onQr}
             className="w-full text-center py-3 rounded-lg text-sm font-bold text-white transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}>
-            📱 Imprimir QR e fazer a surpresa
+            {/* 🖨️ e não 📱: o botão IMPRIME. O celular é do passo 3, de quem
+                recebe — com os dois iguais, os ícones deixavam de contar a
+                sequência (impressora → presente → celular). */}
+            🖨️ Imprimir QR e fazer a surpresa
           </button>
         </div>
       )}
