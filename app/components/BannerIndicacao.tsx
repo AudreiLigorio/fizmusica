@@ -180,7 +180,7 @@ export default function BannerIndicacao() {
         <div
           key={i}
           aria-hidden="true"
-          className={`absolute inset-y-0 right-0 w-[52%] sm:w-[46%] bg-cover transition-opacity ease-in-out group-hover:scale-105 duration-500 ${
+          className={`absolute inset-y-0 right-0 w-[38%] sm:w-[46%] bg-cover transition-opacity ease-in-out group-hover:scale-105 duration-500 ${
             i === face ? "opacity-100" : "opacity-0"
           }`}
           style={{
@@ -193,10 +193,14 @@ export default function BannerIndicacao() {
       ))}
 
       {/* Conteúdo. `max-w` segura o texto à esquerda pra ele nunca invadir a
-          foto. As alturas mínimas evitam que a peça mude de tamanho entre as
+          foto.
+          No CELULAR o título cai pra 21px e o texto ganha 72% da largura: com
+          26px e 62% ele quebrava em QUATRO linhas ("Indique / amigos / e leve
+          a / garrafa") e a peça virava uma torre. A foto também recua de 52%
+          pra 38% ali, senão passa por trás da frase. As alturas mínimas evitam que a peça mude de tamanho entre as
           faces — sem elas, o conteúdo de baixo da página dança a cada troca. */}
       <div
-        className={`relative px-5 py-6 sm:px-8 sm:py-9 max-w-[62%] sm:max-w-[58%] transition-opacity ease-in-out ${
+        className={`relative px-5 py-6 sm:px-8 sm:py-9 max-w-[72%] sm:max-w-[58%] transition-opacity ease-in-out ${
           nitido ? "opacity-100" : "opacity-0"
         }`}
         style={{ transitionDuration: `${FADE}ms` }}
@@ -205,11 +209,11 @@ export default function BannerIndicacao() {
           {atual.chapeu}
         </p>
 
-        <p className="mt-1.5 text-[26px] sm:text-[40px] font-extrabold leading-[0.95] tracking-tight drop-shadow-sm min-h-[2em]">
+        <p className="mt-1.5 text-[21px] sm:text-[40px] font-extrabold leading-[0.95] tracking-tight drop-shadow-sm min-h-[2em]">
           {atual.titulo[0]}<br />{atual.titulo[1]}
         </p>
 
-        <span className="mt-3 inline-flex items-center rounded-lg bg-black/30 backdrop-blur px-3 py-1.5 text-[13px] sm:text-sm font-semibold min-h-[2.1em]">
+        <span className="mt-3 inline-flex items-center rounded-lg bg-black/30 backdrop-blur px-3 py-1.5 text-[12px] sm:text-sm font-semibold min-h-[2.1em] leading-snug">
           {atual.frase}
         </span>
 
