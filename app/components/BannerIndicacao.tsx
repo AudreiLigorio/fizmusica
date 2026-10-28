@@ -62,6 +62,10 @@ const FADE = 400
 
 export default function BannerIndicacao() {
   const [mostrar, setMostrar] = useState(false)
+  // `?banner=debug` mostra POR QUE o banner não apareceu. As três travas são
+  // invisíveis de fora, e descobrir qual pegou no aparelho de outra pessoa
+  // custava uma ida e volta por tentativa.
+  const [diagnostico, setDiagnostico] = useState<string | null>(null)
   const [face, setFace] = useState(0)
   const [nitido, setNitido] = useState(true)
 
@@ -77,7 +81,22 @@ export default function BannerIndicacao() {
     //
     // Serve também pra conferir a arte e tirar print fora da janela da
     // promoção. Não expõe nada: é um banner de divulgação.
-    if (new URLSearchParams(window.location.search).get("banner") === "1") {
+    const pedido = new URLSearchParams(window.location.search).get("banner")
+
+    if (pedido === "debug") {
+      let fechado = false
+      try { fechado = localStorage.getItem(CHAVE) === "1" } catch { /* ignora */ }
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setDiagnostico(
+          `dentro do prazo: sim · fechado neste navegador: ${fechado ? "SIM — é isto que segura" : "não"} · ` +
+          `logado: ${session ? "sim" : "NÃO — é isto que segura"}`,
+        )
+      }).catch((e) => setDiagnostico(`erro ao ler a sessão: ${String(e).slice(0, 80)}`))
+      setMostrar(true)
+      return
+    }
+
+    if (pedido === "1") {
       setMostrar(true)
       return
     }
@@ -142,6 +161,12 @@ export default function BannerIndicacao() {
   const atual = FACES[face]
 
   return (
+    <>
+    {diagnostico && (
+      <p className="mb-2 rounded-lg bg-black/80 px-3 py-2 text-[11px] font-mono text-lime-300">
+        {diagnostico}
+      </p>
+    )}
     <a
       href={DESTINO}
       // `data-zona-escura`: o fundo é cor forte e foto nos DOIS temas, e o
@@ -231,5 +256,6 @@ export default function BannerIndicacao() {
         ×
       </button>
     </a>
+    </>
   )
 }
