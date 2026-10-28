@@ -25,6 +25,14 @@ export const RITMOS = [
   "⚡ Heavy Metal", "🤠 Country",  "🌿 Reggae",
   "🇰🇷 K-Pop",    "🌎 Internacional",
   "🌹 R&B",       "🇧🇷 Samba",    "🙌 Gospel Soul",
+  // Eletrônica entrou em 28/10/2026, depois de teste na API (taskId
+  // c4ee9e14…): o Suno aceitou de primeira e o tradutor de estilo manda
+  // `eletrônica, EDM, sintetizadores pulsantes`. Convive com Dance de
+  // propósito — são gêneros diferentes, e o termo-cabeça que chega no Suno
+  // também é (`eletrônica, EDM` contra `dance pop`). Renomear o Dance seria
+  // pior: os 9 pedidos pagos dele têm "💃 Dance" gravado, e tirar o nome da
+  // lista oficial os transformaria em ritmo órfão (ver o aviso no topo).
+  "🎛️ Eletrônica",
 ] as const
 
 // Tira emoji, seletor de variação e junção ZWJ, sobrando só o nome.
@@ -92,6 +100,9 @@ const COR: Record<string, string> = {
   "Gospel Soul":  "#4a5d8f",
   "Internacional": "#546e7a",
   "Pop Rock":     "#c2415a",
+  // Ciano elétrico: o único tom frio-neon do mapa, pra não encostar no azul
+  // do Dance (#0277bd), que é o banner vizinho mais parecido.
+  "Eletrônica":   "#00838f",
 }
 
 const COR_PADRAO = "#5a4a6e"
