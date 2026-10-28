@@ -21,7 +21,11 @@ import { supabase } from "@/lib/supabase"
 // 3. PODE SER FECHADO. São dois meses de campanha; sem o "×", quem já decidiu
 //    não participar levaria o mesmo recado em toda visita.
 const FIM = new Date("2027-01-01T03:00:00Z") // 1º de janeiro, 00h de Brasília
-const CHAVE = "fm_banner_indicacao_fechado"
+// A chave leva a CAMPANHA no nome. Fechar o banner é por campanha, não pra
+// sempre: sem o sufixo, quem fechou uma vez nunca mais veria nenhum aviso
+// desta família — e foi o que aconteceu aqui, com o banner sumindo num
+// aparelho logado. Campanha nova, chave nova.
+const CHAVE = "fm_banner_indicacao_fechado_garrafas_2026_11"
 
 // O destino já existe: a aba Carreira monta o bloco com `id="indicar-amigos"`.
 // `<a href>` de propósito, em vez de `router.push`: navegação de verdade
