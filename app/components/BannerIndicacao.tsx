@@ -29,8 +29,25 @@ const CHAVE = "fm_banner_indicacao_fechado"
 // costuma ser ignorado quando o elemento ainda não está montado.
 const DESTINO = "/minha-musica?aba=carreira#indicar-amigos"
 
+// A segunda linha GIRA. Num banner pequeno não cabe explicar a mecânica
+// inteira de uma vez, e texto longo em barra estreita ninguém lê. As três
+// frases dizem coisas diferentes e todas são verdade: a regra, como se pontua
+// e o que fazer agora.
+const FRASES = [
+  "Quem mais amigos trouxer em novembro e dezembro leva. São duas.",
+  "Cada amigo que comprar conta um ponto pra você.",
+  "Toque e pegue o seu link de convite.",
+]
+
+// Trocar a cada 4,2s: tempo de ler uma linha curta sem a barra virar um
+// letreiro piscando.
+const INTERVALO = 4200
+const FADE = 220
+
 export default function BannerIndicacao() {
   const [mostrar, setMostrar] = useState(false)
+  const [frase, setFrase] = useState(0)
+  const [nitido, setNitido] = useState(true)
 
   useEffect(() => {
     if (Date.now() >= FIM.getTime()) return
@@ -56,6 +73,30 @@ export default function BannerIndicacao() {
     return () => sub.subscription.unsubscribe()
   }, [])
 
+  // Giro das frases. Duas guardas que um letreiro precisa ter:
+  //
+  // - RESPEITA QUEM PEDIU MENOS MOVIMENTO no sistema: nesse caso fica parado
+  //   na primeira frase, que já contém a regra.
+  // - PARA COM A ABA ESCONDIDA: sem isso o timer segue rodando em segundo
+  //   plano, gastando bateria pra trocar um texto que ninguém está vendo.
+  useEffect(() => {
+    if (!mostrar) return
+    const menosMovimento = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
+    if (menosMovimento) return
+
+    let troca: ReturnType<typeof setTimeout> | undefined
+    const giro = setInterval(() => {
+      if (document.hidden) return
+      setNitido(false)
+      troca = setTimeout(() => {
+        setFrase((i) => (i + 1) % FRASES.length)
+        setNitido(true)
+      }, FADE)
+    }, INTERVALO)
+
+    return () => { clearInterval(giro); if (troca) clearTimeout(troca) }
+  }, [mostrar])
+
   if (!mostrar) return null
 
   function fechar(e: React.MouseEvent) {
@@ -77,7 +118,17 @@ export default function BannerIndicacao() {
       className="relative flex items-center gap-3 sm:gap-4 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.99]"
       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 8px 30px rgba(240,25,107,0.30)" }}
     >
-      <span className="text-2xl sm:text-3xl leading-none shrink-0" aria-hidden="true">🥤</span>
+      {/* Foto do produto no lugar do emoji: a promoção é de um objeto, e
+          objeto se mostra. `alt` vazio porque o texto ao lado já diz o que é —
+          leitor de tela não precisa ouvir duas vezes.
+          Nome do arquivo com a data: `public/` fica em cache por horas, então
+          trocar a foto exige nome novo, nunca sobrescrever. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/garrafa-fizmusica-2026-11.jpg"
+        alt=""
+        className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0 shadow-md"
+      />
 
       <div className="flex-1 min-w-0">
         <p className="text-sm sm:text-base font-bold leading-snug">
@@ -85,9 +136,11 @@ export default function BannerIndicacao() {
         </p>
         {/* "trouxer", não "indicar": o ranking é por amigo que COMPROU (a
             conversão já exclui quem usa o próprio link). Prometer por convite
-            enviado faria quem clicou muito reclamar com razão. */}
-        <p className="text-[13px] sm:text-sm text-white/85 leading-snug mt-0.5">
-          Quem mais amigos trouxer em novembro e dezembro leva. São duas.
+            enviado faria quem clicou muito reclamar com razão.
+            Altura mínima de duas linhas: sem ela o banner pula de tamanho a
+            cada troca de frase, e o conteúdo abaixo dança junto. */}
+        <p className={`text-[13px] sm:text-sm text-white/85 leading-snug mt-0.5 min-h-[2.4em] transition-opacity duration-200 ${nitido ? "opacity-100" : "opacity-0"}`}>
+          {FRASES[frase]}
         </p>
       </div>
 
