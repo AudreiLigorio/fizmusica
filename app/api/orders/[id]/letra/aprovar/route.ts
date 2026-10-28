@@ -3,6 +3,7 @@ import { createServerClient } from "@/lib/supabase"
 import { triggerSunoGeneration } from "@/lib/suno/trigger"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { logOrderEvent } from "@/lib/orderEvents"
+import { LIMITE_LETRA } from "@/lib/suno/limites"
 
 export const dynamic = "force-dynamic"
 
@@ -25,6 +26,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const final = (lyrics ?? order.lyricsDraft ?? "").trim()
   if (!final) return NextResponse.json({ error: "Não há letra para aprovar." }, { status: 400 })
+
+  // Barra a letra longa AQUI, antes de aprovar.
+  //
+  // O Suno recusa acima de 5000 caracteres, mas só na hora de gerar — e aí o
+  // cliente já aprovou, já está esperando, e a recusa vem como falha de
+  // produção. Aconteceu em produção com 5400 caracteres (#5C4FB68C).
+  // Impedir na aprovação troca um erro silencioso por uma frase que diz
+  // exatamente quanto cortar.
+  if (final.length > LIMITE_LETRA) {
+    return NextResponse.json(
+      {
+        error: `Sua letra tem ${final.length.toLocaleString("pt-BR")} caracteres e o limite é ${LIMITE_LETRA.toLocaleString("pt-BR")}. `
+          + `Tire cerca de ${(final.length - LIMITE_LETRA).toLocaleString("pt-BR")} caracteres e aprove de novo.`,
+      },
+      { status: 400 },
+    )
+  }
 
   const { error } = await supabase
     .from("orders")

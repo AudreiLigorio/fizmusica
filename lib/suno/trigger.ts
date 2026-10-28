@@ -2,6 +2,8 @@ import type { createServerClient } from "@/lib/supabase"
 import { generateMusic } from "./client"
 import { mapVocalGender, buildTitle } from "./params"
 import { buildSunoStyle } from "@/lib/composer/style"
+import { logOrderEvent } from "@/lib/orderEvents"
+import { tratarRecusaDoCliente } from "./failure"
 import { getComposerSettings } from "@/lib/composer/settings"
 
 type DB = ReturnType<typeof createServerClient>
@@ -73,6 +75,16 @@ export async function triggerSunoGeneration(
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erro ao gerar a música."
     await supabase.from("orders").update({ sunoStatus: "FAILED", sunoError: message }).eq("id", order.id)
+
+    // Falha de ENVIO também é recusa, e também precisa de tratamento.
+    //
+    // Antes este ramo só gravava o erro e saía: sem histórico, sem e-mail, sem
+    // reabrir a letra. A recusa por tamanho ("cannot exceed 5000 characters")
+    // chega justamente aqui, porque o Suno valida antes de criar a tarefa — e
+    // o cliente ficava esperando uma música que nunca ia sair (#5C4FB68C).
+    await logOrderEvent(supabase, order.id, "musica_recusada", message.slice(0, 500), "system")
+    await tratarRecusaDoCliente(supabase, order.id, message)
+
     throw e
   }
 }

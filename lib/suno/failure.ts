@@ -2,6 +2,7 @@ import type { createServerClient } from "@/lib/supabase"
 import { getMusicDetails } from "./client"
 import { triggerSunoGeneration, AUTORETRY_SENTINEL } from "./trigger"
 import { logOrderEvent } from "@/lib/orderEvents"
+import { LIMITE_LETRA } from "./limites"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -11,9 +12,48 @@ type DB = ReturnType<typeof createServerClient>
 // quando quiser. Então classificar é necessariamente heurístico — e por isso o
 // padrão é NÃO envolver o cliente: só o que reconhecemos com segurança vira
 // pedido de ação pra ele.
-export function pedeAcaoDoCliente(msg: string): "letra_protegida" | null {
+export function pedeAcaoDoCliente(msg: string): "letra_protegida" | "letra_longa" | null {
   if (/copyright|copyrighted material/i.test(msg)) return "letra_protegida"
+  // "The length of lyrics in custom mode cannot exceed 5000 characters".
+  // Também é recusa que só o cliente resolve — ninguém além dele pode cortar
+  // a própria letra.
+  if (/length of lyrics|exceed \d+ characters/i.test(msg)) return "letra_longa"
   return null
+}
+
+// O tratamento de uma recusa que o CLIENTE resolve, num lugar só.
+//
+// Existia solto dentro de `handleSunoFailure`, que só roda quando a tarefa já
+// foi criada no Suno. A recusa por tamanho chega ANTES disso, no envio
+// (ver trigger.ts), e por isso passava sem tratamento nenhum: sem evento, sem
+// e-mail, sem reabrir a letra — o cliente ficava esperando uma música que não
+// ia sair. Agora os dois caminhos chamam isto.
+export async function tratarRecusaDoCliente(
+  supabase: DB,
+  orderId: string,
+  errMsg: string,
+): Promise<boolean> {
+  const acionavel = pedeAcaoDoCliente(errMsg)
+  if (!acionavel) return false
+
+  // A área do cliente é guiada por `lyricsApproved` — zerar faz o pedido subir
+  // pro topo como "precisa da sua ação" e reabrir a etapa da Letra sozinho.
+  // Sem isso o aviso seria cruel: mostraríamos o problema com a edição travada.
+  await supabase
+    .from("orders")
+    .update({ lyricsApproved: false, lyrics_rejection: acionavel })
+    .eq("id", orderId)
+
+  // E avisa por e-mail. Só o aviso na tela não resolve: do ponto de vista do
+  // cliente a música está sendo feita, então ele não tem motivo pra abrir o
+  // site — ficaria esperando por algo que nunca chega.
+  const { data: dono } = await supabase
+    .from("orders").select("email, nome").eq("id", orderId).single()
+  if (dono?.email) {
+    const { sendLyricsRejectedEmail } = await import("@/app/services/emailService")
+    await sendLyricsRejectedEmail({ orderId, nome: dono.nome ?? "", email: dono.email })
+  }
+  return true
 }
 
 // Extrai o termo que o Suno bloqueou da mensagem de erro do KIE, para regenerar sem ele.
@@ -76,22 +116,7 @@ export async function handleSunoFailure(supabase: DB, orderId: string, taskId: s
   // cliente é guiada por `lyricsApproved` — zerar faz o pedido subir pro topo
   // como "precisa da sua ação" e reabrir a etapa da Letra sozinho. Sem isso o
   // aviso seria cruel: mostraríamos o problema com a edição travada em 409.
-  const acionavel = pedeAcaoDoCliente(errMsg)
-  if (acionavel) {
-    await supabase
-      .from("orders")
-      .update({ lyricsApproved: false, lyrics_rejection: acionavel })
-      .eq("id", orderId)
-
-    // E avisa por e-mail. Só o aviso na tela não resolve: do ponto de vista do
-    // cliente a música está sendo feita, então ele não tem motivo pra abrir o
-    // site — ficaria esperando por algo que nunca chega.
-    if (order.email) {
-      const { sendLyricsRejectedEmail } = await import("@/app/services/emailService")
-      await sendLyricsRejectedEmail({ orderId, nome: order.nome ?? "", email: order.email })
-    }
-    return
-  }
+  if (await tratarRecusaDoCliente(supabase, orderId, errMsg)) return
 
   // Auto-retry único para palavra sensível: regenera sem o termo bloqueado.
   if (isSensitive && !wasAutoRetry) {

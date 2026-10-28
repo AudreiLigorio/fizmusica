@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { blocosMarcados, inserirBloco, semBlocos } from "@/lib/blocosEstrutura"
+import { LIMITE_LETRA } from "@/lib/suno/limites"
 import TituloMusica from "./TituloMusica"
 
 type State = {
@@ -281,6 +282,29 @@ export default function LetraPanel({
         é — a resposta dele é só "contém material protegido". Pedir "altere o
         trecho" viraria adivinhação: olhar a letra inteira sem saber o que
         mudar, tentar de novo e ser recusado outra vez. */}
+    {state.rejection === "letra_longa" && (
+      <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-5 mb-4">
+        <p className="text-amber-200 font-semibold">⚠️ Sua letra ficou longa demais</p>
+        <p className="text-white/70 text-sm mt-1.5 leading-relaxed">
+          O estúdio de IA aceita no máximo {LIMITE_LETRA.toLocaleString("pt-BR")} caracteres,
+          e a sua passou disso — por isso a música não chegou a ser gravada.
+          {text.length > 0 && (
+            <> A letra aqui embaixo está com{" "}
+              <strong className="text-white/85">{text.length.toLocaleString("pt-BR")}</strong>.
+              {text.length > LIMITE_LETRA && (
+                <> Falta tirar cerca de{" "}
+                  <strong className="text-amber-200">{(text.length - LIMITE_LETRA).toLocaleString("pt-BR")}</strong>.</>
+              )}
+            </>
+          )}
+        </p>
+        <p className="text-white/70 text-sm mt-3 leading-relaxed">
+          Encurte os versos que menos importam e aprove de novo. Seu pedido
+          continua pago e garantido — nada se perdeu.
+        </p>
+      </div>
+    )}
+
     {state.rejection === "letra_protegida" && (
       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-5 mb-4">
         <p className="text-amber-200 font-semibold">⚠️ Precisamos ajustar a sua letra</p>
@@ -340,6 +364,17 @@ export default function LetraPanel({
             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm leading-relaxed outline-none focus:border-fuchsia-500/60 transition-colors whitespace-pre-wrap disabled:opacity-80"
             placeholder="A letra aparece aqui…"
           />
+
+          {/* Contador. Só aparece perto do limite: mostrar "412/5.000" numa
+              letra comum seria barulho, mas quem está escrevendo demais
+              precisa saber ANTES de aprovar — era o que faltava quando uma
+              letra de 5.400 foi aprovada e recusada depois na geração. */}
+          {text.length > LIMITE_LETRA * 0.8 && (
+            <p className={`text-[13px] mt-1 text-right ${text.length > LIMITE_LETRA ? "text-amber-300 font-semibold" : "text-white/40"}`}>
+              {text.length.toLocaleString("pt-BR")} / {LIMITE_LETRA.toLocaleString("pt-BR")} caracteres
+              {text.length > LIMITE_LETRA && " — precisa encurtar"}
+            </p>
+          )}
 
           {busy === "gerar" && (
             <p className="text-fuchsia-300/70 text-sm mt-1.5 flex items-center gap-1.5">
