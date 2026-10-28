@@ -3,7 +3,7 @@ import { createServerClient } from "@/lib/supabase"
 import { triggerSunoGeneration } from "@/lib/suno/trigger"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { logOrderEvent } from "@/lib/orderEvents"
-import { LIMITE_LETRA } from "@/lib/suno/limites"
+import { LIMITE_LETRA, medirLetra, excessoEstaNasInstrucoes } from "@/lib/suno/limites"
 
 export const dynamic = "force-dynamic"
 
@@ -33,12 +33,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // cliente já aprovou, já está esperando, e a recusa vem como falha de
   // produção. Aconteceu em produção com 5400 caracteres (#5C4FB68C).
   // Impedir na aprovação troca um erro silencioso por uma frase que diz
-  // exatamente quanto cortar.
-  if (final.length > LIMITE_LETRA) {
+  // quanto cortar — e, desde o #8DE81BD7, ONDE cortar (ver `medirLetra`).
+  const medida = medirLetra(final)
+  if (medida.total > LIMITE_LETRA) {
+    const n = (v: number) => v.toLocaleString("pt-BR")
+    // Duas frases diferentes, porque o conserto é diferente. Quando a letra
+    // cantada caberia sozinha, o excesso está no briefing entre colchetes e
+    // pedir "corte a letra" manda a pessoa destruir o que estava certo.
     return NextResponse.json(
       {
-        error: `Sua letra tem ${final.length.toLocaleString("pt-BR")} caracteres e o limite é ${LIMITE_LETRA.toLocaleString("pt-BR")}. `
-          + `Tire cerca de ${(final.length - LIMITE_LETRA).toLocaleString("pt-BR")} caracteres e aprove de novo.`,
+        error: excessoEstaNasInstrucoes(medida)
+          ? `A sua letra cantada tem ${n(medida.cantada)} caracteres e caberia bem. `
+            + `Só que as instruções entre colchetes somam outros ${n(medida.instrucoes)}, `
+            + `e o estúdio de IA conta tudo junto: ${n(medida.total)} de um limite de ${n(LIMITE_LETRA)}. `
+            + `Encurte as instruções — tire as que se repetem e deixe só as marcações de estrutura — e aprove de novo. Os versos podem ficar como estão.`
+          : `Sua letra tem ${n(medida.total)} caracteres e o limite é ${n(LIMITE_LETRA)}. `
+            + `Tire cerca de ${n(medida.total - LIMITE_LETRA)} caracteres e aprove de novo.`,
       },
       { status: 400 },
     )

@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import { LIMITE_LETRA } from "@/lib/suno/limites"
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -322,14 +323,41 @@ export async function sendAccessLinksEmail(data: AccessLinksEmailData): Promise<
 // Sem este e-mail a correção não chega em quem pagou: o aviso existe na área
 // do cliente, mas ele não tem motivo pra abrir o site — do ponto de vista dele
 // a música está sendo feita. Ficaria esperando por algo que nunca vem.
+// O MOTIVO manda no texto. Antes havia um corpo só — o de direito autoral — e
+// ele saía nos dois casos: quem só tinha escrito demais recebia um e-mail
+// dizendo que havia copiado música de outra pessoa. Saiu assim de verdade no
+// aviso do #5C4FB68C (28/10/2026), e é acusação errada em e-mail de compra.
 export async function sendLyricsRejectedEmail(data: {
   orderId: string
   nome: string
   email: string
+  motivo?: "letra_protegida" | "letra_longa"
+  // Os três números da letra (total, versos, instruções), quando o motivo é
+  // tamanho. Deixa o e-mail dizer onde está o excesso, como a tela diz.
+  medida?: { total: number; cantada: number; instrucoes: number }
 }): Promise<{ ok: boolean; error?: string }> {
   const siteUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://fizmusica.com.br"
   const url = `${siteUrl}/minha-musica?orderId=${data.orderId}`
   const firstName = data.nome?.split(" ")[0]
+  const n = (v: number) => v.toLocaleString("pt-BR")
+
+  // Quando os versos caberiam sozinhos, o excesso está nas instruções entre
+  // colchetes — e pedir "encurte a letra" faz a pessoa apagar justo a parte
+  // que estava certa.
+  const m = data.medida
+  const culpaDasInstrucoes = !!m && m.cantada <= LIMITE_LETRA && m.total > LIMITE_LETRA
+
+  const corpo =
+    data.motivo === "letra_longa"
+      ? para(`Olá${firstName ? `, ${strong(firstName)}` : ""}!`) +
+        (culpaDasInstrucoes
+          ? para(`O estúdio de inteligência artificial que grava a sua música aceita até ${strong(`${n(LIMITE_LETRA)} caracteres`)} por letra, e a sua passou um pouco disso — por isso a gravação não chegou a acontecer. A boa notícia: ${strong("os seus versos cabem")}. Eles têm ${n(m!.cantada)} caracteres. O que pesou foram as instruções entre colchetes, que somam outros ${strong(n(m!.instrucoes))} — e o estúdio conta tudo junto.`) +
+            para(`Para seguir, abra seu pedido e ${strong("encurte as instruções")}: tire as que se repetem e deixe só as marcações de estrutura, como [Refrão] e [Ponte]. Os versos podem ficar exatamente como estão.`)
+          : para(`O estúdio de inteligência artificial que grava a sua música aceita até ${strong(`${n(LIMITE_LETRA)} caracteres`)} por letra, e a sua passou disso${m ? ` (está com ${n(m.total)})` : ""} — por isso a gravação não chegou a acontecer.`) +
+            para(`Para seguir, abra seu pedido e ${strong("encurte a letra")}: dá para tirar os versos que menos importam ou enxugar as repetições. O resto da produção continua igual.`))
+      : para(`Olá${firstName ? `, ${strong(firstName)}` : ""}!`) +
+        para(`O estúdio de inteligência artificial que grava a sua música identificou que a letra enviada tem trechos de ${strong("uma música que já existe")} — e por isso não pode gravá-la. Isso vale mesmo quando é só um pedaço ou o refrão.`) +
+        para(`Para seguir, é só abrir seu pedido e ${strong("editar a letra com palavras suas")} — ou pedir que a gente componha uma original a partir da sua história, que é o que fazemos na maioria dos pedidos.`)
 
   try {
     const result = await resend.emails.send({
@@ -340,16 +368,17 @@ export async function sendLyricsRejectedEmail(data: {
       subject: "Sua letra precisa de um pequeno ajuste — FizMusica",
       html: emailShell({
         emoji: "✏️",
-        title: "Precisamos ajustar a sua letra",
+        title: data.motivo === "letra_longa"
+          ? (culpaDasInstrucoes ? "Quase lá: falta encurtar as instruções" : "Sua letra ficou um pouco longa")
+          : "Precisamos ajustar a sua letra",
         subtitle: "Leva dois minutos e a produção continua",
-        body:
-          para(`Olá${firstName ? `, ${strong(firstName)}` : ""}!`) +
-          para(`O estúdio de inteligência artificial que grava a sua música identificou que a letra enviada tem trechos de ${strong("uma música que já existe")} — e por isso não pode gravá-la. Isso vale mesmo quando é só um pedaço ou o refrão.`) +
-          para(`Para seguir, é só abrir seu pedido e ${strong("editar a letra com palavras suas")} — ou pedir que a gente componha uma original a partir da sua história, que é o que fazemos na maioria dos pedidos.`),
+        body: corpo,
         button: { text: "✏️ Ajustar minha letra", url },
         note: {
           label: "💛 Seu pedido está garantido",
-          text: "O pagamento segue confirmado e nada se perdeu. Se você escreveu a letra e acha que houve engano, responda este e-mail que a gente resolve junto.",
+          text: data.motivo === "letra_longa"
+            ? "O pagamento segue confirmado e nada se perdeu — sua letra está salva do jeito que você escreveu. Qualquer dúvida, responda este e-mail que a gente ajuda a encurtar junto."
+            : "O pagamento segue confirmado e nada se perdeu. Se você escreveu a letra e acha que houve engano, responda este e-mail que a gente resolve junto.",
         },
       }),
     })

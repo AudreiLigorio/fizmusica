@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { blocosMarcados, inserirBloco, semBlocos } from "@/lib/blocosEstrutura"
-import { LIMITE_LETRA } from "@/lib/suno/limites"
+import { LIMITE_LETRA, medirLetra, excessoEstaNasInstrucoes } from "@/lib/suno/limites"
 import TituloMusica from "./TituloMusica"
 
 type State = {
@@ -231,6 +231,11 @@ export default function LetraPanel({
 
   const hasLyrics = !!text.trim()
   const semRevisoes = state.reprocessLeft <= 0
+  // Medida do campo em três números (total, cantada, instruções). O total é o
+  // que o fornecedor conta; a separação é o que diz ONDE cortar — ver
+  // `medirLetra`.
+  const medida = medirLetra(text)
+  const nn = (v: number) => v.toLocaleString("pt-BR")
   // Compara SEM as marcações de bloco: marcar um solo é escolha de arranjo,
   // não edição de verso (ver semBlocos).
   const editado = semBlocos(text) !== semBlocos(lastAiText)
@@ -284,24 +289,55 @@ export default function LetraPanel({
         mudar, tentar de novo e ser recusado outra vez. */}
     {state.rejection === "letra_longa" && (
       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/[0.07] p-5 mb-4">
-        <p className="text-amber-200 font-semibold">⚠️ Sua letra ficou longa demais</p>
-        <p className="text-white/70 text-sm mt-1.5 leading-relaxed">
-          O estúdio de IA aceita no máximo {LIMITE_LETRA.toLocaleString("pt-BR")} caracteres,
-          e a sua passou disso — por isso a música não chegou a ser gravada.
-          {text.length > 0 && (
-            <> A letra aqui embaixo está com{" "}
-              <strong className="text-white/85">{text.length.toLocaleString("pt-BR")}</strong>.
-              {text.length > LIMITE_LETRA && (
-                <> Falta tirar cerca de{" "}
-                  <strong className="text-amber-200">{(text.length - LIMITE_LETRA).toLocaleString("pt-BR")}</strong>.</>
+        <p className="text-amber-200 font-semibold">
+          {excessoEstaNasInstrucoes(medida)
+            ? "⚠️ São as instruções que não couberam"
+            : "⚠️ Sua letra ficou longa demais"}
+        </p>
+
+        {/* DUAS EXPLICAÇÕES, porque o conserto é diferente.
+            Quando os versos caberiam sozinhos, o excesso está no briefing
+            entre colchetes — e a versão antiga desta caixa dizia "encurte os
+            versos que menos importam", mandando a pessoa cortar exatamente a
+            parte que estava certa. */}
+        {excessoEstaNasInstrucoes(medida) ? (
+          <>
+            <p className="text-white/70 text-sm mt-1.5 leading-relaxed">
+              Os seus versos têm <strong className="text-white/85">{nn(medida.cantada)}</strong> caracteres
+              e cabem bem. Só que as instruções entre colchetes somam
+              outros <strong className="text-amber-200">{nn(medida.instrucoes)}</strong>,
+              e o estúdio de IA conta tudo junto: {nn(medida.total)} de um limite
+              de {nn(LIMITE_LETRA)}.
+            </p>
+            <p className="text-white/70 text-sm mt-3 leading-relaxed">
+              Encurte as instruções — tire as que se repetem e deixe só as
+              marcações de estrutura, como <span className="text-white/50">[Refrão]</span> e <span className="text-white/50">[Ponte]</span> —
+              e aprove de novo. <strong className="text-white/85">Os versos podem ficar como estão.</strong> Seu
+              pedido continua pago e garantido.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-white/70 text-sm mt-1.5 leading-relaxed">
+              O estúdio de IA aceita no máximo {nn(LIMITE_LETRA)} caracteres,
+              e a sua passou disso — por isso a música não chegou a ser gravada.
+              {medida.total > 0 && (
+                <> A letra aqui embaixo está com{" "}
+                  <strong className="text-white/85">{nn(medida.total)}</strong>
+                  {medida.instrucoes > 0 && <> ({nn(medida.cantada)} de versos e {nn(medida.instrucoes)} de instruções entre colchetes)</>}.
+                  {medida.total > LIMITE_LETRA && (
+                    <> Falta tirar cerca de{" "}
+                      <strong className="text-amber-200">{nn(medida.total - LIMITE_LETRA)}</strong>.</>
+                  )}
+                </>
               )}
-            </>
-          )}
-        </p>
-        <p className="text-white/70 text-sm mt-3 leading-relaxed">
-          Encurte os versos que menos importam e aprove de novo. Seu pedido
-          continua pago e garantido — nada se perdeu.
-        </p>
+            </p>
+            <p className="text-white/70 text-sm mt-3 leading-relaxed">
+              Encurte os versos que menos importam e aprove de novo. Seu pedido
+              continua pago e garantido — nada se perdeu.
+            </p>
+          </>
+        )}
       </div>
     )}
 
@@ -369,11 +405,22 @@ export default function LetraPanel({
               letra comum seria barulho, mas quem está escrevendo demais
               precisa saber ANTES de aprovar — era o que faltava quando uma
               letra de 5.400 foi aprovada e recusada depois na geração. */}
-          {text.length > LIMITE_LETRA * 0.8 && (
-            <p className={`text-[13px] mt-1 text-right ${text.length > LIMITE_LETRA ? "text-amber-300 font-semibold" : "text-white/40"}`}>
-              {text.length.toLocaleString("pt-BR")} / {LIMITE_LETRA.toLocaleString("pt-BR")} caracteres
-              {text.length > LIMITE_LETRA && " — precisa encurtar"}
-            </p>
+          {medida.total > LIMITE_LETRA * 0.8 && (
+            <div className="mt-1 text-right">
+              <p className={`text-[13px] ${medida.total > LIMITE_LETRA ? "text-amber-300 font-semibold" : "text-white/40"}`}>
+                {nn(medida.total)} / {nn(LIMITE_LETRA)} caracteres
+                {medida.total > LIMITE_LETRA && " — precisa encurtar"}
+              </p>
+              {/* A repartição, sempre que houver colchetes. É ela que evita o
+                  corte no lugar errado: num caso real 3.460 dos 6.188
+                  caracteres eram briefing de produção, e o total sozinho
+                  mandava a pessoa apagar versos que caberiam. */}
+              {medida.instrucoes > 0 && (
+                <p className="text-[13px] text-white/40">
+                  versos {nn(medida.cantada)} · instruções entre colchetes {nn(medida.instrucoes)}
+                </p>
+              )}
+            </div>
           )}
 
           {busy === "gerar" && (

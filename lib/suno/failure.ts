@@ -2,7 +2,7 @@ import type { createServerClient } from "@/lib/supabase"
 import { getMusicDetails } from "./client"
 import { triggerSunoGeneration, AUTORETRY_SENTINEL } from "./trigger"
 import { logOrderEvent } from "@/lib/orderEvents"
-import { LIMITE_LETRA } from "./limites"
+import { medirLetra } from "./limites"
 
 type DB = ReturnType<typeof createServerClient>
 
@@ -47,11 +47,23 @@ export async function tratarRecusaDoCliente(
   // E avisa por e-mail. Só o aviso na tela não resolve: do ponto de vista do
   // cliente a música está sendo feita, então ele não tem motivo pra abrir o
   // site — ficaria esperando por algo que nunca chega.
+  //
+  // O MOTIVO vai junto. O e-mail tinha um texto só, o de direito autoral, e ia
+  // igual nos dois casos: quem estourou o tamanho recebia a acusação de ter
+  // copiado música alheia. Aconteceu de verdade com o aviso do #5C4FB68C.
   const { data: dono } = await supabase
-    .from("orders").select("email, nome").eq("id", orderId).single()
+    .from("orders").select("email, nome, lyricsDraft").eq("id", orderId).single()
   if (dono?.email) {
     const { sendLyricsRejectedEmail } = await import("@/app/services/emailService")
-    await sendLyricsRejectedEmail({ orderId, nome: dono.nome ?? "", email: dono.email })
+    await sendLyricsRejectedEmail({
+      orderId,
+      nome: dono.nome ?? "",
+      email: dono.email,
+      motivo: acionavel,
+      // Os três números deixam o e-mail dizer ONDE cortar, do mesmo jeito que
+      // a tela. Sem eles o texto fica genérico e a pessoa corta versos.
+      medida: acionavel === "letra_longa" ? medirLetra(String(dono.lyricsDraft ?? "")) : undefined,
+    })
   }
   return true
 }
