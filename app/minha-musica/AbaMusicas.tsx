@@ -8,6 +8,7 @@ import RedeFizMusica from "./RedeFizMusica"
 import FaixaCarreira from "./FaixaCarreira"
 import InfoTooltip from "./InfoTooltip"
 import ResumeMusicBanner from "@/app/components/ResumeMusicBanner"
+import BannerIndicacao from "@/app/components/BannerIndicacao"
 import { useNoAppPlay } from "@/lib/canal"
 import { useCatalogo, casaFiltroCliente } from "./CatalogoContext"
 import { combina } from "@/lib/busca"
@@ -130,6 +131,13 @@ export default function AbaMusicas({
         />
       ) : (
         <>
+          {/* Promoção das garrafas. Fica depois da busca e dos filtros, não
+              no topo: no app o lembrete de música salva já ocupa o primeiro
+              lugar, e dois cartões empilhados viram ruído. */}
+          <div className="mb-5">
+            <BannerIndicacao />
+          </div>
+
           {/* Faixa de carreira ANTES da Rede: é a primeira coisa da aba,
               onde ela cumpre o papel de mostrar que existe uma progressão.
               Só aparece pra quem tem conta — ela some sozinha se a API não

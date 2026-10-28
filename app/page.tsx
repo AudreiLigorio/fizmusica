@@ -13,6 +13,7 @@ import VideoExemplos from "./components/VideoExemplos"
 import ProdutosCarrossel from "./components/ProdutosCarrossel"
 import FaqHome from "./components/FaqHome"
 import ResumeMusicBanner from "./components/ResumeMusicBanner"
+import BannerIndicacao from "./components/BannerIndicacao"
 import FizMascot from "./components/FizMascot"
 
 const DEMOS = [
@@ -419,6 +420,15 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Promoção das garrafas — DEPOIS do herói, não antes.
+          O herói é o que converte quem nunca comprou; esta promoção é de
+          recompra e só aparece pra quem já tem conta (ver o componente).
+          Acima do herói ela roubaria a primeira tela de quem o banner nem
+          atende. Mesma largura e respiro das seções seguintes. */}
+      <div className="max-w-6xl mx-auto px-6 pt-10">
+        <BannerIndicacao />
+      </div>
 
       {/* ═══════════════════════════════════════════
           PRODUTOS E PREÇOS — vitrine antes dos exemplos
