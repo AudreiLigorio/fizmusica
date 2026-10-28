@@ -29,24 +29,40 @@ const CHAVE = "fm_banner_indicacao_fechado"
 // costuma ser ignorado quando o elemento ainda não está montado.
 const DESTINO = "/minha-musica?aba=carreira#indicar-amigos"
 
-// A segunda linha GIRA. Num banner pequeno não cabe explicar a mecânica
-// inteira de uma vez, e texto longo em barra estreita ninguém lê. As três
-// frases dizem coisas diferentes e todas são verdade: a regra, como se pontua
-// e o que fazer agora.
-const FRASES = [
-  "Quem mais amigos trouxer em novembro e dezembro leva. São duas.",
-  "Cada amigo que comprar conta um ponto pra você.",
-  "Toque e pegue o seu link de convite.",
+// DUAS FACES que se alternam, cada uma com cor e enquadramento próprios.
+//
+// Cor fora da paleta da marca, de propósito: a página inteira é rosa e
+// fúcsia, e um banner rosa no meio dela vira mais um bloco. Âmbar e azul
+// destacam — é o mesmo truque da arte que o Audrei trouxe de referência, que
+// usa laranja forte num site que não é laranja.
+//
+// A imagem não muda de arquivo: muda o ENQUADRAMENTO da mesma foto. A face 1
+// mostra a garrafa preta, a 2 mostra a branca. Sai mais leve que duas fotos e
+// a troca fica nítida do mesmo jeito.
+const FACES = [
+  {
+    cor: "linear-gradient(100deg, #b45309 0%, #f59e0b 100%)",
+    enquadramento: "30% center",
+    chapeu: "Novembro e dezembro",
+    titulo: ["Indique amigos", "e leve a garrafa"],
+    frase: "São duas garrafas térmicas da Fiz Música.",
+  },
+  {
+    cor: "linear-gradient(100deg, #0e7490 0%, #0284c7 100%)",
+    enquadramento: "64% center",
+    chapeu: "Como funciona",
+    titulo: ["Cada amigo que", "comprar vale ponto"],
+    frase: "Quem mais trouxer em novembro e dezembro leva.",
+  },
 ]
 
-// Trocar a cada 4,2s: tempo de ler uma linha curta sem a barra virar um
-// letreiro piscando.
-const INTERVALO = 4200
-const FADE = 220
+// 5,5s por face: tempo de ler o título e a linha sem a peça virar letreiro.
+const INTERVALO = 5500
+const FADE = 400
 
 export default function BannerIndicacao() {
   const [mostrar, setMostrar] = useState(false)
-  const [frase, setFrase] = useState(0)
+  const [face, setFace] = useState(0)
   const [nitido, setNitido] = useState(true)
 
   useEffect(() => {
@@ -89,7 +105,7 @@ export default function BannerIndicacao() {
       if (document.hidden) return
       setNitido(false)
       troca = setTimeout(() => {
-        setFrase((i) => (i + 1) % FRASES.length)
+        setFace((i) => (i + 1) % FACES.length)
         setNitido(true)
       }, FADE)
     }, INTERVALO)
@@ -108,53 +124,90 @@ export default function BannerIndicacao() {
     setMostrar(false)
   }
 
+  const atual = FACES[face]
+
   return (
     <a
       href={DESTINO}
-      // `data-zona-escura`: o fundo é o gradiente rosa da marca nos DOIS temas,
-      // então o texto tem que continuar branco também no tema claro — sem a
-      // marca, a camada do claro escurece e o texto some no rosa.
+      // `data-zona-escura`: o fundo é cor forte e foto nos DOIS temas, e o
+      // texto por cima é sempre branco. Sem a marca, a camada do tema claro
+      // escureceria o texto e ele sumiria dentro da arte.
       data-zona-escura
-      className="relative flex items-center gap-3 sm:gap-4 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 text-white shadow-lg transition-transform hover:scale-[1.01] active:scale-[0.99]"
-      style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 8px 30px rgba(240,25,107,0.30)" }}
+      // PEÇA GRÁFICA, não cartão com foto ao lado. Construída em CSS e não
+      // como um JPG pronto: banner de imagem única tem proporção fixa, e a
+      // arte de referência é bem deitada (~2,5:1) — num celular de 375px isso
+      // vira uma faixa de 150px com tipografia ilegível. Loja grande resolve
+      // publicando duas artes, uma por formato. Aqui o texto é texto: nítido
+      // em qualquer largura, e trocar a foto não exige redesenhar nada.
+      className="group relative block overflow-hidden rounded-2xl text-white shadow-xl transition-transform hover:scale-[1.01] active:scale-[0.99]"
+      style={{ boxShadow: "0 10px 36px rgba(0,0,0,0.25)" }}
     >
-      {/* Foto do produto no lugar do emoji: a promoção é de um objeto, e
-          objeto se mostra. `alt` vazio porque o texto ao lado já diz o que é —
-          leitor de tela não precisa ouvir duas vezes.
-          Nome do arquivo com a data: `public/` fica em cache por horas, então
-          trocar a foto exige nome novo, nunca sobrescrever. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src="/garrafa-fizmusica-2026-11.jpg"
-        alt=""
-        className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover shrink-0 shadow-md"
-      />
+      {/* As duas faces ficam SEMPRE montadas, uma por cima da outra, e o que
+          muda é a opacidade. Gradiente não anima em CSS — trocar o valor no
+          mesmo elemento daria um salto seco de cor. Empilhadas, a troca é um
+          crossfade de verdade. */}
+      {FACES.map((f, i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className={`absolute inset-0 transition-opacity ease-in-out ${i === face ? "opacity-100" : "opacity-0"}`}
+          style={{ background: f.cor, transitionDuration: `${FADE}ms` }}
+        />
+      ))}
 
-      <div className="flex-1 min-w-0">
-        <p className="text-sm sm:text-base font-bold leading-snug">
-          Indique amigos e leve a garrafa Fiz Música
+      {/* O produto, encostado à direita e derretendo na cor.
+          A máscara é o que substitui o recorte: sem um PNG de fundo
+          transparente, é ela que faz a foto virar parte da arte em vez de um
+          retângulo colado por cima.
+          Cada face enquadra a foto num ponto diferente — é daí que vem a
+          "troca de imagem" sem baixar um segundo arquivo. */}
+      {FACES.map((f, i) => (
+        <div
+          key={i}
+          aria-hidden="true"
+          className={`absolute inset-y-0 right-0 w-[52%] sm:w-[46%] bg-cover transition-opacity ease-in-out group-hover:scale-105 duration-500 ${
+            i === face ? "opacity-100" : "opacity-0"
+          }`}
+          style={{
+            backgroundImage: "url(/garrafa-banner-2026-11.jpg)",
+            backgroundPosition: f.enquadramento,
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, #000 42%)",
+            maskImage: "linear-gradient(to right, transparent 0%, #000 42%)",
+          }}
+        />
+      ))}
+
+      {/* Conteúdo. `max-w` segura o texto à esquerda pra ele nunca invadir a
+          foto. As alturas mínimas evitam que a peça mude de tamanho entre as
+          faces — sem elas, o conteúdo de baixo da página dança a cada troca. */}
+      <div
+        className={`relative px-5 py-6 sm:px-8 sm:py-9 max-w-[62%] sm:max-w-[58%] transition-opacity ease-in-out ${
+          nitido ? "opacity-100" : "opacity-0"
+        }`}
+        style={{ transitionDuration: `${FADE}ms` }}
+      >
+        <p className="text-[11px] sm:text-[13px] font-bold uppercase tracking-[0.18em] text-white/85">
+          {atual.chapeu}
         </p>
-        {/* "trouxer", não "indicar": o ranking é por amigo que COMPROU (a
-            conversão já exclui quem usa o próprio link). Prometer por convite
-            enviado faria quem clicou muito reclamar com razão.
-            Altura mínima de duas linhas: sem ela o banner pula de tamanho a
-            cada troca de frase, e o conteúdo abaixo dança junto. */}
-        <p className={`text-[13px] sm:text-sm text-white/85 leading-snug mt-0.5 min-h-[2.4em] transition-opacity duration-200 ${nitido ? "opacity-100" : "opacity-0"}`}>
-          {FRASES[frase]}
+
+        <p className="mt-1.5 text-[26px] sm:text-[40px] font-extrabold leading-[0.95] tracking-tight drop-shadow-sm min-h-[2em]">
+          {atual.titulo[0]}<br />{atual.titulo[1]}
         </p>
+
+        <span className="mt-3 inline-flex items-center rounded-lg bg-black/30 backdrop-blur px-3 py-1.5 text-[13px] sm:text-sm font-semibold min-h-[2.1em]">
+          {atual.frase}
+        </span>
+
+        <span className="mt-4 flex w-fit items-center gap-2 rounded-full bg-white px-4 py-2 text-[13px] sm:text-sm font-bold text-neutral-900 shadow-md">
+          Quero indicar
+          <span aria-hidden="true">→</span>
+        </span>
       </div>
-
-      {/* No celular o cartão inteiro é o alvo e a seta basta; do sm pra cima
-          entra o rótulo, que deixa a ação explícita sem apertar o texto. */}
-      <span className="shrink-0 hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1.5 text-[13px] font-bold">
-        Quero indicar →
-      </span>
-      <span className="shrink-0 sm:hidden text-lg" aria-hidden="true">→</span>
 
       <button
         onClick={fechar}
         aria-label="Fechar aviso"
-        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/60 text-white/80 hover:text-white text-sm leading-none flex items-center justify-center backdrop-blur"
+        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/45 text-white/85 hover:text-white hover:bg-black/70 text-base leading-none flex items-center justify-center backdrop-blur transition-colors"
       >
         ×
       </button>
