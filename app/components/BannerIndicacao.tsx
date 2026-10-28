@@ -67,6 +67,21 @@ export default function BannerIndicacao() {
 
   useEffect(() => {
     if (Date.now() >= FIM.getTime()) return
+
+    // `?banner=1` força a peça a aparecer, pulando sessão e o "fechado".
+    //
+    // Existe por um motivo prático: as travas são invisíveis de fora. Quando o
+    // banner não aparece, não dá pra saber se é sessão, se é o "×" guardado no
+    // navegador ou se é o código que não chegou — e cada palpite custa uma
+    // viagem de ida e volta. Com isto, uma URL responde.
+    //
+    // Serve também pra conferir a arte e tirar print fora da janela da
+    // promoção. Não expõe nada: é um banner de divulgação.
+    if (new URLSearchParams(window.location.search).get("banner") === "1") {
+      setMostrar(true)
+      return
+    }
+
     try {
       if (localStorage.getItem(CHAVE) === "1") return
     } catch {
