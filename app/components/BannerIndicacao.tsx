@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase"
 // Mora na home e no SpotFiz, que é onde o Audrei pediu. Leva pra aba Carreira,
 // onde vive o bloco "Indique amigos" — a âncora `#indicar-amigos` já existia.
 //
-// Três travas que um banner de promoção precisa ter e quase nunca tem:
+// Duas travas:
 //
 // 1. SÓ PRA QUEM TEM CONTA. Indicar exige um código de indicação, que só existe
 //    pra cliente logado. Mostrar "indique amigos" pra visitante é convidar pro
@@ -16,16 +16,14 @@ import { supabase } from "@/lib/supabase"
 //
 // 2. MORRE SOZINHO. A data de fim é fixa: em 1º de janeiro o banner some sem
 //    ninguém precisar lembrar de tirar. Promoção vencida no ar é promessa
-//    quebrada, e é o erro mais comum desse tipo de peça.
+//    quebrada, e é o erro mais comum desse tipo de peça. É também o que torna
+//    aceitável não ter "×": o aviso não fica pra sempre, ele tem prazo.
 //
-// 3. PODE SER FECHADO. São dois meses de campanha; sem o "×", quem já decidiu
-//    não participar levaria o mesmo recado em toda visita.
+// SEM BOTÃO DE FECHAR (decisão do Audrei). O "×" tinha acabado de causar o
+// problema que levou horas: um toque guardava "fechado" e calava o banner
+// pelos dois meses. Com a base ainda pequena, perder alguém da campanha por um
+// toque custa mais do que o incômodo de ver a faixa de novo.
 const FIM = new Date("2027-01-01T03:00:00Z") // 1º de janeiro, 00h de Brasília
-// A chave leva a CAMPANHA no nome. Fechar o banner é por campanha, não pra
-// sempre: sem o sufixo, quem fechou uma vez nunca mais veria nenhum aviso
-// desta família — e foi o que aconteceu aqui, com o banner sumindo num
-// aparelho logado. Campanha nova, chave nova.
-const CHAVE = "fm_banner_indicacao_fechado_garrafas_2026_11"
 
 // O destino já existe: a aba Carreira monta o bloco com `id="indicar-amigos"`.
 // `<a href>` de propósito, em vez de `router.push`: navegação de verdade
@@ -88,12 +86,9 @@ export default function BannerIndicacao() {
     const pedido = new URLSearchParams(window.location.search).get("banner")
 
     if (pedido === "debug") {
-      let fechado = false
-      try { fechado = localStorage.getItem(CHAVE) === "1" } catch { /* ignora */ }
       supabase.auth.getSession().then(({ data: { session } }) => {
         setDiagnostico(
-          `dentro do prazo: sim · fechado neste navegador: ${fechado ? "SIM — é isto que segura" : "não"} · ` +
-          `logado: ${session ? "sim" : "NÃO — é isto que segura"}`,
+          `dentro do prazo: sim · logado: ${session ? "sim" : "NÃO — é isto que segura"}`,
         )
       }).catch((e) => setDiagnostico(`erro ao ler a sessão: ${String(e).slice(0, 80)}`))
       setMostrar(true)
@@ -105,11 +100,6 @@ export default function BannerIndicacao() {
       return
     }
 
-    try {
-      if (localStorage.getItem(CHAVE) === "1") return
-    } catch {
-      /* navegador sem localStorage: segue e mostra */
-    }
     // O MESMO par que o Header usa, e não só a consulta direta.
     //
     // `getSession()` pode responder ANTES de o cliente terminar de restaurar a
@@ -153,14 +143,6 @@ export default function BannerIndicacao() {
 
   if (!mostrar) return null
 
-  function fechar(e: React.MouseEvent) {
-    // `preventDefault` + `stopPropagation`: o "×" vive DENTRO do link, e sem
-    // isso fechar o banner também navegaria pra Carreira.
-    e.preventDefault()
-    e.stopPropagation()
-    try { localStorage.setItem(CHAVE, "1") } catch { /* ignora */ }
-    setMostrar(false)
-  }
 
   const atual = FACES[face]
 
@@ -252,13 +234,6 @@ export default function BannerIndicacao() {
         </span>
       </div>
 
-      <button
-        onClick={fechar}
-        aria-label="Fechar aviso"
-        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/45 text-white/85 hover:text-white hover:bg-black/70 text-base leading-none flex items-center justify-center backdrop-blur transition-colors"
-      >
-        ×
-      </button>
     </a>
     </>
   )
