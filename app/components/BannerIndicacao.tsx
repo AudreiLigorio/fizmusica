@@ -39,9 +39,21 @@ export default function BannerIndicacao() {
     } catch {
       /* navegador sem localStorage: segue e mostra */
     }
+    // O MESMO par que o Header usa, e não só a consulta direta.
+    //
+    // `getSession()` pode responder ANTES de o cliente terminar de restaurar a
+    // sessão guardada — e aí o banner não aparece pra quem está logado, que é
+    // exatamente quem ele atende. Foi o que aconteceu no primeiro deploy.
+    // O assinante pega o evento que chega logo depois (sessão restaurada,
+    // token renovado, login na outra aba).
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setMostrar(true)
     }).catch(() => {})
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, sessao) => {
+      if (sessao) setMostrar(true)
+    })
+    return () => sub.subscription.unsubscribe()
   }, [])
 
   if (!mostrar) return null
