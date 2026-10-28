@@ -85,6 +85,13 @@ export default function BannerIndicacao() {
     // promoção. Não expõe nada: é um banner de divulgação.
     const pedido = new URLSearchParams(window.location.search).get("banner")
 
+    // Os dois ramos abaixo chamam `setMostrar` direto no corpo do efeito, e o
+    // lint avisa sobre render em cascata. Aqui é aceito de propósito: só
+    // acontece quando a URL traz `?banner=`, e custa um render a mais na
+    // montagem. A alternativa — ler a URL no estado inicial — faria o servidor
+    // renderizar sem banner e o navegador com, e aí seria divergência de
+    // hidratação em troca de nada.
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (pedido === "debug") {
       supabase.auth.getSession().then(({ data: { session } }) => {
         setDiagnostico(
@@ -99,6 +106,7 @@ export default function BannerIndicacao() {
       setMostrar(true)
       return
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // O MESMO par que o Header usa, e não só a consulta direta.
     //
