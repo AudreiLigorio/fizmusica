@@ -27,6 +27,7 @@ import { TabBarMobile, TabsDesktop, FecharPlayerForaDeMusicas, type Aba } from "
 import CarreiraPainel from "./CarreiraPainel"
 import AreaPublica from "./AreaPublica"
 import MinhaCarreira from "./MinhaCarreira"
+import SaldoCreditos from "./SaldoCreditos"
 import { confirmar } from "@/app/components/Dialogo"
 import { apelidoPadrao } from "@/lib/apelido"
 import ExcluirConta from "./ExcluirConta"
@@ -1560,6 +1561,14 @@ function MinhaMusicaContent() {
           {/* Nasce com indicação, datas e conta. Nível e discos entram aqui
               quando o programa de fidelidade existir. */}
           {aba === "carreira" && <>
+          {/* Saldo do pacote ANTES da carreira, e em caixa separada: são duas
+              moedas no mesmo produto. Disco é fidelidade — ganho, vira
+              desconto em porcentagem. Crédito é pré-pago — comprado, vira
+              música inteira. Juntos na mesma caixa, a pessoa passa a achar
+              que disco vira música. O painel some sozinho para quem nunca
+              comprou pacote. */}
+          <SaldoCreditos />
+
           {/* A carreira vem primeiro: é o herói da aba. Dados da conta ficam
               logo abaixo, como apoio. */}
           <MinhaCarreira />
