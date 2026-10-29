@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
-import { z } from "zod"
+import { editarProdutoSchema } from "@/lib/validators/produto"
 
 // O proxy só cobre /admin/* — rota de API precisa conferir o cookie por conta
 // própria, senão qualquer um edita preço ou exclui plano do catálogo.
@@ -11,25 +11,7 @@ async function requireAdmin(req: NextRequest) {
   return token ? verifyAdminToken(token) : false
 }
 
-const schema = z.object({
-  name:        z.string().min(1).optional(),
-  description: z.string().optional(),
-  price:       z.number().positive().optional(),
-  active:      z.boolean().optional(),
-  featured:    z.boolean().optional(),
-  category:    z.enum(["DIGITAL", "DIGITAL_PHYSICAL"]).optional(),
-  weight_g:    z.number().int().positive().optional().nullable(),
-  height_cm:   z.number().int().positive().optional().nullable(),
-  width_cm:    z.number().int().positive().optional().nullable(),
-  length_cm:   z.number().int().positive().optional().nullable(),
-  photo_limit: z.number().int().min(0).optional(),
-  // Recursos do plano (migration 042). O identificador NÃO entra aqui: mudar
-  // depois quebraria o vínculo de todo pedido já vendido naquele plano.
-  feat_lyrics_sync: z.boolean().optional(),
-  feat_qrcode:      z.boolean().optional(),
-  feat_download:    z.boolean().optional(),
-  feat_revision:    z.boolean().optional(),
-})
+const schema = editarProdutoSchema
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireAdmin(req))) {

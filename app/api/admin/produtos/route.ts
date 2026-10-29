@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { createServerClient } from "@/lib/supabase"
 import { verifyAdminToken, COOKIE_NAME } from "@/lib/admin-auth"
-import { z } from "zod"
+import { criarProdutoSchema } from "@/lib/validators/produto"
 
 // O proxy só cobre /admin/* — rota de API precisa conferir o cookie por conta
 // própria, senão qualquer um cria plano (e preço) no catálogo.
@@ -11,34 +11,7 @@ async function requireAdmin(req: NextRequest) {
   return token ? verifyAdminToken(token) : false
 }
 
-const schema = z.object({
-  // Identificador escolhido pelo admin: vira a PK e fica gravado em
-  // orders.productId. Restrito a slug pra não virar chave com espaço/acento.
-  id:          z.string().min(2).max(60).regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use apenas letras minúsculas, números e hífens."),
-  name:        z.string().min(1),
-  description: z.string().optional(),
-  price:       z.number().positive(),
-  active:      z.boolean().optional(),
-  featured:    z.boolean().optional(),
-  category:    z.enum(["DIGITAL", "DIGITAL_PHYSICAL"]).optional(),
-  weight_g:    z.number().int().positive().nullable().optional(),
-  height_cm:   z.number().int().positive().nullable().optional(),
-  width_cm:    z.number().int().positive().nullable().optional(),
-  length_cm:   z.number().int().positive().nullable().optional(),
-  photo_limit: z.number().int().min(0).optional(),
-  feat_lyrics_sync: z.boolean().optional(),
-  feat_qrcode:      z.boolean().optional(),
-  feat_download:    z.boolean().optional(),
-  feat_revision:    z.boolean().optional(),
-  // Pacote pré-pago (migração 071). Os dois papéis são independentes:
-  //   credits_granted > 0  → comprar este produto DÁ créditos: é um pacote
-  //   credit_price   > 0   → este produto PODE ser pago com crédito
-  // É aqui que a regra "crédito não vale em qualquer coisa" fica editável:
-  // a música avulsa recebe credit_price 1; Retrospectiva e Premium ficam
-  // nulos e o crédito nem é oferecido neles.
-  credits_granted: z.number().int().min(0).optional(),
-  credit_price:    z.number().int().positive().nullable().optional(),
-})
+const schema = criarProdutoSchema
 
 export async function POST(req: NextRequest) {
   if (!(await requireAdmin(req))) {
