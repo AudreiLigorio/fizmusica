@@ -97,6 +97,34 @@ function beneficios(p: Produto): string[] {
   return [...BENEFICIOS_DE_TODOS, ...meio, ...BENEFICIOS_FINAIS]
 }
 
+// O que ESTE plano traz que nenhum mais barato tinha — e é só isso que vai em
+// negrito (pedido do Audrei, 2026-10-28). Com seis a nove linhas quase iguais
+// em cada carta, a pessoa precisa comparar item a item pra achar o que muda;
+// o negrito faz a diferença saltar sem ela ler tudo.
+//
+// A conta é contra a UNIÃO dos planos mais baratos, não contra o vizinho
+// imediato: se um item some no meio e volta no topo, ele é novidade de novo
+// em relação ao anterior, mas não é novidade nenhuma pra quem olha a escada
+// inteira.
+//
+// Não dá pra marcar simplesmente os itens do `meio`: "Letra sincronizada" sai
+// de lá e está em TODOS os planos pagos — ficaria em negrito nos três sem
+// diferenciar nada. Por isso a comparação é por preço, não por origem.
+function novidadesPorPlano(ordenadosPorPreco: Produto[]): Record<string, Set<string>> {
+  const vistos = new Set<string>()
+  const saida: Record<string, Set<string>> = {}
+  for (const p of ordenadosPorPreco) {
+    const meus = beneficios(p)
+    saida[p.id] = new Set(meus.filter((b) => !vistos.has(b)))
+    for (const b of meus) vistos.add(b)
+  }
+  // O plano mais barato não ganha negrito: tudo nele seria "novidade", e uma
+  // carta inteira em negrito não destaca nada. Ele é a linha de base.
+  const primeiro = ordenadosPorPreco[0]
+  if (primeiro) saida[primeiro.id] = new Set()
+  return saida
+}
+
 const brl = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export default function ProdutosCarrossel() {
@@ -105,6 +133,10 @@ export default function ProdutosCarrossel() {
   const trilhoRef = useRef<HTMLDivElement>(null)
   const [temAntes, setTemAntes] = useState(false)
   const [temDepois, setTemDepois] = useState(false)
+
+  // Calculado uma vez pra lista inteira: cada carta precisa saber o que os
+  // planos mais baratos JÁ tinham, e isso é informação da escada, não da carta.
+  const novidades = novidadesPorPlano(produtos ?? [])
 
   useEffect(() => {
     fetch("/api/produtos")
@@ -193,6 +225,7 @@ export default function ProdutosCarrossel() {
                   key={p.id}
                   produto={p}
                   cor={CORES[i % CORES.length]}
+                  novidades={novidades[p.id] ?? new Set()}
                   // Leva pro WIZARD levando o plano escolhido, não direto
                   // pra /produtos. O pedido nasce no fim do wizard e todo o
                   // resto depende do `orderId` dele: caindo em /produtos sem
@@ -311,9 +344,11 @@ function CartaRede({ onClick }: { onClick: () => void }) {
   )
 }
 
-function CartaProduto({ produto, cor, onClick }: {
+function CartaProduto({ produto, cor, novidades, onClick }: {
   produto: Produto
   cor: (typeof CORES)[number]
+  // O que só existe a partir deste plano — vai em negrito (ver `novidadesPorPlano`).
+  novidades: Set<string>
   onClick: () => void
 }) {
   return (
@@ -347,17 +382,25 @@ function CartaProduto({ produto, cor, onClick }: {
           esticam todas na altura da mais longa, então sem isso o preço de
           cada uma pararia numa altura diferente. */}
       <ul className="mt-3 space-y-1.5 grow">
-        {beneficios(produto).map((b) => (
-          // `items-start` + `shrink-0`: nesta largura os itens longos quebram
-          // em duas linhas, e sem isso o check escorregaria pro meio do texto.
-          <li key={b} className="flex items-start gap-1.5 text-[13px] text-white/65 leading-snug">
-            <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px]" aria-hidden="true"
-                 fill="none" style={{ stroke: cor.forte }} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-              <path d="m5 12 5 5L20 7" />
-            </svg>
-            {b}
-          </li>
-        ))}
+        {beneficios(produto).map((b) => {
+          const novo = novidades.has(b)
+          return (
+            // `items-start` + `shrink-0`: nesta largura os itens longos quebram
+            // em duas linhas, e sem isso o check escorregaria pro meio do texto.
+            <li key={b} className={`flex items-start gap-1.5 text-[13px] leading-snug ${
+              // Novidade ganha peso E contraste. Só engrossar a fonte quase não
+              // aparece em texto de 13px; o que faz a linha saltar é a soma dos
+              // dois, e é por isso que a cor sobe junto.
+              novo ? "font-bold text-white/95" : "text-white/65"
+            }`}>
+              <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px]" aria-hidden="true"
+                   fill="none" style={{ stroke: cor.forte }} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                <path d="m5 12 5 5L20 7" />
+              </svg>
+              {b}
+            </li>
+          )
+        })}
       </ul>
 
       <span className="mt-4 self-start px-4 py-2 rounded-xl text-base font-extrabold"
