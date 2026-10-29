@@ -149,6 +149,21 @@ function CheckoutContent() {
 
   const podeUsarCredito = custoEmCreditos !== null && saldoCreditos >= custoEmCreditos && !isFreeOrder
 
+  // Tem saldo, mas ESTE plano não aceita crédito.
+  //
+  // O silêncio aqui parecia a opção segura e não é: quem comprou "10 músicas"
+  // e vê a Retrospectiva sem nenhuma menção aos créditos conclui que foi
+  // enganado. Dizer custa uma linha e evita a mensagem de suporte.
+  //
+  // Há um risco real do outro lado, e foi decisão do Audrei assumi-lo: lembrar
+  // dos créditos no meio da compra pode desviar quem ia pagar R$ 69,90 para a
+  // avulsa de R$ 9,90. A aposta é que quem escolheu a Retrospectiva quer as
+  // fotos — e que parecer pegadinha custa mais caro que o desvio.
+  //
+  // Por isso o texto explica o que ESTE plano tem, não o que o crédito não
+  // faz: a frase termina no valor da Retrospectiva, não na limitação.
+  const creditoNaoVale = saldoCreditos > 0 && custoEmCreditos === null && !isFreeOrder
+
   async function pagarComCredito() {
     setUsandoCredito(true)
     try {
@@ -598,6 +613,16 @@ function CheckoutContent() {
             ref={brickRef}
             className={status === "processing" || status === "pix" || isFreeOrder ? "opacity-0 pointer-events-none h-0 overflow-hidden" : ""}
           />
+
+          {/* Tem crédito, mas não vale aqui. Linha pequena, sem caixa colorida
+              e sem botão: é informação, não oferta — competir com o botão de
+              pagar seria o pior dos dois mundos. */}
+          {creditoNaoVale && status !== "processing" && status !== "pix" && (
+            <p className="mb-5 text-[13px] text-white/45 leading-relaxed">
+              Seus {saldoCreditos} {saldoCreditos === 1 ? "crédito vale" : "créditos valem"} nas músicas avulsas.
+              Este plano inclui a retrospectiva de fotos e o cartão para presentear, e é pago à parte.
+            </p>
+          )}
 
           {/* Pagar com crédito do pacote. Fica ACIMA do cartão/PIX e não os
               esconde: é alternativa, não substituição — a pessoa pode preferir

@@ -112,6 +112,36 @@ const BENEFICIOS_FINAIS   = ["Publicar no SpotFiz", "Criar playlist"]
 // dos campos do produto (os mesmos que a /produtos usa pra montar os chips),
 // nunca de lista fixa por nome: preso ao nome, mudar um plano no admin
 // deixaria a home prometendo o que o checkout não entrega.
+// O PACOTE tem lista própria, e precisa ter.
+//
+// Montada pelas flags do produto, ela saía idêntica à da música avulsa —
+// seis itens iguais, e lado a lado o pacote lia como "a mesma coisa, cinco
+// vezes mais caro". A lista por flags descreve UMA música; um pacote são
+// dez, e isso não é uma flag.
+//
+// A última linha é a mais importante e é por ela que esta função existe:
+// **diz na venda onde o crédito vale**. Sem ela a pessoa só descobre no
+// checkout da Retrospectiva que o crédito não serve ali — tarde, e parecendo
+// pegadinha.
+//
+// `avulsa` entra pra o desconto ser CALCULADO, não escrito à mão: escrito,
+// ele vira mentira no dia em que qualquer um dos dois preços mudar.
+function beneficiosDoPacote(p: Produto, avulsa: Produto | null): string[] {
+  const n = p.credits_granted ?? 0
+  const porMusica = p.price / n
+  const itens = [
+    `${n} músicas para criar quando quiser`,
+    `R$ ${brl(porMusica)} cada`,
+  ]
+  if (avulsa && avulsa.price > porMusica) {
+    const off = Math.round((1 - porMusica / avulsa.price) * 100)
+    itens[1] = `R$ ${brl(porMusica)} cada — ${off}% menos que a avulsa`
+  }
+  itens.push("Cada uma com capa, letra sincronizada e SpotFiz")
+  itens.push("Válido nas músicas avulsas")
+  return itens
+}
+
 function beneficios(p: Produto): string[] {
   const meio: string[] = []
   if (p.feat_lyrics_sync) meio.push("Letra sincronizada")
@@ -202,6 +232,11 @@ export default function ProdutosCarrossel() {
     }
   }
 
+  // A avulsa de referência: o produto que aceita crédito. É contra ela que o
+  // pacote mostra o desconto — e achá-la por `credit_price` em vez de por
+  // nome ou preço mantém a conta certa se o catálogo mudar.
+  const avulsa = (produtos ?? []).find((p) => !ehPacote(p) && (p.credit_price ?? 0) > 0) ?? null
+
   // Dois blocos. A ordem é deliberada: presente primeiro, porque é o produto
   // principal e o de maior valor, e é dele que o topo da página já fala.
   const presentes = (produtos ?? []).filter(ehPresente)
@@ -243,6 +278,7 @@ export default function ProdutosCarrossel() {
                 produto={p}
                 cor={CORES[i % CORES.length]}
                 novidades={novidades[p.id] ?? new Set()}
+                itens={beneficios(p)}
                 // Leva pro WIZARD levando o plano escolhido, não direto
                 // pra /produtos. O pedido nasce no fim do wizard e todo o
                 // resto depende do `orderId` dele: caindo em /produtos sem
@@ -279,7 +315,9 @@ export default function ProdutosCarrossel() {
                 key={p.id}
                 produto={p}
                 cor={CORES[(i + 1) % CORES.length]}
-                novidades={novidades[p.id] ?? new Set()}
+                novidades={ehPacote(p) ? new Set() : (novidades[p.id] ?? new Set())}
+                itens={ehPacote(p) ? beneficiosDoPacote(p, avulsa) : beneficios(p)}
+                precoPorMusica={ehPacote(p) ? `R$ ${brl(p.price / (p.credits_granted ?? 1))} por música` : null}
                 onClick={() => {
                   track("cta_produto", "carrossel_produtos")
                   // Pacote não passa pelo wizard: não tem ocasião, estilo nem
@@ -475,11 +513,16 @@ function CartaRede({ onClick }: { onClick: () => void }) {
   )
 }
 
-function CartaProduto({ produto, cor, novidades, onClick }: {
+function CartaProduto({ produto, cor, novidades, itens, precoPorMusica, onClick }: {
   produto: Produto
   cor: (typeof CORES)[number]
   // O que só existe a partir deste plano — vai em negrito (ver `novidadesPorPlano`).
   novidades: Set<string>
+  // Vem de fora porque o pacote precisa comparar com a avulsa, e a carta não
+  // conhece o catálogo.
+  itens: string[]
+  // Só no pacote: a linha pequena embaixo do preço cheio.
+  precoPorMusica?: string | null
   onClick: () => void
 }) {
   return (
@@ -513,7 +556,7 @@ function CartaProduto({ produto, cor, novidades, onClick }: {
           esticam todas na altura da mais longa, então sem isso o preço de
           cada uma pararia numa altura diferente. */}
       <ul className="mt-3 space-y-1.5 grow">
-        {beneficios(produto).map((b) => {
+        {itens.map((b) => {
           const novo = novidades.has(b)
           return (
             // `items-start` + `shrink-0`: nesta largura os itens longos quebram
@@ -534,10 +577,17 @@ function CartaProduto({ produto, cor, novidades, onClick }: {
         })}
       </ul>
 
-      <span className="mt-4 self-start px-4 py-2 rounded-xl text-base font-extrabold"
-            style={{ background: cor.forte, color: cor.precoTexto }}>
-        R$ {brl(produto.price)}
-      </span>
+      <div className="mt-4 self-start">
+        <span className="inline-block px-4 py-2 rounded-xl text-base font-extrabold"
+              style={{ background: cor.forte, color: cor.precoTexto }}>
+          R$ {brl(produto.price)}
+        </span>
+        {/* O preço por música embaixo do preço cheio: é ele que faz a
+            comparação com a avulsa acontecer sem texto explicando. */}
+        {precoPorMusica && (
+          <span className="block text-[13px] text-white/50 mt-1.5">{precoPorMusica}</span>
+        )}
+      </div>
     </button>
   )
 }
