@@ -118,6 +118,59 @@ function CheckoutContent() {
   // caminho "pedido grátis". Exige que um cupom esteja de fato aplicado.
   const isFreeOrder = !!coupon && displayTotal <= 0
 
+  // CRÉDITO DO PACOTE PRÉ-PAGO.
+  //
+  // Só aparece quando as três coisas são verdade: a pessoa está logada, tem
+  // saldo, e ESTE produto aceita crédito (`credit_price`). É a terceira que
+  // faz a regra valer — sem ela o crédito comprado por R$ 4,99 a música
+  // pagaria uma Retrospectiva de R$ 69,90.
+  const [saldoCreditos, setSaldoCreditos] = useState(0)
+  const [custoEmCreditos, setCustoEmCreditos] = useState<number | null>(null)
+  const [usandoCredito, setUsandoCredito] = useState(false)
+
+  useEffect(() => {
+    if (!productId) return
+    let vivo = true
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const [rs, rp] = await Promise.all([
+        fetch("/api/creditos", { headers: { Authorization: `Bearer ${session.access_token}` } }).then((r) => r.json()).catch(() => null),
+        fetch("/api/produtos").then((r) => r.json()).catch(() => null),
+      ])
+      if (!vivo) return
+      setSaldoCreditos(Number(rs?.saldo ?? 0))
+      const prod = (rp?.products ?? []).find((x: { id: string }) => x.id === productId)
+      const cp = prod?.credit_price
+      setCustoEmCreditos(typeof cp === "number" && cp > 0 ? cp : null)
+    })()
+    return () => { vivo = false }
+  }, [productId])
+
+  const podeUsarCredito = custoEmCreditos !== null && saldoCreditos >= custoEmCreditos && !isFreeOrder
+
+  async function pagarComCredito() {
+    setUsandoCredito(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { setErrorMsg("Entre na sua conta para usar créditos."); setStatus("error"); return }
+      const res = await fetch("/api/creditos/usar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ orderId, productId }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (d.success || d.jaPago) { router.replace(`/sucesso?orderId=${orderId}&status=approved`); return }
+      setErrorMsg(d.error ?? "Não foi possível usar seus créditos.")
+      setStatus("error")
+    } catch {
+      setErrorMsg("Falha de conexão. Tente novamente.")
+      setStatus("error")
+    } finally {
+      setUsandoCredito(false)
+    }
+  }
+
   async function submitFree() {
     setFreeSubmitting(true)
     try {
@@ -545,6 +598,31 @@ function CheckoutContent() {
             ref={brickRef}
             className={status === "processing" || status === "pix" || isFreeOrder ? "opacity-0 pointer-events-none h-0 overflow-hidden" : ""}
           />
+
+          {/* Pagar com crédito do pacote. Fica ACIMA do cartão/PIX e não os
+              esconde: é alternativa, não substituição — a pessoa pode preferir
+              guardar o crédito e pagar esta. */}
+          {podeUsarCredito && status !== "processing" && status !== "pix" && (
+            <div className="mb-5">
+              <div className="rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/[0.08] p-4">
+                <p className="text-sm font-semibold text-fuchsia-200">
+                  💿 Você tem {saldoCreditos} {saldoCreditos === 1 ? "crédito" : "créditos"}
+                </p>
+                <p className="text-[13px] text-white/60 mt-1">
+                  Esta música custa {custoEmCreditos} {custoEmCreditos === 1 ? "crédito" : "créditos"} do seu pacote — sem pagar nada agora.
+                </p>
+                <button
+                  onClick={pagarComCredito}
+                  disabled={usandoCredito}
+                  className="mt-3 w-full py-3.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all hover:brightness-110"
+                  style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
+                >
+                  {usandoCredito ? "Liberando sua música…" : `Usar ${custoEmCreditos} ${custoEmCreditos === 1 ? "crédito" : "créditos"}`}
+                </button>
+              </div>
+              <p className="text-center text-[13px] text-white/35 mt-3">ou pague normalmente abaixo</p>
+            </div>
+          )}
 
           {/* Pedido grátis — cupom zerou o total (ex.: 100% de teste) */}
           {isFreeOrder && status !== "processing" && status !== "pix" && (
