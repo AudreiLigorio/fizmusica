@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { track } from "@/lib/track"
+import { supabase } from "@/lib/supabase"
 
 // Vitrine de produtos com preço, logo antes dos exemplos em vídeo.
 //
@@ -21,6 +22,9 @@ type Produto = {
   feat_qrcode?: boolean | null
   feat_revision?: boolean | null
   featured?: boolean
+  // Migração 071. Decidem em QUAL bloco a carta entra e o que o clique faz.
+  credits_granted?: number | null
+  credit_price?: number | null
 }
 
 // Paleta por posição: branco, laranja, azul, verde, magenta. Fica fora do
@@ -78,6 +82,26 @@ function iconeDoPlano(p: Produto) {
   )
 }
 
+// Em qual porta este produto mora.
+//
+// A divisão é por FOTO, não por preço nem por nome: presente é o que vem com
+// retrospectiva e cartão para entregar; "para você" é a música sozinha, que
+// vai pro SpotFiz. Isso já classifica o catálogo de hoje corretamente
+// (Essencial sem foto, Retrospectiva com 15, Premium com 25) e continua
+// valendo quando o pacote pré-pago entrar — ele também não tem foto.
+//
+// Por que separar: R$ 49,90 por dez músicas ao lado de R$ 69,90 por uma
+// retrospectiva convida à comparação errada entre coisas que não competem.
+// Dentro de cada bloco tudo é comparável; entre blocos, nada deveria estar
+// lado a lado.
+function ehPresente(p: Produto): boolean {
+  return (p.photo_limit ?? 0) > 0
+}
+
+function ehPacote(p: Produto): boolean {
+  return (p.credits_granted ?? 0) > 0
+}
+
 // Itens que TODO plano entrega. Ficam no código porque não existem como
 // campo no banco — não há coluna de "capa" nem de "2ª versão", e inventar
 // uma só pra marcar `true` em todos os planos seria dado morto.
@@ -130,9 +154,6 @@ const brl = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2,
 export default function ProdutosCarrossel() {
   const router = useRouter()
   const [produtos, setProdutos] = useState<Produto[] | null>(null)
-  const trilhoRef = useRef<HTMLDivElement>(null)
-  const [temAntes, setTemAntes] = useState(false)
-  const [temDepois, setTemDepois] = useState(false)
 
   // Calculado uma vez pra lista inteira: cada carta precisa saber o que os
   // planos mais baratos JÁ tinham, e isso é informação da escada, não da carta.
@@ -150,35 +171,41 @@ export default function ProdutosCarrossel() {
       .catch(() => setProdutos([]))
   }, [])
 
-  // As setas só existem quando há o que rolar. Seta que não leva a lugar
-  // nenhum é pior que seta nenhuma: promete conteúdo e não entrega.
-  function medirRolagem() {
-    const el = trilhoRef.current
-    if (!el) return
-    setTemAntes(el.scrollLeft > 8)
-    setTemDepois(el.scrollLeft + el.clientWidth < el.scrollWidth - 8)
-  }
-
-  useEffect(() => {
-    medirRolagem()
-    const el = trilhoRef.current
-    if (!el) return
-    // `resize` no window não cobre tudo: as cartas mudam de largura quando as
-    // fontes carregam e quando os produtos chegam da API, sem a janela mexer.
-    const ro = new ResizeObserver(medirRolagem)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [produtos])
-
-  function rolar(dir: -1 | 1) {
-    const el = trilhoRef.current
-    if (!el) return
-    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.8), behavior: "smooth" })
-  }
-
   const precos = (produtos ?? []).map((p) => p.price)
   const menor = precos.length ? Math.min(...precos) : null
   const maior = precos.length ? Math.max(...precos) : null
+
+  // Compra do pacote pré-pago. Não passa pelo wizard: cria o pedido direto
+  // e manda pro checkout que já existe.
+  //
+  // EXIGE CONTA, e a tela precisa dizer isso antes de tentar: o crédito vive
+  // no usuário, então comprar deslogado deixaria a pessoa pagando por um
+  // saldo sem dono. Mandar pro login com volta é melhor que um erro depois
+  // do pagamento.
+  async function comprarPacote(p: Produto) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { router.push(`/entrar?next=${encodeURIComponent("/?pacote=" + p.id)}`); return }
+    try {
+      const res = await fetch("/api/creditos/comprar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ productId: p.id }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.orderId) { alert(d.error ?? "Não foi possível iniciar a compra."); return }
+      const qs = new URLSearchParams({
+        orderId: d.orderId, productId: d.productId, productName: d.productName, price: String(d.price),
+      })
+      router.push(`/checkout?${qs}`)
+    } catch {
+      alert("Falha de conexão. Tente novamente.")
+    }
+  }
+
+  // Dois blocos. A ordem é deliberada: presente primeiro, porque é o produto
+  // principal e o de maior valor, e é dele que o topo da página já fala.
+  const presentes = (produtos ?? []).filter(ehPresente)
+  const paraVoce  = (produtos ?? []).filter((p) => !ehPresente(p))
 
   return (
     <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}>
@@ -197,46 +224,75 @@ export default function ProdutosCarrossel() {
         </p>
       </div>
 
-      {/* ── Carrossel ─────────────────────────────────────────── */}
-      <div className="relative">
-        {/* Setas só no desktop: no celular a rolagem com o dedo já é o gesto
-            natural, e botão sobreposto ali só cobriria a carta. */}
-        {temAntes && (
-          <SetaRolagem lado="esq" onClick={() => rolar(-1)} />
-        )}
-        {temDepois && (
-          <SetaRolagem lado="dir" onClick={() => rolar(1)} />
-        )}
+      {/* ── Bloco 1: PRESENTE ──────────────────────────────────
+          Rosa, o mesmo tom do "Quero homenagear alguém" do wizard. A cor é
+          fio condutor: a pessoa clica na carta rosa aqui e cai na porta rosa
+          lá, sem nenhuma tela precisar explicar nada. */}
+      <TituloDoBloco
+        emoji="💝"
+        titulo="Para presentear"
+        cor="#f0196b"
+        descricao="Com as fotos e o cartão para entregar"
+      />
+      <Trilho>
+        {produtos === null
+          ? [0, 1, 2].map((i) => <CartaEsqueleto key={i} />)
+          : presentes.map((p, i) => (
+              <CartaProduto
+                key={p.id}
+                produto={p}
+                cor={CORES[i % CORES.length]}
+                novidades={novidades[p.id] ?? new Set()}
+                // Leva pro WIZARD levando o plano escolhido, não direto
+                // pra /produtos. O pedido nasce no fim do wizard e todo o
+                // resto depende do `orderId` dele: caindo em /produtos sem
+                // pedido, a tela abria normal e o botão "Ir para pagamento"
+                // ficava ATIVO sem fazer nada ao clicar — beco sem saída
+                // silencioso justo no botão de compra.
+                onClick={() => { track("cta_produto", "carrossel_produtos"); router.push(`/criar?produto=${encodeURIComponent(p.id)}`) }}
+              />
+            ))}
+      </Trilho>
 
-        <div
-          ref={trilhoRef}
-          onScroll={medirRolagem}
-          // `snap-x` pra carta nunca parar cortada no meio. A sangria
-          // (-mx-6 + px-6) faz a rolagem começar e terminar rente à borda da
-          // tela no celular, em vez de parecer cortada dentro do padding.
-          className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-6 px-6 lg:mx-0 lg:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <CartaRede onClick={() => { track("cta_rede", "carrossel_produtos"); router.push("/minha-musica?aba=musicas") }} />
-
-          {produtos === null
-            ? [0, 1, 2].map((i) => <CartaEsqueleto key={i} />)
-            : produtos.map((p, i) => (
-                <CartaProduto
-                  key={p.id}
-                  produto={p}
-                  cor={CORES[i % CORES.length]}
-                  novidades={novidades[p.id] ?? new Set()}
-                  // Leva pro WIZARD levando o plano escolhido, não direto
-                  // pra /produtos. O pedido nasce no fim do wizard e todo o
-                  // resto depende do `orderId` dele: caindo em /produtos sem
-                  // pedido, a tela abria normal e o botão "Ir para pagamento"
-                  // ficava ATIVO sem fazer nada ao clicar — beco sem saída
-                  // silencioso justo no botão de compra.
-                  onClick={() => { track("cta_produto", "carrossel_produtos"); router.push(`/criar?produto=${encodeURIComponent(p.id)}`) }}
-                />
-              ))}
+      {/* ── Bloco 2: PARA VOCÊ ─────────────────────────────────
+          Âmbar, o mesmo do "Quero fazer música". Aqui a comparação é
+          saudável: é a mesma coisa em duas quantidades, e o preço por música
+          faz o trabalho de venda sem precisar de explicação. */}
+      {/* Só depois de os produtos chegarem.
+          Enquanto carregava, este bloco mostrava apenas o cartão grátis — e
+          quando os produtos chegavam, o pago era inserido ANTES dele. O
+          navegador então desloca a rolagem para manter o que estava visível
+          no lugar (scroll anchoring), e o trilho abria já rolado até o fim,
+          com a seta "anteriores" acesa. Nascer pronto evita isso sem
+          precisar desligar a ancoragem. */}
+      {produtos !== null && paraVoce.length > 0 && (
+        <div className="mt-12 lg:mt-16">
+          <TituloDoBloco
+            emoji="🎧"
+            titulo="Para você"
+            cor="#f6b440"
+            descricao="Sua música, publicada no SpotFiz"
+          />
+          <Trilho>
+            {paraVoce.map((p, i) => (
+              <CartaProduto
+                key={p.id}
+                produto={p}
+                cor={CORES[(i + 1) % CORES.length]}
+                novidades={novidades[p.id] ?? new Set()}
+                onClick={() => {
+                  track("cta_produto", "carrossel_produtos")
+                  // Pacote não passa pelo wizard: não tem ocasião, estilo nem
+                  // letra. Vai direto pra compra de saldo.
+                  if (ehPacote(p)) { comprarPacote(p); return }
+                  router.push(`/criar?produto=${encodeURIComponent(p.id)}`)
+                }}
+              />
+            ))}
+            <CartaRede onClick={() => { track("cta_rede", "carrossel_produtos"); router.push("/minha-musica?aba=musicas") }} />
+          </Trilho>
         </div>
-      </div>
+      )}
 
       {/* Faixa de preço + CTA final. Pedido do Audrei: sair do cabeçalho
           (onde disputava atenção com o título antes de a pessoa ver os
@@ -295,6 +351,75 @@ function SetaRolagem({ lado, onClick }: { lado: "esq" | "dir"; onClick: () => vo
 // esperado, em vez de cartas ilegíveis.
 const LARGURA = "snap-start shrink-0 w-[66vw] sm:w-[240px] lg:w-auto lg:flex-1 lg:basis-0 lg:min-w-[200px]"
 
+// Cabeçalho de cada porta. O emoji e a cor são os MESMOS do primeiro passo
+// do wizard (🎧 âmbar "Quero fazer música", 💝 rosa "Quero homenagear"), de
+// propósito: a continuidade visual explica a divisão sem nenhuma tela ter
+// que ensinar.
+function TituloDoBloco({ emoji, titulo, cor, descricao }: {
+  emoji: string; titulo: string; cor: string; descricao: string
+}) {
+  return (
+    <div className="mb-4">
+      <h3 className="text-base font-bold flex items-center gap-2">
+        <span aria-hidden="true">{emoji}</span>
+        <span style={{ color: cor }}>{titulo}</span>
+      </h3>
+      <p className="text-[13px] text-white/50 mt-0.5">{descricao}</p>
+    </div>
+  )
+}
+
+// Trilho de rolagem com as próprias setas. Virou componente quando a vitrine
+// passou a ter DOIS blocos: cada um precisa do seu ref e do seu estado de
+// "tem mais pra lá", e compartilhar um só faria as setas de um bloco medirem
+// o outro.
+function Trilho({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [antes, setAntes] = useState(false)
+  const [depois, setDepois] = useState(false)
+
+  function medir() {
+    const el = ref.current
+    if (!el) return
+    const folga = 4 // arredondamento do navegador
+    setAntes(el.scrollLeft > folga)
+    setDepois(el.scrollLeft + el.clientWidth < el.scrollWidth - folga)
+  }
+
+  useEffect(() => {
+    medir()
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(medir)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [children])
+
+  function rolar(dir: -1 | 1) {
+    const el = ref.current
+    if (!el) return
+    el.scrollBy({ left: dir * Math.round(el.clientWidth * 0.8), behavior: "smooth" })
+  }
+
+  return (
+    <div className="relative">
+      {antes && <SetaRolagem lado="esq" onClick={() => rolar(-1)} />}
+      {depois && <SetaRolagem lado="dir" onClick={() => rolar(1)} />}
+      <div
+        ref={ref}
+        onScroll={medir}
+        // `scroll-pl-6` casando com o `px-6`: sem ele o snap come a sangria
+        // esquerda e o trilho trava em scrollLeft 24 em vez de 0 — a seta
+        // "anteriores" aparece sem ter nada antes. É o mesmo defeito que já
+        // apareceu na raia "Mais recentes" do SpotFiz, mesma causa.
+        className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-smooth pb-2 -mx-6 px-6 scroll-pl-6 lg:mx-0 lg:px-0 lg:scroll-pl-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
+
 function CartaRede({ onClick }: { onClick: () => void }) {
   const itens = [
     { texto: "Você cria sua playlist", cor: "#a855f7", icon: <><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></> },
@@ -303,12 +428,18 @@ function CartaRede({ onClick }: { onClick: () => void }) {
   ]
 
   return (
-    // `order-last` só no celular: lá cabe uma carta por vez, e a grátis na
-    // frente fazia a primeira coisa vista na vitrine ser "Começar agora" (que
-    // não é compra) — o plano "mais escolhido" ficava três arrastadas depois.
-    // No computador (lg:order-none) segue a primeira, como no print de
-    // referência, porque ali as quatro aparecem juntas.
-    <div className={`${LARGURA} order-last lg:order-none rounded-2xl border border-white/10 bg-white/[0.04] p-5 flex flex-col`}>
+    // A grátis vem por ÚLTIMO, e agora por posição no DOM em vez de
+    // `order-last`. A razão de ela não vir na frente continua a mesma: no
+    // celular cabe uma carta por vez, e abrir a vitrine com "Começar agora"
+    // (que não é compra) empurrava o plano pago para três arrastadas depois.
+    //
+    // O que mudou foi COMO: com `order-last` o cartão era o primeiro do DOM e
+    // o último na tela, e o navegador ancora a rolagem inicial no primeiro
+    // elemento do DOM — o trilho abria já rolado até o fim.
+    // e o navegador ancora a rolagem inicial no primeiro elemento do DOM —
+    // o trilho abria já rolado até o fim. Agora ele é o último nos dois, e a
+    // ordem fica: o que se compra primeiro, a alternativa grátis depois.
+    <div className={`${LARGURA} rounded-2xl border border-white/10 bg-white/[0.04] p-5 flex flex-col`}>
       <span className="self-start px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-[0.12em] text-emerald-300 border border-emerald-400/30 bg-emerald-400/10">
         Gratuito
       </span>
