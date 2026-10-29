@@ -30,6 +30,14 @@ const schema = z.object({
   feat_qrcode:      z.boolean().optional(),
   feat_download:    z.boolean().optional(),
   feat_revision:    z.boolean().optional(),
+  // Pacote pré-pago (migração 071). Os dois papéis são independentes:
+  //   credits_granted > 0  → comprar este produto DÁ créditos: é um pacote
+  //   credit_price   > 0   → este produto PODE ser pago com crédito
+  // É aqui que a regra "crédito não vale em qualquer coisa" fica editável:
+  // a música avulsa recebe credit_price 1; Retrospectiva e Premium ficam
+  // nulos e o crédito nem é oferecido neles.
+  credits_granted: z.number().int().min(0).optional(),
+  credit_price:    z.number().int().positive().nullable().optional(),
 })
 
 export async function POST(req: NextRequest) {

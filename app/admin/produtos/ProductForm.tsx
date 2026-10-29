@@ -19,6 +19,8 @@ type Product = {
   feat_qrcode?: boolean | null
   feat_download?: boolean | null
   feat_revision?: boolean | null
+  credits_granted?: number | null
+  credit_price?: number | null
 }
 
 // Identificador único do plano. Vira a chave primária (products.id) e aparece
@@ -64,6 +66,11 @@ export default function ProductForm({ product }: { product?: Product }) {
   const [featQrcode, setFeatQrcode]         = useState(product?.feat_qrcode ?? true)
   const [featDownload, setFeatDownload]     = useState(product?.feat_download ?? true)
   const [featRevision, setFeatRevision]     = useState(product?.feat_revision ?? true)
+  // Pacote pré-pago. Guardados como TEXTO porque o campo é digitado: manter
+  // número no estado transforma o campo vazio em 0 enquanto a pessoa apaga,
+  // e ela não consegue limpar pra digitar outro valor.
+  const [creditsGranted, setCreditsGranted] = useState(String(product?.credits_granted ?? 0))
+  const [creditPrice, setCreditPrice]       = useState(product?.credit_price != null ? String(product.credit_price) : "")
 
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -113,6 +120,10 @@ export default function ProductForm({ product }: { product?: Product }) {
         feat_qrcode: featQrcode,
         feat_download: featDownload,
         feat_revision: featRevision,
+        credits_granted: Number(creditsGranted || 0),
+        // Vazio vira null, não 0: null significa "não aceita crédito", e o
+        // banco recusa 0 pelo check (credit_price tem que ser positivo).
+        credit_price: creditPrice.trim() === "" ? null : Number(creditPrice),
         ...(category === "DIGITAL_PHYSICAL" ? {
           weight_g:  weightG  ? Number(weightG)  : null,
           height_cm: heightCm ? Number(heightCm) : null,
@@ -255,6 +266,29 @@ export default function ProductForm({ product }: { product?: Product }) {
           <input type="checkbox" checked={featRevision} onChange={(e) => setFeatRevision(e.target.checked)} className="accent-pink-500" />
           Revisão inclusa (ajustes)
         </label>
+      </div>
+
+      {/* Pacote pré-pago (migração 071). Os dois campos são independentes e
+          a maioria dos produtos deixa os dois zerados/vazios. */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Créditos que a compra concede</label>
+          <input
+            type="number" min={0} value={creditsGranted}
+            onChange={(e) => setCreditsGranted(e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-500/60"
+          />
+          <p className="text-[11px] text-gray-500 mt-1">Acima de zero, este produto é um <strong className="text-gray-400">pacote</strong>: comprar credita saldo e não gera música.</p>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 mb-1 block">Preço em créditos</label>
+          <input
+            type="number" min={1} value={creditPrice} placeholder="vazio = não aceita"
+            onChange={(e) => setCreditPrice(e.target.value)}
+            className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm outline-none focus:border-pink-500/60"
+          />
+          <p className="text-[11px] text-gray-500 mt-1">Quantos créditos custa comprar este produto. <strong className="text-gray-400">Vazio</strong> = só com dinheiro.</p>
+        </div>
       </div>
 
       <div>
