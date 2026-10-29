@@ -2,6 +2,7 @@ import type { createServerClient } from "@/lib/supabase"
 import { sendPaymentConfirmedEmail } from "@/app/services/emailService"
 import { logOrderEvent } from "@/lib/orderEvents"
 import { concederDiscosDoPedido, concederDiscoDeIndicacao } from "@/lib/fidelidade"
+import { creditarPacoteDoPedido } from "@/lib/credits"
 import crypto from "crypto"
 
 type DB = ReturnType<typeof createServerClient>
@@ -14,6 +15,20 @@ type DB = ReturnType<typeof createServerClient>
 // O claim do token é ATÔMICO (update ... where photo_token IS NULL): só "ganha" um
 // dos caminhos, garantindo que o e-mail seja enviado uma única vez sem corrida.
 export async function ensurePaymentPrep(supabase: DB, orderId: string): Promise<void> {
+  // PACOTE PRÉ-PAGO sai por aqui, antes de tudo.
+  //
+  // Um pedido de pacote não tem letra para aprovar nem foto para enviar —
+  // ele só compra saldo. Seguir o preparo normal mandaria o e-mail "aprove
+  // sua letra" para quem não tem letra nenhuma, e reservaria um photo_token
+  // que nunca seria usado.
+  //
+  // Este é o ponto certo para o gancho porque é o ÚNICO lugar por onde todas
+  // as confirmações de pagamento passam: webhook, /confirm, /free e as duas
+  // rotas de reconciliação do admin. Pendurar em qualquer um deles
+  // repetiria o erro que já quebrou o e-mail de música pronta e o cupom de
+  // fidelidade — automação em só um dos caminhos.
+  if (await creditarPacoteDoPedido(supabase, orderId)) return
+
   // Fidelidade ANTES do claim do token, de propósito: o claim tem saída
   // antecipada ("já preparado por outro caminho"), e pedido pago antes do
   // programa existir nunca passaria por aqui de novo. A concessão é

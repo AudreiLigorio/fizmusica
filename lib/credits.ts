@@ -138,3 +138,63 @@ export function creditosConcedidos(produto: { credits_granted?: number | null } 
   const n = produto?.credits_granted
   return typeof n === "number" && n > 0 ? n : 0
 }
+
+/**
+ * Credita o pacote comprado, se este pedido for de pacote.
+ *
+ * Devolve `true` quando o pedido É de pacote — creditado agora ou já
+ * creditado antes. O chamador usa isso para saber que **não deve seguir com
+ * o preparo normal**: pacote não tem letra para aprovar nem foto para pedir,
+ * e mandar o e-mail "aprove sua letra" seria convidar para uma ação que não
+ * existe.
+ *
+ * Idempotente pelo índice único (migração 073). Quem paga no cartão passa
+ * pelo webhook E pelo /confirm; sem a trava, um pacote de 10 creditaria 20.
+ */
+export async function creditarPacoteDoPedido(supabase: DB, orderId: string): Promise<boolean> {
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, userId, paymentStatus, products(name, credits_granted)")
+    .eq("id", orderId)
+    .maybeSingle()
+
+  if (!order) return false
+
+  const produto = Array.isArray(order.products) ? order.products[0] : order.products
+  const quantidade = creditosConcedidos(produto as { credits_granted?: number | null } | null)
+  if (quantidade <= 0) return false // não é pacote: segue o fluxo normal
+
+  // Daqui pra baixo o pedido É de pacote, e todo caminho devolve `true` —
+  // mesmo quando não dá pra creditar. O pedido continua não tendo letra, e
+  // mandar o e-mail de aprovação seria pior que não creditar em silêncio.
+  if (order.paymentStatus !== "PAID") return true
+
+  // Sem dono não há saldo a quem creditar. O checkout sem conta existe, então
+  // isto é possível — e é problema de verdade, porque a pessoa pagou. Fica no
+  // log alto pra aparecer no Sentry em vez de sumir.
+  if (!order.userId) {
+    console.error("[credits] pacote pago SEM dono — crédito não concedido:", orderId)
+    return true
+  }
+
+  const { error } = await supabase.from("credit_transactions").insert({
+    user_id: order.userId,
+    order_id: order.id,
+    delta: quantidade,
+    origem: "pacote",
+    descricao: (produto as { name?: string } | null)?.name ?? "Pacote de músicas",
+  })
+
+  // 23505 = índice único: já creditado por outro caminho. É o esperado numa
+  // rechamada, não uma falha.
+  if (error && error.code !== "23505") {
+    console.error("[credits] falha ao creditar pacote", orderId, error.message)
+  }
+  return true
+}
+
+/** Este pedido é de pacote? Usado para escondê-lo da lista de músicas do cliente. */
+export function ehPedidoDePacote(order: { products?: unknown } | null | undefined): boolean {
+  const p = Array.isArray(order?.products) ? order?.products[0] : order?.products
+  return creditosConcedidos(p as { credits_granted?: number | null } | null) > 0
+}

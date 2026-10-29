@@ -8,6 +8,7 @@ import { createServerClient } from "@/lib/supabase"
 import { extractClientIp, lookupState } from "@/lib/geoip"
 import { toE164 } from "@/lib/n8n/events"
 import { PLAN_FEATURE_COLUMNS, featuresFromProduct } from "@/lib/planFeatures"
+import { ehPedidoDePacote } from "@/lib/credits"
 import { sincronizarPreviaNoPedido } from "@/lib/composer/aproveitarPrevia"
 import { lrcToPlainLyrics } from "@/lib/suno/lrc"
 
@@ -68,6 +69,14 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ orders: [] })
 
+  // Pedido de PACOTE fica fora da lista.
+  //
+  // Ele é uma compra de saldo, não uma música: não tem letra, não tem fotos,
+  // não tem entrega. Na tela de Pedidos viraria um card com a jornada de
+  // cinco passos travada no primeiro, que a pessoa leria como erro. O lugar
+  // dele é o extrato de créditos.
+  const semPacotes = (data ?? []).filter((o) => !ehPedidoDePacote(o as { products?: unknown }))
+
   // Prazo do link público — hoje é único pra todos os produtos
   // (purge_settings.music_days). A tela mostra o número em vez de dizer só
   // "expirou", pra o cliente conferir contra o que foi contratado.
@@ -76,7 +85,7 @@ export async function GET(req: NextRequest) {
   const linkPrazoDias = purge?.music_enabled ? (purge.music_days as number | null) ?? null : null
 
   // Anexa slug + mp3 da música (quando publicada) para os botões Ouvir/Baixar
-  const ids = (data ?? []).map((o) => o.id)
+  const ids = semPacotes.map((o) => o.id)
   const musicByOrder: Record<string, { slug: string | null; mp3Url: string | null; lyrics: string | null; lyricsLrc: string | null; musicName: string | null; linkAtivo: boolean }> = {}
   if (ids.length) {
     const { data: gm } = await supabase
@@ -86,7 +95,7 @@ export async function GET(req: NextRequest) {
     for (const g of gm ?? []) musicByOrder[g.orderId as string] = { slug: g.slug ?? null, mp3Url: g.mp3Url ?? null, lyrics: g.lyrics ?? null, lyricsLrc: g.lyricsLrc ?? null, musicName: g.musicName ?? null, linkAtivo: !g.link_disabled_at }
   }
 
-  const orders = (data ?? []).map((o) => {
+  const orders = semPacotes.map((o) => {
     // Renomeia sunoStatus/sunoTracks para nomes neutros na resposta — a chave literal
     // do JSON é o único lugar onde "suno" chegaria ao cliente (via DevTools/Network).
     const { order_photos, order_answers, sunoStatus, sunoTracks, payments, ...rest } = o as typeof o & {

@@ -17,7 +17,10 @@ export type PlanFeatures = {
 
 /** Colunas a incluir no embed `products(...)` de uma query de pedido. */
 export const PLAN_FEATURE_COLUMNS =
-  "photo_limit, feat_lyrics_sync, feat_qrcode, feat_download, feat_revision"
+  // `credits_granted` entra aqui porque toda tela que lê produto do pedido
+  // precisa saber se aquele pedido é de PACOTE (migração 071) — ele não é
+  // uma música e não deve aparecer onde músicas aparecem.
+  "photo_limit, feat_lyrics_sync, feat_qrcode, feat_download, feat_revision, credits_granted, credit_price"
 
 // Pedido sem produto (rascunho não pago) ou produto sumido: libera tudo.
 //
