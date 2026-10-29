@@ -416,7 +416,15 @@ function MinhaMusicaContent() {
     if (a === "home") { router.push("/"); return }
     setAba(a)
     const qs = new URLSearchParams(Array.from(searchParams.entries()))
-    if (a === "pedidos") qs.delete("aba"); else qs.set("aba", a)
+    // O endereço diz SEMPRE em que aba a pessoa está, inclusive em Pedidos.
+    //
+    // Antes, Pedidos apagava o `?aba=` pra deixar a URL limpa — e isso
+    // colidia com a regra do app, que lê "endereço sem aba" como "acabou de
+    // abrir, manda pro SpotFiz". No app, estar em Pedidos ficava com a URL
+    // idêntica a nunca ter escolhido nada, e aí o Voltar da tela da música
+    // caía no SpotFiz em vez de voltar pra Pedidos (relatado pelo Audrei,
+    // 2026-10-28). Endereço ambíguo é o bug; escrever a aba o desfaz.
+    qs.set("aba", a)
 
     // history.replaceState, NÃO router.replace.
     //
@@ -458,7 +466,18 @@ function MinhaMusicaContent() {
     if (!abaDoAppDecidida.current) {
       abaDoAppDecidida.current = true
       const esperandoCliente = ordersWithRevisions.some((o) => o.paymentStatus === "PAID" && precisaAcao(o))
-      if (!abaExplicita && !esperandoCliente && estaNoAppPlay()) setAba("musicas")
+      if (!abaExplicita && !esperandoCliente && estaNoAppPlay()) {
+        setAba("musicas")
+        // Registra a escolha no endereço também. Sem isto a URL continua sem
+        // `aba` depois de a regra já ter decidido, e qualquer volta a esta
+        // tela refaz a decisão do zero — que é metade do problema do botão
+        // Voltar da tela da música.
+        try {
+          const qs = new URLSearchParams(window.location.search)
+          qs.set("aba", "musicas")
+          window.history.replaceState(null, "", `/minha-musica?${qs}`)
+        } catch { /* sem history: a aba já trocou no estado, que é o que importa */ }
+      }
     }
     setLoading(false)
   }

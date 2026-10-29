@@ -28,16 +28,22 @@ const MODULES = [Autoplay, EffectFade, EffectCards, EffectCoverflow]
 // sem o salto seco de voltar ao começo — e isso importa justamente no caso de
 // uma foto só, onde a animação nunca acaba.
 const MOVIMENTOS = [
-  { nome: "fizkb0", de: "scale(1.00)",                   para: "scale(1.12)",                   dur: 24 },
-  { nome: "fizkb1", de: "scale(1.16)",                   para: "scale(1.02)",                   dur: 28 },
-  { nome: "fizkb2", de: "scale(1.06) translate(-1.6%,0)", para: "scale(1.14) translate(1.6%,0)", dur: 26 },
-  { nome: "fizkb3", de: "scale(1.06) translate(0,1.6%)",  para: "scale(1.14) translate(0,-1.6%)", dur: 30 },
+  { nome: "fizkb0", de: "scale(1.00)",                    para: "scale(1.22)",                    dur: 18 },
+  { nome: "fizkb1", de: "scale(1.24)",                    para: "scale(1.02)",                    dur: 20 },
+  { nome: "fizkb2", de: "scale(1.08) translate(-2.5%,0)", para: "scale(1.26) translate(2.5%,0)",  dur: 19 },
+  { nome: "fizkb3", de: "scale(1.08) translate(0,2.5%)",  para: "scale(1.26) translate(0,-2.5%)", dur: 22 },
 ]
 
-// Deriva (translate) de no máximo 1,6% de propósito. A foto é `object-contain`
-// sobre um fundo borrado — ela NÃO preenche o quadro, então deslocamento
-// grande faria a imagem passear por cima do fundo e denunciar a emenda. O
-// zoom é o movimento seguro aqui; a deriva entra só como tempero.
+// A primeira versão era imperceptível: 12% de zoom em 24s dá 0,5% por segundo,
+// e o Audrei olhou e disse que não via. Agora são ~22% em 18-22s, perto de
+// 1,2% por segundo — mais que o dobro, e ainda longe do ponto em que o
+// movimento chama atenção pra si em vez de dar vida à foto.
+//
+// Deriva (translate) limitada a 2,5%. A foto é `object-contain` sobre um
+// fundo borrado — ela NÃO preenche o quadro, então deslocamento grande faria
+// a imagem passear por cima do fundo e denunciar a emenda. O zoom é o
+// movimento seguro aqui (e de quebra REDUZ a tarja, porque a foto cresce); a
+// deriva entra só como tempero.
 
 const CSS_MOVIMENTO = `
 ${MOVIMENTOS.map((m) => `@keyframes ${m.nome}{from{transform:${m.de}}to{transform:${m.para}}}`).join("\n")}
