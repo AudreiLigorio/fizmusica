@@ -2,8 +2,19 @@ import { createServerClient } from "@/lib/supabase"
 
 const BUCKETS = ["order-photos", "product-images", "songs"] as const
 
-// Limite do Storage no plano Free do Supabase (1 GB). Ajustar se o plano mudar.
-export const STORAGE_LIMIT_BYTES = 1 * 1024 * 1024 * 1024
+// Limite do Storage do plano contratado.
+//
+// Estava cravado em 1 GB (plano Free) com um bilhete dizendo "ajustar se o
+// plano mudar" — e o plano mudou sem ninguém ajustar. Em 30/10/2026 a tela
+// anunciava "100% · limite já atingido" com 2,6 GB guardados, enquanto o
+// Storage gravava 12 músicas naquele mesmo dia. Alarme que dispara sem motivo
+// é pior que alarme nenhum: ensina a ignorar.
+//
+// Agora vem do ambiente, pra deixar de ser mentira no dia em que o plano
+// mudar de novo. O padrão é o Pro (100 GB) porque é onde o projeto está — o
+// Free não comportaria o que já está gravado.
+const LIMITE_GB = Number(process.env.SUPABASE_STORAGE_LIMIT_GB ?? 100) || 100
+export const STORAGE_LIMIT_BYTES = LIMITE_GB * 1024 * 1024 * 1024
 
 async function sumBucket(bucket: string): Promise<number> {
   const supabase = createServerClient()

@@ -99,7 +99,7 @@ async function UsoDoStorage() {
         </div>
         {storage.percent >= 80 && (
           <p className="text-xs text-yellow-400 mt-3">
-            Acima de 80% do plano Free — considere fazer upgrade pro plano Pro (100 GB) antes de estourar.
+            Acima de 80% do limite contratado — hora de olhar o plano do Supabase antes de estourar.
           </p>
         )}
       </div>
