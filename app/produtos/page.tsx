@@ -182,6 +182,53 @@ function ProdutosContent() {
     }
   }
 
+  // ── PACOTE: oferta paralela, fora da lista de planos ───────────────────
+  //
+  // O pacote NÃO entra na lista (ver o filtro de `produtosVisiveis`): ali ele
+  // seria comparado com os planos e escolhido no lugar de um, o que quebrava
+  // o pedido. Aqui embaixo ele é outra coisa — "em vez de pagar esta, leve
+  // dez" — e o botão vai pelo caminho próprio, que cria um pedido separado
+  // para o pacote e deixa o pedido da música intacto.
+  const pacote = products.find((p) => (p.credits_granted ?? 0) > 0) ?? null
+  // Contra qual preço o desconto é calculado. Achada por `credit_price` e não
+  // por nome: é a definição de "a música que o crédito paga".
+  const avulsaCredito = products.find((p) => !(p.credits_granted ?? 0) && (p.credit_price ?? 0) > 0) ?? null
+  const [comprandoPacote, setComprandoPacote] = useState(false)
+
+  async function comprarPacote() {
+    if (!pacote) return
+    setComprandoPacote(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        // Pacote EXIGE conta: o crédito vive em `user_id`. Volta pra cá
+        // depois do login, com o pedido no endereço, pra não perder o funil.
+        const voltar = `/produtos${orderId ? `?orderId=${orderId}` : ""}`
+        router.push(`/entrar?next=${encodeURIComponent(voltar)}`)
+        return
+      }
+      const res = await fetch("/api/creditos/comprar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ productId: pacote.id, pedidoPendente: orderId ?? undefined }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok || !d.orderId) { alert(d.error ?? "Não foi possível iniciar a compra."); return }
+      const qs = new URLSearchParams({
+        orderId: d.orderId, productId: d.productId, productName: d.productName, price: String(d.price),
+      })
+      // Para onde voltar depois de pagar. O servidor é quem garante o débito
+      // do crédito; isto aqui só decide a TELA, pra pessoa cair na música
+      // dela e não numa tela de pacote que some com o pedido.
+      if (d.pedidoVinculado) qs.set("voltarPara", String(d.pedidoVinculado))
+      router.push(`/checkout?${qs}`)
+    } catch {
+      alert("Falha de conexão. Tente novamente.")
+    } finally {
+      setComprandoPacote(false)
+    }
+  }
+
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [zoomSrc, setZoomSrc] = useState<Record<string, string | null>>({})
 
@@ -673,6 +720,43 @@ function ProdutosContent() {
                 </div>
               )
             })}
+
+            {/* ── Pacote: oferta paralela, nunca um item da lista ──────────
+                Visualmente separado de propósito (linha, fundo neutro, sem
+                radio de seleção): a lista acima é "escolha UM destes"; isto
+                aqui é outra pergunta. Enfiá-lo entre os planos foi o que
+                quebrou pedido, porque virava "o plano de R$ 49,90". */}
+            {pacote && avulsaCredito && (
+              <div className="pt-6 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
+                <div className="rounded-[20px] p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <p className="text-sm font-semibold text-white mb-1">Vai fazer mais de uma?</p>
+                  <p className="text-sm text-white/55 leading-relaxed mb-3">
+                    {pacote.credits_granted} músicas por R$ {pacote.price.toFixed(2).replace(".", ",")} — R${" "}
+                    {(pacote.price / (pacote.credits_granted ?? 1)).toFixed(2).replace(".", ",")} cada, contra R${" "}
+                    {avulsaCredito.price.toFixed(2).replace(".", ",")} na avulsa.
+                  </p>
+
+                  {/* A frase que faz o bloco valer a pena estar aqui e não só
+                      na home: diz o que acontece com o pedido que a pessoa
+                      tem em mãos. Sem ela, comprar o pacote no meio do funil
+                      parece abandonar a música. */}
+                  {orderId && (
+                    <p className="text-sm font-medium mb-3" style={{ color: "#f0196b" }}>
+                      ✓ Esta música já sai paga com 1 crédito — sobram {(pacote.credits_granted ?? 1) - 1}.
+                    </p>
+                  )}
+
+                  <button
+                    onClick={comprarPacote}
+                    disabled={comprandoPacote}
+                    className="w-full py-3.5 rounded-2xl text-[15px] font-semibold text-white disabled:opacity-60"
+                    style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+                  >
+                    {comprandoPacote ? "Abrindo…" : `Levar ${pacote.credits_granted} músicas — R$ ${pacote.price.toFixed(2).replace(".", ",")}`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
 

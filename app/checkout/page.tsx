@@ -25,6 +25,19 @@ function CheckoutContent() {
   const price        = Number(searchParams.get("price") ?? "0")
   const deliveryId   = searchParams.get("deliveryId")   ?? undefined
 
+  // Para onde ir DEPOIS de pagar. Quase sempre é o próprio pedido — mas na
+  // compra de pacote feita de dentro do funil é a MÚSICA que o pacote acabou
+  // de pagar: a pessoa comprou dez para liberar aquela, e cair numa tela de
+  // "10 créditos na sua conta" faria o pedido dela parecer perdido.
+  //
+  // Um valor só, lido aqui, em vez de remendar os oito redirecionamentos que
+  // esta tela tem (cartão, PIX, retomada, corrida de duplo pagamento…). Com
+  // oito cópias, a próxima mudança acertaria sete.
+  //
+  // Só a TELA depende disto. O débito do crédito é feito no servidor, em
+  // ensurePaymentPrep, e acontece mesmo que ninguém volte.
+  const orderIdSucesso = searchParams.get("voltarPara") || orderId
+
   const [status, setStatus] = useState<"loading" | "ready" | "processing" | "pix" | "success" | "error">("loading")
   const [errorMsg, setErrorMsg] = useState("")
   const [pixData, setPixData] = useState<{ qrCodeBase64: string; qrCode: string; ticketUrl: string | null } | null>(null)
@@ -175,7 +188,7 @@ function CheckoutContent() {
         body: JSON.stringify({ orderId, productId }),
       })
       const d = await res.json().catch(() => ({}))
-      if (d.success || d.jaPago) { router.replace(`/sucesso?orderId=${orderId}&status=approved`); return }
+      if (d.success || d.jaPago) { router.replace(`/sucesso?orderId=${orderIdSucesso}&status=approved`); return }
       setErrorMsg(d.error ?? "Não foi possível usar seus créditos.")
       setStatus("error")
     } catch {
@@ -201,7 +214,7 @@ function CheckoutContent() {
       })
       const data = await res.json().catch(() => ({}))
       if (data.success || data.alreadyPaid) {
-        router.replace(`/sucesso?orderId=${orderId}&status=approved`)
+        router.replace(`/sucesso?orderId=${orderIdSucesso}&status=approved`)
         return
       }
       setErrorMsg(data.error ?? "Não foi possível concluir o pedido grátis.")
@@ -222,7 +235,7 @@ function CheckoutContent() {
         if (d?.paid) {
           if (pollRef.current) clearInterval(pollRef.current)
           const mp = d.mpPaymentId ? `&mpPaymentId=${d.mpPaymentId}` : ""
-          router.replace(`/sucesso?orderId=${orderId}&status=approved${mp}`)
+          router.replace(`/sucesso?orderId=${orderIdSucesso}&status=approved${mp}`)
         }
       } catch {}
     }, 4000)
@@ -274,7 +287,7 @@ function CheckoutContent() {
         const d = await fetch(`/api/orders/${orderId}`, { cache: "no-store" }).then((r) => r.json())
         if (d?.order?.email) { payerEmailRef.current = d.order.email; setOrderEmail(d.order.email); setEmailInput(d.order.email) }
         if (d?.order?.paymentStatus === "PAID") {
-          router.replace(`/sucesso?orderId=${orderId}&status=approved`)
+          router.replace(`/sucesso?orderId=${orderIdSucesso}&status=approved`)
           return
         }
       } catch {
@@ -287,7 +300,7 @@ function CheckoutContent() {
         const s = await fetch(`/api/payments/status?orderId=${orderId}`, { cache: "no-store" }).then((r) => r.json())
         if (s?.paid) {
           const mp = s.mpPaymentId ? `&mpPaymentId=${s.mpPaymentId}` : ""
-          router.replace(`/sucesso?orderId=${orderId}&status=approved${mp}`)
+          router.replace(`/sucesso?orderId=${orderIdSucesso}&status=approved${mp}`)
           return
         }
         if (s?.pix?.qrCodeBase64) {
@@ -381,7 +394,7 @@ function CheckoutContent() {
 
             // Pedido já estava pago (corrida): manda pro sucesso em vez de erro
             if (data.alreadyPaid) {
-              router.replace(`/sucesso?orderId=${orderId}&status=approved`)
+              router.replace(`/sucesso?orderId=${orderIdSucesso}&status=approved`)
               return
             }
 
@@ -400,7 +413,7 @@ function CheckoutContent() {
             }
 
             // Cartão aprovado: vai para a tela de sucesso
-            router.push(`/sucesso?orderId=${orderId}&status=${data.status}&mpPaymentId=${data.paymentId}`)
+            router.push(`/sucesso?orderId=${orderIdSucesso}&status=${data.status}&mpPaymentId=${data.paymentId}`)
           } catch {
             setErrorMsg("Falha de conexão. Tente novamente.")
             setStatus("error")

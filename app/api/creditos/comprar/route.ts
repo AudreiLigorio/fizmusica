@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
   const user = userData.user
 
-  const { productId } = await req.json().catch(() => ({}))
+  const { productId, pedidoPendente } = await req.json().catch(() => ({}))
   if (!productId) return NextResponse.json({ error: "Produto não informado." }, { status: 400 })
 
   const supabase = createServerClient()
@@ -44,6 +44,43 @@ export async function POST(req: NextRequest) {
   // caminho do pacote vender qualquer plano sem letra nem entrega.
   if (!produto.credits_granted || produto.credits_granted <= 0) {
     return NextResponse.json({ error: "Este produto não é um pacote." }, { status: 400 })
+  }
+
+  // O pedido de música que motivou a compra, quando ela parte do funil
+  // (/produtos). Guardado no pedido do PACOTE para que, ao creditar, 1 dos
+  // créditos pague esse pedido na hora.
+  //
+  // Validado aqui e não aceito de olhos fechados: é um id vindo do cliente, e
+  // sem conferir daria para pendurar o pacote no pedido de outra pessoa e
+  // pagar a música dela. As três condições são o que define "pedido de música
+  // meu e ainda em aberto".
+  let vinculo: string | null = null
+  if (pedidoPendente) {
+    const { data: pend } = await supabase
+      .from("orders")
+      .select("id, userId, email, paymentStatus, musicalStyle, voiceType, emotion, products(credits_granted)")
+      .eq("id", String(pedidoPendente))
+      .maybeSingle()
+
+    const prod = Array.isArray(pend?.products) ? pend?.products[0] : pend?.products
+    const ehPacote = Number((prod as { credits_granted?: number | null } | null)?.credits_granted ?? 0) > 0
+    const temBrief = !!pend && [pend.musicalStyle, pend.voiceType, pend.emotion]
+      .some((v) => String(v ?? "").trim() !== "")
+    // `userId` nulo é "ainda não vinculado", não "de outra pessoa" — o wizard
+    // cria o pedido sem dono. Nesse caso vale o e-mail, a mesma regra do
+    // vínculo automático.
+    const meu = !!pend && (
+      pend.userId === user.id ||
+      (pend.userId === null && (pend.email ?? "").trim().toLowerCase() === (user.email ?? "").trim().toLowerCase())
+    )
+
+    if (pend && meu && pend.paymentStatus !== "PAID" && !ehPacote && temBrief) {
+      vinculo = pend.id
+    } else {
+      // Não é erro: a compra do pacote segue de pé, só sem o débito
+      // automático. Recusar a venda porque o vínculo não serve seria pior.
+      console.warn("[creditos] pedido pendente recusado como vínculo:", pedidoPendente)
+    }
   }
 
   const agora = new Date().toISOString()
@@ -74,6 +111,7 @@ export async function POST(req: NextRequest) {
     recovery_stage: 0,
     lyricsApproved: false,
     lyricsReprocessCount: 0,
+    ...(vinculo ? { pacote_para_pedido: vinculo } : {}),
   })
 
   if (error) {
@@ -87,5 +125,8 @@ export async function POST(req: NextRequest) {
     productName: produto.name,
     price: Number(produto.price),
     credits: produto.credits_granted,
+    // O cliente usa isto para saber se vai voltar para a música ou para a
+    // tela do pacote depois de pagar.
+    pedidoVinculado: vinculo,
   })
 }

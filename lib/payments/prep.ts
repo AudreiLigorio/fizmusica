@@ -3,6 +3,7 @@ import { sendPaymentConfirmedEmail } from "@/app/services/emailService"
 import { logOrderEvent } from "@/lib/orderEvents"
 import { concederDiscosDoPedido, concederDiscoDeIndicacao } from "@/lib/fidelidade"
 import { creditarPacoteDoPedido } from "@/lib/credits"
+import { honrarPedidoVinculadoAoPacote } from "@/lib/creditos/pagarPedido"
 import crypto from "crypto"
 
 type DB = ReturnType<typeof createServerClient>
@@ -27,7 +28,18 @@ export async function ensurePaymentPrep(supabase: DB, orderId: string): Promise<
   // rotas de reconciliação do admin. Pendurar em qualquer um deles
   // repetiria o erro que já quebrou o e-mail de música pronta e o cupom de
   // fidelidade — automação em só um dos caminhos.
-  if (await creditarPacoteDoPedido(supabase, orderId)) return
+  if (await creditarPacoteDoPedido(supabase, orderId)) {
+    // Comprou o pacote de dentro do funil: 1 dos créditos paga AGORA a música
+    // que motivou a compra. Sem isto a pessoa compra "para esta música" e a
+    // música fica parada, não paga, sem o e-mail de aprovar a letra — e ela
+    // nem desconfia, porque pagou.
+    //
+    // Roda aqui, no servidor, e não no retorno do checkout: quem paga PIX e
+    // fecha a aba não volta para lugar nenhum. É o mesmo motivo pelo qual esta
+    // função existe.
+    await honrarPedidoVinculadoAoPacote(supabase, orderId)
+    return
+  }
 
   // Fidelidade ANTES do claim do token, de propósito: o claim tem saída
   // antecipada ("já preparado por outro caminho"), e pedido pago antes do
