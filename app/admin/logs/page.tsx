@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase"
 import Link from "next/link"
+import { Suspense } from "react"
 import ResolveButton from "./ResolveButton"
 import { fmtDateTimeBR } from "@/lib/date"
 import { getCreditBalance } from "@/lib/suno/client"
@@ -47,8 +48,75 @@ async function getSunoBalance(): Promise<{ credits: number | null; error: string
   }
 }
 
+// Carrega sozinho, fora do caminho crítico da página (ver o comentário em
+// AdminLogs). Erro aqui não pode derrubar a tela de alertas: o número de
+// armazenamento é informativo, os alertas é que são operação.
+async function UsoDoStorage() {
+  let storage
+  try {
+    storage = await getStorageUsage()
+  } catch (e) {
+    console.error("[admin/logs] uso do storage falhou:", e instanceof Error ? e.message : e)
+    return (
+      <div className="rounded-2xl border border-white/10 bg-black/40 p-5 mb-8">
+        <p className="text-sm text-gray-500">
+          Não foi possível medir o armazenamento agora. Os alertas abaixo não dependem disto.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+      <div className="rounded-2xl border border-white/10 bg-black/40 p-5 mb-8">
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <span className="text-sm">
+            <span className="font-bold text-lg">{fmtBytes(storage.totalBytes)}</span>{" "}
+            <span className="text-gray-500">de {fmtBytes(storage.limitBytes)} usados ({storage.percent}%)</span>
+          </span>
+          {storage.daysToFull != null && (
+            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
+              storage.daysToFull <= 30 ? "bg-red-500/15 text-red-400" :
+              storage.daysToFull <= 90 ? "bg-yellow-500/15 text-yellow-400" :
+              "bg-green-500/15 text-green-400"
+            }`}>
+              {storage.daysToFull === 0 ? "limite já atingido" : `estoura em ~${storage.daysToFull} dias no ritmo atual`}
+            </span>
+          )}
+        </div>
+        <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-4">
+          <div
+            className={`h-full rounded-full transition-all ${storage.percent >= 90 ? "bg-red-500" : storage.percent >= 70 ? "bg-yellow-500" : "bg-gradient-to-r from-pink-500 to-fuchsia-500"}`}
+            style={{ width: `${storage.percent}%` }}
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-3 text-xs">
+          {storage.buckets.map((b) => (
+            <div key={b.name}>
+              <p className="text-gray-500 mb-0.5">{b.name}</p>
+              <p className="font-medium">{fmtBytes(b.bytes)}</p>
+            </div>
+          ))}
+        </div>
+        {storage.percent >= 80 && (
+          <p className="text-xs text-yellow-400 mt-3">
+            Acima de 80% do plano Free — considere fazer upgrade pro plano Pro (100 GB) antes de estourar.
+          </p>
+        )}
+      </div>
+  )
+}
+
 export default async function AdminLogs() {
-  const [alerts, suno, storage] = await Promise.all([getAlerts(), getSunoBalance(), getStorageUsage()])
+  // O storage NÃO entra aqui. Ele sai num componente próprio, dentro de
+  // <Suspense>: medido em 30/10/2026, somar os buckets pela API do Storage
+  // custava 457 chamadas e 133 SEGUNDOS, estourando o tempo de função antes
+  // de a página renderizar — da tela, o menu "Logs" simplesmente não
+  // respondia. Esperar por ele no topo faz a parte que importa (os alertas)
+  // refém da parte decorativa.
+  //
+  // Com a migração 078 aplicada isso vira uma consulta só e o Suspense nem
+  // chega a piscar. Sem ela, a página abre na hora e o número chega depois.
+  const [alerts, suno] = await Promise.all([getAlerts(), getSunoBalance()])
   const open = alerts.filter((a) => !a.resolved)
 
   return (
@@ -95,42 +163,16 @@ export default async function AdminLogs() {
       </div>
 
       <h2 className="text-base font-semibold mb-3">Armazenamento (Supabase Storage)</h2>
-      <div className="rounded-2xl border border-white/10 bg-black/40 p-5 mb-8">
-        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <span className="text-sm">
-            <span className="font-bold text-lg">{fmtBytes(storage.totalBytes)}</span>{" "}
-            <span className="text-gray-500">de {fmtBytes(storage.limitBytes)} usados ({storage.percent}%)</span>
-          </span>
-          {storage.daysToFull != null && (
-            <span className={`text-xs font-bold px-2 py-1 rounded-lg ${
-              storage.daysToFull <= 30 ? "bg-red-500/15 text-red-400" :
-              storage.daysToFull <= 90 ? "bg-yellow-500/15 text-yellow-400" :
-              "bg-green-500/15 text-green-400"
-            }`}>
-              {storage.daysToFull === 0 ? "limite já atingido" : `estoura em ~${storage.daysToFull} dias no ritmo atual`}
-            </span>
-          )}
+      <Suspense fallback={
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-5 mb-8">
+          <p className="text-sm text-gray-500">Somando os arquivos…</p>
+          <div className="h-2 bg-white/5 rounded-full overflow-hidden mt-3">
+            <div className="h-full w-1/3 rounded-full bg-white/10 animate-pulse" />
+          </div>
         </div>
-        <div className="h-2 bg-white/5 rounded-full overflow-hidden mb-4">
-          <div
-            className={`h-full rounded-full transition-all ${storage.percent >= 90 ? "bg-red-500" : storage.percent >= 70 ? "bg-yellow-500" : "bg-gradient-to-r from-pink-500 to-fuchsia-500"}`}
-            style={{ width: `${storage.percent}%` }}
-          />
-        </div>
-        <div className="grid grid-cols-3 gap-3 text-xs">
-          {storage.buckets.map((b) => (
-            <div key={b.name}>
-              <p className="text-gray-500 mb-0.5">{b.name}</p>
-              <p className="font-medium">{fmtBytes(b.bytes)}</p>
-            </div>
-          ))}
-        </div>
-        {storage.percent >= 80 && (
-          <p className="text-xs text-yellow-400 mt-3">
-            Acima de 80% do plano Free — considere fazer upgrade pro plano Pro (100 GB) antes de estourar.
-          </p>
-        )}
-      </div>
+      }>
+        <UsoDoStorage />
+      </Suspense>
 
       {alerts.length === 0 ? (
         <div className="text-center py-20 text-gray-500">

@@ -51,8 +51,31 @@ async function estimateDaysToFull(totalBytes: number, photoBytes: number, songBy
   return Math.round(remaining / dailyGrowth)
 }
 
+// Soma os buckets numa consulta só, pela função do banco (migração 078).
+// Devolve null quando a função ainda não existe, pra quem chama cair na
+// varredura antiga em vez de quebrar.
+async function somarPeloBanco(): Promise<Record<string, number> | null> {
+  const supabase = createServerClient()
+  const { data, error } = await supabase.rpc("uso_do_storage")
+  if (error || !Array.isArray(data)) return null
+  const out: Record<string, number> = {}
+  for (const b of BUCKETS) out[b] = 0
+  for (const linha of data as { bucket: string; bytes: number | string }[]) {
+    if (linha.bucket in out) out[linha.bucket] = Number(linha.bytes) || 0
+  }
+  return out
+}
+
 export async function getStorageUsage() {
-  const perBucket = await Promise.all(BUCKETS.map((b) => sumBucket(b)))
+  // Caminho rápido primeiro. A varredura pela API do Storage custa uma
+  // chamada POR PASTA, recursiva: 457 chamadas e 133 SEGUNDOS medidos em
+  // 30/10/2026, contra uma consulta só no banco. E o custo cresce a cada
+  // pedido novo, então o caminho lento só existe como rede de segurança
+  // enquanto a migração 078 não estiver aplicada.
+  const doBanco = await somarPeloBanco()
+  const perBucket = doBanco
+    ? BUCKETS.map((b) => doBanco[b] ?? 0)
+    : await Promise.all(BUCKETS.map((b) => sumBucket(b)))
   const totalBytes = perBucket.reduce((a, b) => a + b, 0)
   const byName = Object.fromEntries(BUCKETS.map((name, i) => [name, perBucket[i]]))
 
