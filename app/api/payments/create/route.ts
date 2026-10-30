@@ -5,6 +5,7 @@ import { detectDuplicatePayment } from "@/lib/paymentAlerts"
 import { validateCoupon } from "@/lib/coupons"
 import { concederDiscosDoPedido, concederDiscoDeIndicacao, descontoDeFidelidade } from "@/lib/fidelidade"
 import { melhorDesconto } from "@/lib/descontoRegra"
+import { recusaDePacoteEmPedidoDeMusica } from "@/lib/credits"
 
 const client = new MercadoPago({
   accessToken: process.env.MP_ACCESS_TOKEN!,
@@ -50,6 +51,14 @@ export async function POST(req: Request) {
         { success: false, alreadyPaid: true, error: "Este pedido já foi pago." },
         { status: 409 }
       )
+    }
+
+    // Pacote de créditos não pode ser pago no lugar do plano de uma música:
+    // o pedido sairia creditado e sem preparo, e a música encomendada morreria
+    // sem e-mail de aprovação de letra. Ver o helper para o caso completo.
+    const recusa = await recusaDePacoteEmPedidoDeMusica(supabase, orderId, productId)
+    if (recusa) {
+      return NextResponse.json({ success: false, error: recusa }, { status: 400 })
     }
 
     // Resolve um e-mail VÁLIDO para o pagador.

@@ -37,6 +37,8 @@ type Product = {
   feat_revision?: boolean | null
   // Migração 071: quantos créditos este plano custa (null = só dinheiro).
   credit_price?: number | null
+  // Migração 071: quantos créditos a COMPRA concede (> 0 = é pacote, não música).
+  credits_granted?: number | null
   product_delivery_options: DeliveryOption[]
   product_images: ProductImage[]
 }
@@ -223,7 +225,16 @@ function ProdutosContent() {
       .catch(() => {})
   }, [])
 
-  const produtosVisiveis = products
+  // O PACOTE não entra aqui. Esta tela é o funil de UMA música: quem chega
+  // nela veio do wizard, com ocasião e história já descritas. O pacote tem
+  // `photo_limit` 0 e caía no grupo "Para você", ao lado da avulsa, por
+  // R$ 49,90 — lido como plano melhor por quem só comparava preço. Escolher
+  // ele aqui trocava o plano da música pelo pacote e matava o pedido (ver
+  // `recusaDePacoteEmPedidoDeMusica` em lib/credits.ts).
+  //
+  // Ele continua à venda, na porta certa: o bloco próprio da vitrine da home,
+  // que cria um pedido sem briefing por /api/creditos/comprar.
+  const produtosVisiveis = products.filter((p) => (p.credits_granted ?? 0) <= 0)
 
   // O botão "Salvando…" é transitório: só vale durante o PATCH em andamento.
   // Ao voltar do checkout pelo botão do navegador, o Chrome restaura a página do

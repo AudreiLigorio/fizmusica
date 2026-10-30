@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase"
 import { validateCoupon } from "@/lib/coupons"
 import { ensurePaymentPrep } from "@/lib/payments/prep"
+import { recusaDePacoteEmPedidoDeMusica } from "@/lib/credits"
 
 // Conclui um pedido cujo total foi ZERADO por um cupom (ex.: cupom 100% de teste
 // do youtuber). O Mercado Pago não aceita cobrança de R$ 0, então este caminho
@@ -32,6 +33,11 @@ export async function POST(req: Request) {
     // Preço SEMPRE do banco (nunca confia no client)
     const { data: product } = await supabase.from("products").select("price").eq("id", productId).single()
     if (!product) return NextResponse.json({ success: false, error: "Produto inválido." }, { status: 400 })
+
+    // Mesma recusa do caminho pago: cupom de 100% não é atalho para trocar o
+    // plano de uma música por um pacote de créditos.
+    const recusa = await recusaDePacoteEmPedidoDeMusica(supabase, orderId, productId)
+    if (recusa) return NextResponse.json({ success: false, error: recusa }, { status: 400 })
 
     let priceExtra = 0
     if (deliveryOptionId) {

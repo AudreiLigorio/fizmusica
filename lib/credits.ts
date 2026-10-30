@@ -198,3 +198,57 @@ export function ehPedidoDePacote(order: { products?: unknown } | null | undefine
   const p = Array.isArray(order?.products) ? order?.products[0] : order?.products
   return creditosConcedidos(p as { credits_granted?: number | null } | null) > 0
 }
+
+/**
+ * Um pedido que já carrega briefing de música NÃO pode ser pago como pacote.
+ * Devolve a mensagem de recusa, ou `null` quando a compra é legítima.
+ *
+ * Por que isto existe: `/produtos` listava todo produto ativo, e o pacote
+ * (`photo_limit` 0) caía no grupo "Para você", ao lado da música avulsa, por
+ * R$ 49,90. Quem viesse do wizard podia escolhê-lo achando que era um plano
+ * melhor. O pagamento seguia, `ensurePaymentPrep` reconhecia o pacote,
+ * creditava e SAÍA ANTES DO PREPARO — sem `photo_token` e sem o e-mail
+ * "aprove sua letra". A pessoa pagava e a música que acabou de encomendar
+ * morria ali. Sem conta era pior: `creditarPacoteDoPedido` não tinha a quem
+ * creditar e a compra não virava nem crédito nem música.
+ *
+ * A regra olha o PEDIDO, não o produto, porque é o pedido que carrega a
+ * expectativa. Estilo, voz e emoção são obrigatórios no wizard
+ * (`createOrderSchema`, `min(1)`) e vêm vazios no pedido de pacote, criado por
+ * `/api/creditos/comprar` — então "tem briefing" separa os dois sem depender
+ * de texto mágico. Conferido nos 278 pedidos do banco em 30/10/2026: nenhum
+ * pedido de música tem qualquer um dos três vazio.
+ *
+ * Vive aqui, e não dentro de uma das rotas, pela lição que já custou o e-mail
+ * de música pronta e o cupom de fidelidade: automação pendurada em um só dos
+ * caminhos de pagamento é automação que falta nos outros.
+ */
+export async function recusaDePacoteEmPedidoDeMusica(
+  supabase: DB,
+  orderId: string,
+  productId: string,
+): Promise<string | null> {
+  const { data: produto } = await supabase
+    .from("products")
+    .select("credits_granted")
+    .eq("id", productId)
+    .maybeSingle()
+
+  if (creditosConcedidos(produto) <= 0) return null // não é pacote: nada a checar
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("musicalStyle, voiceType, emotion")
+    .eq("id", orderId)
+    .maybeSingle()
+
+  // Pedido inexistente não é problema desta função — quem chama já recusa antes.
+  if (!order) return null
+
+  const temBrief = [order.musicalStyle, order.voiceType, order.emotion].some(
+    (v) => String(v ?? "").trim() !== "",
+  )
+  if (!temBrief) return null
+
+  return "Este pedido é de uma música, e o pacote não substitui o plano dela. Compre o pacote em Minha Carreira — depois o crédito paga esta música."
+}
