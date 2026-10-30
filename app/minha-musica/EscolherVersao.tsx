@@ -8,10 +8,15 @@ type Track = { audioId: string; audioUrl: string; imageUrl: string | null; title
 export default function EscolherVersao({
   orderId,
   tracks,
+  temQrCode = true,
   onChosen,
 }: {
   orderId: string
   tracks: Track[]
+  // Plano sem QR não deve ouvir falar de QR. O padrão é `true` porque quem
+  // não passa a prop são chamadas antigas, e prometer a mais num plano que
+  // tem é menos grave que esconder de quem tem.
+  temQrCode?: boolean
   onChosen?: () => void
 }) {
   const [busy, setBusy] = useState<string | null>(null)
@@ -46,7 +51,7 @@ export default function EscolherVersao({
             escolha decide — que é o que a pessoa precisa saber para escolher
             (decisão do Audrei: simplificar em vez de detalhar). */}
         <p className="text-white/55 text-sm mt-0.5">
-          Ouça as duas e escolha a sua. A escolhida é a que vai no <strong>QR Code</strong>, no
+          Ouça as duas e escolha a sua. A escolhida é a que vai{temQrCode ? <> no <strong>QR Code</strong>,</> : null} no
           link de compartilhar e no <strong>download</strong>.
         </p>
       </div>

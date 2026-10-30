@@ -772,7 +772,7 @@ function MinhaMusicaContent() {
 
         {/* ESCOLHER VERSÃO — versões liberadas, cliente ainda não escolheu */}
         {escolhaPendente && (
-          <EscolherVersao orderId={order.id} tracks={order.tracks!} onChosen={recarregarEMostrarPedidos} />
+          <EscolherVersao orderId={order.id} tracks={order.tracks!} temQrCode={(order.features ?? TUDO).qrcode} onChosen={recarregarEMostrarPedidos} />
         )}
 
         {/* AJUSTE AUTOMÁTICO NO PEDIDO: o estúdio de IA não grava citando nome
@@ -983,7 +983,12 @@ function MinhaMusicaContent() {
               {order.linkAtivo === false && (
                 <p className="w-full text-[13px] text-white/40 leading-relaxed">
                   🔒 Terminou o prazo{order.linkPrazoDias ? ` de ${order.linkPrazoDias} dias` : ""} de
-                  link público do seu plano — o QR Code, o compartilhamento e as fotos saíram do ar.
+                  link público do seu plano — {(() => {
+                    const f = order.features ?? TUDO
+                    const itens = [f.qrcode ? "o QR Code" : null, "o compartilhamento", f.fotos > 0 ? "as fotos" : null].filter(Boolean) as string[]
+                    const lista = itens.length === 1 ? itens[0] : `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`
+                    return `${lista} ${itens.length === 1 ? "saiu" : "saíram"} do ar.`
+                  })()}
                   A música continua sua: dá pra baixar o MP3 aqui.
                 </p>
               )}

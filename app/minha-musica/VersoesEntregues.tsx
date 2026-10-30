@@ -198,7 +198,11 @@ export default function VersoesEntregues({
       {/* ── PRINCIPAL ── só a versão escolhida; "ouvir a outra" revela pra trocar */}
       {active === "principal" && (
         <div className="space-y-3">
-          <p className="text-white/60 text-sm">Ouça as versões e escolha a <strong className="text-white/80">principal</strong> — é ela que vai no QR Code e no link. {features.revisao && canRevise ? "Se nenhuma te agradou, você pode pedir para refazer." : "Você pode trocar quando quiser."}</p>
+          {/* "QR Code" só em plano que tem QR. O resto deste arquivo já consulta
+                `features` (as abas, o aviso de prazo), e só esta frase tinha
+                ficado de fora — prometendo no Essencial um QR que o plano
+                não inclui. */}
+            <p className="text-white/60 text-sm">Ouça as versões e escolha a <strong className="text-white/80">principal</strong> — é ela que vai {features.qrcode ? "no QR Code e no link" : "no link de compartilhar"}. {features.revisao && canRevise ? "Se nenhuma te agradou, você pode pedir para refazer." : "Você pode trocar quando quiser."}</p>
 
           <div className="rounded-xl border border-pink-500/40 bg-pink-500/[0.06] p-4">
             <div className="flex items-center justify-between mb-2">
@@ -375,7 +379,20 @@ export default function VersoesEntregues({
                 {linkPrazoDias
                   ? `Terminou o prazo de ${linkPrazoDias} dias de link público do seu plano. `
                   : "Terminou o prazo de link público do seu plano. "}
-                O QR Code, o compartilhamento e as fotos saíram do ar.{" "}
+                {/* A lista cita só o que o plano REALMENTE tinha: sem isto,
+                    o Essencial era avisado de que perdeu QR e fotos que nunca
+                    teve. A concordância acompanha o tamanho da lista. */}
+                {(() => {
+                  const itens = [
+                    features.qrcode ? "o QR Code" : null,
+                    "o compartilhamento",
+                    features.fotos > 0 ? "as fotos" : null,
+                  ].filter(Boolean) as string[]
+                  const lista = itens.length === 1
+                    ? itens[0]
+                    : `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`
+                  return `${lista.charAt(0).toUpperCase()}${lista.slice(1)} ${itens.length === 1 ? "saiu" : "saíram"} do ar.`
+                })()}{" "}
                 <strong className="text-white/60">Sua música continua sua</strong> — dá pra
                 ouvir aqui e baixar o MP3 quando quiser.
               </p>

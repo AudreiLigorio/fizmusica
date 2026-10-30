@@ -41,7 +41,10 @@ const POR_ABA: Record<AbaAjuda, { titulo: string; itens: Item[] }> = {
       },
       {
         q: "Recebi duas versões. E agora?",
-        a: "As duas são suas. Você escolhe a principal — é a que vai no player, no link e no QR Code. Dá pra trocar quando quiser.",
+        // O FAQ é uma lista estática, então não conhece o plano de quem lê.
+        // A saída é a mesma que a resposta de baixo já usava: dizer "quando o
+        // seu produto inclui" em vez de prometer a todos.
+        a: "As duas são suas. Você escolhe a principal — é a que vai no player, no link e no QR Code, quando o seu produto inclui. Dá pra trocar quando quiser.",
       },
       {
         q: "Não gostei. Posso pedir outra?",
