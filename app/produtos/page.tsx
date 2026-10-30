@@ -11,7 +11,7 @@ import { useBloquearCompraNoApp } from "@/lib/canal"
 import { supabase } from "@/lib/supabase"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
-import { avisar } from "@/app/components/Dialogo"
+import { avisar, confirmar } from "@/app/components/Dialogo"
 
 type DeliveryOption = {
   id: string
@@ -252,6 +252,23 @@ function ProdutosContent() {
   // pegou o plano de entrada costuma subir de plano.
   const planoDaHome = searchParams.get("produto")
 
+  // De qual grupo veio a escolha da home. Quem clicou na Retrospectiva lá já
+  // decidiu "é presente"; chegar aqui e encontrar o Essencial de R$ 9,90 como
+  // PRIMEIRA coisa da tela, com o plano dela em último lugar, é a tela
+  // convidando ao erro depois de a pessoa ter contado a história inteira.
+  const grupoDeOrigem = planoDaHome
+    ? (products.find((p) => p.id === planoDaHome) ? planGroup(products.find((p) => p.id === planoDaHome)!) : null)
+    : null
+
+  // O grupo de origem vem primeiro; o outro recolhe. Recolher e não ESCONDER
+  // é deliberado: quem clicou na Retrospectiva pode não saber que custa
+  // R$ 69,90, e tirar o plano de R$ 9,90 da tela faria parte dessas pessoas
+  // abandonar em vez de comprar o mais barato — perde venda e parece
+  // armadilha. Um toque continua resolvendo.
+  const ordemDosGrupos: ("voce" | "presentear")[] =
+    grupoDeOrigem === "presentear" ? ["presentear", "voce"] : ["voce", "presentear"]
+  const [outrosAbertos, setOutrosAbertos] = useState(false)
+
   useEffect(() => {
     fetch("/api/produtos")
       .then((r) => r.json())
@@ -326,7 +343,29 @@ function ProdutosContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [delivery, selected])
 
-  function handleSelectProduct(product: Product) {
+  async function handleSelectProduct(product: Product) {
+    // Trocar para um plano SEM fotos, vindo de um COM fotos, é a troca que
+    // machuca: a pessoa veio pela retrospectiva, contou a história inteira e
+    // sai com um produto que não tem foto nenhuma — e só descobre depois de
+    // pagar. Perguntar aqui pega inclusive quem troca de propósito sem
+    // entender a diferença, que é o caso mais comum.
+    //
+    // Só nesse sentido. Subir de plano não tira nada de ninguém.
+    //
+    // `confirmar()` do projeto, nunca o confirm do navegador (regra da casa).
+    const perdeFotos = (selected?.photo_limit ?? 0) > 0 && (product.photo_limit ?? 0) === 0
+    if (perdeFotos) {
+      const trocar = await confirmar({
+        titulo: "Trocar de plano?",
+        mensagem:
+          `A ${selected!.name} inclui ${selected!.photo_limit} fotos sincronizadas com a música. ` +
+          `O ${product.name} não tem fotos — só a música, a capa e a letra acompanhando.`,
+        botao: `Trocar para ${product.name}`,
+        cancelar: `Manter a ${selected!.name}`,
+      })
+      if (!trocar) return
+    }
+
     setSelected(product)
     setDelivery(null)
     setSavingShipping(false)
@@ -537,9 +576,24 @@ function ProdutosContent() {
           </div>
         ) : step === 1 ? (
           <div className="space-y-8 mb-4 md:mb-10">
-            {(["voce", "presentear"] as const).map((group) => {
+            {ordemDosGrupos.map((group) => {
               const items = produtosVisiveis.filter((p) => planGroup(p) === group)
               if (items.length === 0) return null
+              // Sem origem (entrou direto no wizard), nada recolhe: não há
+              // decisão anterior a respeitar, e os dois grupos são iguais.
+              const ehOutro = !!grupoDeOrigem && group !== grupoDeOrigem
+              if (ehOutro && !outrosAbertos) {
+                return (
+                  <button
+                    key={group}
+                    onClick={() => setOutrosAbertos(true)}
+                    className="text-sm underline underline-offset-4"
+                    style={{ color: "rgba(255,255,255,0.5)" }}
+                  >
+                    Ver outros planos
+                  </button>
+                )
+              }
               return (
                 <div key={group}>
                   <div className="flex items-center gap-2 mb-3">
