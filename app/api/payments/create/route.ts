@@ -82,6 +82,10 @@ export async function POST(req: Request) {
     // Aplica cupom (validado no servidor — não confia no client)
     let finalPrice = grossPrice
     let appliedCouponCode: string | null = null
+    // O ID anda junto do código, mas só quando o desconto vem de um cupom DE
+    // VERDADE: o desconto de fidelidade também escreve em `coupon_code`, com
+    // um código sintético, e não pode contar como uso de cupom nenhum.
+    let appliedCouponId: string | null = null
     let discountAmount = 0
     if (couponCode) {
       const cv = await validateCoupon(supabase, String(couponCode), grossPrice, productId)
@@ -89,6 +93,7 @@ export async function POST(req: Request) {
         finalPrice        = cv.finalTotal
         discountAmount    = cv.discount
         appliedCouponCode = cv.coupon.code
+        appliedCouponId   = cv.coupon.id
       }
     }
 
@@ -97,8 +102,10 @@ export async function POST(req: Request) {
     // deixa "acumula ou não" como decisão de admin, não como padrão.
     //
     // Registrado no mesmo campo de cupom, com código sintético CARREIRA-N{n}:
-    // mantém a contabilidade de desconto concedido num lugar só, e não polui a
-    // contagem de uso dos cupons reais (que é derivada por código).
+    // mantém a contabilidade de desconto concedido num lugar só. Não polui a
+    // contagem de uso dos cupons reais porque ela passou a ser derivada do
+    // VÍNCULO (`coupon_id`, migração 075), e o sintético não tem vínculo —
+    // por código, um cupom chamado CARREIRA-N1 colidiria com ele.
     const { data: pedidoDono } = await supabase
       .from("orders").select("userId").eq("id", orderId).maybeSingle()
     const ehFisico = (product.category as string | null ?? "").toUpperCase().includes("PHYSICAL")
@@ -112,6 +119,8 @@ export async function POST(req: Request) {
       finalPrice        = Math.max(0, grossPrice - vencedor.desconto)
       discountAmount    = vencedor.desconto
       appliedCouponCode = vencedor.codigo
+      // O cupom perdeu para a fidelidade: não foi usado, e o vínculo cai.
+      appliedCouponId   = null
     }
 
     const baseUrl = (process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "")
@@ -174,7 +183,7 @@ export async function POST(req: Request) {
       .update({
         productId,
         ...(deliveryOptionId ? { deliveryOptionId } : {}),
-        ...(appliedCouponCode ? { coupon_code: appliedCouponCode, discount_amount: discountAmount } : {}),
+        ...(appliedCouponCode ? { coupon_code: appliedCouponCode, coupon_id: appliedCouponId, discount_amount: discountAmount } : {}),
         updatedAt: new Date().toISOString(),
       })
       .eq("id", orderId)

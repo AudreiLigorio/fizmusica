@@ -16,17 +16,25 @@ export type Coupon = {
   product_id: string | null
 }
 
-// Nº de usos de um cupom = quantidade de pedidos PAGOS que o carregam.
-// Fonte da verdade (em vez do contador `used_count`, que subcontava PIX e podia
-// duplicar). `orders.coupon_code` é gravado na criação da cobrança, então cobre
+// Nº de usos de um cupom = quantidade de pedidos PAGOS que apontam para ELE.
+//
+// Fonte da verdade (em vez do contador `used_count`, que subcontava PIX e
+// podia duplicar). O vínculo é gravado na criação da cobrança, então cobre
 // cartão e PIX igualmente.
-export async function countCouponUses(supabase: SupabaseClient, code: string): Promise<number> {
-  const clean = String(code ?? "").trim()
-  if (!clean) return 0
+//
+// POR ID, NÃO POR CÓDIGO (migração 075). Contar por texto parecia equivalente
+// e não é: `orders.coupon_code` é histórico e nunca some, então um cupom
+// apagado e recriado com o MESMO código fazia o novo nascer herdando os usos
+// do antigo — e um "máx. de usos 10" podia já começar esgotado. O admin tem
+// botão Excluir, então o caminho era alcançável pela tela, e ninguém precisa
+// lembrar de código nenhum pra cair nele.
+export async function countCouponUses(supabase: SupabaseClient, couponId: string): Promise<number> {
+  const id = String(couponId ?? "").trim()
+  if (!id) return 0
   const { count } = await supabase
     .from("orders")
     .select("id", { count: "exact", head: true })
-    .ilike("coupon_code", clean)
+    .eq("coupon_id", id)
     .eq("paymentStatus", "PAID")
   return count ?? 0
 }
@@ -43,7 +51,7 @@ export async function getActivePublicCoupon(supabase: SupabaseClient): Promise<C
   const now = Date.now()
   for (const c of data ?? []) {
     if (c.expires_at != null && new Date(c.expires_at).getTime() <= now) continue
-    if (c.max_uses != null && (await countCouponUses(supabase, c.code)) >= c.max_uses) continue
+    if (c.max_uses != null && (await countCouponUses(supabase, c.id)) >= c.max_uses) continue
     return c as Coupon
   }
   return null
@@ -76,7 +84,7 @@ export async function checkCouponActive(
   if (!coupon.active) return { valid: false, reason: "Cupom inativo." }
   if (coupon.expires_at && new Date(coupon.expires_at).getTime() < Date.now())
     return { valid: false, reason: "Cupom expirado." }
-  if (coupon.max_uses != null && (await countCouponUses(supabase, coupon.code)) >= coupon.max_uses)
+  if (coupon.max_uses != null && (await countCouponUses(supabase, coupon.id)) >= coupon.max_uses)
     return { valid: false, reason: "Cupom esgotado." }
 
   return { valid: true, coupon: coupon as Coupon }

@@ -64,6 +64,9 @@ export async function POST(req: Request) {
         productId,
         ...(deliveryOptionId ? { deliveryOptionId } : {}),
         coupon_code: cv.coupon.code,
+        // O vínculo é o que a contagem de usos lê (migração 075). O código
+        // continua ao lado como registro do que foi aplicado nesta compra.
+        coupon_id: cv.coupon.id,
         discount_amount: cv.discount,
         paymentStatus: "PAID",
         updatedAt: new Date().toISOString(),
