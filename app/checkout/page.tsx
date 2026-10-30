@@ -607,26 +607,13 @@ function CheckoutContent() {
             </div>
           )}
 
-          {/* Container do Brick — escondido no pedido grátis (não há o que cobrar) */}
-          <div
-            id="payment-brick-container"
-            ref={brickRef}
-            className={status === "processing" || status === "pix" || isFreeOrder ? "opacity-0 pointer-events-none h-0 overflow-hidden" : ""}
-          />
-
-          {/* Tem crédito, mas não vale aqui. Linha pequena, sem caixa colorida
-              e sem botão: é informação, não oferta — competir com o botão de
-              pagar seria o pior dos dois mundos. */}
-          {creditoNaoVale && status !== "processing" && status !== "pix" && (
-            <p className="mb-5 text-[13px] text-white/45 leading-relaxed">
-              Seus {saldoCreditos} {saldoCreditos === 1 ? "crédito vale" : "créditos valem"} nas músicas avulsas.
-              Este plano inclui a retrospectiva de fotos e o cartão para presentear, e é pago à parte.
-            </p>
-          )}
-
-          {/* Pagar com crédito do pacote. Fica ACIMA do cartão/PIX e não os
-              esconde: é alternativa, não substituição — a pessoa pode preferir
-              guardar o crédito e pagar esta. */}
+          {/* Pagar com crédito do pacote.
+              Fica ANTES do cartão/PIX no DOM, não só na intenção: na primeira
+              versão este bloco foi inserido depois do container do Brick e
+              aparecia EMBAIXO do botão "Pagar" — quem tinha crédito via
+              primeiro o que não precisava, e a ação certa ficava no rodapé.
+              Não esconde os meios de pagamento: é alternativa, não
+              substituição, e alguém pode preferir guardar o crédito. */}
           {podeUsarCredito && status !== "processing" && status !== "pix" && (
             <div className="mb-5">
               <div className="rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/[0.08] p-4">
@@ -647,6 +634,23 @@ function CheckoutContent() {
               </div>
               <p className="text-center text-[13px] text-white/35 mt-3">ou pague normalmente abaixo</p>
             </div>
+          )}
+
+          {/* Container do Brick — escondido no pedido grátis (não há o que cobrar) */}
+          <div
+            id="payment-brick-container"
+            ref={brickRef}
+            className={status === "processing" || status === "pix" || isFreeOrder ? "opacity-0 pointer-events-none h-0 overflow-hidden" : ""}
+          />
+
+          {/* Tem crédito, mas não vale aqui. Linha pequena, sem caixa colorida
+              e sem botão: é informação, não oferta — competir com o botão de
+              pagar seria o pior dos dois mundos. */}
+          {creditoNaoVale && status !== "processing" && status !== "pix" && (
+            <p className="mb-5 text-[13px] text-white/45 leading-relaxed">
+              Seus {saldoCreditos} {saldoCreditos === 1 ? "crédito vale" : "créditos valem"} nas músicas avulsas.
+              Este plano inclui a retrospectiva de fotos e o cartão para presentear, e é pago à parte.
+            </p>
           )}
 
           {/* Pedido grátis — cupom zerou o total (ex.: 100% de teste) */}

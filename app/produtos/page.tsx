@@ -8,6 +8,7 @@ import Footer from "@/app/components/Footer"
 import JourneyProgress from "@/app/components/JourneyProgress"
 import AvisoCompraApp from "@/app/components/AvisoCompraApp"
 import { useBloquearCompraNoApp } from "@/lib/canal"
+import { supabase } from "@/lib/supabase"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 import { avisar } from "@/app/components/Dialogo"
@@ -34,6 +35,8 @@ type Product = {
   feat_lyrics_sync?: boolean | null
   feat_qrcode?: boolean | null
   feat_revision?: boolean | null
+  // Migração 071: quantos créditos este plano custa (null = só dinheiro).
+  credit_price?: number | null
   product_delivery_options: DeliveryOption[]
   product_images: ProductImage[]
 }
@@ -116,6 +119,67 @@ function ProdutosContent() {
   const [checkingCoupon, setCheckingCoupon] = useState(false)
 
   // "detalhes" expandido e foto ampliada por card — vários podem estar abertos.
+  // SALDO DE CRÉDITOS nesta tela, e não só no checkout.
+  //
+  // Antes a pessoa com 5 créditos atravessava a escolha do plano sem nenhuma
+  // menção a eles e só descobria no fim, abaixo do botão "Pagar". Crédito é
+  // dinheiro JÁ PAGO: mandar alguém até a tela de cobrança para gastar o que
+  // já gastou é pedir que atravesse uma catraca paga.
+  //
+  // O crachá aparece só no card que aceita — e isso responde sozinho "onde
+  // meu crédito vale?", sem nenhuma linha explicando onde não vale.
+  const [saldoCreditos, setSaldoCreditos] = useState(0)
+  const [usandoCredito, setUsandoCredito] = useState<string | null>(null)
+
+  useEffect(() => {
+    let vivo = true
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const r = await fetch("/api/creditos", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).then((x) => x.json()).catch(() => null)
+      if (vivo) setSaldoCreditos(Number(r?.saldo ?? 0))
+    })()
+    return () => { vivo = false }
+  }, [])
+
+  function custoEmCreditos(p: Product): number | null {
+    const c = p.credit_price
+    return typeof c === "number" && c > 0 ? c : null
+  }
+  function podeUsarCredito(p: Product): boolean {
+    const c = custoEmCreditos(p)
+    return c !== null && saldoCreditos >= c && !!orderId
+  }
+
+  // Gasta o crédito e PULA o checkout: não há nada a cobrar.
+  //
+  // O rótulo do botão é a confirmação. Um "Selecionar" genérico que
+  // silenciosamente gastasse um crédito seria pior que um diálogo a mais.
+  // Toque repetido não gasta dois: o índice único (order_id, 'consumo')
+  // barra a segunda tentativa do mesmo pedido.
+  async function usarCredito(p: Product) {
+    if (!orderId) return
+    setUsandoCredito(p.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { router.push("/entrar"); return }
+      const res = await fetch("/api/creditos/usar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ orderId, productId: p.id }),
+      })
+      const d = await res.json().catch(() => ({}))
+      if (d.success || d.jaPago) { router.push(`/sucesso?orderId=${orderId}&status=approved`); return }
+      alert(d.error ?? "Não foi possível usar seus créditos.")
+    } catch {
+      alert("Falha de conexão. Tente novamente.")
+    } finally {
+      setUsandoCredito(null)
+    }
+  }
+
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [zoomSrc, setZoomSrc] = useState<Record<string, string | null>>({})
 
@@ -322,7 +386,15 @@ function ProdutosContent() {
                 <h1 className="text-xl lg:text-2xl font-bold mb-1 leading-tight tracking-tight">
                   Selecione o produto ideal
                 </h1>
-                <p className="text-gray-400 text-[15px]">Escolha abaixo e prossiga para o pagamento.</p>
+                {/* "prossiga para o pagamento" fica falso pra quem vai usar crédito —
+                    esse caminho não passa por cobrança nenhuma. */}
+                <p className="text-gray-400 text-[15px]">Escolha o plano da sua música.</p>
+                {saldoCreditos > 0 && (
+                  <p className="mt-2 inline-flex items-center gap-2 text-[13px] font-semibold px-3 py-1.5 rounded-full"
+                     style={{ color: "#f0abfc", background: "rgba(240,25,107,0.12)", border: "1px solid rgba(240,25,107,0.3)" }}>
+                    💿 Você tem {saldoCreditos} {saldoCreditos === 1 ? "crédito" : "créditos"}
+                  </p>
+                )}
 
                 {/* Banner do cupom ativo */}
                 {promoCoupon && (
@@ -471,6 +543,11 @@ function ProdutosContent() {
                             <h3 className="text-[17px] font-semibold leading-tight min-w-0">{product.name}</h3>
                             <span className="text-[17px] font-semibold whitespace-nowrap shrink-0" style={{ color: "#f472b6" }}>
                               R$ {fmt(product.price)}
+                              {podeUsarCredito(product) && (
+                                <span className="text-[13px] font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                                  {" "}ou {custoEmCreditos(product)} {custoEmCreditos(product) === 1 ? "crédito" : "créditos"}
+                                </span>
+                              )}
                             </span>
                           </div>
 
@@ -488,6 +565,25 @@ function ProdutosContent() {
                             </div>
                           )}
 
+                          {/* Ação primária de quem tem crédito: pula a tela de
+                              pagamento inteira. "Selecionar e pagar" continua
+                              logo abaixo — alguém pode preferir guardar o
+                              crédito e pagar esta, e tirar a escolha seria
+                              decidir pela pessoa o que fazer com o que ela
+                              comprou. */}
+                          {podeUsarCredito(product) && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); usarCredito(product) }}
+                              disabled={usandoCredito !== null}
+                              className="w-full mb-3 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all hover:brightness-110"
+                              style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)" }}
+                            >
+                              {usandoCredito === product.id
+                                ? "Liberando sua música…"
+                                : `Usar ${custoEmCreditos(product)} ${custoEmCreditos(product) === 1 ? "crédito" : "créditos"}`}
+                            </button>
+                          )}
+
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-sm" style={{ color: isSelected ? "#f472b6" : "rgba(255,255,255,0.6)" }}>
                               <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all"
@@ -498,7 +594,7 @@ function ProdutosContent() {
                                   </svg>
                                 )}
                               </div>
-                              {isSelected ? "Selecionado" : "Selecionar"}
+                              {isSelected ? "Selecionado" : (podeUsarCredito(product) ? "Selecionar e pagar" : "Selecionar")}
                             </div>
 
                             {withPhotoCount && (
