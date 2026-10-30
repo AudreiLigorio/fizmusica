@@ -649,9 +649,17 @@ function CheckoutContent() {
             </div>
           )}
 
-          {/* Container do Brick — escondido no pedido grátis (não há o que cobrar) */}
+          {/* Container do Brick — escondido no pedido grátis (não há o que cobrar).
+              `data-zona-escura` é OBRIGATÓRIO aqui: o Brick é montado com
+              `theme: "dark"` e pinta o próprio texto de branco, mas a regra de
+              tema claro do projeto força fundo branco em todo input. O
+              resultado era branco no branco — o e-mail do Pix chegava
+              preenchido e ficava INVISÍVEL, com um "Formato inválido" embaixo
+              de um campo que parecia vazio. A válvula desliga a regra clara
+              nesta subárvore. */}
           <div
             id="payment-brick-container"
+            data-zona-escura
             ref={brickRef}
             className={status === "processing" || status === "pix" || isFreeOrder ? "opacity-0 pointer-events-none h-0 overflow-hidden" : ""}
           />
