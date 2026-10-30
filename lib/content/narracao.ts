@@ -38,7 +38,21 @@ function wavFromPcm(pcm: Buffer, sampleRate = 24000, channels = 1, bits = 16): B
   return Buffer.concat([header, pcm])
 }
 
-export async function gerarNarracao(texto: string, voz: VozId = "Kore"): Promise<Buffer> {
+/** Direções de interpretação. O modelo de TTS recebe atuação pelo próprio texto. */
+export const DIRECAO = {
+  // Peça de marketing — era a única que existia, e segue sendo o padrão.
+  emocional: "Narre com emoção contida e ritmo pausado, como num comercial sensível:",
+  // Tutorial: quem está assistindo quer entender, não se emocionar. Ritmo
+  // normal e tom de quem explica ao lado, senão o vídeo fica arrastado e a
+  // pessoa pula.
+  didatica: "Narre de forma clara e amigável, em ritmo natural, como quem explica a um amigo o que está aparecendo na tela:",
+} as const
+
+export async function gerarNarracao(
+  texto: string,
+  voz: VozId = "Kore",
+  direcao: string = DIRECAO.emocional,
+): Promise<Buffer> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error("GEMINI_API_KEY não configurada — necessária para a narração.")
   if (!texto.trim()) throw new Error("Escreva o texto da narração.")
@@ -51,7 +65,7 @@ export async function gerarNarracao(texto: string, voz: VozId = "Kore"): Promise
       body: JSON.stringify({
         // A instrução de interpretação vai no próprio texto: é assim que o
         // modelo de TTS recebe direção de atuação.
-        contents: [{ parts: [{ text: `Narre com emoção contida e ritmo pausado, como num comercial sensível: ${texto}` }] }],
+        contents: [{ parts: [{ text: `${direcao} ${texto}` }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
           speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voz } } },
