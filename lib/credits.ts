@@ -151,10 +151,63 @@ export function creditosConcedidos(produto: { credits_granted?: number | null } 
  * Idempotente pelo índice único (migração 073). Quem paga no cartão passa
  * pelo webhook E pelo /confirm; sem a trava, um pacote de 10 creditaria 20.
  */
+/**
+ * Quem é o dono do saldo deste pedido — achando ou CRIANDO a conta pelo e-mail.
+ *
+ * O pacote exigia login ANTES de pagar, e isso era uma parede na cara de quem
+ * só queria comprar. Mas o crédito mora em `user_id`: sem dono, a pessoa pagava
+ * por um saldo que não existia em lugar nenhum. A saída não é escolher entre os
+ * dois — é mudar a HORA. A conta nasce depois do pagamento, com o e-mail que a
+ * pessoa já informou no wizard.
+ *
+ * Criar conta aqui não inventa nada: o login do projeto é sem senha (link por
+ * e-mail), então a conta criada é exatamente a que ela usaria ao entrar pela
+ * primeira vez — e o e-mail pós-pagamento já leva pra lá. Nenhuma senha é
+ * definida e nada é enviado que ela não esperasse.
+ *
+ * Devolve null só quando nem e-mail existe, que é o caso em que não há mesmo
+ * a quem creditar.
+ */
+async function donoDoSaldo(
+  supabase: DB,
+  order: { id: string; userId: string | null; email?: string | null },
+): Promise<string | null> {
+  if (order.userId) return order.userId
+
+  const email = (order.email ?? "").trim().toLowerCase()
+  if (!email) return null
+
+  // O `filter` do admin não está nos tipos do supabase-js, mas a API aceita —
+  // e é o que evita varrer a base inteira a cada pagamento.
+  type AdminAuth = {
+    listUsers: (p: { page: number; perPage: number; filter: string }) => Promise<{ data: { users: { id: string }[] } | null }>
+    createUser: (p: { email: string; email_confirm: boolean }) => Promise<{ data: { user: { id: string } | null } | null; error: { message: string } | null }>
+  }
+  const admin = (supabase.auth as unknown as { admin: AdminAuth }).admin
+
+  const busca = await admin.listUsers({ page: 1, perPage: 1, filter: `email.eq.${email}` })
+  let userId = busca.data?.users?.[0]?.id ?? null
+
+  if (!userId) {
+    const criado = await admin.createUser({ email, email_confirm: true })
+    userId = criado.data?.user?.id ?? null
+    if (!userId) {
+      console.error("[credits] não consegui a conta para creditar o pacote:", order.id, criado.error?.message)
+      return null
+    }
+    console.log(`[credits] conta criada para ${email} ao creditar o pacote ${order.id}`)
+  }
+
+  // Amarra o pedido à conta, com a MESMA regra do vínculo automático. Sem
+  // isto o lançamento ficaria órfão e a tela do cliente não acharia a compra.
+  await supabase.from("orders").update({ userId }).eq("id", order.id).is("userId", null)
+  return userId
+}
+
 export async function creditarPacoteDoPedido(supabase: DB, orderId: string): Promise<boolean> {
   const { data: order } = await supabase
     .from("orders")
-    .select("id, userId, paymentStatus, products(name, credits_granted)")
+    .select("id, userId, email, paymentStatus, products(name, credits_granted)")
     .eq("id", orderId)
     .maybeSingle()
 
@@ -169,16 +222,16 @@ export async function creditarPacoteDoPedido(supabase: DB, orderId: string): Pro
   // mandar o e-mail de aprovação seria pior que não creditar em silêncio.
   if (order.paymentStatus !== "PAID") return true
 
-  // Sem dono não há saldo a quem creditar. O checkout sem conta existe, então
-  // isto é possível — e é problema de verdade, porque a pessoa pagou. Fica no
-  // log alto pra aparecer no Sentry em vez de sumir.
-  if (!order.userId) {
-    console.error("[credits] pacote pago SEM dono — crédito não concedido:", orderId)
+  // O dono pode não existir ainda: o pacote passou a ser comprado SEM login.
+  // `donoDoSaldo` acha a conta pelo e-mail do pedido ou cria uma.
+  const dono = await donoDoSaldo(supabase, order as { id: string; userId: string | null; email?: string | null })
+  if (!dono) {
+    console.error("[credits] pacote pago SEM dono e sem e-mail — crédito não concedido:", orderId)
     return true
   }
 
   const { error } = await supabase.from("credit_transactions").insert({
-    user_id: order.userId,
+    user_id: dono,
     order_id: order.id,
     delta: quantidade,
     origem: "pacote",

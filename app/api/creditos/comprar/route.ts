@@ -11,21 +11,24 @@ export const dynamic = "force-dynamic"
 // ocasião, estilo, voz, emoção e pelo menos uma resposta do wizard, e um
 // pacote não tem nada disso — ele não é uma música, é saldo.
 //
-// EXIGE CONTA, e isso não é comodidade: o crédito vive em `user_id`. Sem dono
-// não há a quem creditar, e a pessoa teria pago por um saldo que não existe
-// em lugar nenhum. O checkout sem conta continua valendo para música; para
-// pacote, não.
+// NÃO exige login. O crédito vive em `user_id`, então alguém precisa ser dono —
+// mas essa conta nasce DEPOIS do pagamento, pelo e-mail que a pessoa já
+// informou no wizard (ver `donoDoSaldo` em lib/credits.ts). Exigir login antes
+// era uma parede na cara de quem só queria comprar, e no momento errado: a
+// pessoa ainda não tinha motivo nenhum pra criar conta.
+//
+// Quem JÁ está logado continua mandando o token, e aí o pedido já nasce com
+// dono — é o caminho da recarga de quem é cliente.
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization") ?? ""
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null
-  if (!token) return NextResponse.json({ error: "Entre na sua conta para comprar um pacote." }, { status: 401 })
 
-  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
-  const { data: userData, error: authErr } = await anon.auth.getUser(token)
-  if (authErr || !userData.user) {
-    return NextResponse.json({ error: "Sessão expirada. Entre de novo." }, { status: 401 })
+  let user: { id: string; email?: string | null; user_metadata?: Record<string, unknown> } | null = null
+  if (token) {
+    const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+    const { data: userData } = await anon.auth.getUser(token)
+    user = userData?.user ?? null
   }
-  const user = userData.user
 
   const { productId, pedidoPendente } = await req.json().catch(() => ({}))
   if (!productId) return NextResponse.json({ error: "Produto não informado." }, { status: 400 })
@@ -55,10 +58,19 @@ export async function POST(req: NextRequest) {
   // pagar a música dela. As três condições são o que define "pedido de música
   // meu e ainda em aberto".
   let vinculo: string | null = null
+  // Identidade do pedido de pacote. Com login vem da conta; sem login, do
+  // pedido de música que a pessoa acabou de montar no wizard — é de lá que
+  // sai o e-mail que vai virar a conta dona do saldo.
+  let identidade = {
+    nome: (user?.user_metadata?.full_name as string | undefined) ?? user?.email?.split("@")[0] ?? "Cliente",
+    email: user?.email ?? "",
+    whatsapp: "",
+  }
+
   if (pedidoPendente) {
     const { data: pend } = await supabase
       .from("orders")
-      .select("id, userId, email, paymentStatus, musicalStyle, voiceType, emotion, products(credits_granted)")
+      .select("id, userId, email, nome, whatsapp, paymentStatus, musicalStyle, voiceType, emotion, products(credits_granted)")
       .eq("id", String(pedidoPendente))
       .maybeSingle()
 
@@ -66,21 +78,42 @@ export async function POST(req: NextRequest) {
     const ehPacote = Number((prod as { credits_granted?: number | null } | null)?.credits_granted ?? 0) > 0
     const temBrief = !!pend && [pend.musicalStyle, pend.voiceType, pend.emotion]
       .some((v) => String(v ?? "").trim() !== "")
-    // `userId` nulo é "ainda não vinculado", não "de outra pessoa" — o wizard
-    // cria o pedido sem dono. Nesse caso vale o e-mail, a mesma regra do
-    // vínculo automático.
+    // Sem login, o pedido pendente é a ÚNICA identidade que existe — e ele veio
+    // do wizard desta mesma sessão. Logado, vale a regra de sempre: meu por
+    // `userId`, ou por e-mail quando o pedido ainda não foi vinculado.
     const meu = !!pend && (
+      !user ||
       pend.userId === user.id ||
       (pend.userId === null && (pend.email ?? "").trim().toLowerCase() === (user.email ?? "").trim().toLowerCase())
     )
 
     if (pend && meu && pend.paymentStatus !== "PAID" && !ehPacote && temBrief) {
       vinculo = pend.id
+      // Sem login é daqui que sai a identidade. Com login a conta manda, pra
+      // não trocar o dono do saldo por um e-mail digitado no wizard.
+      if (!user) {
+        identidade = {
+          nome: pend.nome || identidade.nome,
+          email: (pend.email ?? "").trim().toLowerCase(),
+          whatsapp: pend.whatsapp ?? "",
+        }
+      }
     } else {
       // Não é erro: a compra do pacote segue de pé, só sem o débito
       // automático. Recusar a venda porque o vínculo não serve seria pior.
       console.warn("[creditos] pedido pendente recusado como vínculo:", pedidoPendente)
     }
+  }
+
+  // Sem login E sem pedido pendente não existe e-mail nenhum — e aí o saldo
+  // realmente não teria a quem pertencer. Este é o único caso que ainda pede
+  // conta, e ele não acontece pelos caminhos da tela (home e /produtos sempre
+  // trazem o pedido do wizard).
+  if (!identidade.email) {
+    return NextResponse.json(
+      { error: "Entre na sua conta para comprar um pacote." },
+      { status: 401 },
+    )
   }
 
   const agora = new Date().toISOString()
@@ -94,9 +127,9 @@ export async function POST(req: NextRequest) {
     id: orderId,
     createdAt: agora,
     updatedAt: agora,
-    nome: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Cliente",
-    email: user.email ?? "",
-    whatsapp: "",
+    nome: identidade.nome,
+    email: identidade.email,
+    whatsapp: identidade.whatsapp,
     emotion: "",
     context: "Pacote de músicas",
     subcategory: produto.name,
@@ -105,7 +138,9 @@ export async function POST(req: NextRequest) {
     status: "PENDING",
     paymentStatus: "UNPAID",
     productId: produto.id,
-    userId: user.id,
+    // Pode nascer sem dono: a conta é resolvida (ou criada) ao creditar, pelo
+    // e-mail. Ver `donoDoSaldo` em lib/credits.ts.
+    userId: user?.id ?? null,
     honoree_consent: false,
     is_revision: false,
     recovery_stage: 0,

@@ -199,20 +199,22 @@ function ProdutosContent() {
     if (!pacote) return
     setComprandoPacote(true)
     try {
+      // SEM parede de login. O crédito precisa de dono, mas a conta nasce
+      // depois do pagamento, pelo e-mail que a pessoa já deu no wizard (ver
+      // `donoDoSaldo` em lib/credits.ts). Pedir login aqui interrompia a
+      // compra no pior momento: antes de ela ter qualquer motivo pra criar
+      // conta.
+      //
+      // Quem JÁ está logado manda o token assim mesmo — aí o pedido nasce
+      // com dono e o saldo cai na conta certa, mesmo que o e-mail do wizard
+      // seja outro.
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        // Pacote EXIGE conta: o crédito vive em `user_id`. Volta pra cá
-        // depois do login com o endereço INTEIRO — não só o `orderId`.
-        // Montar a volta à mão derrubava o `?produto=`, e a pessoa voltava
-        // para uma tela diferente da que deixou: sem o grupo de origem no
-        // topo e sem o outro recolhido.
-        const voltar = window.location.pathname + window.location.search
-        router.push(`/entrar?next=${encodeURIComponent(voltar)}`)
-        return
-      }
       const res = await fetch("/api/creditos/comprar", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        headers: {
+          "Content-Type": "application/json",
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ productId: pacote.id, pedidoPendente: orderId ?? undefined }),
       })
       const d = await res.json().catch(() => ({}))
@@ -254,6 +256,10 @@ function ProdutosContent() {
   // chegar aqui passaram vários minutos e várias telas — e é aqui que quem
   // pegou o plano de entrada costuma subir de plano.
   const planoDaHome = searchParams.get("produto")
+  /** O pacote foi a escolha feita na home? Então ele aparece marcado. */
+  const pacoteVeioDaHome = !!planoDaHome && products.some(
+    (p) => p.id === planoDaHome && (p.credits_granted ?? 0) > 0,
+  )
 
   // De qual grupo veio a escolha da home. Quem clicou na Retrospectiva lá já
   // decidiu "é presente"; chegar aqui e encontrar o Essencial de R$ 9,90 como
@@ -796,7 +802,23 @@ function ProdutosContent() {
                         forma (ver recusaDePacoteEmPedidoDeMusica). */}
                     {group === "voce" && pacote && avulsaCredito && (
                       <div className="rounded-[18px] p-4 border flex flex-col"
-                           style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.04)" }}>
+                           style={{
+                             // Quando o pacote FOI a escolha da home, ele
+                             // aparece marcado. Sem isso a pessoa escolhia o
+                             // pacote lá, chegava aqui e não via nada
+                             // selecionado — parecia que a escolha tinha se
+                             // perdido. Ele continua sem radio de propósito:
+                             // não é opção do seletor de planos, e virar uma
+                             // era o que quebrava o pedido.
+                             borderColor: pacoteVeioDaHome ? "#f0196b" : "rgba(255,255,255,0.14)",
+                             background: pacoteVeioDaHome ? "rgba(240,25,107,0.12)" : "rgba(255,255,255,0.04)",
+                             boxShadow: pacoteVeioDaHome ? "0 0 28px rgba(240,25,107,0.18)" : "none",
+                           }}>
+                        {pacoteVeioDaHome && (
+                          <p className="text-[13px] font-bold mb-1.5" style={{ color: "#f0196b" }}>
+                            ✓ Sua escolha
+                          </p>
+                        )}
                         <p className="text-[15px] font-bold text-white mb-1">Vai fazer mais de uma?</p>
                         <p className="text-sm text-white/55 leading-relaxed">
                           {pacote.credits_granted} músicas por R$ {pacote.price.toFixed(2).replace(".", ",")} — R${" "}
