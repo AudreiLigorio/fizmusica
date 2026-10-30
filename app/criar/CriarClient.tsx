@@ -81,6 +81,12 @@ const PREVIA_BORRADA = [
   "cada detalhe, cada razão",
 ]
 
+// Formatos exigidos nos dados de contato. Subiram pra cá porque passaram a ter
+// DOIS leitores — a validação do passo 4 e a decisão de pular esse passo. Como
+// literais soltos dentro da função, um dia um mudaria sem o outro.
+const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const WHATSAPP_RE = /^\(\d{2}\) 9\d{4}-\d{4}$/
+
 function maskWhatsapp(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11)
   if (digits.length === 0) return ""
@@ -598,6 +604,28 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   /* NEXT STEP                                         */
   /* ================================================= */
 
+  // Os dados de contato já estão completos e válidos?
+  //
+  // O passo 4 é duplicata INTEGRAL da captura de lead — os mesmos quatro
+  // campos, inclusive "Para quem é essa música?". Quem preencheu a captura
+  // digitava tudo de novo depois de escolher o estilo, sem nada novo pra
+  // informar. Então o passo passa a aparecer só quando ainda falta algo.
+  //
+  // `leadCaptured` NÃO serve como condição: `handleLeadSkip` marca a captura
+  // como vista ("não mostra mais") deixando os campos VAZIOS. A bandeira diz
+  // que aquela tela não volta, não que os dados existem — quem pulou precisa
+  // do passo 4 tanto quanto antes.
+  //
+  // Esta constante é a fonte única: é ela que o passo 4 valida e é ela que
+  // decide se o passo existe. Separadas, as duas sairiam do ar uma da outra, e
+  // pular um passo que a validação ainda reprovaria prenderia a pessoa no
+  // resumo sem dizer o que falta.
+  const dadosDeContatoOk =
+    nome.trim() !== "" &&
+    EMAIL_RE.test(emailEfetivo) &&
+    WHATSAPP_RE.test(whatsapp) &&
+    (ehComposicao || honoreeName.trim() !== "")
+
   function advanceQuestion() {
     setInterimText("")
     if (questionStep < questions.length - 1) {
@@ -642,6 +670,13 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
         mostrarErro("Escolha todas as opções musicais.")
         return
       }
+      // Nada a preencher no passo 4: vai direto ao resumo, onde os dados
+      // aparecem e podem ser corrigidos.
+      if (dadosDeContatoOk) {
+        setStep(5)
+        saveSession(buildSessionData({ step: 5 }), 5)
+        return
+      }
     }
 
     if (step === 4) {
@@ -653,13 +688,11 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
         mostrarErro("Informe para quem é essa música.")
         return
       }
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(emailEfetivo)) {
+      if (!EMAIL_RE.test(emailEfetivo)) {
         mostrarErro("E-mail inválido.")
         return
       }
-      const whatsappRegex = /^\(\d{2}\) 9\d{4}-\d{4}$/
-      if (!whatsappRegex.test(whatsapp)) {
+      if (!WHATSAPP_RE.test(whatsapp)) {
         mostrarErro("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX.")
         return
       }
@@ -680,6 +713,15 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     // sem saída).
     if (step === 1) {
       router.push("/")
+      return
+    }
+    // Volta pulando o passo 4 pelo mesmo motivo que a ida pula: se não havia
+    // nada a preencher, não há nada a rever. Sem isto o caminho ficaria
+    // assimétrico — some indo, reaparece voltando — e a pessoa veria pela
+    // primeira vez, de ré, uma tela que o wizard tinha decidido esconder.
+    if (step === 5 && dadosDeContatoOk) {
+      setStep(3)
+      saveSession(buildSessionData({ step: 3 }), 3)
       return
     }
     if (step === 2 && questionStep > 0) {
@@ -1671,9 +1713,26 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   <span className="text-white/35 text-sm">{dadosAbertos ? "▲" : "▼"}</span>
                 </button>
                 {dadosAbertos && (
-                  <div className="mt-3 bg-black/40 border border-white/10 rounded-2xl p-5 whitespace-pre-wrap text-gray-300 leading-relaxed text-sm max-h-80 overflow-y-auto">
-                    {resumo}
-                  </div>
+                  <>
+                    <div className="mt-3 bg-black/40 border border-white/10 rounded-2xl p-5 whitespace-pre-wrap text-gray-300 leading-relaxed text-sm max-h-80 overflow-y-auto">
+                      {resumo}
+                    </div>
+                    {/* Única porta para o passo 4 depois que ele deixou de
+                        aparecer sozinho. Sem ela, um WhatsApp digitado errado
+                        na captura de lead não teria conserto dentro do wizard
+                        — e é justamente o campo por onde a música é cobrada e
+                        entregue. Fica aqui dentro, junto do texto que a pessoa
+                        acabou de conferir, que é quando ela percebe o erro. */}
+                    <button
+                      onClick={() => {
+                        setStep(4)
+                        saveSession(buildSessionData({ step: 4 }), 4)
+                      }}
+                      className="mt-3 text-sm text-pink-400 underline underline-offset-2"
+                    >
+                      ✏️ Corrigir meus dados
+                    </button>
+                  </>
                 )}
               </div>
 
