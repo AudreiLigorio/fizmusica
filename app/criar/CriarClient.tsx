@@ -467,7 +467,9 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     if (!leadNome.trim()) { setLeadError("Informe seu nome."); return }
     if (!leadEmail.trim() || !leadEmailOk) { setLeadError("E-mail inválido."); return }
     if (!leadWhatsappOk) { setLeadError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX."); return }
-    if (!leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
+    // Na composição livre o campo nem é exibido — exigir aqui prenderia a
+    // pessoa numa tela sem o campo que a mensagem pede.
+    if (!ehComposicao && !leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
 
     // Preenche os campos finais para não repetir digitação
     setNome(leadNome)
@@ -810,6 +812,18 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
     setQuestionStep(0)
     setAnswers({})
 
+    // Entrar na composição livre APAGA o homenageado. Dá pra escolher uma
+    // homenagem, digitar o nome, voltar ao passo 1 e trocar pra autoral — e o
+    // nome ficava no estado. Some da tela de dados (o campo não existe lá), mas
+    // continuava no resumo, que anunciava "HOMENAGEADO: Dona Marta" logo acima
+    // do termo que declara ter autorização dessa pessoa.
+    //
+    // Limpar aqui, na origem, e não em cada leitor: o resumo, o payload e a
+    // sessão salva passam a concordar sozinhos. A guarda no envio continua,
+    // porque sessão gravada ANTES desta correção pode voltar com o nome.
+    const viraComposicao = !!composicaoLivre && contextLabel === composicaoLivre.label
+    if (viraComposicao) setHonoreeName("")
+
     let sid = sessionId
     if (!sid) {
       sid = crypto.randomUUID()
@@ -825,6 +839,7 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
           answers: {},
           selectedContext: contextLabel,
           selectedSubcategory: sub.label,
+          ...(viraComposicao ? { honoreeName: "" } : {}),
         }),
         2,
         sid!,
@@ -854,13 +869,18 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
       voiceType,
       emotion,
       styleReference: styleReference.trim() || undefined,
-      honoreeName: honoreeName.trim() || undefined,
+      // Na autoral vai SEMPRE vazio, mesmo que o estado ainda carregue um
+      // nome: dá pra escolher uma homenagem, digitar o nome, voltar ao passo 1
+      // e trocar pra composição livre — o campo some da tela mas o valor fica.
+      // Sem esta guarda ele seguiria pro player de uma música que não é
+      // homenagem a ninguém.
+      honoreeName: ehComposicao ? undefined : (honoreeName.trim() || undefined),
       // Serve só pra reaproveitar a letra da prévia como rascunho do pedido, e
       // apenas se a assinatura do conteúdo ainda bater com o que foi contratado.
       sessionId: sessionId ?? undefined,
       termsAccepted: true,
       termsVersion: TERMS_VERSION,
-      honoreeConsent: !!honoreeName.trim(),
+      honoreeConsent: !ehComposicao && !!honoreeName.trim(),
       answers: questions.map((q, i) => ({
         question: q,
         answer: answers[q] ?? "",
@@ -1156,7 +1176,17 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   )}
                 </div>
 
-                {/* Nome do homenageado — destaque especial */}
+                {/* Nome do homenageado — destaque especial.
+                    NÃO aparece na composição livre: ali a pessoa está
+                    escrevendo a própria música, não presenteando ninguém.
+                    Medido em 30/10/2026 nos 88 pedidos autorais que
+                    preencheram o campo: quase nada era pessoa. Vinha nome
+                    artístico (um mesmo autor repetiu o dele 30 vezes),
+                    gênero ("Metal", "Brasil Dance"), título da música e, num
+                    caso, o prompt de estilo inteiro colado. E isso vaza pro
+                    player público, que escreve "Uma música especial para
+                    {nome}" — virou "Uma música especial para Metal". */}
+                {!ehComposicao && (
                 <div className="space-y-2 rounded-2xl p-4" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
                   <label className="text-sm font-semibold pl-1 flex items-center gap-2" style={{ color: "#f0196b" }}>
                     🎵 Para quem é essa música?
@@ -1172,6 +1202,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     />
                   </div>
                 </div>
+                )}
               </div>
 
               {leadError && (
@@ -1590,7 +1621,12 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 </div>
               </div>
 
-              {/* Nome do homenageado — destaque especial */}
+              {/* Nome do homenageado — some na composição livre, pelo mesmo
+                  motivo da captura de lead (ver o comentário lá). O rótulo
+                  aqui dizia "(opcional)" na autoral, mas opcional não bastava:
+                  o campo continuava convidando, e o que entrava nele ia parar
+                  no player como destinatário. */}
+              {!ehComposicao && (
               <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
                 <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
                   🎵 Para quem é essa música?
@@ -1611,6 +1647,8 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   />
                 </div>
               </div>
+
+              )}
 
               <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-5 text-[15px] text-gray-200 leading-relaxed">
                 🔒 Seus dados são privados e usados exclusivamente para entrega da sua música.
