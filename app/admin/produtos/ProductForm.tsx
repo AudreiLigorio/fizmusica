@@ -294,6 +294,18 @@ export default function ProductForm({ product }: { product?: Product }) {
         </div>
       </div>
 
+      {/* Migração 076. Fica junto dos campos de crédito de propósito: é no
+          pacote que ela importa, e a explicação só faz sentido ao lado deles. */}
+      <label className="flex items-start gap-2 text-sm text-gray-300 cursor-pointer">
+        <input type="checkbox" checked={aceitaCupom} onChange={(e) => setAceitaCupom(e.target.checked)} className="accent-pink-500 mt-0.5" />
+        <span>
+          Aceita cupom de desconto
+          <span className="block text-[11px] text-gray-500">
+            Desmarque em pacote: um cupom de 100% ali não dá uma música grátis, dá o pacote inteiro.
+          </span>
+        </span>
+      </label>
+
       <div>
         <label className="text-xs text-gray-500 mb-1 block">Categoria do produto</label>
         <select
