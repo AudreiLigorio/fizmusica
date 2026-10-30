@@ -195,6 +195,9 @@ function MinhaMusicaContent() {
   // Modal de detalhes — substitui o antigo colapsar/expandir inline: pedido
   // sem ação pendente vira capinha no carrossel, detalhes abrem aqui.
   const [openDetailOrderId, setOpenDetailOrderId] = useState<string | null>(null)
+  // Prateleiras abertas por toque do cliente. `null` = ele não mexeu, e aí
+  // vale a regra automática (ver `prateleiraFechada`).
+  const [prateleiraAberta, setPrateleiraAberta] = useState<boolean | null>(null)
 
   // Autorização de publicação marcada no MESMO portão da entrega.
   //
@@ -623,10 +626,29 @@ function MinhaMusicaContent() {
   const liberadosAgora = orders
     .filter((o) => recemLiberados.includes(o.id) && !precisaAcao(o) && o.status === "DELIVERED")
 
+  // ENTREGUES COMEÇA FECHADO quando há pedido esperando por ele.
+  //
+  // Pedido do Audrei: com um "Continuar →" na tela, duas capinhas de músicas
+  // prontas logo abaixo competem por atenção com a única coisa que ele
+  // precisa fazer.
+  //
+  // FECHADO, não escondido, e essa diferença importa: quem tem um pedido em
+  // andamento e abre Pedidos pra pegar o link de uma música antiga ainda
+  // precisa alcançá-la. Sumir seria repetir o defeito que já apareceu três
+  // vezes aqui — a funcionalidade certa atrás de uma condição de tela. A
+  // contagem no cabeçalho é o que impede a sensação de "sumiu".
+  //
+  // A regra é por ESTADO, não pelo caminho de chegada: amarrar a "veio de
+  // uma aprovação" faria a mesma tela parecer diferente dependendo de como
+  // se chegou nela.
   const shelfOrders = orders
     .filter((o) => !recemLiberados.includes(o.id))
     .filter((o) => (o.paymentStatus === "PAID" && !precisaAcao(o) && o.status === "DELIVERED") || (o.paymentStatus !== "PAID" && o.status === "ABANDONED"))
     .sort((a, b) => paidPriority(a) - paidPriority(b) || dbTime(b.createdAt) - dbTime(a.createdAt))
+
+  // Toque do cliente vence a regra automática.
+  const temAlgoPedindoAcao = heroOrders.length > 0
+  const prateleiraFechada = prateleiraAberta === null ? temAlgoPedindoAcao : !prateleiraAberta
 
   // "Minhas músicas" não é dado novo — é derivado dos mesmos pedidos entregues
   // que já alimentam o carrossel, só que reempacotado como prateleira.
@@ -1445,13 +1467,28 @@ function MinhaMusicaContent() {
                   <>
                     {producedShelf.length > 0 && (
                       <>
-                        <div className="flex items-center gap-2.5 mt-4 mb-3">
-                          <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Entregues</span>
+                        {/* O cabeçalho vira o botão de abrir/fechar. Linha
+                            inteira clicável, não só a setinha: num celular
+                            um alvo de 10px é um alvo errado. */}
+                        <button
+                          // Primeiro toque parte do que está na tela: se a
+                          // regra fechou (há ação pendente), abre; se estava
+                          // aberta, fecha. Daí em diante é só inverter.
+                          onClick={() => setPrateleiraAberta((v) => (v === null ? temAlgoPedindoAcao : !v))}
+                          aria-expanded={!prateleiraFechada}
+                          className="w-full flex items-center gap-2.5 mt-4 mb-3 text-left"
+                        >
+                          <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">
+                            Entregues ({producedShelf.length})
+                          </span>
+                          <span className="text-white/35 text-[11px]">{prateleiraFechada ? "▾" : "▴"}</span>
                           <span className="h-px flex-1 bg-white/10" />
-                        </div>
-                        <div className="flex items-start gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
-                          {producedShelf.map(tile)}
-                        </div>
+                        </button>
+                        {!prateleiraFechada && (
+                          <div className="flex items-start gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
+                            {producedShelf.map(tile)}
+                          </div>
+                        )}
                       </>
                     )}
 
