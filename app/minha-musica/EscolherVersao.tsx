@@ -38,9 +38,16 @@ export default function EscolherVersao({
     <div className="rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/[0.07] p-5 mb-4">
       <div className="mb-4">
         <p className="text-fuchsia-100 font-semibold flex items-center gap-2">🎧 Sua música ficou pronta — em 2 versões!</p>
+        {/* O texto anterior prometia que "as duas continuam disponíveis para
+            ouvir e BAIXAR", e isso não é verdade: o download segue a versão
+            escolhida. Quem quisesse a outra teria que voltar, trocar a
+            escolha e avançar de novo.
+            Em vez de explicar essa manobra, a frase passa a dizer só o que a
+            escolha decide — que é o que a pessoa precisa saber para escolher
+            (decisão do Audrei: simplificar em vez de detalhar). */}
         <p className="text-white/55 text-sm mt-0.5">
-          Você fica com as <strong>duas</strong>. Ouça e escolha qual será a <strong>principal</strong> — a do QR Code e do link de
-          compartilhar. As duas continuam disponíveis para ouvir e baixar.
+          Ouça as duas e escolha a sua. A escolhida é a que vai no <strong>QR Code</strong>, no
+          link de compartilhar e no <strong>download</strong>.
         </p>
       </div>
 
