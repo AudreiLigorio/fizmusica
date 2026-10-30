@@ -716,47 +716,54 @@ function ProdutosContent() {
                         </div>
                       )
                     })}
+
+                    {/* ── Pacote, dentro do "Pra você" ────────────────────
+                        Mora aqui porque é isso que ele é: outra forma de
+                        resolver a MESMA necessidade do Essencial. Fora do
+                        grupo, depois dos presentes, ficava lido como rodapé.
+
+                        O que NÃO pode voltar é ele ser um item selecionável
+                        da lista — era assim que o pedido virava pacote e a
+                        música morria sem preparo. Por isso ele não tem radio,
+                        não passa por `handleSelectProduct` e tem botão
+                        próprio: é um card irmão, não uma opção do mesmo
+                        seletor. O servidor ainda recusa a troca, de qualquer
+                        forma (ver recusaDePacoteEmPedidoDeMusica). */}
+                    {group === "voce" && pacote && avulsaCredito && (
+                      <div className="rounded-[18px] p-4 border flex flex-col"
+                           style={{ borderColor: "rgba(255,255,255,0.14)", background: "rgba(255,255,255,0.04)" }}>
+                        <p className="text-[15px] font-bold text-white mb-1">Vai fazer mais de uma?</p>
+                        <p className="text-sm text-white/55 leading-relaxed">
+                          {pacote.credits_granted} músicas por R$ {pacote.price.toFixed(2).replace(".", ",")} — R${" "}
+                          {(pacote.price / (pacote.credits_granted ?? 1)).toFixed(2).replace(".", ",")} cada, contra R${" "}
+                          {avulsaCredito.price.toFixed(2).replace(".", ",")} na avulsa.
+                        </p>
+
+                        {/* A frase que justifica o card estar no funil e não
+                            só na home: diz o que acontece com o pedido que a
+                            pessoa tem em mãos. Sem ela, comprar o pacote aqui
+                            parece abandonar a música. */}
+                        {orderId && (
+                          <p className="text-sm font-medium mt-2.5" style={{ color: "#f0196b" }}>
+                            ✓ Esta música já sai paga com 1 crédito — sobram {(pacote.credits_granted ?? 1) - 1}.
+                          </p>
+                        )}
+
+                        <button
+                          onClick={comprarPacote}
+                          disabled={comprandoPacote}
+                          className="w-full mt-auto py-3 rounded-2xl text-sm font-semibold text-white disabled:opacity-60"
+                          style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
+                        >
+                          {comprandoPacote ? "Abrindo…" : `Levar ${pacote.credits_granted} músicas — R$ ${pacote.price.toFixed(2).replace(".", ",")}`}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )
             })}
 
-            {/* ── Pacote: oferta paralela, nunca um item da lista ──────────
-                Visualmente separado de propósito (linha, fundo neutro, sem
-                radio de seleção): a lista acima é "escolha UM destes"; isto
-                aqui é outra pergunta. Enfiá-lo entre os planos foi o que
-                quebrou pedido, porque virava "o plano de R$ 49,90". */}
-            {pacote && avulsaCredito && (
-              <div className="pt-6 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
-                <div className="rounded-[20px] p-5" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
-                  <p className="text-sm font-semibold text-white mb-1">Vai fazer mais de uma?</p>
-                  <p className="text-sm text-white/55 leading-relaxed mb-3">
-                    {pacote.credits_granted} músicas por R$ {pacote.price.toFixed(2).replace(".", ",")} — R${" "}
-                    {(pacote.price / (pacote.credits_granted ?? 1)).toFixed(2).replace(".", ",")} cada, contra R${" "}
-                    {avulsaCredito.price.toFixed(2).replace(".", ",")} na avulsa.
-                  </p>
-
-                  {/* A frase que faz o bloco valer a pena estar aqui e não só
-                      na home: diz o que acontece com o pedido que a pessoa
-                      tem em mãos. Sem ela, comprar o pacote no meio do funil
-                      parece abandonar a música. */}
-                  {orderId && (
-                    <p className="text-sm font-medium mb-3" style={{ color: "#f0196b" }}>
-                      ✓ Esta música já sai paga com 1 crédito — sobram {(pacote.credits_granted ?? 1) - 1}.
-                    </p>
-                  )}
-
-                  <button
-                    onClick={comprarPacote}
-                    disabled={comprandoPacote}
-                    className="w-full py-3.5 rounded-2xl text-[15px] font-semibold text-white disabled:opacity-60"
-                    style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)" }}
-                  >
-                    {comprandoPacote ? "Abrindo…" : `Levar ${pacote.credits_granted} músicas — R$ ${pacote.price.toFixed(2).replace(".", ",")}`}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         ) : null}
 
