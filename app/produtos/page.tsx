@@ -202,8 +202,11 @@ function ProdutosContent() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
         // Pacote EXIGE conta: o crédito vive em `user_id`. Volta pra cá
-        // depois do login, com o pedido no endereço, pra não perder o funil.
-        const voltar = `/produtos${orderId ? `?orderId=${orderId}` : ""}`
+        // depois do login com o endereço INTEIRO — não só o `orderId`.
+        // Montar a volta à mão derrubava o `?produto=`, e a pessoa voltava
+        // para uma tela diferente da que deixou: sem o grupo de origem no
+        // topo e sem o outro recolhido.
+        const voltar = window.location.pathname + window.location.search
         router.push(`/entrar?next=${encodeURIComponent(voltar)}`)
         return
       }
@@ -279,7 +282,15 @@ function ProdutosContent() {
         // quando não bate com nada: um plano desativado no admin depois do
         // clique não pode travar a tela — a pessoa escolhe outro normalmente.
         const escolhido = planoDaHome ? lista.find((x) => x.id === planoDaHome) : null
-        if (escolhido) handleSelectProduct(escolhido)
+        // PACOTE é exceção: quem clicou nele na home também cai aqui, mas o
+        // pacote NÃO é o plano da música — é saldo. Marcá-lo como `selected`
+        // mandaria o "Ir para pagamento" tentar cobrar o pedido da música como
+        // se fosse pacote, que é exatamente o que o servidor recusa.
+        //
+        // Ele ainda serve pra definir o GRUPO de origem ("Pra você"), que é o
+        // que abre a tela no lugar certo — e o bloco do pacote está ali, com o
+        // botão próprio.
+        if (escolhido && (escolhido.credits_granted ?? 0) <= 0) handleSelectProduct(escolhido)
         setLoading(false)
       })
       .catch(() => setLoading(false))

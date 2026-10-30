@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { track } from "@/lib/track"
-import { supabase } from "@/lib/supabase"
 
 // Vitrine de produtos com preço, logo antes dos exemplos em vídeo.
 //
@@ -205,33 +204,6 @@ export default function ProdutosCarrossel() {
   const menor = precos.length ? Math.min(...precos) : null
   const maior = precos.length ? Math.max(...precos) : null
 
-  // Compra do pacote pré-pago. Não passa pelo wizard: cria o pedido direto
-  // e manda pro checkout que já existe.
-  //
-  // EXIGE CONTA, e a tela precisa dizer isso antes de tentar: o crédito vive
-  // no usuário, então comprar deslogado deixaria a pessoa pagando por um
-  // saldo sem dono. Mandar pro login com volta é melhor que um erro depois
-  // do pagamento.
-  async function comprarPacote(p: Produto) {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) { router.push(`/entrar?next=${encodeURIComponent("/?pacote=" + p.id)}`); return }
-    try {
-      const res = await fetch("/api/creditos/comprar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ productId: p.id }),
-      })
-      const d = await res.json().catch(() => ({}))
-      if (!res.ok || !d.orderId) { alert(d.error ?? "Não foi possível iniciar a compra."); return }
-      const qs = new URLSearchParams({
-        orderId: d.orderId, productId: d.productId, productName: d.productName, price: String(d.price),
-      })
-      router.push(`/checkout?${qs}`)
-    } catch {
-      alert("Falha de conexão. Tente novamente.")
-    }
-  }
-
   // A avulsa de referência: o produto que aceita crédito. É contra ela que o
   // pacote mostra o desconto — e achá-la por `credit_price` em vez de por
   // nome ou preço mantém a conta certa se o catálogo mudar.
@@ -320,9 +292,19 @@ export default function ProdutosCarrossel() {
                 precoPorMusica={ehPacote(p) ? `R$ ${brl(p.price / (p.credits_granted ?? 1))} por música` : null}
                 onClick={() => {
                   track("cta_produto", "carrossel_produtos")
-                  // Pacote não passa pelo wizard: não tem ocasião, estilo nem
-                  // letra. Vai direto pra compra de saldo.
-                  if (ehPacote(p)) { comprarPacote(p); return }
+                  // O PACOTE entra no wizard igual a qualquer plano.
+                  //
+                  // Antes ele tinha caminho próprio e empurrava quem não
+                  // estava logado direto pro login — parede na cara de quem
+                  // só queria comprar, antes de a pessoa ter feito nada. E a
+                  // conta continua sendo necessária (o crédito vive no
+                  // usuário), só que agora ela é pedida na hora de pagar, que
+                  // é quando pedir login é normal.
+                  //
+                  // Quem segue por aqui faz a primeira música e, ao fechar o
+                  // pacote, 1 dos 10 créditos paga ela na hora
+                  // (honrarPedidoVinculadoAoPacote). Sai com a música
+                  // encomendada e 9 créditos.
                   router.push(`/criar?produto=${encodeURIComponent(p.id)}`)
                 }}
               />
