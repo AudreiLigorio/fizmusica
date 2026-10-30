@@ -113,8 +113,27 @@ export async function validateCoupon(
   const coupon = check.coupon
 
   // É aqui que o valor do cupom deixa de depender de onde ele é usado.
+  //
+  // Duas regras, respondendo perguntas diferentes:
+  //   coupons.product_id    "este cupom vale SÓ neste plano?"  (074)
+  //   products.aceita_cupom "este plano aceita cupom algum?"   (076)
+  //
+  // A segunda existe porque o pacote de crédito não é música com desconto, é
+  // SALDO: um cupom de 100% ali não dá uma música grátis, dá dez. Expressar
+  // isso em cada cupom exigiria lista de exclusão, e todo cupom novo nasceria
+  // com o buraco. No produto, fecha de uma vez — inclusive pros que ainda não
+  // existem.
   if (coupon.product_id && productId && coupon.product_id !== productId)
     return { valid: false, reason: "Este cupom não vale para o plano escolhido." }
+
+  if (productId) {
+    const { data: prod } = await supabase
+      .from("products").select("aceita_cupom").eq("id", productId).maybeSingle()
+    // `false` explícito recusa; nulo ou coluna ausente libera, que é o estado
+    // de todo produto normal.
+    if (prod && prod.aceita_cupom === false)
+      return { valid: false, reason: "Este plano não aceita cupom de desconto." }
+  }
 
   if (coupon.min_value != null && orderTotal < Number(coupon.min_value))
     return { valid: false, reason: `Pedido mínimo de R$ ${Number(coupon.min_value).toFixed(2)} para usar este cupom.` }

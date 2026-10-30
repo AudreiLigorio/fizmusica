@@ -37,6 +37,9 @@ export const camposDoProduto = {
   //   credit_price   > 0   → este produto PODE ser pago com crédito
   credits_granted: z.number().int().min(0).optional(),
   credit_price:    z.number().int().positive().nullable().optional(),
+  // Migração 076. Falso em pacote de crédito: cupom ali multiplica o valor
+  // do desconto pelo tamanho do pacote.
+  aceita_cupom:    z.boolean().optional(),
 }
 
 // Criação: identificador obrigatório (vira a PK e fica gravado em

@@ -21,6 +21,7 @@ type Product = {
   feat_revision?: boolean | null
   credits_granted?: number | null
   credit_price?: number | null
+  aceita_cupom?: boolean | null
 }
 
 // Identificador único do plano. Vira a chave primária (products.id) e aparece
@@ -71,6 +72,7 @@ export default function ProductForm({ product }: { product?: Product }) {
   // e ela não consegue limpar pra digitar outro valor.
   const [creditsGranted, setCreditsGranted] = useState(String(product?.credits_granted ?? 0))
   const [creditPrice, setCreditPrice]       = useState(product?.credit_price != null ? String(product.credit_price) : "")
+  const [aceitaCupom, setAceitaCupom]       = useState(product?.aceita_cupom ?? true)
 
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -124,6 +126,7 @@ export default function ProductForm({ product }: { product?: Product }) {
         // Vazio vira null, não 0: null significa "não aceita crédito", e o
         // banco recusa 0 pelo check (credit_price tem que ser positivo).
         credit_price: creditPrice.trim() === "" ? null : Number(creditPrice),
+        aceita_cupom: aceitaCupom,
         ...(category === "DIGITAL_PHYSICAL" ? {
           weight_g:  weightG  ? Number(weightG)  : null,
           height_cm: heightCm ? Number(heightCm) : null,
