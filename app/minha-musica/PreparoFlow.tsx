@@ -146,9 +146,14 @@ export default function PreparoFlow({
       {photosConfirmed && (
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/[0.08] p-4">
           <p className="text-yellow-300 font-semibold text-sm mb-1">⚠️ Tudo pronto para gerar</p>
+          {/* A frase das fotos só existe para quem TEM fotos.
+              O resto do fluxo já consultava `temFotos` — o passo, o stepper e
+              o rótulo do botão — e só este texto tinha ficado de fora. No
+              Essencial, que não inclui retrospectiva, a tela prometia ajustar
+              fotos que o plano nem tem. */}
           <p className="text-yellow-400/70 text-sm leading-relaxed mb-3">
             Ao aprovar, a música é <strong>gerada automaticamente</strong> e a <strong>letra fica travada</strong>.
-            As fotos você ainda pode ajustar depois, inclusive com a música pronta.
+            {temFotos ? " As fotos você ainda pode ajustar depois, inclusive com a música pronta." : null}
           </p>
 
           <div className="mb-3">
