@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
     // Valida o cupom no servidor: ativo, não expirado, não esgotado (usos derivados
     // dos pedidos pagos — respeita o "Máx. de usos" do cupom) e pedido mínimo.
-    const cv = await validateCoupon(supabase, String(couponCode), grossPrice)
+    const cv = await validateCoupon(supabase, String(couponCode), grossPrice, productId)
     if (!cv.valid) return NextResponse.json({ success: false, error: cv.reason }, { status: 400 })
 
     // Só é "grátis" se o cupom REALMENTE zera o total. Senão, exige pagamento normal.

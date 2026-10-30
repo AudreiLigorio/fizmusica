@@ -84,7 +84,7 @@ export async function POST(req: Request) {
     let appliedCouponCode: string | null = null
     let discountAmount = 0
     if (couponCode) {
-      const cv = await validateCoupon(supabase, String(couponCode), grossPrice)
+      const cv = await validateCoupon(supabase, String(couponCode), grossPrice, productId)
       if (cv.valid) {
         finalPrice        = cv.finalTotal
         discountAmount    = cv.discount

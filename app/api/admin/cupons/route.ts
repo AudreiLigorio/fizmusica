@@ -87,6 +87,8 @@ export async function POST(req: NextRequest) {
       expires_at:   body.expires_at || null,
       description:  body.description?.trim() || null,
       show_on_site: !!body.show_on_site,
+      // Vazio vira NULO = vale em qualquer produto (migração 074).
+      product_id:   body.product_id || null,
       active:       body.active !== false,
     })
     .select("*")

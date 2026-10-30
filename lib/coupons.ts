@@ -12,6 +12,8 @@ export type Coupon = {
   expires_at: string | null
   show_on_site: boolean
   description: string | null
+  // Produto em que o cupom vale (migração 074). NULO = qualquer um.
+  product_id: string | null
 }
 
 // Nº de usos de um cupom = quantidade de pedidos PAGOS que o carregam.
@@ -89,11 +91,22 @@ export type ValidationResult =
 export async function validateCoupon(
   supabase: SupabaseClient,
   code: string,
-  orderTotal: number
+  orderTotal: number,
+  // Produto do pedido. Quando vem, cupom preso a OUTRO produto é recusado.
+  //
+  // Opcional porque o endpoint de preview valida antes de a pessoa escolher
+  // o plano. Lá a resposta é só "o código existe"; a recusa por produto
+  // acontece no `create` e no `free`, que são a autoridade e sempre sabem
+  // qual produto está sendo comprado.
+  productId?: string | null,
 ): Promise<ValidationResult> {
   const check = await checkCouponActive(supabase, code)
   if (!check.valid) return check
   const coupon = check.coupon
+
+  // É aqui que o valor do cupom deixa de depender de onde ele é usado.
+  if (coupon.product_id && productId && coupon.product_id !== productId)
+    return { valid: false, reason: "Este cupom não vale para o plano escolhido." }
 
   if (coupon.min_value != null && orderTotal < Number(coupon.min_value))
     return { valid: false, reason: `Pedido mínimo de R$ ${Number(coupon.min_value).toFixed(2)} para usar este cupom.` }

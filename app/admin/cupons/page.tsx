@@ -23,11 +23,20 @@ type Coupon = {
 
 const emptyForm = {
   code: "", type: "PERCENT" as "PERCENT" | "FIXED", value: "",
-  min_value: "", max_uses: "", expires_at: "", description: "", show_on_site: false,
+  min_value: "", max_uses: "", expires_at: "", description: "", show_on_site: false, product_id: "",
 }
 
 export default function CuponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
+  // Lista de planos para prender o cupom a um deles. Sem isto, um código de
+  // 100% pensado pra dar UMA música zera também o Pacote e entrega DEZ
+  // créditos — o valor do cupom passava a depender de onde era usado.
+  const [produtos, setProdutos] = useState<{ id: string; name: string; price: number }[]>([])
+  useEffect(() => {
+    fetch("/api/produtos").then((r) => r.json())
+      .then((d) => setProdutos(d.products ?? []))
+      .catch(() => setProdutos([]))
+  }, [])
   const [loading, setLoading] = useState(true)
   const [form, setForm]       = useState({ ...emptyForm })
   const [saving, setSaving]   = useState(false)
@@ -52,6 +61,7 @@ export default function CuponsPage() {
         min_value: form.min_value ? Number(form.min_value) : null,
         max_uses: form.max_uses ? Number(form.max_uses) : null,
         expires_at: form.expires_at || null,
+        product_id: form.product_id || null,
       }),
     })
     const d = await res.json()
@@ -131,6 +141,26 @@ export default function CuponsPage() {
               value={form.expires_at} onChange={(e) => setForm({ ...form, expires_at: e.target.value })}
               className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-pink-500" />
           </div>
+        </div>
+
+        <div className="mb-4">
+          <label className="text-sm text-gray-400 block mb-1.5">
+            Vale em <span className="text-gray-600">vazio = qualquer plano</span>
+          </label>
+          <select
+            value={form.product_id}
+            onChange={(e) => setForm({ ...form, product_id: e.target.value })}
+            className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-pink-500"
+          >
+            <option value="">Qualquer plano</option>
+            {produtos.map((p) => (
+              <option key={p.id} value={p.id}>{p.name} — R$ {Number(p.price).toFixed(2)}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-gray-500 mt-1">
+            Prenda ao plano quando o desconto for pensado para ele. Um cupom de 100% solto
+            zera tanto uma música de R$ 9,90 quanto um pacote de R$ 49,90.
+          </p>
         </div>
 
         <label className="flex items-center gap-2 mb-4 cursor-pointer">
