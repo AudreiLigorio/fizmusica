@@ -483,7 +483,11 @@ function CartaRede({ onClick }: { onClick: () => void }) {
       </span>
 
       <h3 className="mt-4 text-lg font-bold leading-tight text-white">
-        Ouvir música<br />na rede <span style={{ color: "#ff3d84" }}>Fiz Música</span>
+        {/* "no SpotFiz", não "na rede Fiz Música": a renomeação de outubro
+            passou pela aba, pela home, pelo FAQ e pelos termos, e este card
+            ficou pra trás. O resto do app já diz "no SpotFiz" sem "rede" —
+            seguir o mesmo nome evita que a pessoa ache que são dois lugares. */}
+        Ouvir música<br />no <span style={{ color: "#ff3d84" }}>SpotFiz</span>
       </h3>
 
       <ul className="mt-4 space-y-3 grow">
