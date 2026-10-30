@@ -76,6 +76,21 @@ export async function POST(req: NextRequest) {
   if (!value || value <= 0) return NextResponse.json({ error: "Valor inválido." }, { status: 400 })
   if (type === "PERCENT" && value > 100) return NextResponse.json({ error: "Percentual não pode passar de 100%." }, { status: 400 })
 
+  // Opção desabilitada na tela não é barreira — só evita o engano. A recusa
+  // de verdade é aqui: prender um cupom a um plano que não aceita cupom cria
+  // um cupom que não funciona em lugar nenhum (no plano onde está preso, a
+  // trava do produto recusa; fora dele, a trava do cupom recusa).
+  if (body.product_id) {
+    const { data: alvo } = await supabase
+      .from("products").select("name, aceita_cupom").eq("id", body.product_id).maybeSingle()
+    if (alvo && alvo.aceita_cupom === false) {
+      return NextResponse.json(
+        { error: `${alvo.name} não aceita cupom. Libere no cadastro do produto antes de prender um cupom a ele.` },
+        { status: 400 },
+      )
+    }
+  }
+
   const { data, error } = await supabase
     .from("coupons")
     .insert({

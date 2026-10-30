@@ -31,7 +31,7 @@ export default function CuponsPage() {
   // Lista de planos para prender o cupom a um deles. Sem isto, um código de
   // 100% pensado pra dar UMA música zera também o Pacote e entrega DEZ
   // créditos — o valor do cupom passava a depender de onde era usado.
-  const [produtos, setProdutos] = useState<{ id: string; name: string; price: number }[]>([])
+  const [produtos, setProdutos] = useState<{ id: string; name: string; price: number; aceita_cupom?: boolean }[]>([])
   useEffect(() => {
     fetch("/api/produtos").then((r) => r.json())
       .then((d) => setProdutos(d.products ?? []))
@@ -153,9 +153,24 @@ export default function CuponsPage() {
             className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2.5 outline-none focus:border-pink-500"
           >
             <option value="">Qualquer plano</option>
-            {produtos.map((p) => (
-              <option key={p.id} value={p.id}>{p.name} — R$ {Number(p.price).toFixed(2)}</option>
-            ))}
+            {produtos.map((p) => {
+              // Plano que não aceita cupom fica DESABILITADO em vez de some.
+              //
+              // Escolher um deles criaria um cupom morto: no plano onde está
+              // preso, a trava do produto recusa; em qualquer outro, a trava
+              // do próprio cupom recusa. Não existe combinação em que ele
+              // funcione — e nada avisava. Erro silencioso é pior que erro.
+              //
+              // Desabilitado e não escondido porque o motivo importa: some da
+              // lista, a pessoa procura e não entende. Com o motivo escrito ao
+              // lado, ela sabe onde mexer pra liberar.
+              const bloqueado = p.aceita_cupom === false
+              return (
+                <option key={p.id} value={p.id} disabled={bloqueado}>
+                  {p.name}{bloqueado ? " — não aceita cupom" : ` — R$ ${Number(p.price).toFixed(2)}`}
+                </option>
+              )
+            })}
           </select>
           <p className="text-[11px] text-gray-500 mt-1">
             Prenda ao plano quando o desconto for pensado para ele. Um cupom de 100% solto

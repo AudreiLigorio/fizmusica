@@ -10,7 +10,7 @@ export async function GET() {
       .select(`
         id, name, description, price, imageUrl, featured, category, photo_limit,
         feat_lyrics_sync, feat_qrcode, feat_download, feat_revision, loyalty_discos,
-        credits_granted, credit_price,
+        credits_granted, credit_price, aceita_cupom,
         product_delivery_options (
           id, label, days, price_extra, sort_order, active
         ),
