@@ -10,10 +10,18 @@ const BUCKETS = ["order-photos", "product-images", "songs"] as const
 // Storage gravava 12 músicas naquele mesmo dia. Alarme que dispara sem motivo
 // é pior que alarme nenhum: ensina a ignorar.
 //
-// Agora vem do ambiente, pra deixar de ser mentira no dia em que o plano
-// mudar de novo. O padrão é o Pro (100 GB) porque é onde o projeto está — o
-// Free não comportaria o que já está gravado.
-const LIMITE_GB = Number(process.env.SUPABASE_STORAGE_LIMIT_GB ?? 100) || 100
+// Vem do ambiente, pra deixar de ser mentira no dia em que o plano mudar.
+//
+// O padrão é 1 GB, o plano Free. Em 30/10/2026 eu troquei este padrão para
+// 100 GB INFERINDO que o plano era Pro, porque o Storage ainda aceitava
+// uploads com 2,6 GB gravados — e disse ao Audrei que o "100% · limite
+// atingido" era alarme falso. Não era: o Supabase tolera o excesso por um
+// tempo e só depois corta. Em 04/11 o projeto inteiro foi restringido
+// (`exceed_storage_size_quota`) e o site saiu do ar.
+//
+// A lição é o padrão: na dúvida, o limite menor. Um painel que grita sem
+// motivo custa atenção; um que silencia um problema real custa o site.
+const LIMITE_GB = Number(process.env.SUPABASE_STORAGE_LIMIT_GB ?? 1) || 1
 export const STORAGE_LIMIT_BYTES = LIMITE_GB * 1024 * 1024 * 1024
 
 async function sumBucket(bucket: string): Promise<number> {
