@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Permite buildar num diretório separado (NEXT_DIST_DIR) sem atropelar o
+  // `.next` de um dev server rodando em paralelo. Sem a variável, nada muda.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   typescript: {
     ignoreBuildErrors: true,
   },

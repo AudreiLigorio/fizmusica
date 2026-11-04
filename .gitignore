@@ -54,3 +54,6 @@ next-env.d.ts
 
 # tutoriais: o MP4 é saída, não fonte
 scripts/tutoriais/saida/
+
+# build de medição (NEXT_DIST_DIR)
+.next-*
