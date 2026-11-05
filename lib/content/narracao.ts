@@ -46,12 +46,18 @@ export const DIRECAO = {
   // normal e tom de quem explica ao lado, senão o vídeo fica arrastado e a
   // pessoa pula.
   didatica: "Narre de forma clara e amigável, em ritmo natural, como quem explica a um amigo o que está aparecendo na tela:",
+  // Peça de divulgação curta (Reels, TikTok). Ritmo adiantado e voz acesa —
+  // vídeo vertical disputa atenção com o polegar, e narração arrastada perde
+  // antes do terceiro segundo. Não é grito: é entusiasmo de quem gosta do que
+  // está mostrando.
+  entusiasmada: "Narre com energia e ritmo acelerado, em tom de locução publicitária animada, como quem apresenta algo que adora e quer que a pessoa experimente agora:",
 } as const
 
 export async function gerarNarracao(
   texto: string,
   voz: VozId = "Kore",
   direcao: string = DIRECAO.emocional,
+  tentativa = 0,
 ): Promise<Buffer> {
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) throw new Error("GEMINI_API_KEY não configurada — necessária para a narração.")
@@ -75,6 +81,19 @@ export async function gerarNarracao(
   )
 
   const json = await res.json()
+
+  // 429 — teto de 10 chamadas por minuto no TTS. Uma peça de 12 cenas estoura
+  // isso em sequência, e a falha vinha no meio da gravação, depois de já ter
+  // gastado as 10 primeiras. A própria resposta diz quanto esperar, então a
+  // espera é a que o Google pediu, não um palpite.
+  if (res.status === 429 && tentativa < 3) {
+    const pedido = JSON.stringify(json).match(/retry in ([\d.]+)s/i)?.[1]
+    const espera = (pedido ? parseFloat(pedido) : 20) + 1
+    console.warn(`[narracao] limite por minuto atingido — esperando ${espera.toFixed(0)}s`)
+    await new Promise((r) => setTimeout(r, espera * 1000))
+    return gerarNarracao(texto, voz, direcao, tentativa + 1)
+  }
+
   if (!res.ok || json.error) {
     throw new Error(`Falha na narração: ${json.error?.message ?? res.statusText}`)
   }
