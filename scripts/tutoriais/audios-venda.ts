@@ -15,7 +15,7 @@
 //   npx tsx scripts/tutoriais/audios-venda.ts
 
 // Primeiro de todos: povoa process.env antes dos módulos que o leem.
-import "./ambiente"
+import { RAIZ } from "./ambiente"
 import { execFile } from "child_process"
 import { promisify } from "util"
 import fs from "fs/promises"
@@ -26,7 +26,9 @@ import { gerarNarracao, DIRECAO, type VozId } from "@/lib/content/narracao"
 
 const run = promisify(execFile)
 const VOZ: VozId = "Kore"
-const SAIDA = "scripts/tutoriais/saida"
+// Ancorado na raiz do projeto, não no diretório de quem chama: rodado de
+// outra pasta, o script criava uma árvore `scripts/tutoriais/saida` solta lá.
+const SAIDA = path.join(RAIZ, "scripts/tutoriais/saida")
 
 const PECAS: { arquivo: string; titulo: string; texto: string }[] = [
   {
