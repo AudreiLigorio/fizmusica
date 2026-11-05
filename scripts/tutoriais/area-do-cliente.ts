@@ -14,6 +14,8 @@
 //
 //   npx tsx scripts/tutoriais/area-do-cliente.ts
 
+// Primeiro de todos: povoa process.env antes dos módulos que o leem.
+import "./ambiente"
 import { gravar, type Roteiro } from "./gravar"
 import { linkDeEntrada } from "./sessao"
 

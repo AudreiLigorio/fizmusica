@@ -14,6 +14,8 @@
 //
 //   npx tsx scripts/tutoriais/audios-venda.ts
 
+// Primeiro de todos: povoa process.env antes dos módulos que o leem.
+import "./ambiente"
 import { execFile } from "child_process"
 import { promisify } from "util"
 import fs from "fs/promises"

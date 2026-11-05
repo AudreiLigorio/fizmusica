@@ -7,9 +7,21 @@ move a letra — sem serviço novo).
 ## Rodar
 
 ```bash
-set -a && . ./.env.local && set +a
 npx tsx scripts/tutoriais/area-do-cliente.ts
 ```
+
+Os scripts carregam o `.env.local` sozinhos (`ambiente.ts`) — não é preciso
+exportar nada antes.
+
+## Cota de narração
+
+O Gemini TTS tem dois tetos: **10 por minuto** e **100 por dia**. O de minuto
+o código espera e repete sozinho; o de dia falha na hora, com a mensagem
+dizendo quando volta — insistir só queimaria mais chamadas.
+
+Por isso existe o **cofre de narrações** (`$TMPDIR/fiztut-narracoes`): a chave
+é o hash de texto + voz + tom. Regravar ajustando só a navegação não gasta
+cota nenhuma. Mudou a frase, aí sim gera de novo.
 
 Sai em `scripts/tutoriais/saida/`.
 

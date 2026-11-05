@@ -14,6 +14,8 @@
 //
 //   npx tsx scripts/tutoriais/spotfiz-reels.ts
 
+// Primeiro de todos: povoa process.env antes dos módulos que o leem.
+import "./ambiente"
 import { gravar, type Roteiro } from "./gravar"
 import { linkDeEntrada } from "./sessao"
 import { DIRECAO } from "@/lib/content/narracao"

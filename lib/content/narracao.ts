@@ -86,12 +86,27 @@ export async function gerarNarracao(
   // isso em sequência, e a falha vinha no meio da gravação, depois de já ter
   // gastado as 10 primeiras. A própria resposta diz quanto esperar, então a
   // espera é a que o Google pediu, não um palpite.
-  if (res.status === 429 && tentativa < 3) {
-    const pedido = JSON.stringify(json).match(/retry in ([\d.]+)s/i)?.[1]
-    const espera = (pedido ? parseFloat(pedido) : 20) + 1
-    console.warn(`[narracao] limite por minuto atingido — esperando ${espera.toFixed(0)}s`)
-    await new Promise((r) => setTimeout(r, espera * 1000))
-    return gerarNarracao(texto, voz, direcao, tentativa + 1)
+  if (res.status === 429) {
+    const corpo = JSON.stringify(json)
+    // Teto DIÁRIO não passa esperando: insistir só queima mais chamadas e
+    // atrasa o aviso. A primeira versão disto tentava 3 vezes com 21s de
+    // espera mesmo no limite de dia — um minuto perdido pra chegar no mesmo
+    // lugar.
+    if (/per_day|per day/i.test(corpo)) {
+      const quando = corpo.match(/retry in ([\dhms.]+)/i)?.[1]
+      throw new Error(
+        `Cota DIÁRIA de narração esgotada (100 por dia no Gemini TTS). ` +
+        `Volta em ${quando ?? "algumas horas"}. ` +
+        `As narrações já geradas ficam guardadas — ao voltar, só as novas são cobradas.`,
+      )
+    }
+    if (tentativa < 3) {
+      const pedido = corpo.match(/retry in ([\d.]+)s/i)?.[1]
+      const espera = (pedido ? parseFloat(pedido) : 20) + 1
+      console.warn(`[narracao] limite por minuto atingido — esperando ${espera.toFixed(0)}s`)
+      await new Promise((r) => setTimeout(r, espera * 1000))
+      return gerarNarracao(texto, voz, direcao, tentativa + 1)
+    }
   }
 
   if (!res.ok || json.error) {
