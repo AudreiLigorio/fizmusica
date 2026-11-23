@@ -189,7 +189,6 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
 
   // Leva o olhar do usuário até a mensagem de erro assim que ela aparece —
   // sem isso, numa etapa longa o aviso pode renderizar fora da tela.
-  const leadErrorRef = useRef<HTMLDivElement>(null)
   // Reconhece quem já está logado. Sem sessão, nada muda: o wizard segue
   // funcionando sem conta, que é a jornada de quem vem de anúncio.
   useEffect(() => {
@@ -220,7 +219,7 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     if (!error) return
     // O aviso flutua (sempre à vista); rolar só quando há um trecho a mostrar.
     const alvo = erroAlvoRef.current ? document.getElementById(erroAlvoRef.current) : null
-    alvo?.scrollIntoView({ behavior: "smooth", block: alvo.tagName === "INPUT" ? "center" : "start" })
+    alvo?.scrollIntoView({ behavior: "smooth", block: alvo.tagName === "INPUT" || alvo.tagName === "LABEL" ? "center" : "start" })
     // Some sozinho depois de ler. `errorSeq` reinicia a contagem a cada erro.
     const t = setTimeout(() => setError(""), 6000)
     return () => clearTimeout(t)
@@ -313,8 +312,6 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   const [leadEmail, setLeadEmail] = useState("")
   const [leadWhatsapp, setLeadWhatsapp] = useState("")
   const [leadHonoreeName, setLeadHonoreeName] = useState("")
-  const [leadError, setLeadError] = useState("")
-  useEffect(() => { if (leadError) leadErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }) }, [leadError])
 
   const leadWhatsappOk = /^\(\d{2}\) 9\d{4}-\d{4}$/.test(leadWhatsapp)
   const leadWhatsappDirty = leadWhatsapp.length > 0
@@ -528,14 +525,18 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   /* ================================================= */
 
   function handleLeadSave() {
-    setLeadError("")
+    setError("")
 
-    if (!leadNome.trim()) { setLeadError("Informe seu nome."); return }
-    if (!leadEmail.trim() || !leadEmailOk) { setLeadError("E-mail inválido."); return }
-    if (!leadWhatsappOk) { setLeadError("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX."); return }
+    // Mesmo aviso flutuante do resto do wizard (era uma caixa no fim da tela,
+    // fora da vista de quem estava digitando nos campos de cima).
+    if (!leadNome.trim()) { mostrarErro("Falta o seu nome.", "lead-nome"); return }
+    if (!leadEmail.trim()) { mostrarErro("Falta o seu e-mail.", "lead-email"); return }
+    if (!leadEmailOk) { mostrarErro("Confira o e-mail: parece que falta alguma parte.", "lead-email"); return }
+    if (!leadWhatsapp.trim()) { mostrarErro("Falta o seu WhatsApp com DDD.", "lead-whatsapp"); return }
+    if (!leadWhatsappOk) { mostrarErro("Confira o WhatsApp: use DDD + número, ex. (11) 91234-5678.", "lead-whatsapp"); return }
     // Na composição livre o campo nem é exibido — exigir aqui prenderia a
     // pessoa numa tela sem o campo que a mensagem pede.
-    if (!ehComposicao && !leadHonoreeName.trim()) { setLeadError("Informe para quem é essa música."); return }
+    if (!ehComposicao && !leadHonoreeName.trim()) { mostrarErro("Informe para quem é essa música.", "lead-homenageado"); return }
 
     // Preenche os campos finais para não repetir digitação
     setNome(leadNome)
@@ -584,6 +585,30 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
 
   const totalSteps = 5
   const ETAPAS_WIZARD = ["Ocasião", "Sua história", "Estilo", "Seus dados", "Prévia da letra"]
+
+  // ── Aviso de erro flutuante ──
+  // Era uma caixa no FIM do conteúdo: quando a tela rolava até o campo que
+  // faltava (ex.: tipo de voz), a mensagem ficava lá embaixo, fora da vista.
+  // Agora flutua sem bloquear a tela — não é um modal que exige fechar antes
+  // de corrigir — e some sozinha (6s), ao tocar nela ou ao tentar de novo.
+  // Sempre escura (zona escura) pra ler bem nos dois temas.
+  // Posição no celular: logo acima da barra fixa do "Continuar" quando ela
+  // existe (estilo, dados, prévia); nas telas sem barra (ocasião, perguntas,
+  // "Informe seu contato") o botão fica no meio do conteúdo e um aviso
+  // embaixo o cobriria — ali ele aparece no topo. No computador, sempre
+  // centralizado embaixo.
+  const avisoNoTopo = showLeadCapture || step === 1 || step === 2
+  const avisoErro = (pos: "topo" | "embaixo") => error ? (
+    <div key={errorSeq} role="alert" aria-live="assertive" data-zona-escura
+         onClick={() => setError("")}
+         className={`absolute left-4 right-4 ${pos === "topo" ? "top-2 slide-in-from-top-2" : "bottom-3 slide-in-from-bottom-2"} lg:fixed lg:top-auto lg:left-1/2 lg:right-auto lg:bottom-8 lg:w-[440px] lg:-translate-x-1/2 flex items-start gap-3 rounded-2xl px-4 py-3.5 cursor-pointer animate-in fade-in duration-200`}
+         style={{ background: "#211726", color: "#fff", border: "1px solid rgba(240,25,107,0.45)", boxShadow: "0 12px 32px rgba(0,0,0,0.35)" }}>
+      <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0 mt-px" fill="none" stroke="#ff5c9a" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" />
+      </svg>
+      <p className="text-[15px] leading-snug font-medium flex-1">{error}</p>
+    </div>
+  ) : null
   const internalQuestionProgress =
     step === 2 ? questionStep / Math.max(questions.length, 1) : 0
   const progress =
@@ -937,7 +962,7 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   const handleFinalizar = async () => {
     setError("")
     if (!termsAccepted) {
-      mostrarErro("Para continuar, aceite os Termos de Uso e a Política de Privacidade.")
+      mostrarErro("Para continuar, marque que aceita os Termos de Uso e a Política de Privacidade.", "aceite-termos")
       return
     }
     setSubmitting(true)
@@ -1095,6 +1120,11 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           </div>
         </div>
 
+        {/* ── Aviso de erro flutuante (no topo, celular) ── ver `avisoErro` */}
+        {avisoNoTopo && (
+          <div className="relative h-0 shrink-0 z-30">{avisoErro("topo")}</div>
+        )}
+
         {/* ── Área de conteúdo ── */}
         <div ref={contentRef} className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12" style={{ width: "100%", boxSizing: "border-box" }}>
@@ -1191,7 +1221,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <div className="space-y-2">
                   <label className="text-sm text-gray-200 font-medium pl-2">Seu nome completo</label>
                   <input
-                    value={leadNome}
+                    id="lead-nome" value={leadNome}
                     onChange={(e) => setLeadNome(e.target.value)}
                     placeholder="Ex: João Silva"
                     className="w-full bg-black/40 border border-white/10 rounded-3xl px-6 py-4 text-base outline-none focus:border-pink-500 transition-colors"
@@ -1204,7 +1234,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   <div className="relative">
                     <input
                       type="email"
-                      value={leadEmail}
+                      id="lead-email" value={leadEmail}
                       onChange={(e) => setLeadEmail(e.target.value)}
                       placeholder="Ex: joao@email.com"
                       className="w-full bg-black/40 rounded-3xl px-6 py-4 text-base outline-none transition-colors pr-12"
@@ -1240,7 +1270,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     <input
                       type="tel"
                       inputMode="numeric"
-                      value={leadWhatsapp}
+                      id="lead-whatsapp" value={leadWhatsapp}
                       onChange={(e) => setLeadWhatsapp(maskWhatsapp(e.target.value))}
                       placeholder="(11) 99999-9999"
                       maxLength={16}
@@ -1284,7 +1314,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   <p className="text-sm text-white/40 pl-1 -mt-1">Nome de quem vai receber a homenagem</p>
                   <div className="relative">
                     <input
-                      value={leadHonoreeName}
+                      id="lead-homenageado" value={leadHonoreeName}
                       onChange={(e) => setLeadHonoreeName(e.target.value)}
                       placeholder="Ex: Maria, Vovó Lúcia, Papai…"
                       className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
@@ -1295,11 +1325,6 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 )}
               </div>
 
-              {leadError && (
-                <div ref={leadErrorRef} className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
-                  ⚠️ {leadError}
-                </div>
-              )}
 
               <div className="mt-6 flex flex-col gap-3">
                 <button
@@ -1886,7 +1911,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             {!showLeadCapture && (
               <>
               {step === 5 && (
-                <label className="flex items-start gap-3 mt-8 cursor-pointer max-w-2xl">
+                <label id="aceite-termos" className="flex items-start gap-3 mt-8 cursor-pointer max-w-2xl scroll-mt-6 lg:scroll-mt-28">
                   <input
                     type="checkbox"
                     checked={termsAccepted}
@@ -1942,28 +1967,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           </div>
         </div>
 
-        {/* ── Aviso de erro flutuante ──
-            Era uma caixa no FIM do conteúdo. Quando a tela rolava até o
-            campo que faltava (ex.: tipo de voz), a mensagem ficava lá
-            embaixo, fora da vista; e numa tela comprida ela nem aparecia sem
-            rolar. Agora flutua logo acima do botão de avançar — onde está o
-            dedo e o olho de quem acabou de tocar — sem bloquear a tela: não
-            é um modal que exige fechar antes de corrigir. Some sozinha, ao
-            tocar nela ou ao tentar de novo. Sempre escura (zona escura) pra
-            ler bem sobre qualquer fundo, nos dois temas. */}
-        <div className="relative h-0 shrink-0 z-30">
-          {!showLeadCapture && error && (
-            <div key={errorSeq} role="alert" aria-live="assertive" data-zona-escura
-                 onClick={() => setError("")}
-                 className="absolute left-4 right-4 bottom-3 lg:fixed lg:left-1/2 lg:right-auto lg:bottom-8 lg:w-[440px] lg:-translate-x-1/2 flex items-start gap-3 rounded-2xl px-4 py-3.5 cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-200"
-                 style={{ background: "#211726", color: "#fff", border: "1px solid rgba(240,25,107,0.45)", boxShadow: "0 12px 32px rgba(0,0,0,0.35)" }}>
-              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0 mt-px" fill="none" stroke="#ff5c9a" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" />
-              </svg>
-              <p className="text-[15px] leading-snug font-medium flex-1">{error}</p>
-            </div>
-          )}
-        </div>
+        {/* ── Aviso de erro flutuante (embaixo) ── ver `avisoErro` */}
+        {!avisoNoTopo && (
+          <div className="relative h-0 shrink-0 z-30">{avisoErro("embaixo")}</div>
+        )}
 
         {/* Botão fixo no rodapé — mobile */}
         {!showLeadCapture && step !== 1 && step !== 2 && (
