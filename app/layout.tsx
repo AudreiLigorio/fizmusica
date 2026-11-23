@@ -4,6 +4,7 @@ import "./globals.css";
 import AuthHashHandler from "./components/AuthHashHandler";
 import ChunkReloadGuard from "./components/ChunkReloadGuard"
 import Tracker from "@/app/components/Tracker";
+import MetaPixel from "@/app/components/MetaPixel";
 import RegistrarSW from "@/app/components/RegistrarSW";
 import { SincronizarTema } from "@/app/components/Tema";
 import OnboardingPortao from "@/app/components/onboarding/OnboardingPortao";
@@ -58,6 +59,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col antialiased">
         <AuthHashHandler />
         <Tracker />
+        <MetaPixel />
         <ChunkReloadGuard />
         <RegistrarSW />
         <SincronizarTema />

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
 import { track } from "@/lib/track"
+import { pixelCompra } from "@/lib/metaPixel"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Suspense } from "react"
 import Header from "../components/Header"
@@ -55,6 +56,13 @@ function SucessoContent() {
       // 3. Limpa sessão do wizard — pagamento confirmado, pedido encerrado
       if (d.order?.paymentStatus === "PAID") {
         track("pago")
+        // Valor COBRADO (com cupom/desconto de fidelidade), não o de tabela: é
+        // o que a Meta usa pra calcular retorno do anúncio. `payments` pode vir
+        // como array do Supabase. Pedido pago com CRÉDITO de pacote não tem
+        // pagamento próprio: vai sem valor, senão a mesma venda (o pacote)
+        // contaria de novo a cada música usada.
+        const pg = Array.isArray(d.order.payments) ? d.order.payments[0] : d.order.payments
+        pixelCompra(d.order.id ?? orderId, pg?.amount != null ? Number(pg.amount) : null)
         localStorage.removeItem("fizmusica_session_id")
       }
     }

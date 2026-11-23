@@ -1,5 +1,7 @@
 "use client"
 
+import { pixelDoFunil } from "@/lib/metaPixel"
+
 // Rastreamento de comportamento, lado do navegador.
 //
 // Um id anônimo por visitante (localStorage) só pra ligar os passos de uma
@@ -69,6 +71,10 @@ function canal(): "app" | "web" {
 }
 
 export function track(evento: string, detalhe?: string) {
+  // Os passos que importam pro anúncio também vão pro Meta Pixel (desligado
+  // sem NEXT_PUBLIC_META_PIXEL_ID). Mesmo ponto de disparo de propósito: o
+  // funil do admin e o do Instagram contam a mesma coisa.
+  pixelDoFunil(evento, detalhe)
   try {
     const corpo = JSON.stringify({
       sessao: idDeSessao(),

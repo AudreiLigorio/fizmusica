@@ -1,6 +1,6 @@
 # Política de Privacidade — Fiz Música
 
-Última atualização: 27 de outubro de 2026
+Última atualização: 23 de novembro de 2026
 
 ## 1. Apresentação
 
@@ -76,6 +76,7 @@ A Fiz Música compartilha dados, na medida necessária, com prestadores que atua
 | Provedores de inteligência artificial | Geração da **letra** e da **música** por IA | Brasil / Exterior |
 | n8n | Automação de eventos | Nuvem |
 | Meta (Instagram) | Publicação de conteúdo nos perfis oficiais da Fiz Música | EUA |
+| Meta (Meta Pixel) | Medição dos anúncios da Fiz Música: recebe quais etapas do site foram visitadas e, na compra, o valor e um código do pedido — **sem** nome, e-mail, telefone ou conteúdo do pedido (ver Política de Cookies, item 3) | EUA / Exterior |
 | TikTok | Autenticação e publicação de conteúdo no perfil oficial da Fiz Música | EUA / Exterior |
 
 Todos os parceiros devem observar padrões adequados de segurança e proteção de dados.
@@ -152,7 +153,7 @@ Caso o cliente envie fotos ou informações de crianças/adolescentes (ex.: home
 
 ## 14. Cookies e Tecnologias Semelhantes
 
-A plataforma poderá utilizar cookies e tecnologias similares para funcionamento, segurança, melhoria da experiência e estatísticas. O usuário poderá gerenciar suas preferências no navegador (ver Política de Cookies).
+A plataforma utiliza cookies e tecnologias similares para funcionamento, segurança, melhoria da experiência, estatísticas internas e **medição de anúncios (Meta Pixel)**, com base no legítimo interesse (art. 7º, IX, da LGPD). Nenhum dado de identificação ou conteúdo do pedido é enviado à Meta. O usuário poderá bloquear esses cookies no navegador e se opor a esse tratamento pelo canal de privacidade (ver Política de Cookies).
 
 ## 15. Alterações desta Política
 
