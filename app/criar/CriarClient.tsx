@@ -97,19 +97,32 @@ function maskWhatsapp(value: string): string {
 
 export type PlanoResumo = { id: string; name: string; price: number }
 
-// Teclado virtual aberto? Compara a área VISÍVEL com a altura do LAYOUT.
+// Teclado virtual aberto? Compara a área VISÍVEL com a altura da tela SEM
+// teclado, medida enquanto nenhum campo de texto está em foco.
 //
-// A primeira versão comparava com `window.innerHeight` e funcionava no Chrome
-// do computador e no Android — mas no iPhone (Safari e Chrome, ambos WebKit)
-// o `innerHeight` encolhe JUNTO com a área visível quando o teclado abre: a
-// diferença dava zero, o wizard nunca percebia o teclado e o "Continuar"
-// seguia escondido atrás dele (o Audrei achou testando "Pets" no celular).
-// `documentElement.clientHeight` é a altura do layout e não muda com o
-// teclado em nenhum dos dois.
+// Cada sistema abre o teclado de um jeito, e cada um derrubou uma versão:
+//  - iPhone (Safari e Chrome, ambos WebKit): encolhe a área visível E o
+//    `window.innerHeight`. A 1ª versão comparava com o innerHeight: a
+//    diferença dava zero e o "Continuar" seguia atrás do teclado (o Audrei
+//    achou testando "Pets" no celular).
+//  - Chrome do Android: encolhe só a área visível.
+//  - Samsung Internet, Firefox e alguns apps: encolhem a PÁGINA INTEIRA
+//    ("resizes-content") — aí até `documentElement.clientHeight` muda, e só
+//    uma medida guardada de ANTES do foco enxerga a diferença.
+// A medida "sem teclado" é renovada sempre que não há campo em foco, o que
+// também cobre girar o celular.
+let alturaSemTeclado = 0
+function campoDeTextoEmFoco(): boolean {
+  const el = document.activeElement as HTMLElement | null
+  if (!el) return false
+  if (el.tagName === "TEXTAREA" || el.isContentEditable) return true
+  return el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|range|color|file)$/i.test((el as HTMLInputElement).type)
+}
 function tecladoAberto(vv: VisualViewport): boolean {
   if (window.innerWidth >= 1024) return false
-  const layout = Math.max(document.documentElement.clientHeight, window.innerHeight)
-  return layout - vv.height > 150
+  const agora = Math.max(document.documentElement.clientHeight, window.innerHeight, vv.height)
+  if (!campoDeTextoEmFoco() || !alturaSemTeclado) alturaSemTeclado = agora
+  return alturaSemTeclado - vv.height > 150
 }
 
 export default function CriarClient({ initialOccasions, planos = [] }: { initialOccasions: WizardOccasion[]; planos?: PlanoResumo[] }) {
@@ -269,6 +282,9 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   // Android com "resizes-content" já encolhe o layout inteiro: a diferença
   // fica abaixo do limite e nada muda (nem precisa). Ver `tecladoAberto`.
   const [teclado, setTeclado] = useState<{ h: number; top: number } | null>(null)
+  // Teclado aberto numa tela cujo botão fica no meio do conteúdo: o botão vai
+  // pra barra fixa logo acima do teclado (ver o rodapé mobile).
+  const barraNoTeclado = !!teclado && (showLeadCapture || step === 2)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
@@ -298,24 +314,33 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
       window.removeEventListener("focusout", depoisDoFoco)
     }
   }, [])
-  // Com o teclado aberto, mantém à vista o campo em foco E, se couber junto, o
-  // botão de avançar da tela (marcado com `data-acao-teclado`). Rolagem
-  // instantânea: a suave é cancelada quando o teclado mexe na tela.
+  // Com o teclado aberto, mantém à vista o campo em foco e, se couber junto,
+  // a pergunta que ele responde (marcada com `data-contexto-teclado`). O botão
+  // de avançar não entra na conta: com teclado ele fica na barra fixa logo
+  // acima do teclado. Rolagem instantânea: a suave é cancelada quando o
+  // teclado mexe na tela.
   const mostrarFocoEBotao = useCallback(() => {
     const vv = window.visualViewport
     if (!vv || !tecladoAberto(vv)) return
-      const c = contentRef.current
-      const foco = document.activeElement as HTMLElement | null
-      if (!c || !foco || !c.contains(foco)) return
-      const area = c.getBoundingClientRect()
-      const f = foco.getBoundingClientRect()
-      const botao = c.querySelector<HTMLElement>("[data-acao-teclado]")
-      const b = botao?.getBoundingClientRect()
-      const margem = 12
-      let alvoBaixo = f.bottom
-      if (b && b.bottom > f.top && b.bottom - f.top + margem * 2 <= area.height) alvoBaixo = Math.max(alvoBaixo, b.bottom)
-      if (alvoBaixo + margem > area.bottom) c.scrollTop += alvoBaixo + margem - area.bottom
-      else if (f.top - margem < area.top) c.scrollTop -= area.top - (f.top - margem)
+    const c = contentRef.current
+    const foco = document.activeElement as HTMLElement | null
+    if (!c || !foco || !c.contains(foco)) return
+    const margem = 12
+    const area = c.getBoundingClientRect()
+    const f = foco.getBoundingClientRect()
+    const ctx = c.querySelector<HTMLElement>("[data-contexto-teclado]")?.getBoundingClientRect()
+    const comPergunta = !!ctx && ctx.height > 0 && ctx.top <= f.top && f.bottom - ctx.top + margem * 2 <= area.height
+    const topo = (comPergunta ? ctx!.top : f.top) - margem
+    const base = f.bottom + margem
+    if (base > area.bottom) c.scrollTop += base - area.bottom
+    else if (topo < area.top) c.scrollTop -= area.top - topo
+    // Depois de descer até o campo, sobe o que der pra mostrar a pergunta.
+    const f2 = foco.getBoundingClientRect()
+    const ctx2 = c.querySelector<HTMLElement>("[data-contexto-teclado]")?.getBoundingClientRect()
+    if (comPergunta && ctx2 && ctx2.top - margem < area.top) {
+      const folga = area.bottom - (f2.bottom + margem)
+      c.scrollTop -= Math.min(area.top - (ctx2.top - margem), Math.max(0, folga))
+    }
   }, [])
   useEffect(() => {
     if (!teclado) return
@@ -1355,7 +1380,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <button
                   onClick={handleLeadSave}
                   data-acao-teclado
-                  className="w-full py-4 rounded-2xl text-base font-semibold text-white"
+                  className={`w-full py-4 rounded-2xl text-base font-semibold text-white ${barraNoTeclado ? "max-lg:hidden" : ""}`}
                   style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
                 >
                   Salvar e continuar →
@@ -1527,7 +1552,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   </div>
                 </div>
 
-                <h2 className="text-lg font-bold mb-3">{currentQuestion}</h2>
+                <h2 data-contexto-teclado className="text-lg font-bold mb-3">{currentQuestion}</h2>
 
                 <div className="relative">
                   <textarea
@@ -1563,7 +1588,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 <button
                   onClick={nextStep}
                   data-acao-teclado
-                  className="lg:hidden w-full mt-3 py-3.5 rounded-2xl text-base font-semibold text-white"
+                  className={`${barraNoTeclado ? "hidden" : "lg:hidden"} w-full mt-3 py-3.5 rounded-2xl text-base font-semibold text-white`}
                   style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
                 >
                   Continuar →
@@ -1997,13 +2022,28 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           <div className="relative h-0 shrink-0 z-30">{avisoErro("embaixo")}</div>
         )}
 
-        {/* Botão fixo no rodapé — mobile */}
-        {!showLeadCapture && step !== 1 && step !== 2 && (
-          <div className="lg:hidden shrink-0 px-5 py-4 border-t border-white/[0.06]"
+        {/* Botão fixo no rodapé — mobile.
+            Estilo, dados e prévia têm sempre. As perguntas e o "Informe seu
+            contato" têm o botão no meio do conteúdo — mas com o TECLADO
+            ABERTO ele passa pra cá, preso logo acima do teclado. Tentar
+            rolar o conteúdo pra caber campo + botão falhava em celular
+            pequeno (iPhone SE: faltava 1px) e voltaria a falhar com qualquer
+            pergunta mais longa; a barra fixa aparece em qualquer tamanho. */}
+        {(barraNoTeclado || (!showLeadCapture && step !== 1 && step !== 2)) && (
+          <div className={`lg:hidden shrink-0 px-5 border-t border-white/[0.06] ${teclado ? "py-2" : "py-4"}`}
                style={{ background: "rgba(7,6,13,0.95)", backdropFilter: "blur(16px)" }}>
-            {step < 5 ? (
-              <button onClick={nextStep}
-                      className="w-full py-4 rounded-2xl text-base font-semibold text-white"
+            {showLeadCapture ? (
+              // onMouseDown/preventDefault: o toque no botão não tira o foco do
+              // campo antes do clique — sem isso o teclado começa a fechar, a
+              // barra desce junto e o toque cai no vazio.
+              <button onMouseDown={(e) => e.preventDefault()} onClick={handleLeadSave}
+                      className="w-full py-3 rounded-2xl text-base font-semibold text-white"
+                      style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
+                Salvar e continuar →
+              </button>
+            ) : step < 5 ? (
+              <button onClick={nextStep} onMouseDown={(e) => { if (teclado) e.preventDefault() }}
+                      className={`w-full rounded-2xl text-base font-semibold text-white ${teclado ? "py-3" : "py-4"}`}
                       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
                 Continuar →
               </button>
