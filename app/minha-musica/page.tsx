@@ -1472,22 +1472,35 @@ function MinhaMusicaContent() {
                   <>
                     {producedShelf.length > 0 && (
                       <>
-                        {/* O cabeçalho vira o botão de abrir/fechar. Linha
-                            inteira clicável, não só a setinha: num celular
-                            um alvo de 10px é um alvo errado. */}
+                        {/* Abrir/fechar as entregues é um BOTÃO com cara de
+                            botão. Era um rótulo de 10,5px em caixa-alta com
+                            um ▾ de 11px — com 53 músicas atrás dele, parecia
+                            legenda de seção e ninguém tocava (2026-11-23).
+                            Fechado, ele É a prateleira inteira, então precisa
+                            dizer quantas tem e o que acontece ao tocar. */}
                         <button
                           // Primeiro toque parte do que está na tela: se a
                           // regra fechou (há ação pendente), abre; se estava
                           // aberta, fecha. Daí em diante é só inverter.
                           onClick={() => setPrateleiraAberta((v) => (v === null ? temAlgoPedindoAcao : !v))}
                           aria-expanded={!prateleiraFechada}
-                          className="w-full flex items-center gap-2.5 mt-4 mb-3 text-left"
+                          className="w-full flex items-center gap-3 mt-5 mb-3 px-4 py-3.5 rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.07] hover:border-white/20 text-left transition-colors"
                         >
-                          <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">
-                            Entregues ({producedShelf.length})
+                          <span aria-hidden className="shrink-0 w-10 h-10 rounded-xl bg-fuchsia-500/15 flex items-center justify-center text-lg">🎵</span>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-base font-semibold text-white leading-snug">Músicas entregues</span>
+                            <span className="block text-[13px] text-white/55 leading-snug">
+                              {producedShelf.length} {producedShelf.length === 1 ? "música pronta" : "músicas prontas"}
+                            </span>
                           </span>
-                          <span className="text-white/35 text-[11px]">{prateleiraFechada ? "▾" : "▴"}</span>
-                          <span className="h-px flex-1 bg-white/10" />
+                          <span className="shrink-0 flex items-center gap-1 text-sm font-semibold text-fuchsia-300">
+                            {prateleiraFechada ? "Ver todas" : "Recolher"}
+                            <svg viewBox="0 0 24 24" aria-hidden
+                                 className={`w-4 h-4 transition-transform ${prateleiraFechada ? "" : "rotate-180"}`}
+                                 fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </span>
                         </button>
                         {!prateleiraFechada && (
                           <div className="flex items-start gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
@@ -1500,7 +1513,7 @@ function MinhaMusicaContent() {
                     {pendingShelf.length > 0 && (
                       <>
                         <div className="flex items-center gap-2.5 mt-4 mb-3">
-                          <span className="text-[10.5px] uppercase tracking-wide font-bold text-white/40 whitespace-nowrap">Pendentes</span>
+                          <span className="text-[11px] uppercase tracking-wide font-bold text-white/50 whitespace-nowrap">Pendentes</span>
                           <span className="h-px flex-1 bg-white/10" />
                         </div>
                         <div className="flex items-start gap-3 overflow-x-auto sm:flex-wrap sm:overflow-x-visible pb-2 -mx-5 sm:mx-0 px-5 sm:px-0">
