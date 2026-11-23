@@ -189,7 +189,6 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
 
   // Leva o olhar do usuário até a mensagem de erro assim que ela aparece —
   // sem isso, numa etapa longa o aviso pode renderizar fora da tela.
-  const errorRef = useRef<HTMLDivElement>(null)
   const leadErrorRef = useRef<HTMLDivElement>(null)
   // Reconhece quem já está logado. Sem sessão, nada muda: o wizard segue
   // funcionando sem conta, que é a jornada de quem vem de anúncio.
@@ -219,8 +218,12 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   function mostrarErro(msg: string, alvo?: string) { erroAlvoRef.current = alvo ?? null; setError(msg); setErrorSeq((n) => n + 1) }
   useEffect(() => {
     if (!error) return
+    // O aviso flutua (sempre à vista); rolar só quando há um trecho a mostrar.
     const alvo = erroAlvoRef.current ? document.getElementById(erroAlvoRef.current) : null
-    ;(alvo ?? errorRef.current)?.scrollIntoView({ behavior: "smooth", block: alvo ? "start" : "center" })
+    alvo?.scrollIntoView({ behavior: "smooth", block: alvo.tagName === "INPUT" ? "center" : "start" })
+    // Some sozinho depois de ler. `errorSeq` reinicia a contagem a cada erro.
+    const t = setTimeout(() => setError(""), 6000)
+    return () => clearTimeout(t)
   }, [error, errorSeq])
   const [faltaNoEstilo, setFaltaNoEstilo] = useState<"estilo" | "voz" | "emocao" | null>(null)
 
@@ -754,20 +757,28 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     }
 
     if (step === 4) {
-      if (!nome.trim() || !emailEfetivo || !whatsapp.trim()) {
-        mostrarErro("Preencha todos os seus dados.")
+      if (!nome.trim()) {
+        mostrarErro("Falta o seu nome.", "campo-nome")
+        return
+      }
+      if (!emailEfetivo) {
+        mostrarErro("Falta o seu e-mail.", "campo-email")
+        return
+      }
+      if (!whatsapp.trim()) {
+        mostrarErro("Falta o seu WhatsApp com DDD.", "campo-whatsapp")
         return
       }
       if (!ehComposicao && !honoreeName.trim()) {
-        mostrarErro("Informe para quem é essa música.")
+        mostrarErro("Informe para quem é essa música.", "campo-homenageado")
         return
       }
       if (!EMAIL_RE.test(emailEfetivo)) {
-        mostrarErro("E-mail inválido.")
+        mostrarErro("Confira o e-mail: parece que falta alguma parte.", "campo-email")
         return
       }
       if (!WHATSAPP_RE.test(whatsapp)) {
-        mostrarErro("WhatsApp inválido. Use o formato (XX) 9XXXX-XXXX.")
+        mostrarErro("Confira o WhatsApp: use DDD + número, ex. (11) 91234-5678.", "campo-whatsapp")
         return
       }
     }
@@ -1519,7 +1530,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="mb-4">
-                <h2 id="secao-estilo" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6" style={{ color: "#f0196b" }}>Estilo musical</h2>
+                <h2 id="secao-estilo" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6 lg:scroll-mt-28" style={{ color: "#f0196b" }}>Estilo musical</h2>
                 {faltaNoEstilo === "estilo" && !musicalStyle && (
                   <p className="text-sm text-red-300 mb-2">Escolha uma opção abaixo.</p>
                 )}
@@ -1549,7 +1560,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="mb-4">
-                <h2 id="secao-voz" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6" style={{ color: "#f0196b" }}>Tipo de voz</h2>
+                <h2 id="secao-voz" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6 lg:scroll-mt-28" style={{ color: "#f0196b" }}>Tipo de voz</h2>
                 {faltaNoEstilo === "voz" && !voiceType && (
                   <p className="text-sm text-red-300 mb-2">Escolha uma opção abaixo.</p>
                 )}
@@ -1591,7 +1602,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   Uma música ou banda que lembre o que você imagina. Usamos só a <strong className="text-white/50">sonoridade</strong> como inspiração — a sua música é original.
                 </p>
 
-                <h2 id="secao-emocao" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6" style={{ color: "#f0196b" }}>Emoção da música</h2>
+                <h2 id="secao-emocao" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6 lg:scroll-mt-28" style={{ color: "#f0196b" }}>Emoção da música</h2>
                 {faltaNoEstilo === "emocao" && !emotion && (
                   <p className="text-sm text-red-300 mb-2">Escolha uma opção abaixo.</p>
                 )}
@@ -1644,7 +1655,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     <input
                       value={nome}
                       onChange={(e) => setNome(e.target.value)}
-                      placeholder="Ex: João Silva"
+                      id="campo-nome" placeholder="Ex: João Silva"
                       className="w-full bg-black/40 border border-white/10 rounded-3xl px-6 py-5 text-lg outline-none focus:border-pink-500 transition-colors"
                     />
                   </div>
@@ -1670,7 +1681,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Ex: joao@email.com"
+                      id="campo-email" placeholder="Ex: joao@email.com"
                       className="w-full bg-black/40 border border-white/10 rounded-3xl px-6 py-5 text-lg outline-none focus:border-pink-500 transition-colors"
                     />
                   )}
@@ -1686,7 +1697,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       inputMode="numeric"
                       value={whatsapp}
                       onChange={(e) => setWhatsapp(maskWhatsapp(e.target.value))}
-                      placeholder="(11) 99999-9999"
+                      id="campo-whatsapp" placeholder="(11) 99999-9999"
                       maxLength={16}
                       className="w-full bg-black/40 rounded-3xl px-6 py-5 text-lg outline-none transition-colors pr-12"
                       style={{
@@ -1731,7 +1742,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   <input
                     value={honoreeName}
                     onChange={(e) => setHonoreeName(e.target.value)}
-                    placeholder="Ex: Maria, Vovó Lúcia, Papai…"
+                    id="campo-homenageado" placeholder="Ex: Maria, Vovó Lúcia, Papai…"
                     className="w-full rounded-2xl px-5 py-3.5 text-base outline-none transition-colors"
                     style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(240,25,107,0.3)" }}
                   />
@@ -1870,12 +1881,6 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             </div>
             </div>
 
-            {/* Erro */}
-            {!showLeadCapture && error && (
-              <div ref={errorRef} className="mt-4 bg-red-500/10 border border-red-500/20 text-red-300 rounded-2xl p-4 text-sm">
-                ⚠️ {error}
-              </div>
-            )}
 
             {/* Botões de navegação — desktop */}
             {!showLeadCapture && (
@@ -1935,6 +1940,29 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             )}
 
           </div>
+        </div>
+
+        {/* ── Aviso de erro flutuante ──
+            Era uma caixa no FIM do conteúdo. Quando a tela rolava até o
+            campo que faltava (ex.: tipo de voz), a mensagem ficava lá
+            embaixo, fora da vista; e numa tela comprida ela nem aparecia sem
+            rolar. Agora flutua logo acima do botão de avançar — onde está o
+            dedo e o olho de quem acabou de tocar — sem bloquear a tela: não
+            é um modal que exige fechar antes de corrigir. Some sozinha, ao
+            tocar nela ou ao tentar de novo. Sempre escura (zona escura) pra
+            ler bem sobre qualquer fundo, nos dois temas. */}
+        <div className="relative h-0 shrink-0 z-30">
+          {!showLeadCapture && error && (
+            <div key={errorSeq} role="alert" aria-live="assertive" data-zona-escura
+                 onClick={() => setError("")}
+                 className="absolute left-4 right-4 bottom-3 lg:fixed lg:left-1/2 lg:right-auto lg:bottom-8 lg:w-[440px] lg:-translate-x-1/2 flex items-start gap-3 rounded-2xl px-4 py-3.5 cursor-pointer animate-in fade-in slide-in-from-bottom-2 duration-200"
+                 style={{ background: "#211726", color: "#fff", border: "1px solid rgba(240,25,107,0.45)", boxShadow: "0 12px 32px rgba(0,0,0,0.35)" }}>
+              <svg viewBox="0 0 24 24" className="w-5 h-5 shrink-0 mt-px" fill="none" stroke="#ff5c9a" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="10" /><path d="M12 8v4" /><path d="M12 16h.01" />
+              </svg>
+              <p className="text-[15px] leading-snug font-medium flex-1">{error}</p>
+            </div>
+          )}
         </div>
 
         {/* Botão fixo no rodapé — mobile */}
