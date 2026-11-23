@@ -32,8 +32,20 @@ export default function AuthCallback() {
       // caminho é outro, não ver a tela de login de novo sem explicação.
       const hash = new URLSearchParams(window.location.hash.slice(1))
       const erroProvedor = url.searchParams.get("error_description") || hash.get("error_description")
-      if (erroProvedor) {
-        router.replace(`/entrar?erro=${/email/i.test(erroProvedor) ? "sem-email" : "login-social"}`)
+      const codigoErro = url.searchParams.get("error_code") || hash.get("error_code")
+      if (erroProvedor || codigoErro) {
+        // O link mágico vencido ou já usado TAMBÉM volta por aqui ("Email link
+        // is invalid or has expired", error_code=otp_expired). Testar só /email/
+        // mandava esse caso pra mensagem do Facebook sem e-mail — o dono da
+        // conta clicou num link do próprio e-mail e leu que o Facebook não
+        // compartilhou o e-mail dele (2026-11-23). Por isso: link primeiro, e o
+        // Facebook só com a frase EXATA que o Supabase usa pra esse caso.
+        const texto = erroProvedor ?? ""
+        const erro =
+          codigoErro === "otp_expired" || /link|expired|invalid/i.test(texto) ? "link-invalido"
+          : /getting user email/i.test(texto) ? "sem-email"
+          : "login-social"
+        router.replace(`/entrar?erro=${erro}`)
         return
       }
 

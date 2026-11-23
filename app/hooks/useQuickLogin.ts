@@ -26,7 +26,11 @@ export function useQuickLogin(email: string | null | undefined, vincularToken?: 
     setError("")
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: redirectTo() },
+      options: {
+        redirectTo: redirectTo(),
+        // Deixa escolher a conta do Google — ver app/entrar/page.tsx.
+        ...(provider === "google" && { queryParams: { prompt: "select_account" } }),
+      },
     })
     if (authError) setError(authError.message)
   }

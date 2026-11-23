@@ -106,7 +106,12 @@ export default function EntrarPage() {
     setError("")
     const { error: authError } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        // Sem isso o Google entra direto na única conta logada no navegador,
+        // e quem tem duas (pessoal e da loja) não consegue escolher a outra.
+        ...(provider === "google" && { queryParams: { prompt: "select_account" } }),
+      },
     })
     if (authError) setError(authError.message)
   }
