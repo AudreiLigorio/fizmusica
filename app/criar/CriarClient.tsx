@@ -211,8 +211,18 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   // anterior, React não re-renderiza e o efeito não roda, então o aviso não
   // volta pra tela. Do segundo clique em diante o botão parecia morto.
   const [errorSeq, setErrorSeq] = useState(0)
-  function mostrarErro(msg: string) { setError(msg); setErrorSeq((n) => n + 1) }
-  useEffect(() => { if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }) }, [error, errorSeq])
+  // `alvo`: id do trecho da tela que precisa de atenção. Sem ele a rolagem vai
+  // até a caixa de erro, que fica no fim; com ele, vai até o que falta — no
+  // passo do estilo a caixa aparecia lá embaixo dizendo só "escolha todas as
+  // opções", e o tipo de voz que faltava ficava escondido sob 24 ritmos.
+  const erroAlvoRef = useRef<string | null>(null)
+  function mostrarErro(msg: string, alvo?: string) { erroAlvoRef.current = alvo ?? null; setError(msg); setErrorSeq((n) => n + 1) }
+  useEffect(() => {
+    if (!error) return
+    const alvo = erroAlvoRef.current ? document.getElementById(erroAlvoRef.current) : null
+    ;(alvo ?? errorRef.current)?.scrollIntoView({ behavior: "smooth", block: alvo ? "start" : "center" })
+  }, [error, errorSeq])
+  const [faltaNoEstilo, setFaltaNoEstilo] = useState<"estilo" | "voz" | "emocao" | null>(null)
 
   // Session persistence
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -506,6 +516,7 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   /* ================================================= */
 
   const totalSteps = 5
+  const ETAPAS_WIZARD = ["Ocasião", "Sua história", "Estilo", "Seus dados", "Prévia da letra"]
   const internalQuestionProgress =
     step === 2 ? questionStep / Math.max(questions.length, 1) : 0
   const progress =
@@ -657,10 +668,18 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     }
 
     if (step === 3) {
-      if (!musicalStyle || !voiceType || !emotion) {
-        mostrarErro("Escolha todas as opções musicais.")
+      const falta = !musicalStyle ? "estilo" : !voiceType ? "voz" : !emotion ? "emocao" : null
+      if (falta) {
+        setFaltaNoEstilo(falta)
+        mostrarErro(
+          falta === "estilo" ? "Falta escolher o estilo musical." :
+          falta === "voz"    ? "Falta escolher o tipo de voz: masculina ou feminina." :
+                               "Falta escolher a emoção da música.",
+          `secao-${falta}`,
+        )
         return
       }
+      setFaltaNoEstilo(null)
       // Nada a preencher no passo 4: vai direto ao resumo, onde os dados
       // aparecem e podem ser corrigidos.
       if (dadosDeContatoOk) {
@@ -977,7 +996,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
         {/* ── Mobile: barra de progresso + topo ── */}
         <div className="lg:hidden shrink-0">
-          <div className="h-[2px] w-full" style={{ background: "rgba(255,255,255,0.05)" }}>
+          <div className="h-1 w-full" style={{ background: "rgba(255,255,255,0.08)" }}>
             <div className="h-full transition-all duration-500"
                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
           </div>
@@ -986,7 +1005,13 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               <button onClick={voltarTela} disabled={submitting}
                       className="text-white/50 text-sm disabled:opacity-30">← Voltar</button>
             ) : <div />}
-            <div />
+            {/* A barra de cima (Ocasião · Experiência · ...) é a jornada INTEIRA
+                e fica no 1 durante todo o wizard — a pessoa respondia cinco
+                telas sem ver nada andar. Este rótulo mostra o avanço dentro
+                do wizard. */}
+            <span className="text-[13px] font-medium text-white/55">
+              Etapa {step} de {totalSteps} · {ETAPAS_WIZARD[step - 1]}
+            </span>
             {noApp ? (
               <button onClick={sairDoWizard} aria-label="Sair da criação"
                       className="w-9 h-9 -mr-2 flex items-center justify-center rounded-full text-white/60 hover:text-white text-xl leading-none">✕</button>
@@ -1427,7 +1452,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="mb-4">
-                <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Estilo musical</h2>
+                <h2 id="secao-estilo" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6" style={{ color: "#f0196b" }}>Estilo musical</h2>
+                {faltaNoEstilo === "estilo" && !musicalStyle && (
+                  <p className="text-sm text-red-300 mb-2">Escolha uma opção abaixo.</p>
+                )}
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
                   {/* Lista em lib/ritmo.ts, compartilhada com o catálogo.
@@ -1454,7 +1482,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               </div>
 
               <div className="mb-4">
-                <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Tipo de voz</h2>
+                <h2 id="secao-voz" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6" style={{ color: "#f0196b" }}>Tipo de voz</h2>
+                {faltaNoEstilo === "voz" && !voiceType && (
+                  <p className="text-sm text-red-300 mb-2">Escolha uma opção abaixo.</p>
+                )}
                 <div className="grid grid-cols-2 gap-2 overflow-hidden">
                   {["👨 Masculina", "👩 Feminina"].map((item) => (
                     <button
@@ -1493,7 +1524,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   Uma música ou banda que lembre o que você imagina. Usamos só a <strong className="text-white/50">sonoridade</strong> como inspiração — a sua música é original.
                 </p>
 
-                <h2 className="text-xs font-semibold mb-2 uppercase tracking-widest" style={{ color: "#f0196b" }}>Emoção da música</h2>
+                <h2 id="secao-emocao" className="text-xs font-semibold mb-2 uppercase tracking-widest scroll-mt-6" style={{ color: "#f0196b" }}>Emoção da música</h2>
+                {faltaNoEstilo === "emocao" && !emotion && (
+                  <p className="text-sm text-red-300 mb-2">Escolha uma opção abaixo.</p>
+                )}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 overflow-hidden">
                   {[
                     "💖 Emocionante",  "❤️ Romântica",
