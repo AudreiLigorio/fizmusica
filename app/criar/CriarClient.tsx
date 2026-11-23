@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Header from "../components/Header"
 import Footer from "../components/Footer"
@@ -241,6 +241,70 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   // telas que trocam SEM mudar de etapa: as subcategorias do tema (escolher
   // "Pets" abre outra lista) e o "Informe seu contato".
   useScrollTopOnStepChange(`${step}-${questionStep}-${selectedContext}-${showLeadCapture}`, contentRef)
+
+  // ── Teclado aberto no celular ──
+  // No iPhone o teclado NÃO encolhe a tela: ele cobre a parte de baixo, e o
+  // wizard (fixo, top-0/bottom-0) seguia do tamanho cheio por trás dele. O
+  // "Continuar" ficava embaixo do teclado e a pessoa precisava tocar fora pra
+  // fechar o teclado e achar o botão. A `visualViewport` diz a área que sobra
+  // visível; o wizard passa a ocupar só ela (a barra fixa do rodapé sobe junto
+  // e fica logo acima do teclado) e a barra da jornada some pra dar espaço.
+  // Android com "resizes-content" já encolhe a janela inteira: a diferença
+  // fica abaixo do limite e nada muda.
+  const [teclado, setTeclado] = useState<{ h: number; top: number } | null>(null)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const atualiza = () => {
+      const aberto = window.innerWidth < 1024 && window.innerHeight - vv.height > 150
+      setTeclado((ant) => {
+        if (!aberto) return null
+        const novo = { h: Math.round(vv.height), top: Math.round(vv.offsetTop) }
+        return ant && ant.h === novo.h && ant.top === novo.top ? ant : novo
+      })
+    }
+    vv.addEventListener("resize", atualiza)
+    vv.addEventListener("scroll", atualiza)
+    atualiza()
+    return () => {
+      vv.removeEventListener("resize", atualiza)
+      vv.removeEventListener("scroll", atualiza)
+    }
+  }, [])
+  // Com o teclado aberto, mantém à vista o campo em foco E, se couber junto, o
+  // botão de avançar da tela (marcado com `data-acao-teclado`). Rolagem
+  // instantânea: a suave é cancelada quando o teclado mexe na tela.
+  const mostrarFocoEBotao = useCallback(() => {
+    const vv = window.visualViewport
+    if (!vv || window.innerWidth >= 1024 || window.innerHeight - vv.height <= 150) return
+      const c = contentRef.current
+      const foco = document.activeElement as HTMLElement | null
+      if (!c || !foco || !c.contains(foco)) return
+      const area = c.getBoundingClientRect()
+      const f = foco.getBoundingClientRect()
+      const botao = c.querySelector<HTMLElement>("[data-acao-teclado]")
+      const b = botao?.getBoundingClientRect()
+      const margem = 12
+      let alvoBaixo = f.bottom
+      if (b && b.bottom > f.top && b.bottom - f.top + margem * 2 <= area.height) alvoBaixo = Math.max(alvoBaixo, b.bottom)
+      if (alvoBaixo + margem > area.bottom) c.scrollTop += alvoBaixo + margem - area.bottom
+      else if (f.top - margem < area.top) c.scrollTop -= area.top - (f.top - margem)
+  }, [])
+  useEffect(() => {
+    if (!teclado) return
+    const id = requestAnimationFrame(mostrarFocoEBotao)
+    return () => cancelAnimationFrame(id)
+  }, [teclado, step, questionStep, showLeadCapture, mostrarFocoEBotao])
+  // Trocar de campo com o teclado já aberto (captura de contato, dados) não
+  // muda o tamanho da tela, então o efeito acima não roda: o foco avisa.
+  useEffect(() => {
+    const c = contentRef.current
+    if (!c) return
+    let t: ReturnType<typeof setTimeout> | undefined
+    const aoFocar = () => { clearTimeout(t); t = setTimeout(mostrarFocoEBotao, 60) }
+    c.addEventListener("focusin", aoFocar)
+    return () => { clearTimeout(t); c.removeEventListener("focusin", aoFocar) }
+  }, [mostrarFocoEBotao])
   const [leadCaptured, setLeadCaptured] = useState(false)
   const [leadNome, setLeadNome] = useState("")
   const [leadEmail, setLeadEmail] = useState("")
@@ -987,10 +1051,11 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
       </div>
 
       <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex flex-col lg:static lg:inset-auto lg:z-auto lg:block lg:min-h-screen lg:pt-24"
-           style={{ background: "#07060d", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+           style={{ background: "#07060d", width: "100%", maxWidth: "100vw", overflowX: "hidden",
+                    ...(teclado && { top: teclado.top, height: teclado.h, bottom: "auto" }) }}>
 
         {/* ── Jornada completa (todas as páginas) ── */}
-        <div className="shrink-0 border-b border-white/[0.06] px-4">
+        <div className={`shrink-0 border-b border-white/[0.06] px-4 ${teclado ? "hidden" : ""}`}>
           <JourneyProgress current={1} />
         </div>
 
@@ -1228,6 +1293,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   onClick={handleLeadSave}
+                  data-acao-teclado
                   className="w-full py-4 rounded-2xl text-base font-semibold text-white"
                   style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
                 >
@@ -1435,6 +1501,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
                 <button
                   onClick={nextStep}
+                  data-acao-teclado
                   className="lg:hidden w-full mt-3 py-3.5 rounded-2xl text-base font-semibold text-white"
                   style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}
                 >
