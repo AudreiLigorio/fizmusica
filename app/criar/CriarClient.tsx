@@ -95,15 +95,17 @@ function maskWhatsapp(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
-export default function CriarClient({ initialOccasions }: { initialOccasions: WizardOccasion[] }) {
+export type PlanoResumo = { id: string; name: string; price: number }
+
+export default function CriarClient({ initialOccasions, planos = [] }: { initialOccasions: WizardOccasion[]; planos?: PlanoResumo[] }) {
   return (
     <Suspense fallback={null}>
-      <CriarMusicaInner initialOccasions={initialOccasions} />
+      <CriarMusicaInner initialOccasions={initialOccasions} planos={planos} />
     </Suspense>
   )
 }
 
-function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasion[] }) {
+function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: WizardOccasion[]; planos: PlanoResumo[] }) {
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -148,7 +150,12 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   // botão "Trocar" precisa poder cancelar a escolha, e limpar a URL por
   // `history.replaceState` (pra não custar uma ida ao servidor) não atualiza
   // o hook — o envio ainda levaria o plano que a pessoa acabou de tirar.
-  const [planoPre, setPlanoPre] = useState<{ id: string; name: string; price: number } | null>(null)
+  // Plano desativado no admin entre o clique e agora: fica null em silêncio e
+  // a pessoa escolhe normalmente no fim do wizard.
+  const [planoPre, setPlanoPre] = useState<PlanoResumo | null>(() => {
+    const id = searchParams.get("produto")
+    return id ? planos.find((p) => p.id === id) ?? null : null
+  })
   const [error, setError] = useState("")
   const [questionStep, setQuestionStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -248,24 +255,6 @@ function CriarMusicaInner({ initialOccasions }: { initialOccasions: WizardOccasi
   }, [initialOccasions])
 
   // Ao montar: verifica ?sessao=UUID (link de e-mail de recuperação) ou localStorage
-  // Busca nome e preço do plano pré-escolhido só quando ele existe: quem entra
-  // pelo caminho normal (Criar música) não paga por essa requisição.
-  useEffect(() => {
-    const id = searchParams.get("produto")
-    if (!id) return
-    let vivo = true
-    fetch("/api/produtos")
-      .then((r) => r.json())
-      .then((d) => {
-        if (!vivo) return
-        const p = (d.products ?? []).find((x: { id: string }) => x.id === id)
-        // Plano desativado no admin entre o clique e agora: ignora em silêncio.
-        // A pessoa segue o wizard e escolhe normalmente no fim.
-        if (p) setPlanoPre({ id: p.id, name: p.name, price: p.price })
-      })
-      .catch(() => {})
-    return () => { vivo = false }
-  }, [searchParams])
 
   useEffect(() => {
     // Fluxo e-mail → pagamento → "Voltar": vem com ?orderId. Reconstrói o wizard a
