@@ -27,6 +27,14 @@ function getClient(location: string): GoogleGenAI {
   })
 }
 
+// Falta de crédito do Google vira e-mail de emergência na hora (lib/alertaCreditos).
+// Import dinâmico: o alerta usa o Supabase e o e-mail, que não precisam carregar
+// em toda geração — só quando ela falha.
+async function avisarSeSemCredito(e: unknown) {
+  const { alertarSeFaltaDeCredito } = await import("@/lib/alertaCreditos")
+  await alertarSeFaltaDeCredito("google", e)
+}
+
 type LyricsOpts = {
   systemPrompt: string
   model: string
@@ -73,7 +81,7 @@ export async function generateLyrics(opts: LyricsOpts): Promise<string> {
       systemInstruction: opts.systemPrompt,
       temperature: 0.9,
     },
-  })
+  }).catch(async (e) => { await avisarSeSemCredito(e); throw e })
 
   const text = (res.text ?? "").trim()
   if (!text) throw new Error("A IA não retornou letra.")
@@ -94,12 +102,17 @@ export async function generateLyricsStream(opts: LyricsOpts): Promise<AsyncItera
       systemInstruction: opts.systemPrompt,
       temperature: 0.9,
     },
-  })
+  }).catch(async (e) => { await avisarSeSemCredito(e); throw e })
 
   return (async function* () {
-    for await (const chunk of stream) {
-      const text = chunk.text ?? ""
-      if (text) yield text
+    try {
+      for await (const chunk of stream) {
+        const text = chunk.text ?? ""
+        if (text) yield text
+      }
+    } catch (e) {
+      await avisarSeSemCredito(e)
+      throw e
     }
   })()
 }

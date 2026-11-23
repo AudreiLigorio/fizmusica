@@ -51,7 +51,11 @@ export async function generateMusic(params: SunoGenerateParams): Promise<string>
 
   const data = await res.json().catch(() => ({}))
   if (!res.ok || data?.code !== 200) {
-    throw new Error(data?.msg || `Falha ao gerar música (HTTP ${res.status}).`)
+    const erro = new Error(data?.msg || `Falha ao gerar música (HTTP ${res.status}).`)
+    // Sem crédito na KIE: e-mail de emergência na hora (uma vez por dia).
+    const { alertarSeFaltaDeCredito } = await import("@/lib/alertaCreditos")
+    await alertarSeFaltaDeCredito("suno", `${erro.message} (HTTP ${res.status}, code ${data?.code ?? "?"})`)
+    throw erro
   }
   const taskId = data?.data?.taskId
   if (!taskId) throw new Error("Suno não retornou taskId.")

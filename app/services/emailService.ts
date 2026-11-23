@@ -882,3 +882,40 @@ export async function sendMassEmail(recipients: MassEmailRecipient[], subject: s
   console.log(`[email] Massa: ${sent} enviados, ${failed} falharam`)
   return { sent, failed, errors }
 }
+
+// ============================================================
+// Alerta operacional: créditos de IA (Google/Gemini e Suno/KIE)
+// Vai pro e-mail pessoal do dono (mesmo padrão do ADMIN_REVIEW_EMAIL): é o
+// tipo de aviso que não pode ficar numa caixa compartilhada sem ser lido.
+// ============================================================
+
+const ALERTA_CREDITOS_EMAIL = process.env.ALERTA_CREDITOS_EMAIL ?? ADMIN_REVIEW_EMAIL
+
+export async function sendAlertaCreditos(data: {
+  assunto: string
+  emoji: string
+  titulo: string
+  subtitulo?: string
+  paragrafos: string[]
+  linhas?: [string, string][]
+  botao?: { text: string; url: string }
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from:    FROM_ADDRESS,
+      to:      ALERTA_CREDITOS_EMAIL,
+      subject: data.assunto,
+      html: emailShell({
+        emoji: data.emoji,
+        title: data.titulo,
+        subtitle: data.subtitulo,
+        body: data.paragrafos.map(para).join("") + (data.linhas?.length ? adminRows(data.linhas) : ""),
+        button: data.botao,
+      }),
+    })
+    if ((result as any).error) return { ok: false, error: (result as any).error?.message ?? "erro" }
+    return { ok: true }
+  } catch (err: any) {
+    return { ok: false, error: err?.message ?? String(err) }
+  }
+}
