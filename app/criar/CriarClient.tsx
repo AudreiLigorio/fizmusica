@@ -97,6 +97,21 @@ function maskWhatsapp(value: string): string {
 
 export type PlanoResumo = { id: string; name: string; price: number }
 
+// Teclado virtual aberto? Compara a área VISÍVEL com a altura do LAYOUT.
+//
+// A primeira versão comparava com `window.innerHeight` e funcionava no Chrome
+// do computador e no Android — mas no iPhone (Safari e Chrome, ambos WebKit)
+// o `innerHeight` encolhe JUNTO com a área visível quando o teclado abre: a
+// diferença dava zero, o wizard nunca percebia o teclado e o "Continuar"
+// seguia escondido atrás dele (o Audrei achou testando "Pets" no celular).
+// `documentElement.clientHeight` é a altura do layout e não muda com o
+// teclado em nenhum dos dois.
+function tecladoAberto(vv: VisualViewport): boolean {
+  if (window.innerWidth >= 1024) return false
+  const layout = Math.max(document.documentElement.clientHeight, window.innerHeight)
+  return layout - vv.height > 150
+}
+
 export default function CriarClient({ initialOccasions, planos = [] }: { initialOccasions: WizardOccasion[]; planos?: PlanoResumo[] }) {
   return (
     <Suspense fallback={null}>
@@ -251,26 +266,36 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   // fechar o teclado e achar o botão. A `visualViewport` diz a área que sobra
   // visível; o wizard passa a ocupar só ela (a barra fixa do rodapé sobe junto
   // e fica logo acima do teclado) e a barra da jornada some pra dar espaço.
-  // Android com "resizes-content" já encolhe a janela inteira: a diferença
-  // fica abaixo do limite e nada muda.
+  // Android com "resizes-content" já encolhe o layout inteiro: a diferença
+  // fica abaixo do limite e nada muda (nem precisa). Ver `tecladoAberto`.
   const [teclado, setTeclado] = useState<{ h: number; top: number } | null>(null)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
     const atualiza = () => {
-      const aberto = window.innerWidth < 1024 && window.innerHeight - vv.height > 150
+      const aberto = tecladoAberto(vv)
       setTeclado((ant) => {
         if (!aberto) return null
         const novo = { h: Math.round(vv.height), top: Math.round(vv.offsetTop) }
         return ant && ant.h === novo.h && ant.top === novo.top ? ant : novo
       })
     }
+    // Rede de segurança: o teclado do iPhone sobe animado e nem toda versão
+    // avisa o fim da animação pelo `resize`. Reavaliar logo depois de entrar
+    // ou sair de um campo garante o estado final.
+    let t: ReturnType<typeof setTimeout> | undefined
+    const depoisDoFoco = () => { clearTimeout(t); t = setTimeout(atualiza, 350) }
     vv.addEventListener("resize", atualiza)
     vv.addEventListener("scroll", atualiza)
+    window.addEventListener("focusin", depoisDoFoco)
+    window.addEventListener("focusout", depoisDoFoco)
     atualiza()
     return () => {
+      clearTimeout(t)
       vv.removeEventListener("resize", atualiza)
       vv.removeEventListener("scroll", atualiza)
+      window.removeEventListener("focusin", depoisDoFoco)
+      window.removeEventListener("focusout", depoisDoFoco)
     }
   }, [])
   // Com o teclado aberto, mantém à vista o campo em foco E, se couber junto, o
@@ -278,7 +303,7 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   // instantânea: a suave é cancelada quando o teclado mexe na tela.
   const mostrarFocoEBotao = useCallback(() => {
     const vv = window.visualViewport
-    if (!vv || window.innerWidth >= 1024 || window.innerHeight - vv.height <= 150) return
+    if (!vv || !tecladoAberto(vv)) return
       const c = contentRef.current
       const foco = document.activeElement as HTMLElement | null
       if (!c || !foco || !c.contains(foco)) return
