@@ -270,14 +270,13 @@ function ProdutosContent() {
     ? (products.find((p) => p.id === planoDaHome) ? planGroup(products.find((p) => p.id === planoDaHome)!) : null)
     : null
 
-  // O grupo de origem vem primeiro; o outro recolhe. Recolher e não ESCONDER
-  // é deliberado: quem clicou na Retrospectiva pode não saber que custa
-  // R$ 69,90, e tirar o plano de R$ 9,90 da tela faria parte dessas pessoas
-  // abandonar em vez de comprar o mais barato — perde venda e parece
-  // armadilha. Um toque continua resolvendo.
+  // O grupo de origem vem primeiro, e os DOIS ficam abertos. Até 24/11/2026
+  // o outro grupo vinha recolhido em "Ver outros planos"; o Audrei pediu
+  // aberto: quem vem do anúncio do Essencial precisa VER que existem planos
+  // com fotos (lista ✓/✕ e "Ver como fica") para trocar antes de pagar, e
+  // não descobrir depois que comprou o plano errado.
   const ordemDosGrupos: ("voce" | "presentear")[] =
     grupoDeOrigem === "presentear" ? ["presentear", "voce"] : ["voce", "presentear"]
-  const [outrosAbertos, setOutrosAbertos] = useState(false)
 
   useEffect(() => {
     fetch("/api/produtos")
@@ -610,21 +609,6 @@ function ProdutosContent() {
             {ordemDosGrupos.map((group) => {
               const items = produtosVisiveis.filter((p) => planGroup(p) === group)
               if (items.length === 0) return null
-              // Sem origem (entrou direto no wizard), nada recolhe: não há
-              // decisão anterior a respeitar, e os dois grupos são iguais.
-              const ehOutro = !!grupoDeOrigem && group !== grupoDeOrigem
-              if (ehOutro && !outrosAbertos) {
-                return (
-                  <button
-                    key={group}
-                    onClick={() => setOutrosAbertos(true)}
-                    className="text-sm underline underline-offset-4"
-                    style={{ color: "rgba(255,255,255,0.5)" }}
-                  >
-                    Ver outros planos
-                  </button>
-                )
-              }
               return (
                 <div key={group}>
                   <div className="flex items-center gap-2 mb-3">
