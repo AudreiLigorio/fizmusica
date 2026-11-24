@@ -291,7 +291,7 @@ export default function Home() {
               da altura e nunca mais pode transbordar. */}
           <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,54%)] lg:gap-6 lg:items-center">
 
-            <div className="max-w-xl">
+            <div className="fm-hero-texto max-w-xl">
             {/* Aqui existia o rótulo "MÚSICAS PERSONALIZADAS" em caixa alta.
                 Saiu a pedido do Audrei. Os delays das linhas abaixo subiram
                 um degrau junto (200→100 e assim por diante): mantidos como

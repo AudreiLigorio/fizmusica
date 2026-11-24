@@ -452,6 +452,10 @@
 [data-tema="claro"] [style*="background:#f0196b"] *:not([data-zona-escura]):not([data-zona-escura] *){ color: #ffffff; }
 /* Sombra de texto foi pensada para título sobre foto escura; no creme borra */
 [data-tema="claro"] h1:not([data-zona-escura]):not([data-zona-escura] *), [data-tema="claro"] h2:not([data-zona-escura]):not([data-zona-escura] *){ text-shadow: none !important; }
+/* Herói da home: a sombra fica em linha nos span e p (não no h1), então a
+   regra acima não alcança; e o degradê do título usa drop-shadow. No creme
+   as duas viram um borrão escuro em volta da letra. */
+[data-tema="claro"] .fm-hero-texto *{ text-shadow: none !important; filter: none !important; }
 /* Hero da home: os véus escuros sobre o vídeo viram véus creme — forte à
    esquerda (onde está o texto), leve à direita (onde o vídeo aparece). */
 [data-tema="claro"] [style*="linear-gradient(90deg, rgba(7"]:not([data-zona-escura]):not([data-zona-escura] *){
