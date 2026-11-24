@@ -107,16 +107,45 @@ export function track(evento: string, detalhe?: string) {
 export function iniciarPresenca(): () => void {
   let timer: ReturnType<typeof setInterval> | null = null
 
-  const bater = () => {
-    if (document.visibilityState === "visible") track("ping")
+  // ── Saída: quanto tempo ficou e até onde rolou ──
+  // O ping só bate ao abrir e a cada 60s, então "saiu em 3s" e "saiu em 50s"
+  // eram iguais nos dados (24/11/2026: quase todo o anúncio pamela-v4 caía
+  // aí). Ao esconder a aba (fechar, voltar pro Instagram, trocar de app)
+  // manda `saida` com "12s 40%": segundos nesta página e a maior rolagem.
+  // A rolagem é medida em QUALQUER elemento (captura): no celular o wizard
+  // rola uma div própria, não a janela.
+  const inicio = Date.now()
+  let rolagem = 0
+  let saiu = false
+  const aoRolar = (e: Event) => {
+    const el = e.target === document ? document.scrollingElement : (e.target as Element | null)
+    if (!el || el.scrollHeight <= el.clientHeight + 4) return
+    const p = Math.min(100, Math.round(((el.scrollTop + el.clientHeight) / el.scrollHeight) * 100))
+    if (p > rolagem) rolagem = p
+  }
+  const sair = () => {
+    if (saiu) return
+    saiu = true
+    track("saida", `${Math.round((Date.now() - inicio) / 1000)}s ${rolagem}%`)
   }
 
-  bater()
-  timer = setInterval(bater, 60_000)
+  const bater = () => {
+    if (document.visibilityState === "visible") {
+      saiu = false
+      track("ping")
+    } else sair()
+  }
+
+  track("ping")
+  timer = setInterval(() => { if (document.visibilityState === "visible") track("ping") }, 60_000)
   document.addEventListener("visibilitychange", bater)
+  document.addEventListener("scroll", aoRolar, { capture: true, passive: true })
+  window.addEventListener("pagehide", sair)
 
   return () => {
     if (timer) clearInterval(timer)
     document.removeEventListener("visibilitychange", bater)
+    document.removeEventListener("scroll", aoRolar, { capture: true })
+    window.removeEventListener("pagehide", sair)
   }
 }

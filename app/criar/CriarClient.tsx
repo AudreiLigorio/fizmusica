@@ -60,7 +60,8 @@ import { useNoAppPlay } from "@/lib/canal"
 import { TabBarMobile } from "@/app/minha-musica/AreaTabs"
 import { confirmar } from "@/app/components/Dialogo"
 import { RITMOS } from "@/lib/ritmo"
-import BannerOcasioes, { TEMA_AUTORAL, type SlideBanner } from "@/app/components/BannerOcasioes"
+import { TEMA_AUTORAL } from "@/app/components/BannerOcasioes"
+import RecepcaoAnuncio from "./RecepcaoAnuncio"
 
 const SESSION_KEY = "fizmusica_session_id"
 
@@ -284,13 +285,19 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   // minuto. "De fora" = a página foi CARREGADA já no /criar (a navegação
   // vinda da home é feita no cliente e a entrada de navegação continua sendo
   // a da home). Retomada de pedido (orderId/sessao/editar) nunca vê.
-  const [deFora, setDeFora] = useState(false)
+  //
+  // Com utm_ na URL (todo anúncio), já nasce ligado: a checagem da navegação
+  // só roda depois da hidratação, e o anúncio mostrava o formulário por 1-2s
+  // antes de trocar pela recepção — os primeiros segundos são justamente
+  // quando quase todos saem. Os links internos do site não levam utm_.
+  const retomada = !!(searchParams.get("orderId") || searchParams.get("sessao") || searchParams.get("editar"))
+  const [deFora, setDeFora] = useState(() => !retomada && !!(searchParams.get("utm_source") || searchParams.get("utm_content")))
   useEffect(() => {
-    if (searchParams.get("orderId") || searchParams.get("sessao") || searchParams.get("editar")) return
+    if (retomada) return
     try {
       const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined
       const entrada = nav ? new URL(nav.name).pathname : ""
-      setDeFora(entrada.startsWith("/criar"))
+      if (entrada.startsWith("/criar")) setDeFora(true)
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -306,15 +313,11 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [composicaoLivre])
 
-  // Toque no banner da recepção: escolhe ALI MESMO, sem trocar de página —
-  // o ?produto= e a origem do anúncio seguem na URL.
-  function escolherPeloBanner(sl: SlideBanner) {
-    if (sl.tema === TEMA_AUTORAL) {
-      const sub = composicaoLivre?.wizard_subcategories[0]
-      if (sub && composicaoLivre) handleSubcategoryClick(sub, composicaoLivre.label)
-      return
-    }
-    setSelectedContext(sl.tema)
+  // "Criar a minha música" da recepção: desce até os temas, sem trocar de
+  // página (o ?produto= e a origem do anúncio seguem na URL).
+  const temasRef = useRef<HTMLDivElement>(null)
+  function irParaTemas() {
+    temasRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
   }
   // Quem traz a própria letra pode estar escrevendo pra mãe — ou sobre um
   // lugar, um sentimento, nada em particular. Aqui o nome do homenageado é
@@ -1289,6 +1292,11 @@ NOME: ${nome}
 E-MAIL: ${email}
 WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
+  // Recepção do anúncio na tela: sem barra de etapas, "Etapa 1 de 5" nem
+  // Voltar — para quem ainda está decidindo se quer, aquilo era formulário
+  // (e o Voltar, a saída mais à mão). Volta tudo ao escolher o tema.
+  const naRecepcao = deFora && !selectedContext && !resumeBanner && step === 1 && !showLeadCapture
+
   /* ================================================= */
   /* RENDER                                            */
   /* ================================================= */
@@ -1325,12 +1333,12 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         </div>
 
         {/* ── Jornada completa (todas as páginas) ── */}
-        <div className={`shrink-0 border-b border-white/[0.06] px-4 ${teclado ? "hidden" : ""}`}>
+        <div className={`shrink-0 border-b border-white/[0.06] px-4 ${teclado ? "hidden" : ""} ${naRecepcao ? "max-lg:hidden" : ""}`}>
           <JourneyProgress current={1} />
         </div>
 
         {/* ── Mobile: barra de progresso + topo ── */}
-        <div className="lg:hidden shrink-0">
+        <div className={`lg:hidden shrink-0 ${naRecepcao ? "hidden" : ""}`}>
           <div className="h-1 w-full" style={{ background: "rgba(255,255,255,0.08)" }}>
             <div className="h-full transition-all duration-500"
                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
@@ -1384,9 +1392,17 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     Plano{" "}
                     <span className="font-semibold text-white">{planoPre.name}</span>
                     <span className="text-white/50"> — R$ {planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                    {step === 1 && (
+                    {step === 1 && ((planoPre.photo_limit ?? 0) === 0 && planosDeMusica.some((p) => (p.photo_limit ?? 0) > 0) ? (
+                      // Sem fotos segue DITO (o vídeo do anúncio tem fotos),
+                      // mas como caminho, não como falta.
+                      <span className="block text-[13px] text-white/50 mt-0.5">
+                        Música{planoPre.feat_lyrics_sync ? " com letra sincronizada" : ""}. Com fotos:{" "}
+                        <button type="button" onClick={() => setTrocandoPlano(true)}
+                                className="font-semibold text-pink-400 underline underline-offset-2">ver planos</button>
+                      </span>
+                    ) : (
                       <span className="block text-[13px] text-white/50 mt-0.5">{resumoDoPlano(planoPre)}</span>
-                    )}
+                    ))}
                   </p>
                   {planosDeMusica.length > 1 && (
                     <button
@@ -1614,28 +1630,8 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           {/* ===== STEP 1 — Ocasião ===== */}
           {!showLeadCapture && step === 1 && (
             <div>
-              {deFora && !selectedContext && !resumeBanner && (
-                <div className="mb-7">
-                  <p className="text-[15px] text-white/70 mb-3 leading-snug">
-                    Você conta a história e <strong className="text-white">a gente transforma em música</strong>, pra presentear alguém ou lançar a sua.
-                  </p>
-                  <BannerOcasioes variante="wizard" onEscolher={escolherPeloBanner} />
-                  <ol className="mt-3 grid grid-cols-3 gap-2 text-center max-w-[400px] mx-auto">
-                    {[
-                      ["1", "Conte a história", "uns 3 minutos"],
-                      ["2", "Veja o refrão", "grátis"],
-                      ["3", "Receba 2 versões", "a 2ª é grátis"],
-                    ].map(([n, t, sub]) => (
-                      <li key={n} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2.5">
-                        <span className="block text-[13px] font-bold text-pink-400">{n}</span>
-                        <span className="block text-[13px] text-white leading-tight">{t}</span>
-                        <span className={`block text-[12px] mt-0.5 ${n !== "1" ? "text-emerald-400" : "text-white/50"}`}>{sub}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-              <div className="mb-8">
+              {naRecepcao && <RecepcaoAnuncio onCriar={irParaTemas} />}
+              <div ref={temasRef} className="mb-8 scroll-mt-4">
                 <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
                   Qual história você quer transformar em música?
                 </h1>
