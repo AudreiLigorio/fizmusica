@@ -131,12 +131,27 @@ function tecladoAberto(vv: VisualViewport): boolean {
 // posição obriga o navegador a recalcular onde desenhar o cursor.
 // Por isso os campos de e-mail usam inputMode="email" em vez do tipo e-mail:
 // nesse tipo o navegador não deixa mexer na seleção (lança erro).
+// Não mexer no campo enquanto a pessoa digita: no meio de uma composição
+// (ditado, acento, sugestão do teclado) trocar o valor quebraria o que está
+// sendo escrito. Atualizados por ouvintes no componente.
+let compondo = false
+let ultimaDigitacao = 0
 function ressincronizarCursor() {
   const el = document.activeElement
   if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return
+  if (compondo || Date.now() - ultimaDigitacao < 400) return
   try {
     const a = el.selectionStart, b = el.selectionEnd
     if (a == null || b == null) return
+    // Regravar a MESMA seleção pode não fazer nada: o WebKit vê que nada mudou
+    // e não redesenha. Mexer no texto e devolver igual obriga a refazer o
+    // layout do campo — e com ele o cursor —, inclusive em campo VAZIO, que é
+    // como o próximo campo (WhatsApp) costuma estar quando a pessoa chega
+    // nele. Escrever direto em `.value` não dispara onChange, e o valor volta
+    // idêntico, então o React não percebe.
+    const v = el.value
+    el.value = v + " "
+    el.value = v
     el.setSelectionRange(a, b, el.selectionDirection ?? undefined)
   } catch { /* tipo de campo sem seleção */ }
 }
@@ -392,19 +407,50 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   }, [teclado, step, questionStep, showLeadCapture, mostrarFocoEBotao])
   // Trocar de campo com o teclado já aberto (captura de contato, dados) não
   // muda o tamanho da tela, então o efeito acima não roda: o foco avisa.
+  //
+  // Os ouvintes ficam no DOCUMENTO, não na área de conteúdo: este efeito roda
+  // uma vez só, e quando a tela abre a área às vezes ainda não existe (ou é
+  // trocada depois). Presos nela, os ouvintes nunca ligavam — o cursor era
+  // acertado no 1º campo (pelo efeito do teclado) e ficava fora do lugar no
+  // campo seguinte (e-mail → WhatsApp, no iPhone do Audrei).
   useEffect(() => {
-    const c = contentRef.current
-    if (!c) return
+    const dentro = (alvo: EventTarget | null) => {
+      const c = contentRef.current
+      return !!c && alvo instanceof Node && c.contains(alvo)
+    }
     let t: ReturnType<typeof setTimeout> | undefined
-    const aoFocar = () => { clearTimeout(t); t = setTimeout(mostrarFocoEBotao, 60) }
+    // O iPhone rola por conta própria DEPOIS do foco, em tempo que varia:
+    // ressincroniza o cursor em alguns momentos até a tela assentar.
+    let marcas: ReturnType<typeof setTimeout>[] = []
+    const aoFocar = (e: FocusEvent) => {
+      if (!dentro(e.target)) return
+      clearTimeout(t); marcas.forEach(clearTimeout)
+      t = setTimeout(mostrarFocoEBotao, 60)
+      marcas = [250, 550, 900].map((ms) => setTimeout(ressincronizarCursor, ms))
+    }
     let r: ReturnType<typeof setTimeout> | undefined
     const aoRolar = () => { clearTimeout(r); r = setTimeout(ressincronizarCursor, 120) }
-    c.addEventListener("focusin", aoFocar)
-    c.addEventListener("scroll", aoRolar, { passive: true })
+    const iniComp = (e: Event) => { if (dentro(e.target)) compondo = true }
+    const fimComp = () => { compondo = false; ultimaDigitacao = Date.now() }
+    const digitou = (e: Event) => { if (dentro(e.target)) ultimaDigitacao = Date.now() }
+    const vv = window.visualViewport
+    document.addEventListener("compositionstart", iniComp, true)
+    document.addEventListener("compositionend", fimComp, true)
+    document.addEventListener("input", digitou, true)
+    document.addEventListener("focusin", aoFocar, true)
+    // Captura pega a rolagem da área de conteúdo (scroll não sobe em bolha).
+    document.addEventListener("scroll", aoRolar, { capture: true, passive: true })
+    vv?.addEventListener("scroll", aoRolar)
+    vv?.addEventListener("resize", aoRolar)
     return () => {
-      clearTimeout(t); clearTimeout(r)
-      c.removeEventListener("focusin", aoFocar)
-      c.removeEventListener("scroll", aoRolar)
+      clearTimeout(t); clearTimeout(r); marcas.forEach(clearTimeout)
+      document.removeEventListener("compositionstart", iniComp, true)
+      document.removeEventListener("compositionend", fimComp, true)
+      document.removeEventListener("input", digitou, true)
+      document.removeEventListener("focusin", aoFocar, true)
+      document.removeEventListener("scroll", aoRolar, { capture: true })
+      vv?.removeEventListener("scroll", aoRolar)
+      vv?.removeEventListener("resize", aoRolar)
     }
   }, [mostrarFocoEBotao])
   const [leadCaptured, setLeadCaptured] = useState(false)
