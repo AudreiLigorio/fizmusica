@@ -18,6 +18,11 @@ export const dynamic = "force-dynamic"
 // 3. "Clicaram em criar música" saiu do funil: o anúncio leva DIRETO ao
 //    wizard, então o degrau dava 0 com 58 pessoas no degrau seguinte. No lugar
 //    entrou "Passaram da 1ª tela", que é onde o anúncio trava.
+// 4. "Onde param" somava anúncio e direto e chamava de "parou" quem chegou no
+//    passo 5 e PAGOU. Virou "Até onde foram", com o nome de cada passo, as
+//    duas origens em colunas e, no passo 5, quantos viram o refrão e pagaram.
+//    Sessões vindas de localhost (teste local grava no banco de produção)
+//    saem junto com os testes.
 
 type Evento = {
   sessao: string
@@ -26,6 +31,7 @@ type Evento = {
   utm_source: string | null
   utm_campaign: string | null
   utm_content: string | null
+  referrer: string | null
   caminho: string | null
   created_at: string
 }
@@ -37,7 +43,11 @@ const PERIODOS = [
 ]
 
 const ehTeste = (e: Evento) =>
-  /^teste/i.test(e.utm_source ?? "") || /^teste|verificacao/i.test(e.utm_content ?? "")
+  /^teste/i.test(e.utm_source ?? "") || /^teste|verificacao/i.test(e.utm_content ?? "") ||
+  /^(localhost|127\.0\.0\.1)$/.test(e.referrer ?? "")
+
+// Os 5 passos do wizard (mesma ordem de ETAPAS_WIZARD em app/criar/CriarClient.tsx).
+const NOMES_PASSO = ["Ocasião", "Sua história", "Estilo", "Seus dados", "Prévia da letra e pagamento"]
 
 const passoDe = (e: Evento) =>
   e.evento === "wizard_passo" && e.detalhe ? Number(e.detalhe.replace("passo-", "")) || 0 : 0
@@ -78,7 +88,7 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
   for (let de = 0; de < 100_000; de += 1000) {
     const { data, error } = await supabase
       .from("site_events")
-      .select("sessao, evento, detalhe, utm_source, utm_campaign, utm_content, caminho, created_at")
+      .select("sessao, evento, detalhe, utm_source, utm_campaign, utm_content, referrer, caminho, created_at")
       .gte("created_at", desde)
       .neq("evento", "ping")
       .order("id", { ascending: true })
@@ -118,8 +128,23 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
   const funil = DEGRAUS.map((d, i) => ({ rotulo: d.rotulo, sessoes: lista.filter((s) => s.degraus.has(i)).length }))
   const topo = funil[0].sessoes || 1
 
-  const paradaPorPasso = new Map<number, number>()
-  for (const s of lista) if (s.passoMax) paradaPorPasso.set(s.passoMax, (paradaPorPasso.get(s.passoMax) ?? 0) + 1)
+  // Até onde cada pessoa foi no wizard, separando quem veio de link com
+  // campanha (anúncio, bio) de quem veio direto. No passo 5, "foi até aqui"
+  // inclui quem pagou — por isso ele mostra o refrão e o pagamento à parte.
+  const IREFRAO = DEGRAUS.findIndex((d) => d.rotulo.startsWith("Viram o refrão"))
+  const IPAGO = DEGRAUS.length - 1
+  const ateOnde = NOMES_PASSO.map((nome, i) => {
+    const aqui = lista.filter((s) => s.passoMax === i + 1)
+    return {
+      passo: i + 1,
+      nome,
+      campanha: aqui.filter((s) => s.campanha).length,
+      direto: aqui.filter((s) => !s.campanha).length,
+      refrao: aqui.filter((s) => s.degraus.has(IREFRAO)).length,
+      pagaram: aqui.filter((s) => s.degraus.has(IPAGO)).length,
+    }
+  })
+  const noWizard = ateOnde.reduce((t, l) => t + l.campanha + l.direto, 0)
 
   const porOrigem = new Map<string, number>()
   for (const s of lista) porOrigem.set(s.origem, (porOrigem.get(s.origem) ?? 0) + 1)
@@ -249,18 +274,38 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="rounded-2xl border border-white/10 bg-black/40 p-6">
-          <h2 className="text-white/80 text-sm font-semibold mb-3">Onde param no wizard</h2>
-          {paradaPorPasso.size === 0 ? (
+          <h2 className="text-white/80 text-sm font-semibold mb-1">Até onde foram no wizard</h2>
+          <p className="text-white/40 text-[12px] mb-3">
+            Cada pessoa conta uma vez, no passo mais longe que alcançou. Todas as origens; o anúncio sozinho está em &quot;Por campanha&quot;.
+          </p>
+          {noWizard === 0 ? (
             <p className="text-white/40 text-[13px]">Ninguém entrou no wizard no período.</p>
           ) : (
-            <ul className="space-y-1.5">
-              {[...paradaPorPasso.entries()].sort((a, b) => a[0] - b[0]).map(([passo, qtd]) => (
-                <li key={passo} className="flex justify-between text-[13px]">
-                  <span className="text-white/70">Passo {passo}</span>
-                  <span className="text-white/50">{qtd} pararam aqui</span>
-                </li>
-              ))}
-            </ul>
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="text-white/40 text-left">
+                  <th className="font-normal pb-1.5">Passo</th>
+                  <th className="font-normal pb-1.5 text-right">De campanha</th>
+                  <th className="font-normal pb-1.5 text-right">Direto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ateOnde.map((l) => (
+                  <tr key={l.passo} className="border-t border-white/5 align-top">
+                    <td className="py-1.5 text-white/70">
+                      {l.passo}. {l.nome}
+                      {l.passo === 5 && l.campanha + l.direto > 0 && (
+                        <span className="block text-[12px] text-white/40">
+                          {l.refrao} viram o refrão · {l.pagaram} pagaram
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-1.5 text-right text-white/60">{l.campanha || "–"}</td>
+                    <td className="py-1.5 text-right text-white/60">{l.direto || "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
           <p className="text-white/30 text-[11px] mt-3">
             Concentração num passo é sinal de confusão ou de pedido demais naquela tela.

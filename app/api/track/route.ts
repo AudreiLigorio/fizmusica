@@ -20,6 +20,10 @@ const semConteudo = () => new Response(null, { status: 204 })
 // pessoal — sem IP, sem user agent. O id de sessão é anônimo e serve só pra
 // ligar os passos de uma mesma visita.
 export async function POST(req: NextRequest) {
+  // O `next dev` local grava no MESMO banco da produção. Em 23/11 isso pôs 12
+  // sessões de teste no funil (9 delas "pararam no passo 4"), contadas como
+  // visita direta. Telemetria de localhost não entra.
+  if (/^(localhost|127\.0\.0\.1|\[::1\])(:|$)/.test(req.headers.get("host") ?? "")) return semConteudo()
   try {
     const b = await req.json().catch(() => ({}))
     if (!b?.sessao || !EVENTOS.has(b.evento)) {
