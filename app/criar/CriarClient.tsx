@@ -60,6 +60,7 @@ import { useNoAppPlay } from "@/lib/canal"
 import { TabBarMobile } from "@/app/minha-musica/AreaTabs"
 import { confirmar } from "@/app/components/Dialogo"
 import { RITMOS } from "@/lib/ritmo"
+import BannerOcasioes, { TEMA_AUTORAL, type SlideBanner } from "@/app/components/BannerOcasioes"
 
 const SESSION_KEY = "fizmusica_session_id"
 
@@ -95,7 +96,7 @@ function maskWhatsapp(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
-export type PlanoResumo = { id: string; name: string; price: number }
+export type PlanoResumo = { id: string; name: string; price: number; photo_limit?: number | null; feat_lyrics_sync?: boolean | null }
 
 // Teclado virtual aberto? Compara a área VISÍVEL com a altura da tela SEM
 // teclado, medida enquanto nenhum campo de texto está em foco.
@@ -198,7 +199,10 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   const TERMS_VERSION = "2026-06"
   // ?tema= vem do banner de ocasiões da home: abre o wizard já na lista
   // daquele tema. Label que não existe (ocasião renomeada) só não abre nada.
-  const [selectedContext, setSelectedContext] = useState(() => searchParams.get("tema") ?? "")
+  const [selectedContext, setSelectedContext] = useState(() => {
+    const t = searchParams.get("tema") ?? ""
+    return t === TEMA_AUTORAL ? "" : t // o autoral pula direto pro passo 2 (efeito abaixo)
+  })
   const [selectedSubcategory, setSelectedSubcategory] = useState("")
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [musicalStyle, setMusicalStyle] = useState("")
@@ -257,6 +261,46 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   const composicaoLivre = occasions.find((o) => o.label === "Composição Livre")
   const temas = occasions.filter((o) => o.label !== "Composição Livre")
   const temaAberto = temas.find((o) => o.label === selectedContext)
+
+  // ── Recepção pra quem cai DIRETO no wizard (anúncio, link compartilhado) ──
+  // Quem vem pela home já viu o que dá pra fazer, o preço e os exemplos; quem
+  // vem do anúncio cai aqui sem nada disso. Em 24/11/2026, das ~25 sessões
+  // reais do anúncio pamela-v4 nenhuma tocou num tema — saíam em menos de 1
+  // minuto. "De fora" = a página foi CARREGADA já no /criar (a navegação
+  // vinda da home é feita no cliente e a entrada de navegação continua sendo
+  // a da home). Retomada de pedido (orderId/sessao/editar) nunca vê.
+  const [deFora, setDeFora] = useState(false)
+  useEffect(() => {
+    if (searchParams.get("orderId") || searchParams.get("sessao") || searchParams.get("editar")) return
+    try {
+      const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined
+      const entrada = nav ? new URL(nav.name).pathname : ""
+      setDeFora(entrada.startsWith("/criar"))
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ?tema=Composição Livre (slide autoral do banner da home): vai direto pro
+  // caminho de quem já tem a letra, como a porta amarela faz.
+  const temaAutoralDaUrl = useRef(searchParams.get("tema") === TEMA_AUTORAL && !searchParams.get("orderId") && !searchParams.get("sessao"))
+  useEffect(() => {
+    const sub = composicaoLivre?.wizard_subcategories[0]
+    if (!temaAutoralDaUrl.current || !sub || !composicaoLivre) return
+    temaAutoralDaUrl.current = false
+    handleSubcategoryClick(sub, composicaoLivre.label)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [composicaoLivre])
+
+  // Toque no banner da recepção: escolhe ALI MESMO, sem trocar de página —
+  // o ?produto= e a origem do anúncio seguem na URL.
+  function escolherPeloBanner(sl: SlideBanner) {
+    if (sl.tema === TEMA_AUTORAL) {
+      const sub = composicaoLivre?.wizard_subcategories[0]
+      if (sub && composicaoLivre) handleSubcategoryClick(sub, composicaoLivre.label)
+      return
+    }
+    setSelectedContext(sl.tema)
+  }
   // Quem traz a própria letra pode estar escrevendo pra mãe — ou sobre um
   // lugar, um sentimento, nada em particular. Aqui o nome do homenageado é
   // opcional; no caminho da homenagem ele é o ponto inteiro, e segue exigido.
@@ -1308,10 +1352,21 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                      fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
                   <path d="m5 12 5 5L20 7" />
                 </svg>
+                {/* Quem vem do anúncio não ESCOLHEU plano nenhum: "Plano
+                    escolhido" soava como compra já feita. Agora diz o que é
+                    e quando paga. */}
                 <p className="text-sm text-white/70 leading-snug flex-1 min-w-0">
-                  Plano escolhido:{" "}
+                  Plano{" "}
                   <span className="font-semibold text-white">{planoPre.name}</span>
                   <span className="text-white/50"> — R$ {planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                  {step === 1 && (
+                    <span className="block text-[13px] text-white/50 mt-0.5">
+                      {planoPre.photo_limit === 0
+                        ? `Música${planoPre.feat_lyrics_sync ? " com letra sincronizada" : ""}, sem fotos. `
+                        : ""}
+                      Você só paga depois de ver o refrão.
+                    </span>
+                  )}
                 </p>
                 <button
                   type="button"
@@ -1513,6 +1568,27 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           {/* ===== STEP 1 — Ocasião ===== */}
           {!showLeadCapture && step === 1 && (
             <div>
+              {deFora && !selectedContext && !resumeBanner && (
+                <div className="mb-7">
+                  <p className="text-[15px] text-white/70 mb-3 leading-snug">
+                    Você conta a história e <strong className="text-white">a gente transforma em música</strong>, pra presentear alguém ou lançar a sua.
+                  </p>
+                  <BannerOcasioes variante="wizard" onEscolher={escolherPeloBanner} />
+                  <ol className="mt-3 grid grid-cols-3 gap-2 text-center max-w-[400px] mx-auto">
+                    {[
+                      ["1", "Conte a história", "uns 3 minutos"],
+                      ["2", "Veja o refrão", "grátis"],
+                      ["3", "Pague e receba", planoPre ? `R$ ${planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "em minutos"],
+                    ].map(([n, t, sub]) => (
+                      <li key={n} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2.5">
+                        <span className="block text-[13px] font-bold text-pink-400">{n}</span>
+                        <span className="block text-[13px] text-white leading-tight">{t}</span>
+                        <span className={`block text-[12px] mt-0.5 ${n === "2" ? "text-emerald-400" : "text-white/50"}`}>{sub}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
               <div className="mb-8">
                 <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
                   Qual história você quer transformar em música?
@@ -1551,7 +1627,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       chamativo — botão da tela era o do caminho de nicho. */}
                   {composicaoLivre && composicaoLivre.wizard_subcategories[0] && (
                     <button
-                      onClick={() => handleSubcategoryClick(composicaoLivre.wizard_subcategories[0], composicaoLivre.label)}
+                      onClick={() => {
+                        if (deFora) track("recepcao", "porta_autoral")
+                        handleSubcategoryClick(composicaoLivre.wizard_subcategories[0], composicaoLivre.label)
+                      }}
                       className="order-last text-left rounded-2xl p-5 transition-all hover:brightness-110 active:scale-[0.99]"
                       style={{ background: "rgba(248,171,8,0.06)", border: "1px solid rgba(248,171,8,0.45)" }}
                     >
@@ -1622,7 +1701,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                           {temas.map((occasion) => (
                             <button
                               key={occasion.id}
-                              onClick={() => setSelectedContext(occasion.label)}
+                              onClick={() => {
+                                if (deFora) track("recepcao", `grade_${occasion.label}`)
+                                setSelectedContext(occasion.label)
+                              }}
                               className="rounded-xl p-3 border border-white/10 bg-black/30 hover:border-pink-500/60 transition-all text-left"
                             >
                               <span className="block text-lg leading-none mb-1.5">{occasion.emoji}</span>

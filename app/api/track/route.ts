@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic"
 // exemplo, detalhe = slug) e cta_rede (convite do SpotFiz na home) entraram
 // em 24/11/2026 — evento fora desta lista é
 // descartado em silêncio, o track() do client não acusa.
-const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "previa_letra", "checkout", "pago", "ping", "ouvir_exemplo", "exemplo_video", "cta_rede"])
+const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "previa_letra", "checkout", "pago", "ping", "ouvir_exemplo", "exemplo_video", "cta_rede", "recepcao"])
 
 // 204 não pode ter corpo: `NextResponse.json(..., { status: 204 })` lança. Como
 // isso acontecia dentro E fora do catch, a rota respondia 500 — o bloco que

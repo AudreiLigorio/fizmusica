@@ -24,9 +24,9 @@ export default async function CriarPage() {
   try {
     const { data } = await createServerClient()
       .from("products")
-      .select("id, name, price")
+      .select("id, name, price, photo_limit, feat_lyrics_sync")
       .eq("active", true)
-    planos = (data ?? []).map((p) => ({ id: p.id, name: p.name, price: Number(p.price) }))
+    planos = (data ?? []).map((p) => ({ id: p.id, name: p.name, price: Number(p.price), photo_limit: p.photo_limit, feat_lyrics_sync: p.feat_lyrics_sync }))
   } catch {
     planos = []
   }
