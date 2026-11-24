@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { track } from "@/lib/track"
+import VerComoFica from "@/app/produtos/VerComoFica"
 
 // Vitrine de produtos com preço, logo antes dos exemplos em vídeo.
 //
@@ -52,11 +53,12 @@ const CORES = [
 
 const S = { fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
 
-// Ícone escolhido pelo que o plano ENTREGA, não pela posição na lista: quem
-// tem QR Code ganha o presente, quem tem foto ganha a imagem, e assim por
-// diante. Assim a vitrine continua coerente se a ordem dos planos mudar.
+// Ícone pelo que o plano ENTREGA, não pela posição: com fotos é presente
+// (caixa de presente, as duas Retrospectivas); sem fotos é música (nota
+// musical: Essencial e pacote). Pedido do Audrei em 24/11/2026 — antes a
+// Retrospectiva tinha um ícone de imagem e a música um ícone de documento.
 function iconeDoPlano(p: Produto) {
-  if (p.feat_qrcode) {
+  if ((p.photo_limit ?? 0) > 0) {
     return (
       <svg viewBox="0 0 24 24" className="w-6 h-6" aria-hidden="true" {...S}>
         <polyline points="20 12 20 22 4 22 4 12" /><rect x="2" y="7" width="20" height="5" />
@@ -65,18 +67,9 @@ function iconeDoPlano(p: Produto) {
       </svg>
     )
   }
-  if ((p.photo_limit ?? 0) > 0) {
-    return (
-      <svg viewBox="0 0 24 24" className="w-6 h-6" aria-hidden="true" {...S}>
-        <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" />
-        <polyline points="21 15 16 10 5 21" />
-      </svg>
-    )
-  }
   return (
     <svg viewBox="0 0 24 24" className="w-6 h-6" aria-hidden="true" {...S}>
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-      <polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" />
+      <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
     </svg>
   )
 }
@@ -104,7 +97,9 @@ function ehPacote(p: Produto): boolean {
 // Itens que TODO plano entrega. Ficam no código porque não existem como
 // campo no banco — não há coluna de "capa" nem de "2ª versão", e inventar
 // uma só pra marcar `true` em todos os planos seria dado morto.
-const BENEFICIOS_DE_TODOS = ["Música personalizada", "Capa exclusiva", "Segunda versão grátis"]
+// "2 versões pra você escolher", não "Segunda versão grátis": a frase antiga
+// lia como refazer/revisão, que só o Premium tem (mesmo texto da /produtos).
+const BENEFICIOS_DE_TODOS = ["Música personalizada", "Capa exclusiva", "2 versões pra você escolher"]
 const BENEFICIOS_FINAIS   = ["Publicar no SpotFiz", "Criar playlist"]
 
 // O que vem no plano, na ordem que o Audrei passou. Os itens do MEIO saem
@@ -141,10 +136,14 @@ function beneficiosDoPacote(p: Produto, avulsa: Produto | null): string[] {
   return itens
 }
 
+const ITEM_SEM_FOTOS = "Sem fotos"
+
 function beneficios(p: Produto): string[] {
   const meio: string[] = []
   if (p.feat_lyrics_sync) meio.push("Letra sincronizada")
-  if ((p.photo_limit ?? 0) > 0) meio.push(`Retrospectiva com ${p.photo_limit} fotos sincronizadas`)
+  // Sem fotos aparece ESCRITO (✕), igual à /produtos: quem vem do anúncio de
+  // R$ 12,90 não pode pagar o Essencial achando que vêm as fotos.
+  meio.push((p.photo_limit ?? 0) > 0 ? `Retrospectiva com ${p.photo_limit} fotos sincronizadas` : ITEM_SEM_FOTOS)
   if (p.feat_qrcode) meio.push("Cartão com QR Code para presentear")
   if (p.feat_revision) meio.push("Ajustes inclusos")
   return [...BENEFICIOS_DE_TODOS, ...meio, ...BENEFICIOS_FINAIS]
@@ -183,6 +182,9 @@ const brl = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2,
 export default function ProdutosCarrossel() {
   const router = useRouter()
   const [produtos, setProdutos] = useState<Produto[] | null>(null)
+  // "+ Ver como fica": a mesma janela da /produtos (música da Pâmela montada
+  // pelos ajustes do plano). "Quero este plano" leva ao wizard com o plano.
+  const [previaDe, setPreviaDe] = useState<Produto | null>(null)
 
   // Calculado uma vez pra lista inteira: cada carta precisa saber o que os
   // planos mais baratos JÁ tinham, e isso é informação da escada, não da carta.
@@ -258,6 +260,7 @@ export default function ProdutosCarrossel() {
                 // ficava ATIVO sem fazer nada ao clicar — beco sem saída
                 // silencioso justo no botão de compra.
                 onClick={() => { track("cta_produto", "carrossel_produtos"); router.push(`/criar?produto=${encodeURIComponent(p.id)}`) }}
+                onVerComoFica={() => setPreviaDe(p)}
               />
             ))}
       </Trilho>
@@ -290,6 +293,9 @@ export default function ProdutosCarrossel() {
                 novidades={ehPacote(p) ? new Set() : (novidades[p.id] ?? new Set())}
                 itens={ehPacote(p) ? beneficiosDoPacote(p, avulsa) : beneficios(p)}
                 precoPorMusica={ehPacote(p) ? `R$ ${brl(p.price / (p.credits_granted ?? 1))} por música` : null}
+                // Pacote não tem prévia: são créditos, a prévia de UMA música
+                // é a do Essencial ao lado.
+                onVerComoFica={ehPacote(p) ? undefined : () => setPreviaDe(p)}
                 onClick={() => {
                   track("cta_produto", "carrossel_produtos")
                   // O PACOTE entra no wizard igual a qualquer plano.
@@ -344,6 +350,15 @@ export default function ProdutosCarrossel() {
           <svg viewBox="0 0 24 24" className="w-4 h-4" {...S} strokeWidth={2.2}><path d="m9 6 6 6-6 6" /></svg>
         </button>
       </div>
+
+      {previaDe && (
+        <VerComoFica
+          plano={previaDe}
+          selecionado={false}
+          onEscolher={() => router.push(`/criar?produto=${encodeURIComponent(previaDe.id)}`)}
+          onFechar={() => setPreviaDe(null)}
+        />
+      )}
     </div>
   )
 }
@@ -499,7 +514,7 @@ function CartaRede({ onClick }: { onClick: () => void }) {
   )
 }
 
-function CartaProduto({ produto, cor, novidades, itens, precoPorMusica, onClick }: {
+function CartaProduto({ produto, cor, novidades, itens, precoPorMusica, onClick, onVerComoFica }: {
   produto: Produto
   cor: (typeof CORES)[number]
   // O que só existe a partir deste plano — vai em negrito (ver `novidadesPorPlano`).
@@ -510,11 +525,17 @@ function CartaProduto({ produto, cor, novidades, itens, precoPorMusica, onClick 
   // Só no pacote: a linha pequena embaixo do preço cheio.
   precoPorMusica?: string | null
   onClick: () => void
+  // "+ Ver como fica". Ausente no pacote.
+  onVerComoFica?: () => void
 }) {
+  // A carta deixou de ser um <button> inteiro: dentro dela agora há o "+ Ver
+  // como fica", e botão dentro de botão não existe em HTML. O toque em
+  // qualquer ponto da carta segue levando ao wizard (onClick na div); pelo
+  // teclado, o caminho é o botão do preço.
   return (
-    <button
+    <div
       onClick={onClick}
-      className={`${LARGURA} text-left rounded-2xl border bg-white/[0.04] p-5 flex flex-col transition-all hover:-translate-y-1 hover:bg-white/[0.07]`}
+      className={`${LARGURA} text-left rounded-2xl border bg-white/[0.04] p-5 flex flex-col cursor-pointer transition-all hover:-translate-y-1 hover:bg-white/[0.07]`}
       style={{ borderColor: cor.borda }}
     >
       {/* Altura reservada mesmo sem selo, senão a carta em destaque empurra
@@ -544,6 +565,7 @@ function CartaProduto({ produto, cor, novidades, itens, precoPorMusica, onClick 
       <ul className="mt-3 space-y-1.5 grow">
         {itens.map((b) => {
           const novo = novidades.has(b)
+          const falta = b === ITEM_SEM_FOTOS
           return (
             // `items-start` + `shrink-0`: nesta largura os itens longos quebram
             // em duas linhas, e sem isso o check escorregaria pro meio do texto.
@@ -553,28 +575,50 @@ function CartaProduto({ produto, cor, novidades, itens, precoPorMusica, onClick 
               // dois, e é por isso que a cor sobe junto.
               novo ? "font-bold text-white/95" : "text-white/65"
             }`}>
-              <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px]" aria-hidden="true"
-                   fill="none" style={{ stroke: cor.forte }} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-                <path d="m5 12 5 5L20 7" />
-              </svg>
-              {b}
+              {falta ? (
+                <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px] text-white/50" aria-hidden="true"
+                     fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round">
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="w-3 h-3 shrink-0 mt-[3px]" aria-hidden="true"
+                     fill="none" style={{ stroke: cor.forte }} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m5 12 5 5L20 7" />
+                </svg>
+              )}
+              <span className={falta ? "font-semibold" : undefined}>{b}</span>
             </li>
           )
         })}
       </ul>
 
       <div className="mt-4 self-start">
-        <span className="inline-block px-4 py-2 rounded-xl text-base font-extrabold"
-              style={{ background: cor.forte, color: cor.precoTexto }}>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClick() }}
+          className="inline-block px-4 py-2 rounded-xl text-base font-extrabold"
+          style={{ background: cor.forte, color: cor.precoTexto }}
+        >
           R$ {brl(produto.price)}
-        </span>
+        </button>
         {/* O preço por música embaixo do preço cheio: é ele que faz a
             comparação com a avulsa acontecer sem texto explicando. */}
         {precoPorMusica && (
           <span className="block text-[13px] text-white/50 mt-1.5">{precoPorMusica}</span>
         )}
       </div>
-    </button>
+
+      {onVerComoFica && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onVerComoFica() }}
+          className="mt-3 self-start text-[13px] font-semibold"
+          style={{ color: "#f472b6" }}
+        >
+          + Ver como fica
+        </button>
+      )}
+    </div>
   )
 }
 
