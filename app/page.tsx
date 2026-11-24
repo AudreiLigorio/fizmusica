@@ -142,11 +142,32 @@ function StatItem({ stat, displayFont, bodyFont }: {
   )
 }
 
+function formatarPreco(valor: number) {
+  return `R$ ${valor.toFixed(2).replace(".", ",")}`
+}
+
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [currentAudio, setCurrentAudio] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
   const router = useRouter()
+
+  // "A partir de R$ X" do herói: menor preço entre os planos de MÚSICA ativos.
+  // Pacote de créditos fica fora (não é uma música, é saldo). Se a busca
+  // falhar, a linha simplesmente não aparece — melhor que um preço errado.
+  const [precoMinimo, setPrecoMinimo] = useState<number | null>(null)
+  useEffect(() => {
+    fetch("/api/produtos")
+      .then((r) => r.json())
+      .then((d: { products?: { price: number; credits_granted?: number | null }[] }) => {
+        const precos = (d.products ?? [])
+          .filter((p) => !p.credits_granted)
+          .map((p) => Number(p.price))
+          .filter((n) => Number.isFinite(n) && n > 0)
+        if (precos.length) setPrecoMinimo(Math.min(...precos))
+      })
+      .catch(() => {})
+  }, [])
 
   // Animação de entrada de "Como funciona" — dispara quando a seção aparece.
   const { ref: stepsRef, inView: stepsInView } = useInView()
@@ -290,7 +311,7 @@ export default function Home() {
                 necessária nas duas: o texto fica sobre vídeo em movimento. */}
             <h1 className="animate-fade-up delay-100 font-extrabold uppercase leading-[0.98] tracking-tight mb-7" style={bodyFont}>
               <span className="block text-white" style={{ fontSize: "clamp(1.9rem, 3.6vw, 3rem)", textShadow: "0 2px 30px rgba(0,0,0,0.6)" }}>
-                Aqui você escolhe
+                Sua história.
               </span>
               <span
                 className="block"
@@ -303,15 +324,20 @@ export default function Home() {
                   filter: "drop-shadow(0 2px 18px rgba(0,0,0,0.55))",
                 }}
               >
-                como quer viver essa experiência.
+                Sua música.
               </span>
             </h1>
 
-            <p className="animate-fade-up delay-200 text-white/60 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
-              Pode ser apenas uma música que emociona, ou uma experiência completa com fotos sincronizadas, capa exclusiva e QR Code.
+            {/* Título igual ao do anúncio ("Sua história. Sua música."): quem
+                chega pelo clique reconhece onde caiu. O texto antigo ("Aqui
+                você escolhe como quer viver essa experiência") não dizia nem
+                que era MÚSICA. O refrão mostrado antes de pagar é o da LETRA —
+                a música só é gerada depois do pagamento; não prometer áudio. */}
+            <p className="animate-fade-up delay-200 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
+              Você conta a história e a gente escreve a letra e transforma em música, pra presentear alguém ou lançar a sua. Você vê o refrão da letra antes de pagar.
             </p>
 
-            <div className="animate-fade-up delay-300 flex flex-wrap gap-3 mb-9">
+            <div className="animate-fade-up delay-300 flex flex-wrap gap-3 mb-4">
               <button
                 onClick={() => { track("cta_criar", "home"); router.push("/criar") }}
                 className="text-white px-8 py-4 rounded-2xl transition-all duration-200 hover:brightness-110 active:scale-[0.97]"
@@ -325,6 +351,31 @@ export default function Home() {
                 Criar minha música ❤️
               </button>
               </div>
+
+            {/* Preço e exemplo na 1ª tela: antes o 1º preço visível era o da
+                Retrospectiva (R$ 69,90), uma tela abaixo, e o 1º áudio ficava
+                a ~4 telas. O preço vem do banco (menor plano de música, sem
+                pacote de créditos) — nunca fixo no código. A linha tem altura
+                reservada pra não empurrar o "Ouvir um exemplo" quando chega. */}
+            <div className="animate-fade-up delay-300 mb-9 flex flex-col gap-2" style={bodyFont}>
+              <p className="text-white/75 min-h-[1.25rem]" style={{ fontSize: "0.875rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
+                {precoMinimo !== null && (
+                  <>A partir de <strong className="text-white font-semibold">{formatarPreco(precoMinimo)}</strong> · pronta em minutos</>
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  track("ouvir_exemplo", "home_heroi")
+                  document.getElementById("exemplos")?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }}
+                className="self-start inline-flex items-center gap-2 font-semibold transition-opacity hover:opacity-80"
+                style={{ color: "#ff3d84", fontSize: "0.9375rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="2"/><path d="M10 8v8l6-4Z" fill="currentColor"/></svg>
+                Ouvir um exemplo
+              </button>
+            </div>
             </div>
 
             {/* Colagem "Player Exclusivo". Só desktop (versão web): no
@@ -447,7 +498,9 @@ export default function Home() {
       {/* ═══════════════════════════════════════════
           PLAYER DE EXEMPLOS — abaixo do hero
       ═══════════════════════════════════════════ */}
-      <section className="max-w-3xl lg:max-w-5xl mx-auto px-6 py-14 lg:py-20">
+      {/* id="exemplos": destino do "Ouvir um exemplo" do herói. scroll-mt
+          desconta o header fixo. */}
+      <section id="exemplos" className="scroll-mt-20 max-w-3xl lg:max-w-5xl mx-auto px-6 py-14 lg:py-20">
         {/* Mesma lógica do cabeçalho de exemplos em vídeo (pedido do
             Audrei): selo removido, título passa da serifada (Cormorant)
             pra DM Sans extrabold em caixa alta, quebrado em duas linhas
