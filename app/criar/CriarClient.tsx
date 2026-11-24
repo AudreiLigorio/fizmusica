@@ -141,6 +141,29 @@ function ressincronizarCursor() {
   } catch { /* tipo de campo sem seleção */ }
 }
 
+// Destaca o nome de quem recebe a música dentro da prévia, como no anúncio:
+// ver o nome de quem ama dentro da letra é o que mais prende. Só destaca o que
+// estiver ESCRITO na letra — música própria não tem nome, e a IA às vezes não
+// usa. Nome composto ("Vovó Lúcia") destaca cada parte que aparecer.
+const LIGA_NOME = new Set(["de", "da", "do", "das", "dos", "e"])
+function letraComNome(letra: string, nome: string): React.ReactNode {
+  const partes = nome.trim().split(/\s+/).filter((p) => p.length >= 3 && !LIGA_NOME.has(p.toLowerCase()))
+  if (!partes.length) return letra
+  const esc = partes.map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).sort((a, b) => b.length - a.length)
+  const re = new RegExp(`(?<![\\p{L}])(${esc.join("|")})(?![\\p{L}])`, "giu")
+  const out: React.ReactNode[] = []
+  let ultimo = 0
+  for (const m of letra.matchAll(re)) {
+    const i = m.index ?? 0
+    if (i > ultimo) out.push(letra.slice(ultimo, i))
+    out.push(<strong key={i} className="text-pink-400 font-bold">{m[0]}</strong>)
+    ultimo = i + m[0].length
+  }
+  if (!out.length) return letra
+  if (ultimo < letra.length) out.push(letra.slice(ultimo))
+  return out
+}
+
 export default function CriarClient({ initialOccasions, planos = [] }: { initialOccasions: WizardOccasion[]; planos?: PlanoResumo[] }) {
   return (
     <Suspense fallback={null}>
@@ -1911,12 +1934,12 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
 
                   <div className="relative overflow-hidden rounded-2xl px-5 pt-4"
                        style={{ background: "rgba(240,25,107,0.07)", border: "1px solid rgba(240,25,107,0.3)", boxShadow: "0 0 24px rgba(236,72,153,0.12)" }}>
-                    <p className="text-[11px] text-pink-400 uppercase tracking-widest mb-3">refrão</p>
-                    <p className="text-[15px] text-white whitespace-pre-wrap" style={{ lineHeight: 1.85 }}>{refrao}</p>
+                    <p className="text-xs font-bold text-pink-400 uppercase tracking-widest mb-3">♪ Refrão</p>
+                    <p className="text-[17px] font-semibold text-white whitespace-pre-wrap" style={{ lineHeight: 1.7 }}>{letraComNome(refrao, honoreeName)}</p>
 
                     <div aria-hidden="true" className="select-none mt-4" style={{ filter: "blur(4px)", opacity: 0.5 }}>
                       {PREVIA_BORRADA.map((l, i) => (
-                        <p key={i} className="text-[15px] text-white/75" style={{ lineHeight: 1.8 }}>{l}</p>
+                        <p key={i} className="text-[17px] font-semibold text-white/75" style={{ lineHeight: 1.7 }}>{l}</p>
                       ))}
                       <div className="h-10" />
                     </div>
@@ -1930,8 +1953,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     </div>
                   </div>
 
-                  <p className="text-[13px] text-white/40 text-center mt-3 leading-relaxed">
-                    A música completa fica pronta depois da contratação — e você ainda pode pedir ajustes.
+                  {/* Vender a música, não explicar a regra: é o ponto em que a
+                      pessoa decide. "Em minutos" = promessa do anúncio, e é
+                      verdade (~40s depois do pagamento). */}
+                  <p className="text-base font-bold text-white text-center mt-4 leading-snug">
+                    Agora imagine essa letra cantada, com melodia e produção profissional. 🎵
+                  </p>
+                  <p className="text-sm text-white/60 text-center mt-1.5 leading-relaxed">
+                    Sua música fica pronta em minutos depois da contratação, e você ainda pode pedir ajustes.
                   </p>
                 </div>
               )}
