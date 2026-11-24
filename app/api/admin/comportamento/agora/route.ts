@@ -25,10 +25,14 @@ export async function GET(req: NextRequest) {
     .order("created_at", { ascending: false })
     .limit(500)
 
-  // Uma linha por pessoa, com o que ela fez por último.
+  // Uma linha por pessoa, com o que ela fez por último. Se o último sinal é
+  // `saida` (fechou, voltou pro Instagram, trocou de app), ela já não está
+  // aqui — antes aparecia como "saida (13s 0%)" entre quem está no site.
   const porSessao = new Map<string, { caminho: string | null; evento: string; detalhe: string | null; origem: string; visto: string }>()
+  const foram = new Set<string>()
   for (const e of data ?? []) {
-    if (porSessao.has(e.sessao)) continue
+    if (porSessao.has(e.sessao) || foram.has(e.sessao)) continue
+    if (e.evento === "saida") { foram.add(e.sessao); continue }
     porSessao.set(e.sessao, {
       caminho: e.caminho,
       evento: e.evento,
