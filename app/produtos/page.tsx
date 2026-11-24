@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase"
 import ShippingForm, { EMPTY_SHIPPING, isShippingValid, type ShippingData } from "./ShippingForm"
 import { useScrollTopOnStepChange } from "@/app/hooks/useScrollTopOnStepChange"
 import { avisar, confirmar } from "@/app/components/Dialogo"
+import VerComoFica from "./VerComoFica"
 
 type DeliveryOption = {
   id: string
@@ -43,12 +44,6 @@ type Product = {
   product_images: ProductImage[]
 }
 
-// Fotos de exemplo já usadas na galeria pública do produto — mostradas no
-// "detalhes" dos planos que incluem fotos, pra ilustrar o recurso.
-const EXAMPLE_PHOTOS = [
-  "https://esjjcqwxcflppyqrixqt.supabase.co/storage/v1/object/public/product-images/prod-digital/photo_2_1782620463333.jpg",
-  "https://esjjcqwxcflppyqrixqt.supabase.co/storage/v1/object/public/product-images/prod-digital/photo_3_1782621244638.jpg",
-]
 
 // "Pra você" (uso pessoal) vs "Pra presentear" (retrospectiva com fotos) —
 // o recurso de fotos é o que separa as duas jornadas.
@@ -78,15 +73,6 @@ function itensDoPacote(p: Product): ItemPacote[] {
   return itens
 }
 
-function planChips(p: Product): string[] {
-  const chips: string[] = []
-  if (p.feat_lyrics_sync) chips.push("letra sincronizada")
-  if ((p.photo_limit ?? 0) > 0) chips.push(`${p.photo_limit} fotos`)
-  if (p.feat_qrcode) chips.push("QR Code")
-  if (p.feat_revision) chips.push("ajustes inclusos")
-  if (p.category === "DIGITAL_PHYSICAL") chips.push("caixa física", "frete grátis")
-  return chips
-}
 
 const PRODUCT_ICONS: Record<string, React.ReactNode> = {
   "Música Digital": (
@@ -256,16 +242,9 @@ function ProdutosContent() {
     }
   }
 
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
-  const [zoomSrc, setZoomSrc] = useState<Record<string, string | null>>({})
-
-  function toggleDetails(id: string) {
-    setExpandedIds((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
+  // "+ Ver como fica": qual plano está com a prévia aberta.
+  const [previaDe, setPreviaDe] = useState<Product | null>(null)
+  const fecharPrevia = React.useCallback(() => setPreviaDe(null), [])
 
   const contentRef = useRef<HTMLDivElement>(null)
   useScrollTopOnStepChange(step, contentRef)
@@ -667,14 +646,6 @@ function ProdutosContent() {
                     {items.map((product) => {
                       const isSelected = selected?.id === product.id
                       const isPhysicalPlan = product.category === "DIGITAL_PHYSICAL"
-                      const chips = planChips(product)
-                      const isExpanded = expandedIds.has(product.id)
-                      const zoomed = zoomSrc[product.id]
-                      // "ver exemplo" só quando há o que mostrar (fotos ou a caixa).
-                      // A lista acima já diz o que vem; o texto livre do admin
-                      // repetia o mesmo e chamava pra "tocar numa foto" em
-                      // plano que não tem foto.
-                      const temExemplo = (product.photo_limit ?? 0) > 0 || isPhysicalPlan
 
                       return (
                         <div
@@ -767,66 +738,15 @@ function ProdutosContent() {
                               {isSelected ? "Selecionado" : (podeUsarCredito(product) ? "Selecionar e pagar" : "Selecionar")}
                             </div>
 
-                            {temExemplo && (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); toggleDetails(product.id) }}
-                                aria-label="Ver exemplo"
-                                className="flex items-center gap-1 text-[13px]"
-                                style={{ color: "rgba(255,255,255,0.5)" }}
-                              >
-                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="9"/><path strokeLinecap="round" d="M12 16v-4M12 8h.01"/>
-                                </svg>
-                                ver exemplo
-                              </button>
-                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setPreviaDe(product) }}
+                              className="flex items-center gap-1 text-[13px] font-semibold"
+                              style={{ color: "#f472b6" }}
+                            >
+                              + Ver como fica
+                            </button>
                           </div>
 
-                          {isExpanded && temExemplo && (
-                            <div className="mt-2.5 pt-2 border-t" style={{ borderColor: "rgba(255,255,255,0.12)" }} onClick={(e) => e.stopPropagation()}>
-                              <p className="text-sm leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
-                                {(product.photo_limit ?? 0) > 0
-                                  ? "Fotos de exemplo, como aparecem no player. Toque numa foto pra ampliar."
-                                  : "Música digital + caixa física entregue em casa."}
-                              </p>
-                              {chips.length > 0 && (
-                                <div className="flex gap-1.5 flex-wrap">
-                                  {isPhysicalPlan && (
-                                    <>
-                                      <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
-                                        <svg className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-                                      </div>
-                                      <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
-                                        <svg className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 2h6M10 2v4l-3 4v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V10l-3-4V2"/></svg>
-                                      </div>
-                                    </>
-                                  )}
-                                  {(product.photo_limit ?? 0) > 0 && EXAMPLE_PHOTOS.map((src) => (
-                                    <img
-                                      key={src}
-                                      src={src}
-                                      alt="Exemplo de foto do cliente no player"
-                                      className="w-11 h-11 rounded-lg object-cover shrink-0 cursor-zoom-in"
-                                      onClick={(e) => { e.stopPropagation(); setZoomSrc((prev) => ({ ...prev, [product.id]: prev[product.id] === src ? null : src })) }}
-                                    />
-                                  ))}
-                                  {product.feat_qrcode && !isPhysicalPlan && (
-                                    <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
-                                      <svg className="w-4 h-4" style={{ color: "rgba(255,255,255,0.3)" }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              {zoomed && (
-                                <img
-                                  src={zoomed}
-                                  alt="Exemplo de foto do cliente no player, ampliada"
-                                  className="w-full rounded-lg mt-2 cursor-zoom-out"
-                                  onClick={(e) => { e.stopPropagation(); setZoomSrc((prev) => ({ ...prev, [product.id]: null })) }}
-                                />
-                              )}
-                            </div>
-                          )}
                         </div>
                       )
                     })}
@@ -1044,6 +964,15 @@ function ProdutosContent() {
         </div>
 
       </div>{/* fecha container adaptativo */}
+
+      {previaDe && (
+        <VerComoFica
+          plano={previaDe}
+          selecionado={selected?.id === previaDe.id}
+          onEscolher={() => { if (selected?.id !== previaDe.id) handleSelectProduct(previaDe) }}
+          onFechar={fecharPrevia}
+        />
+      )}
     </div>
   )
 }
