@@ -315,8 +315,11 @@ export default function Home() {
                 você escolhe como quer viver essa experiência") não dizia nem
                 que era MÚSICA. O refrão mostrado antes de pagar é o da LETRA —
                 a música só é gerada depois do pagamento; não prometer áudio. */}
-            <p className="animate-fade-up delay-200 text-white/75 leading-relaxed mb-9 max-w-sm" style={{ ...bodyFont, fontSize: "1rem", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
-              Você conta a história e a gente transforma em música, pra presentear alguém ou lançar a sua.
+            {/* Mais destaque (pedido do Audrei, 24/11): 16px cinza sumia entre
+                o título e o botão. Agora 18-20px, mais contraste, e a promessa
+                ("a gente transforma em música") em negrito na cor do título. */}
+            <p className="animate-fade-up delay-200 text-white/85 leading-snug mb-8 max-w-md" style={{ ...bodyFont, fontSize: "clamp(1.125rem, 1.6vw, 1.25rem)", textShadow: "0 1px 12px rgba(0,0,0,0.6)" }}>
+              Você conta a história e <strong className="text-white font-bold">a gente transforma em música</strong>, pra presentear alguém ou lançar a sua.
             </p>
 
             <div className="animate-fade-up delay-300 flex flex-wrap gap-3 mb-4">
