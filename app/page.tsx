@@ -14,6 +14,7 @@ import ProdutosCarrossel from "./components/ProdutosCarrossel"
 import FaqHome from "./components/FaqHome"
 import ResumeMusicBanner from "./components/ResumeMusicBanner"
 import BannerIndicacao from "./components/BannerIndicacao"
+import FizMascot from "./components/FizMascot"
 
 
 // Vídeo do hero (fundo em loop). Duas resoluções — baixa só a certa por tela.
@@ -476,6 +477,50 @@ export default function Home() {
           desconta o header fixo). Era a lista de áudio, que saiu em 24/11. */}
       <section id="exemplos" className="scroll-mt-20 max-w-6xl mx-auto px-6 pt-14 lg:pt-20 pb-8 lg:pb-4">
         <VideoExemplos />
+      </section>
+
+      {/* Convite pro SpotFiz (mascote "Fiz", ver FizMascot.tsx). Vivia dentro
+          da lista de exemplos em áudio, que saiu em 24/11/2026; voltou sozinho,
+          logo depois dos vídeos, a pedido do Audrei, pra MEDIR se alguém usa
+          (cta_rede passou a ser gravado no mesmo dia — antes era descartado
+          pelo /api/track, então nunca houve dado). Linha única a partir de
+          640px: na largura cheia o cartão não precisa mais empilhar. */}
+      <section className="max-w-3xl mx-auto px-6 pb-6 lg:pb-10">
+          <div data-zona-escura className="relative rounded-3xl overflow-hidden">
+            <div className="absolute inset-0"
+                 style={{ background: "radial-gradient(130% 160% at 12% 15%, rgba(240,25,107,0.38) 0%, transparent 55%), radial-gradient(130% 160% at 88% 85%, rgba(139,92,246,0.38) 0%, transparent 55%), #14111f" }} />
+            <div className="absolute inset-0 opacity-40"
+                 style={{ backgroundImage: "radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "22px 22px", maskImage: "radial-gradient(ellipse at center, black 0%, transparent 70%)" }} />
+
+            <div className="relative flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-6 px-6 pt-2 pb-7 sm:py-8 text-center sm:text-left">
+              <div className="shrink-0 -mt-4 sm:mt-0 pointer-events-none select-none">
+                <FizMascot mood="energetic" size={104} />
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="font-extrabold leading-tight" style={{ ...bodyFont, fontSize: "clamp(1.35rem, 3.2vw, 1.75rem)" }}>
+                  <span className="text-white">Divirta-se ouvindo</span>{" "}
+                  <span style={{ background: "linear-gradient(90deg,#f0196b,#d946ef)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>
+                    Fiz Música
+                  </span>
+                </p>
+                <p className="text-white/60 text-sm mt-2 max-w-sm mx-auto sm:mx-0" style={bodyFont}>
+                  Explore o SpotFiz: histórias reais que outros clientes escolheram publicar, e também música de quem quer compor e criar na prática. Curta, favorite e monte sua playlist.
+                </p>
+              </div>
+
+              <button
+                onClick={() => { track("cta_rede", "home_convite"); router.push("/minha-musica?aba=musicas") }}
+                className="shrink-0 mt-1 sm:mt-0 inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold transition-all hover:brightness-110 active:scale-[0.97]"
+                style={{ background: "linear-gradient(135deg,#f0196b,#d946ef)", boxShadow: "0 8px 26px rgba(240,25,107,0.35)" }}
+              >
+                Ouvir a Rede
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
       </section>
 
 
