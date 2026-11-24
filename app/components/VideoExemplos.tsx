@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { track } from "@/lib/track"
 
 /**
  * Carrossel de exemplos em VÍDEO — o player pronto dentro de um mockup de celular.
@@ -21,9 +22,11 @@ type Exemplo = {
   grad: string
 }
 
+// Pâmela primeiro: é o exemplo do anúncio (pamela-v4), quem chega por ele
+// reconhece. Kobra (2:40) abria a fila antes.
 const EXEMPLOS: Exemplo[] = [
-  { slug: "kobra",   nome: "Kobra",   musica: "Cores de Amor e Esperança", ocasiao: "Homenagem a um amigo", duracao: "2:40", grad: "linear-gradient(155deg,#1b1630 0%,#c9a227 55%,#f0e0a8 100%)" },
   { slug: "pamela",  nome: "Pamela",  musica: "Meu Melhor Talento",     ocasiao: "Pedido de namoro", duracao: "0:40", grad: "linear-gradient(155deg,#3d1533 0%,#c8447a 55%,#f3b26e 100%)" },
+  { slug: "kobra",   nome: "Kobra",   musica: "Cores de Amor e Esperança", ocasiao: "Homenagem a um amigo", duracao: "2:40", grad: "linear-gradient(155deg,#1b1630 0%,#c9a227 55%,#f0e0a8 100%)" },
   { slug: "eduardo", nome: "Eduardo", musica: "O Farol do Meu Mundo",   ocasiao: "Dia dos Pais",     duracao: "0:40", grad: "linear-gradient(155deg,#12222f 0%,#3c6b74 48%,#e3b579 100%)" },
   { slug: "familia", nome: "Família", musica: "A Doce Espera de Beatriz", ocasiao: "Chá revelação",  duracao: "0:40", grad: "linear-gradient(135deg,#f7bcd8 0%,#ddc9f4 52%,#a8d3f0 100%)" },
   { slug: "orelha",  nome: "Orelha",  musica: "Estrela da Praia Brava",  ocasiao: "Homenagem Pet",   duracao: "4:44", grad: "linear-gradient(160deg,#241a33 0%,#6d5a94 48%,#d9b8d0 100%)" },
@@ -62,7 +65,11 @@ export default function VideoExemplos() {
           </span>
         </h2>
         <p className="text-white/50 text-sm mt-3">
-          Toque para ver como cada música pode ser apresentado no celular. Além disso, você tem a opção de publicar a música na Rede.
+          {/* Os vídeos mostram o player COM fotos (Retrospectiva). O Essencial,
+              que é o plano do anúncio, não tem fotos: o texto precisa dizer,
+              senão quem paga R$ 12,90 espera as fotos. A lista de áudio que
+              mostrava "só a música" saiu da home em 24/11/2026. */}
+          Toque para ver e ouvir. As fotos fazem parte da Retrospectiva; no Essencial você recebe a música com a letra sincronizada. E pode publicar no SpotFiz.
         </p>
       </div>
 
@@ -157,7 +164,7 @@ export default function VideoExemplos() {
 
                         {/* Play central */}
                         <button
-                          onClick={() => setPlaying(ex.slug)}
+                          onClick={() => { track("exemplo_video", ex.slug); setPlaying(ex.slug) }}
                           aria-label={`Assistir a música de ${ex.nome}`}
                           className="absolute inset-0 z-10 flex items-center justify-center group"
                         >
