@@ -96,7 +96,16 @@ function maskWhatsapp(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
 
-export type PlanoResumo = { id: string; name: string; price: number; photo_limit?: number | null; feat_lyrics_sync?: boolean | null }
+// Uma linha do que o plano entrega, a partir dos AJUSTES do produto (não de
+// texto livre): sem fotos tem que estar escrito, pra ninguém esperar as fotos
+// do vídeo do anúncio num plano que não tem.
+function resumoDoPlano(p: PlanoResumo): string {
+  const fotos = p.photo_limit ?? 0
+  if (fotos > 0) return `Música com até ${fotos} fotos sincronizadas`
+  return `Música${p.feat_lyrics_sync ? " com letra sincronizada" : ""}, sem fotos`
+}
+
+export type PlanoResumo = { id: string; name: string; price: number; photo_limit?: number | null; feat_lyrics_sync?: boolean | null; credits_granted?: number | null }
 
 // Teclado virtual aberto? Compara a área VISÍVEL com a altura da tela SEM
 // teclado, medida enquanto nenhum campo de texto está em foco.
@@ -244,6 +253,12 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     const id = searchParams.get("produto")
     return id ? planos.find((p) => p.id === id) ?? null : null
   })
+  const [trocandoPlano, setTrocandoPlano] = useState(false)
+  // Planos de MÚSICA (pacote de créditos fica de fora: não é música).
+  const planosDeMusica = useMemo(
+    () => planos.filter((p) => !p.credits_granted).sort((a, b) => a.price - b.price),
+    [planos]
+  )
   const [error, setError] = useState("")
   const [questionStep, setQuestionStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -1337,54 +1352,74 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         <div ref={contentRef} className="flex-1 overflow-y-auto lg:overflow-visible" style={{ overflowX: "hidden", width: "100%" }}>
           <div className="px-5 py-4 pb-32 lg:pb-0 lg:max-w-3xl lg:mx-auto lg:px-6 lg:py-12" style={{ width: "100%", boxSizing: "border-box" }}>
 
-            {/* ── Plano escolhido na home ──
+            {/* ── Plano escolhido na home / no anúncio ──
                 Aparece em TODOS os passos: quem clicou num plano na vitrine
                 passa vários minutos preenchendo o briefing e, sem isso, não
-                tem nenhum sinal de que a escolha sobreviveu — chega no fim
-                achando que vai ter que escolher de novo.
+                tem nenhum sinal de que a escolha sobreviveu.
 
-                "Trocar" não manda pra lugar nenhum: só cancela a
-                pré-seleção. A tela de planos vem no fim do wizard de
-                qualquer forma, com o comparativo à vista. */}
+                "Trocar" abre a lista dos planos de música ALI MESMO. Antes
+                ele só sumia com o aviso, sem mostrar nada — o Audrei clicou
+                pelo link do anúncio e achou que estava quebrado. Trocar não
+                navega: atualiza o ?produto= no lugar (o resto da URL, com a
+                origem do anúncio, fica). */}
             {planoPre && (
-              <div className="mb-6 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" style={{ color: "#22c55e" }}
-                     fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m5 12 5 5L20 7" />
-                </svg>
-                {/* Quem vem do anúncio não ESCOLHEU plano nenhum: "Plano
-                    escolhido" soava como compra já feita. Agora diz o que é
-                    e quando paga. */}
-                <p className="text-sm text-white/70 leading-snug flex-1 min-w-0">
-                  Plano{" "}
-                  <span className="font-semibold text-white">{planoPre.name}</span>
-                  <span className="text-white/50"> — R$ {planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
-                  {step === 1 && (
-                    <span className="block text-[13px] text-white/50 mt-0.5">
-                      {planoPre.photo_limit === 0
-                        ? `Música${planoPre.feat_lyrics_sync ? " com letra sincronizada" : ""}, sem fotos. `
-                        : ""}
-                      Você só paga depois de ver o refrão.
-                    </span>
+              <div className="mb-6 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 shrink-0" style={{ color: "#22c55e" }}
+                       fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m5 12 5 5L20 7" />
+                  </svg>
+                  <p className="text-sm text-white/70 leading-snug flex-1 min-w-0">
+                    Plano{" "}
+                    <span className="font-semibold text-white">{planoPre.name}</span>
+                    <span className="text-white/50"> — R$ {planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                    {step === 1 && (
+                      <span className="block text-[13px] text-white/50 mt-0.5">{resumoDoPlano(planoPre)}</span>
+                    )}
+                  </p>
+                  {planosDeMusica.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setTrocandoPlano((v) => !v)}
+                      aria-expanded={trocandoPlano}
+                      className="shrink-0 text-sm font-semibold text-white/50 hover:text-white underline underline-offset-2 transition-colors"
+                    >
+                      {trocandoPlano ? "Fechar" : "Trocar"}
+                    </button>
                   )}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPlanoPre(null)
-                    // `history.replaceState` em vez de `router.replace`: com
-                    // staleTimes dynamic=0 o replace busca o RSC no servidor e
-                    // o wizard inteiro pisca no meio do preenchimento.
-                    try {
-                      const u = new URL(window.location.href)
-                      u.searchParams.delete("produto")
-                      window.history.replaceState(null, "", u.toString())
-                    } catch {}
-                  }}
-                  className="shrink-0 text-sm font-semibold text-white/50 hover:text-white underline underline-offset-2 transition-colors"
-                >
-                  Trocar
-                </button>
+                </div>
+                {trocandoPlano && (
+                  <div className="mt-3 grid gap-2">
+                    {planosDeMusica.map((p) => {
+                      const atual = p.id === planoPre.id
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setPlanoPre(p)
+                            setTrocandoPlano(false)
+                            // replaceState em vez de router.replace: com
+                            // staleTimes dynamic=0 o replace busca o RSC e o
+                            // wizard inteiro pisca no meio do preenchimento.
+                            try {
+                              const u = new URL(window.location.href)
+                              u.searchParams.set("produto", p.id)
+                              window.history.replaceState(window.history.state, "", u.toString())
+                            } catch {}
+                          }}
+                          className={`text-left rounded-xl border px-3.5 py-2.5 transition-colors ${atual ? "border-pink-500 bg-pink-500/10" : "border-white/10 bg-black/20 hover:border-pink-500/60"}`}
+                        >
+                          <span className="flex items-baseline justify-between gap-2">
+                            <span className="text-[15px] font-semibold text-white">{p.name}</span>
+                            <span className="text-sm text-white/70 shrink-0">R$ {p.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span>
+                          </span>
+                          <span className="block text-[13px] text-white/50 mt-0.5">{resumoDoPlano(p)}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1578,12 +1613,12 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     {[
                       ["1", "Conte a história", "uns 3 minutos"],
                       ["2", "Veja o refrão", "grátis"],
-                      ["3", "Pague e receba", planoPre ? `R$ ${planoPre.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "em minutos"],
+                      ["3", "Receba 2 versões", "a 2ª é grátis"],
                     ].map(([n, t, sub]) => (
                       <li key={n} className="rounded-xl border border-white/10 bg-white/[0.03] px-2 py-2.5">
                         <span className="block text-[13px] font-bold text-pink-400">{n}</span>
                         <span className="block text-[13px] text-white leading-tight">{t}</span>
-                        <span className={`block text-[12px] mt-0.5 ${n === "2" ? "text-emerald-400" : "text-white/50"}`}>{sub}</span>
+                        <span className={`block text-[12px] mt-0.5 ${n !== "1" ? "text-emerald-400" : "text-white/50"}`}>{sub}</span>
                       </li>
                     ))}
                   </ol>
