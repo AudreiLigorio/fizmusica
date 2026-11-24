@@ -1313,6 +1313,17 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
            style={{ background: "#07060d", width: "100%", maxWidth: "100vw", overflowX: "hidden",
                     ...(teclado && { top: teclado.top, height: teclado.h, bottom: "auto" }) }}>
 
+        {/* ── Logo no celular ──
+            No computador o Header aparece; no celular o wizard não tinha marca
+            nenhuma, e quem chega pelo anúncio (marca que ainda não conhece)
+            via um formulário sem dono. NÃO é link: o funil não ganha saídas
+            (ver a barra de navegação, que também fica fora daqui). Some com o
+            teclado aberto, como a jornada logo abaixo. No tema claro o
+            globals.css troca pela versão clara. */}
+        <div className={`lg:hidden shrink-0 flex justify-center pt-2.5 pb-1 ${teclado ? "hidden" : ""}`}>
+          <img src="/logo_fizmusica.png" alt="Fiz Música" className="h-10 w-auto" draggable={false} />
+        </div>
+
         {/* ── Jornada completa (todas as páginas) ── */}
         <div className={`shrink-0 border-b border-white/[0.06] px-4 ${teclado ? "hidden" : ""}`}>
           <JourneyProgress current={1} />
