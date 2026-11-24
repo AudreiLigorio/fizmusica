@@ -56,6 +56,28 @@ function planGroup(p: Product): "voce" | "presentear" {
   return (p.photo_limit ?? 0) > 0 ? "presentear" : "voce"
 }
 
+// "O que vem no seu pacote": montado dos AJUSTES do produto no admin (não do
+// texto livre), pra nunca mentir quando um plano muda. O ✗ das fotos é o
+// ponto: quem fica no Essencial precisa ver ANTES de pagar que não leva foto —
+// é a frustração mais provável desta tela.
+type ItemPacote = { ok: boolean; texto: string }
+function itensDoPacote(p: Product): ItemPacote[] {
+  const fotos = p.photo_limit ?? 0
+  const itens: ItemPacote[] = [
+    { ok: true, texto: "Música personalizada com capa exclusiva" },
+    { ok: true, texto: "2 versões pra você escolher" },
+  ]
+  if (p.feat_lyrics_sync) itens.push({ ok: true, texto: "Letra sincronizada com a música" })
+  itens.push(fotos > 0
+    ? { ok: true, texto: `Até ${fotos} fotos de vocês passando com a música` }
+    : { ok: false, texto: "Sem fotos" })
+  if (p.feat_qrcode) itens.push({ ok: true, texto: "Cartão com QR Code pra entregar" })
+  if (p.feat_revision) itens.push({ ok: true, texto: "Ajustes inclusos" })
+  if (p.category === "DIGITAL_PHYSICAL") itens.push({ ok: true, texto: "Caixa física com frete grátis" })
+  itens.push({ ok: true, texto: "Link pra compartilhar e publicar no SpotFiz" })
+  return itens
+}
+
 function planChips(p: Product): string[] {
   const chips: string[] = []
   if (p.feat_lyrics_sync) chips.push("letra sincronizada")
@@ -395,6 +417,19 @@ function ProdutosContent() {
   // Dentro do app da Play Store não vendemos (ver lib/canal.ts).
   const noApp = useBloquearCompraNoApp() === true
 
+  // Voltar ao wizard LEVANDO o plano: sem ele, a ida seguinte pra cá chegava
+  // sem origem e abria todos os grupos — quem veio do anúncio do Essencial
+  // dava de cara com os presentes abertos. Leva a escolha atual (a mais
+  // recente decisão da pessoa) ou, sem ela, a que veio da home/anúncio.
+  function voltarAoWizard() {
+    const plano = selected?.id ?? planoDaHome
+    const q = new URLSearchParams()
+    if (orderId) q.set("orderId", orderId)
+    q.set("editar", "1")
+    if (plano) q.set("produto", plano)
+    router.push(`/criar?${q.toString()}`)
+  }
+
   async function handleContinuar() {
     if (!selected) return
 
@@ -482,7 +517,7 @@ function ProdutosContent() {
         {/* Mobile: Voltar no topo */}
         <div className="lg:hidden shrink-0 px-5 pt-4 pb-1">
           <button
-            onClick={step === 1 ? () => router.push(orderId ? `/criar?orderId=${orderId}&editar=1` : "/criar?editar=1") : () => setStep(1)}
+            onClick={step === 1 ? voltarAoWizard : () => setStep(1)}
             className="text-white/50 text-sm hover:text-white transition-colors"
           >
             ← Voltar
@@ -635,9 +670,11 @@ function ProdutosContent() {
                       const chips = planChips(product)
                       const isExpanded = expandedIds.has(product.id)
                       const zoomed = zoomSrc[product.id]
-                      const withPhotoCount = product.description
-                        ? product.description.replace(/\{fotos\}/gi, String(product.photo_limit ?? ""))
-                        : null
+                      // "ver exemplo" só quando há o que mostrar (fotos ou a caixa).
+                      // A lista acima já diz o que vem; o texto livre do admin
+                      // repetia o mesmo e chamava pra "tocar numa foto" em
+                      // plano que não tem foto.
+                      const temExemplo = (product.photo_limit ?? 0) > 0 || isPhysicalPlan
 
                       return (
                         <div
@@ -680,19 +717,23 @@ function ProdutosContent() {
                             </span>
                           </div>
 
-                          <p className="text-sm mb-1" style={{ color: "rgba(74,222,128,0.55)" }}>
-                            música personalizada · capa exclusiva · 2ª versão grátis
+                          <p className="text-[13px] font-semibold uppercase tracking-wider mt-2 mb-1.5" style={{ color: "rgba(255,255,255,0.5)" }}>
+                            O que vem no seu pacote
                           </p>
-
-                          {chips.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-2.5">
-                              {chips.map((chip) => (
-                                <span key={chip} className="text-sm font-medium" style={{ color: "#4ade80" }}>
-                                  + {chip}
+                          <ul className="space-y-1 mb-3">
+                            {itensDoPacote(product).map((it) => (
+                              <li key={it.texto} className="flex items-start gap-2 text-sm leading-snug"
+                                  style={{ color: it.ok ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>
+                                <span aria-hidden="true" className="shrink-0 w-4 text-center font-bold"
+                                      style={{ color: it.ok ? "#4ade80" : "rgba(255,255,255,0.5)" }}>
+                                  {it.ok ? "✓" : "✕"}
                                 </span>
-                              ))}
-                            </div>
-                          )}
+                                <span className={it.ok ? "" : "font-semibold"}>
+                                  <span className="sr-only">{it.ok ? "Inclui: " : "Não inclui: "}</span>{it.texto}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
 
                           {/* Ação primária de quem tem crédito: pula a tela de
                               pagamento inteira. "Selecionar e pagar" continua
@@ -726,25 +767,27 @@ function ProdutosContent() {
                               {isSelected ? "Selecionado" : (podeUsarCredito(product) ? "Selecionar e pagar" : "Selecionar")}
                             </div>
 
-                            {withPhotoCount && (
+                            {temExemplo && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); toggleDetails(product.id) }}
-                                aria-label="Ver detalhes e fotos"
+                                aria-label="Ver exemplo"
                                 className="flex items-center gap-1 text-[13px]"
                                 style={{ color: "rgba(255,255,255,0.5)" }}
                               >
                                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <circle cx="12" cy="12" r="9"/><path strokeLinecap="round" d="M12 16v-4M12 8h.01"/>
                                 </svg>
-                                detalhes
+                                ver exemplo
                               </button>
                             )}
                           </div>
 
-                          {isExpanded && withPhotoCount && (
+                          {isExpanded && temExemplo && (
                             <div className="mt-2.5 pt-2 border-t" style={{ borderColor: "rgba(255,255,255,0.12)" }} onClick={(e) => e.stopPropagation()}>
                               <p className="text-sm leading-relaxed mb-2" style={{ color: "rgba(255,255,255,0.6)" }}>
-                                {withPhotoCount}{(chips.length > 0) && " Toque numa foto pra ampliar."}
+                                {(product.photo_limit ?? 0) > 0
+                                  ? "Fotos de exemplo, como aparecem no player. Toque numa foto pra ampliar."
+                                  : "Música digital + caixa física entregue em casa."}
                               </p>
                               {chips.length > 0 && (
                                 <div className="flex gap-1.5 flex-wrap">
@@ -939,7 +982,7 @@ function ProdutosContent() {
             {/* RODAPÉ — desktop */}
             <div className="hidden lg:flex justify-between items-center mt-10">
               <button
-                onClick={step === 1 ? () => router.push(orderId ? `/criar?orderId=${orderId}&editar=1` : "/criar?editar=1") : () => setStep(1)}
+                onClick={step === 1 ? voltarAoWizard : () => setStep(1)}
                 className="transition-all px-7 py-3.5 rounded-2xl text-sm font-medium text-white/60 hover:text-white"
                 style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)" }}
               >
