@@ -536,3 +536,35 @@
   margin-right: -1rem;
   border-top-color: #e3d8dc !important;
 }
+
+/* Banner de ocasioes da home (BannerOcasioes.tsx) */
+.fm-bo-foto{position:absolute;inset:0;background-size:cover;background-position:var(--pm);opacity:0;transition:opacity 1s}
+.fm-bo-foto.on{opacity:1}
+.fm-bo-foto.on.fm-bo-kb{animation:fmBoKb 12s ease-in-out infinite alternate}
+@keyframes fmBoKb{from{transform:scale(1.05)}to{transform:scale(1.16) translateX(-10px)}}
+.fm-bo-sombra{background:linear-gradient(180deg,rgba(15,8,25,.55) 0%,rgba(15,8,25,0) 22%,rgba(15,8,25,0) 30%,rgba(15,8,25,.9) 56%,rgba(15,8,25,.98) 70%,#0f0819 100%)}
+@media (min-width:1024px){
+  .fm-bo-fotos{left:48%;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 32%);mask-image:linear-gradient(90deg,transparent 0%,#000 32%)}
+  .fm-bo-foto{background-size:auto 175%;background-position:100% 25%}
+  .fm-bo-sombra{background:linear-gradient(180deg,rgba(15,8,25,.45) 0%,rgba(15,8,25,0) 25%)}
+}
+.fm-bo-vidro{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.fm-bo-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25)}
+.fm-bo-faixa{mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.fm-bo-rolar{animation:fmBoRolar 22s linear infinite}
+@keyframes fmBoRolar{to{transform:translateX(-33.333%)}}
+.fm-bo-cta{background:var(--ac);box-shadow:0 8px 30px -6px var(--ac);transition:background .6s}
+.fm-bo-pulso{animation:fmBoPulso 2.4s ease-in-out infinite}
+@keyframes fmBoPulso{50%{transform:scale(1.025)}}
+.fm-bo-eq{display:flex;align-items:flex-end;gap:3px;height:18px}
+.fm-bo-eq i{width:3px;border-radius:2px;background:var(--ac);animation:fmBoEq 1s ease-in-out infinite}
+.fm-bo-eq i:nth-child(2){animation-delay:-.3s}
+.fm-bo-eq i:nth-child(3){animation-delay:-.6s}
+.fm-bo-eq i:nth-child(4){animation-delay:-.15s}
+.fm-bo-eq i:nth-child(5){animation-delay:-.45s}
+@keyframes fmBoEq{0%,100%{height:4px}50%{height:18px}}
+.fm-bo-cursor::after{content:"|";margin-left:1px;opacity:.7;animation:fmBoPisca .8s steps(1) infinite}
+@keyframes fmBoPisca{50%{opacity:0}}
+.fm-bo-nota{position:absolute;font-size:20px;color:var(--ac);opacity:0;animation:fmBoNota 5s linear infinite;text-shadow:0 0 12px var(--ac)}
+@keyframes fmBoNota{0%{opacity:0;transform:translateY(0)}20%{opacity:.9}100%{opacity:0;transform:translateY(-160px) rotate(25deg)}}
+@keyframes fmBoBarra{from{width:0}to{width:100%}}

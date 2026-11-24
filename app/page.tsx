@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import { track } from "@/lib/track"
 import { useRouter } from "next/navigation"
-import FizMusicaCarousel from "./components/FizMusicaCarousel"
+import BannerOcasioes from "./components/BannerOcasioes"
 import Header from "./components/Header"
 import Footer from "./components/Footer"
 import BarraHome, { TabsHomeDesktop } from "./components/BarraHome"
@@ -552,7 +552,7 @@ export default function Home() {
           </h2>
         </div>
 
-        <FizMusicaCarousel />
+        <BannerOcasioes />
       </section>
 
       {/* ═══════════════════════════════════════════

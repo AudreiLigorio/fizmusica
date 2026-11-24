@@ -196,7 +196,9 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   const [step, setStep] = useState(1)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const TERMS_VERSION = "2026-06"
-  const [selectedContext, setSelectedContext] = useState("")
+  // ?tema= vem do banner de ocasiões da home: abre o wizard já na lista
+  // daquele tema. Label que não existe (ocasião renomeada) só não abre nada.
+  const [selectedContext, setSelectedContext] = useState(() => searchParams.get("tema") ?? "")
   const [selectedSubcategory, setSelectedSubcategory] = useState("")
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [musicalStyle, setMusicalStyle] = useState("")
