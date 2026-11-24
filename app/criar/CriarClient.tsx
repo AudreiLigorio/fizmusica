@@ -125,6 +125,22 @@ function tecladoAberto(vv: VisualViewport): boolean {
   return alturaSemTeclado - vv.height > 150
 }
 
+// iPhone: quando a tela se ajusta ao teclado (o container fixo muda de
+// posição e rolamos até o campo), o WebKit às vezes deixa o CURSOR desenhado
+// no lugar antigo, piscando fora do campo. Regravar a seleção na mesma
+// posição obriga o navegador a recalcular onde desenhar o cursor.
+// Por isso os campos de e-mail usam inputMode="email" em vez do tipo e-mail:
+// nesse tipo o navegador não deixa mexer na seleção (lança erro).
+function ressincronizarCursor() {
+  const el = document.activeElement
+  if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return
+  try {
+    const a = el.selectionStart, b = el.selectionEnd
+    if (a == null || b == null) return
+    el.setSelectionRange(a, b, el.selectionDirection ?? undefined)
+  } catch { /* tipo de campo sem seleção */ }
+}
+
 export default function CriarClient({ initialOccasions, planos = [] }: { initialOccasions: WizardOccasion[]; planos?: PlanoResumo[] }) {
   return (
     <Suspense fallback={null}>
@@ -341,11 +357,15 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
       const folga = area.bottom - (f2.bottom + margem)
       c.scrollTop -= Math.min(area.top - (ctx2.top - margem), Math.max(0, folga))
     }
+    ressincronizarCursor()
   }, [])
   useEffect(() => {
     if (!teclado) return
     const id = requestAnimationFrame(mostrarFocoEBotao)
-    return () => cancelAnimationFrame(id)
+    // De novo depois que a animação do teclado assenta: é quando o cursor
+    // costuma ficar para trás.
+    const t = setTimeout(ressincronizarCursor, 400)
+    return () => { cancelAnimationFrame(id); clearTimeout(t) }
   }, [teclado, step, questionStep, showLeadCapture, mostrarFocoEBotao])
   // Trocar de campo com o teclado já aberto (captura de contato, dados) não
   // muda o tamanho da tela, então o efeito acima não roda: o foco avisa.
@@ -354,8 +374,15 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     if (!c) return
     let t: ReturnType<typeof setTimeout> | undefined
     const aoFocar = () => { clearTimeout(t); t = setTimeout(mostrarFocoEBotao, 60) }
+    let r: ReturnType<typeof setTimeout> | undefined
+    const aoRolar = () => { clearTimeout(r); r = setTimeout(ressincronizarCursor, 120) }
     c.addEventListener("focusin", aoFocar)
-    return () => { clearTimeout(t); c.removeEventListener("focusin", aoFocar) }
+    c.addEventListener("scroll", aoRolar, { passive: true })
+    return () => {
+      clearTimeout(t); clearTimeout(r)
+      c.removeEventListener("focusin", aoFocar)
+      c.removeEventListener("scroll", aoRolar)
+    }
   }, [mostrarFocoEBotao])
   const [leadCaptured, setLeadCaptured] = useState(false)
   const [leadNome, setLeadNome] = useState("")
@@ -1283,7 +1310,8 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   <label className="text-sm text-gray-200 font-medium pl-2">Seu e-mail</label>
                   <div className="relative">
                     <input
-                      type="email"
+                      type="text" inputMode="email" autoComplete="email"
+                      autoCapitalize="none" autoCorrect="off" spellCheck={false}
                       id="lead-email" value={leadEmail}
                       onChange={(e) => setLeadEmail(e.target.value)}
                       placeholder="Ex: joao@email.com"
@@ -1753,7 +1781,8 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     </div>
                   ) : (
                     <input
-                      type="email"
+                      type="text" inputMode="email" autoComplete="email"
+                      autoCapitalize="none" autoCorrect="off" spellCheck={false}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       id="campo-email" placeholder="Ex: joao@email.com"
