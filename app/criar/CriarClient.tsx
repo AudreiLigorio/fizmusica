@@ -442,7 +442,7 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
           if (!o) return
           // Pedido já pago não deve ser reeditado no wizard — leva pra área do cliente.
           if (o.paymentStatus === "PAID") { router.replace(`/minha-musica?orderId=${urlOrderId}`); return }
-          resumeSessionData({
+          const retomar = () => resumeSessionData({
             selectedContext:     o.context ?? "",
             selectedSubcategory: o.subcategory ?? "",
             answers: Object.fromEntries(
@@ -460,6 +460,22 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
             leadCaptured: true,
             orderId:      urlOrderId,
           }, 5)
+          // A prévia da letra mora na SESSÃO (wizard_sessions), não no pedido.
+          // Sem sessão a etapa 5 caía direto no aviso calmo — o refrão sumia
+          // ao voltar da /produtos. Reaproveita a sessão guardada (o servidor
+          // devolve o refrão já gerado se a história não mudou, sem gastar
+          // geração); sem ela (in-app browser apaga o localStorage), abre uma.
+          // A sessão entra ANTES da etapa 5: a prévia dispara ao chegar nela.
+          const guardada = localStorage.getItem(SESSION_KEY)
+          if (guardada) { setSessionId(guardada); retomar(); return }
+          const nova = crypto.randomUUID()
+          localStorage.setItem(SESSION_KEY, nova)
+          const seguir = () => { setSessionId(nova); retomar() }
+          return fetch("/api/wizard-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: nova, step: 5, data: {} }),
+          }).then(seguir, seguir)
         })
         .catch(() => {})
       return
