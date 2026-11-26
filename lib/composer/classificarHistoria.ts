@@ -59,6 +59,15 @@ Responda SOMENTE um JSON: {"opcao": <número>, "pergunta": <texto ou null>}
 - A pergunta pede um detalhe concreto que FALTA, em português do Brasil, tom carinhoso e simples, até 110 caracteres, termina com "?".
 - Use o nome de quem vai receber quando soar natural. Não repita o que a pessoa já contou.`
 
+/**
+ * Aquece a função e os caches (catálogo + configurações) enquanto a pessoa
+ * ainda digita. Medido no ar em 26/11: 1ª chamada depois de um tempo parado
+ * ~8 s; aquecida, ~2 s. O wizard chama no 1º caractere digitado.
+ */
+export async function aquecerClassificacao(): Promise<void> {
+  await Promise.all([opcoesDoCatalogo(), getComposerSettings()]).catch(() => {})
+}
+
 export async function classificarHistoria(opts: {
   historia: string
   nome: string

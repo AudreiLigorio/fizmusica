@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse, after } from "next/server"
 import { createHash } from "crypto"
 import { createServerClient } from "@/lib/supabase"
-import { classificarHistoria } from "@/lib/composer/classificarHistoria"
+import { classificarHistoria, aquecerClassificacao } from "@/lib/composer/classificarHistoria"
 import { getComposerSettings } from "@/lib/composer/settings"
 import { extractClientIp } from "@/lib/geoip"
 import { HISTORIA_MIN, HISTORIA_MAX } from "@/lib/wizardHistoria"
@@ -25,6 +25,12 @@ const hashIp = (ip: string) =>
   createHash("sha256")
     .update(`${process.env.PREVIEW_IP_SALT ?? "fizmusica-previa"}:historia:${ip}`)
     .digest("hex")
+
+// GET = só aquecer (sem efeito colateral, sem IA). Ver aquecerClassificacao.
+export async function GET() {
+  await aquecerClassificacao()
+  return NextResponse.json({ ok: true })
+}
 
 export async function POST(req: NextRequest) {
   const b = await req.json().catch(() => ({}))

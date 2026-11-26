@@ -82,6 +82,9 @@ export function PrimeiraTelaHistoria(props: {
     if (digitou.current) return
     digitou.current = true
     track("recepcao", "historia_digitou")
+    // Aquece a rota da IA enquanto a pessoa escreve: a 1ª chamada depois de
+    // um tempo parado levava ~8 s no "Continuar"; aquecida, ~2 s.
+    fetch("/api/wizard/historia").catch(() => {})
   }
 
   return (
