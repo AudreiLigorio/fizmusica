@@ -1667,7 +1667,21 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                       celular, à direita no computador). Homenagem é o uso
                       principal; com o compositor em cima, o primeiro — e mais
                       chamativo — botão da tela era o do caminho de nicho. */}
-                  {composicaoLivre && composicaoLivre.wizard_subcategories[0] && (
+                  {/* Quem chega de anúncio (deFora) veio pelo PRESENTE: a porta
+                      do compositor vira um link discreto no fim, em vez de um
+                      cartão amarelo com o botão mais chamativo da tela. */}
+                  {composicaoLivre && composicaoLivre.wizard_subcategories[0] && deFora && (
+                    <button
+                      onClick={() => {
+                        track("recepcao", "porta_autoral")
+                        handleSubcategoryClick(composicaoLivre.wizard_subcategories[0], composicaoLivre.label)
+                      }}
+                      className="order-last text-[14px] text-white/50 underline underline-offset-4 decoration-white/25 py-2 justify-self-center"
+                    >
+                      Já tem a letra pronta? Cole aqui
+                    </button>
+                  )}
+                  {composicaoLivre && composicaoLivre.wizard_subcategories[0] && !deFora && (
                     <button
                       onClick={() => {
                         if (deFora) track("recepcao", "porta_autoral")
@@ -1747,10 +1761,13 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                                 if (deFora) track("recepcao", `grade_${occasion.label}`)
                                 setSelectedContext(occasion.label)
                               }}
-                              className="rounded-xl p-3 border border-white/10 bg-black/30 hover:border-pink-500/60 transition-all text-left"
+                              className="relative rounded-xl p-3 pr-7 border border-white/15 bg-black/30 hover:border-pink-500/60 active:border-pink-500 active:bg-pink-500/10 transition-all text-left"
                             >
                               <span className="block text-lg leading-none mb-1.5">{occasion.emoji}</span>
                               <span className="block text-[15px] text-white leading-snug">{occasion.label}</span>
+                              {/* Seta: sem ela o quadrante parecia ilustração, e o
+                                  único "botão" visível era o da letra pronta. */}
+                              <span aria-hidden className="absolute right-2.5 top-1/2 -translate-y-1/2 text-pink-400 text-lg leading-none">›</span>
                             </button>
                           ))}
                         </div>
