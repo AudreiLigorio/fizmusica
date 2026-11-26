@@ -116,3 +116,26 @@ export async function generateLyricsStream(opts: LyricsOpts): Promise<AsyncItera
     }
   })()
 }
+
+/**
+ * Resposta curta em JSON (classificação, não letra). Criada para o wizard
+ * "campo primeiro" (lib/composer/classificarHistoria.ts): escolher o tema a
+ * partir da história e decidir se cabe uma pergunta extra.
+ *
+ * Sem pensar e com temperatura baixa: é escolha entre opções dadas, e quem
+ * espera é o visitante na primeira tela do wizard.
+ */
+export async function gerarJson(opts: { systemPrompt: string; model: string; location: string; userContent: string }): Promise<unknown> {
+  const ai = getClient(opts.location)
+  const res = await ai.models.generateContent({
+    model: opts.model,
+    contents: opts.userContent,
+    config: {
+      ...configDePensamento(false),
+      systemInstruction: opts.systemPrompt,
+      temperature: 0.3,
+      responseMimeType: "application/json",
+    },
+  }).catch(async (e) => { await avisarSeSemCredito(e); throw e })
+  return JSON.parse((res.text ?? "").trim() || "null")
+}

@@ -99,7 +99,7 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
   }
 
   // Por sessão: o que ela fez, de onde veio (1º toque) e quanto ficou.
-  type Sessao = { origem: string; campanha: string | null; degraus: Set<number>; passoMax: number; saida: number | null; ouviu: boolean }
+  type Sessao = { origem: string; campanha: string | null; degraus: Set<number>; passoMax: number; saida: number | null; ouviu: boolean; variante: "A" | "B" | null; agiu: boolean }
   const sessoes = new Map<string, Sessao>()
   for (const e of todos) {
     let s = sessoes.get(e.sessao)
@@ -111,6 +111,8 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
         passoMax: 0,
         saida: null,
         ouviu: false,
+        variante: null,
+        agiu: false,
       }
       sessoes.set(e.sessao, s)
     }
@@ -122,6 +124,12 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
       if (Number.isFinite(seg)) s.saida = seg
     }
     if (e.evento === "recepcao" && /ouvir|exemplo_pamela/.test(e.detalhe ?? "")) s.ouviu = true
+    // Teste A/B do wizard (lib/wizardHistoria.ts): versão sorteada e a 1ª
+    // ação na tela de chegada. A: tocar no "Criar", num tema, na letra
+    // pronta ou no exemplo. B: começar a digitar, ouvir o exemplo, ir pro
+    // guiado ou pra letra pronta.
+    if (e.evento === "ab" && (e.detalhe === "historia-A" || e.detalhe === "historia-B")) s.variante = e.detalhe === "historia-B" ? "B" : "A"
+    if (e.evento === "recepcao" && /^(hero_|grade_|porta_autoral|historia_digitou|historia_ouvir|historia_guiado)/.test(e.detalhe ?? "")) s.agiu = true
   }
   const lista = [...sessoes.values()]
 
@@ -162,6 +170,24 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
     porCampanha.set(s.campanha, l)
   }
   const campanhas = [...porCampanha.values()].sort((a, b) => b.n - a.n).slice(0, 12)
+
+  // Teste A/B: uma linha por versão. "Viram o refrão" é a métrica que decide;
+  // "Agiram" (1ª ação na tela de chegada) é o sinal precoce.
+  const testeAB = (["A", "B"] as const).map((v) => {
+    const grupo = lista.filter((s) => s.variante === v)
+    const saidas = grupo.map((s) => s.saida).filter((x): x is number => x !== null)
+    return {
+      v,
+      n: grupo.length,
+      agiram: grupo.filter((s) => s.agiu).length,
+      passaram: grupo.filter((s) => s.degraus.has(2)).length,
+      refrao: grupo.filter((s) => s.degraus.has(3)).length,
+      pagamento: grupo.filter((s) => s.degraus.has(4)).length,
+      pagaram: grupo.filter((s) => s.degraus.has(5)).length,
+      ficou: mediana(saidas),
+      medidas: saidas.length,
+    }
+  })
 
   const porPagina = new Map<string, number>()
   for (const e of todos) {
@@ -216,6 +242,50 @@ export default async function ComportamentoPage({ searchParams }: { searchParams
           </div>
         )}
       </div>
+
+      {testeAB.some((l) => l.n > 0) && (
+        <div className="rounded-2xl border border-white/10 bg-black/40 p-6 mb-6">
+          <h2 className="text-white/80 text-sm font-semibold mb-1">Teste A/B do wizard (anúncio)</h2>
+          <p className="text-white/40 text-[12px] mb-4">
+            A = temas e perguntas (o de sempre). B = &quot;para quem é&quot; + a história num campo aberto, dados depois do
+            refrão. Só quem chega por anúncio; metade cai em cada. Decide quem ganhou: <b>viram o refrão</b>. Rodar 7 dias
+            antes de concluir. &quot;Agiram&quot; = 1ª ação na tela de chegada.
+          </p>
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full text-[13px] min-w-[600px]">
+              <thead>
+                <tr className="text-white/40 text-left">
+                  <th className="font-normal px-2 pb-2">Versão</th>
+                  <th className="font-normal px-2 pb-2 text-right">Pessoas</th>
+                  <th className="font-normal px-2 pb-2 text-right">Agiram</th>
+                  <th className="font-normal px-2 pb-2 text-right">Passou da 1ª</th>
+                  <th className="font-normal px-2 pb-2 text-right">Refrão</th>
+                  <th className="font-normal px-2 pb-2 text-right">Pagamento</th>
+                  <th className="font-normal px-2 pb-2 text-right">Pagaram</th>
+                  <th className="font-normal px-2 pb-2 text-right">Ficou</th>
+                </tr>
+              </thead>
+              <tbody>
+                {testeAB.map((l) => (
+                  <tr key={l.v} className="border-t border-white/5">
+                    <td className="px-2 py-2 text-white/80">{l.v === "A" ? "A · temas e perguntas" : "B · campo aberto"}</td>
+                    <td className="px-2 py-2 text-right text-white/80">{l.n}</td>
+                    {[l.agiram, l.passaram, l.refrao, l.pagamento, l.pagaram].map((x, i) => (
+                      <td key={i} className={`px-2 py-2 text-right ${i === 2 ? "text-white font-semibold" : "text-white/70"}`}>
+                        {x} <span className="text-white/30 font-normal">{pct(x, l.n)}</span>
+                      </td>
+                    ))}
+                    <td className="px-2 py-2 text-right text-white/70">
+                      {l.ficou === null ? "—" : `${l.ficou}s`}
+                      {l.medidas > 0 && <span className="block text-white/30 text-[11px]">{l.medidas} medidas</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-2xl border border-white/10 bg-black/40 p-6 mb-6">
         <h2 className="text-white/80 text-sm font-semibold mb-1">Por campanha</h2>

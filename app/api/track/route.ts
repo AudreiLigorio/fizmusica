@@ -3,12 +3,14 @@ import { createServerClient } from "@/lib/supabase"
 
 export const dynamic = "force-dynamic"
 
+// ab ("historia-A"/"historia-B": versão sorteada no teste do wizard
+// "campo primeiro", lib/wizardHistoria.ts) entrou em 26/11/2026.
 // saida ("12s 40%": tempo na página e rolagem ao esconder a aba) entrou em
 // 24/11/2026 à noite. ouvir_exemplo (link do topo da home) e exemplo_video (play de cada vídeo de
 // exemplo, detalhe = slug) e cta_rede (convite do SpotFiz na home) entraram
 // em 24/11/2026 — evento fora desta lista é
 // descartado em silêncio, o track() do client não acusa.
-const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "previa_letra", "checkout", "pago", "ping", "ouvir_exemplo", "exemplo_video", "cta_rede", "recepcao", "saida"])
+const EVENTOS = new Set(["pageview", "cta_criar", "wizard_passo", "previa_letra", "checkout", "pago", "ping", "ouvir_exemplo", "exemplo_video", "cta_rede", "recepcao", "saida", "ab"])
 
 // 204 não pode ter corpo: `NextResponse.json(..., { status: 204 })` lança. Como
 // isso acontecia dentro E fora do catch, a rota respondia 500 — o bloco que

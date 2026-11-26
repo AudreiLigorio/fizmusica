@@ -1,4 +1,6 @@
 import { connection } from "next/server"
+import { cookies } from "next/headers"
+import { AB_HISTORIA, decidirVarianteHistoria } from "@/lib/wizardHistoria"
 import CriarClient, { type PlanoResumo } from "./CriarClient"
 import { getWizardOccasions, type WizardOccasion } from "@/lib/wizard"
 import { createServerClient } from "@/lib/supabase"
@@ -50,8 +52,25 @@ async function dadosDaPagina(): Promise<{ initialOccasions: WizardOccasion[]; pl
   return { initialOccasions, planos }
 }
 
-export default async function CriarPage() {
+// Teste A/B do wizard "campo primeiro" (lib/wizardHistoria.ts). Decidido
+// AQUI, no servidor, pra página já chegar desenhada na versão certa. Só entra
+// quem vem de anúncio (utm_) e não está retomando pedido — a mesma regra do
+// `deFora` do CriarClient. O navegador grava o cookie depois (CriarClient).
+function varianteDoWizard(sp: Record<string, string | string[] | undefined>, cookie?: string) {
+  const um = (k: string) => { const v = sp[k]; return typeof v === "string" ? v : null }
+  return decidirVarianteHistoria({
+    elegivel: !!(um("utm_source") || um("utm_content")) && !(um("orderId") || um("sessao") || um("editar")),
+    cookie,
+    forcar: um("ab"),
+    sorteio: Math.random(),
+  })
+}
+
+export default async function CriarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await connection()
-  const { initialOccasions, planos } = await dadosDaPagina()
-  return <CriarClient initialOccasions={initialOccasions} planos={planos} />
+  const [{ initialOccasions, planos }, sp, jar] = await Promise.all([dadosDaPagina(), searchParams, cookies()])
+
+  const variante = varianteDoWizard(sp, jar.get(AB_HISTORIA.cookie)?.value)
+
+  return <CriarClient initialOccasions={initialOccasions} planos={planos} variante={variante} />
 }

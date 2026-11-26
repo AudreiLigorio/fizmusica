@@ -53,6 +53,11 @@ type SessionData = {
   honoreeName: string
   leadCaptured?: boolean
   orderId?: string
+  // Versão B do wizard ("campo primeiro", lib/wizardHistoria.ts). Ausentes =
+  // sessão da versão A (todas as sessões anteriores a 26/11/2026).
+  modoHistoria?: boolean
+  perguntaExtra?: string
+  dicaOcasiao?: string
 }
 
 import { track } from "@/lib/track"
@@ -62,6 +67,11 @@ import { confirmar } from "@/app/components/Dialogo"
 import { RITMOS } from "@/lib/ritmo"
 import { TEMA_AUTORAL } from "@/app/components/BannerOcasioes"
 import RecepcaoAnuncio from "./RecepcaoAnuncio"
+import { PrimeiraTelaHistoria, PerguntaExtraTela, TemaEntendido } from "./HistoriaB"
+import {
+  AB_HISTORIA, PERGUNTA_HISTORIA, HISTORIA_MIN, perguntasDaHistoria, ehRespostaDaHistoria,
+  type VarianteHistoria,
+} from "@/lib/wizardHistoria"
 
 const SESSION_KEY = "fizmusica_session_id"
 
@@ -190,15 +200,15 @@ function letraComNome(letra: string, nome: string): React.ReactNode {
   return out
 }
 
-export default function CriarClient({ initialOccasions, planos = [] }: { initialOccasions: WizardOccasion[]; planos?: PlanoResumo[] }) {
+export default function CriarClient({ initialOccasions, planos = [], variante = null }: { initialOccasions: WizardOccasion[]; planos?: PlanoResumo[]; variante?: VarianteHistoria | null }) {
   return (
     <Suspense fallback={null}>
-      <CriarMusicaInner initialOccasions={initialOccasions} planos={planos} />
+      <CriarMusicaInner initialOccasions={initialOccasions} planos={planos} variante={variante} />
     </Suspense>
   )
 }
 
-function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: WizardOccasion[]; planos: PlanoResumo[] }) {
+function CriarMusicaInner({ initialOccasions, planos, variante }: { initialOccasions: WizardOccasion[]; planos: PlanoResumo[]; variante: VarianteHistoria | null }) {
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -385,6 +395,36 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
 
   // Lead capture (após 3ª pergunta respondida)
   const [showLeadCapture, setShowLeadCapture] = useState(false)
+
+  // ── Versão B do teste A/B: wizard "campo primeiro" ──
+  // Regras, dados e por que nada do resto muda: lib/wizardHistoria.ts.
+  // `variante` vem do SERVIDOR (app/criar/page.tsx); null = fora do teste.
+  // `modoHistoria` é o que manda na tela: começa ligado pra quem sorteou B e
+  // desliga se a pessoa preferir o caminho guiado ("Responder perguntas") ou
+  // a letra pronta. A história mora em answers[PERGUNTA_HISTORIA]; a pergunta
+  // extra (quando a IA pede) é a 2ª pergunta e a resposta vai em
+  // answers[perguntaExtra]. Ordem dos passos na B: 1 → (2) → 3 → 5 → 4 →
+  // /produtos (os dados vêm DEPOIS do refrão).
+  const [modoHistoria, setModoHistoria] = useState(variante === "B")
+  const [perguntaExtra, setPerguntaExtra] = useState("")
+  const [dicaOcasiao, setDicaOcasiao] = useState("")
+  const [classificando, setClassificando] = useState(false)
+  // A IA não conseguiu escolher o tema: o passo 2 vira "escolha a ocasião".
+  const [temaFalhou, setTemaFalhou] = useState(false)
+  // A pessoa trocou o tema à mão: reenviar a história não sobrescreve.
+  const temaManual = useRef(false)
+  // Última história classificada: voltar e avançar sem mudar o texto não
+  // chama a IA de novo (nem troca a pergunta extra já respondida).
+  const ultimaClassificada = useRef("")
+  useEffect(() => {
+    if (!variante) return
+    // O servidor sorteou; aqui só fica gravado pra pessoa voltar na mesma
+    // versão. Cookie (e não localStorage) porque é o SERVIDOR que lê.
+    try {
+      document.cookie = `${AB_HISTORIA.cookie}=${variante}; Max-Age=${AB_HISTORIA.cookieDias * 86400}; Path=/; SameSite=Lax`
+    } catch { /* sem cookie a pessoa só pode cair na outra versão se voltar */ }
+    track("ab", `historia-${variante}`)
+  }, [variante])
   // Toda tela nova começa no topo. Além da etapa e da pergunta, entram as
   // telas que trocam SEM mudar de etapa: as subcategorias do tema (escolher
   // "Pets" abre outra lista) e o "Informe seu contato".
@@ -402,7 +442,7 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   const [teclado, setTeclado] = useState<{ h: number; top: number } | null>(null)
   // Teclado aberto numa tela cujo botão fica no meio do conteúdo: o botão vai
   // pra barra fixa logo acima do teclado (ver o rodapé mobile).
-  const barraNoTeclado = !!teclado && (showLeadCapture || step === 2)
+  const barraNoTeclado = !!teclado && (showLeadCapture || step === 2 || (modoHistoria && step === 1))
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
@@ -657,6 +697,9 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
       honoreeName,
       leadCaptured,
       orderId: orderId ?? undefined,
+      modoHistoria,
+      perguntaExtra,
+      dicaOcasiao,
       ...overrides,
     }
   }
@@ -710,6 +753,15 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     setHonoreeName(data.honoreeName ?? "")
     setLeadCaptured(data.leadCaptured ?? false)
     setOrderId(data.orderId ?? null)
+    // Versão B: a sessão guarda o modo. Retomada pelo PEDIDO (?orderId) não
+    // tem esse campo — aí o modo é reconhecido pelas próprias respostas, que
+    // chegam na ordem de `position` (história primeiro, extra depois).
+    const perguntasSalvas = Object.keys(data.answers ?? {})
+    const modo = data.modoHistoria ?? ehRespostaDaHistoria(perguntasSalvas)
+    setModoHistoria(modo)
+    setPerguntaExtra(data.perguntaExtra ?? (modo ? (perguntasSalvas[1] ?? "") : ""))
+    setDicaOcasiao(data.dicaOcasiao ?? "")
+    ultimaClassificada.current = modo ? `${data.answers?.[PERGUNTA_HISTORIA] ?? ""}|${data.dicaOcasiao ?? ""}` : ""
     // orderId só entra na sessão DEPOIS que handleFinalizar cria o pedido, o que
     // exige termsAccepted=true naquele momento — ou seja, se há orderId, os termos
     // já foram aceitos de verdade. Sem isso, o resumo da etapa 5 volta pedindo pra
@@ -742,6 +794,12 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     setOrderId(null)
     setLeadCaptured(false)
     setShowLeadCapture(false)
+    setModoHistoria(variante === "B")
+    setPerguntaExtra("")
+    setDicaOcasiao("")
+    setTemaFalhou(false)
+    temaManual.current = false
+    ultimaClassificada.current = ""
     const newId = crypto.randomUUID()
     initSession(newId)
   }
@@ -797,11 +855,14 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   /* ================================================= */
 
   const questions = useMemo((): string[] => {
+    // Versão B: as perguntas são a história + a extra (se houver), não as do
+    // subtema. Mesma lista que o servidor usa pra ordenar a prévia.
+    if (modoHistoria) return perguntasDaHistoria(perguntaExtra)
     if (!selectedContext || !selectedSubcategory) return []
     const occasion = occasions.find((o) => o.label === selectedContext)
     const sub = occasion?.wizard_subcategories.find((s) => s.label === selectedSubcategory)
     return sub?.wizard_questions.map((q) => q.label) ?? []
-  }, [selectedContext, selectedSubcategory, occasions])
+  }, [selectedContext, selectedSubcategory, occasions, modoHistoria, perguntaExtra])
 
   const currentQuestion = questions[questionStep]
 
@@ -837,8 +898,13 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
   ) : null
   const internalQuestionProgress =
     step === 2 ? questionStep / Math.max(questions.length, 1) : 0
-  const progress =
-    ((step - 1 + internalQuestionProgress) / totalSteps) * 100
+  // Versão B: 4 etapas na ordem em que a pessoa as vê (o passo 4 do código,
+  // dados, vem DEPOIS do 5, refrão). [número mostrado, nome].
+  const etapaHistoria: [number, string] =
+    step === 3 ? [2, "Estilo"] : step === 5 ? [3, "Refrão"] : step === 4 ? [4, "Seus dados"] : [1, "Sua história"]
+  const progress = modoHistoria
+    ? ((etapaHistoria[0] - 1 + (step === 2 ? 0.5 : 0)) / 4) * 100
+    : ((step - 1 + internalQuestionProgress) / totalSteps) * 100
 
   function clicarEstilo(item: string) {
     setMusicalStyle(musicalStyle === item ? "" : item)
@@ -969,6 +1035,22 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
       }
     }
 
+    // Versão B, passo 2: tema escolhido (pela IA ou à mão) e, se houver, a
+    // pergunta extra respondida. Depois vai pro estilo, como na A.
+    if (modoHistoria && step === 2) {
+      if (!selectedContext || !selectedSubcategory) {
+        mostrarErro("Escolha a ocasião da música.", "secao-tema")
+        return
+      }
+      if (perguntaExtra && (answers[perguntaExtra] ?? "").trim().length < 3) {
+        mostrarErro("Responda a pergunta ou toque em “Pular esta pergunta”.", "campo-pergunta-extra")
+        return
+      }
+      setStep(3)
+      saveSession(buildSessionData({ step: 3 }), 3)
+      return
+    }
+
     if (step === 2) {
       if (!answers[currentQuestion] || answers[currentQuestion].trim().length < 3) {
         mostrarErro("Responda a pergunta para continuar.")
@@ -998,6 +1080,12 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
         return
       }
       setFaltaNoEstilo(null)
+      // Versão B: do estilo vai SEMPRE pro refrão; os dados vêm depois dele.
+      if (modoHistoria) {
+        setStep(5)
+        saveSession(buildSessionData({ step: 5 }), 5)
+        return
+      }
       // Nada a preencher no passo 4: vai direto ao resumo, onde os dados
       // aparecem e podem ser corrigidos.
       if (dadosDeContatoOk) {
@@ -1032,6 +1120,12 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
         mostrarErro("Confira o WhatsApp: use DDD + número, ex. (11) 91234-5678.", "campo-whatsapp")
         return
       }
+      // Versão B: os dados são a ÚLTIMA tela do wizard (vêm depois do
+      // refrão). Validados, cria o pedido e segue pro /produtos, igual à A.
+      if (modoHistoria) {
+        handleFinalizar()
+        return
+      }
     }
 
     const nextSt = step + 1
@@ -1049,6 +1143,14 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     // sem saída).
     if (step === 1) {
       router.push("/")
+      return
+    }
+    // Versão B, de ré: dados(4) → refrão(5) → estilo(3) → pergunta(2, se
+    // existiu) → história(1).
+    if (modoHistoria) {
+      const alvo = step === 4 ? 5 : step === 5 ? 3 : step === 3 ? (perguntaExtra || temaFalhou ? 2 : 1) : 1
+      setStep(alvo)
+      saveSession(buildSessionData({ step: alvo }), alvo)
       return
     }
     // Volta pulando o passo 4 pelo mesmo motivo que a ida pula: se não havia
@@ -1101,7 +1203,7 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     setTimeout(() => { voltandoPeloSistema.current = false }, 400)
     if (showLeadCapture) { setShowLeadCapture(false); return }
     if (step === 1) {
-      if (selectedContext) { setSelectedContext(""); return }
+      if (selectedContext && !modoHistoria) { setSelectedContext(""); return }
       // Depois do Next restaurar /criar (ele também trata o "voltar"); no
       // mesmo instante a restauração dele vencia e a pessoa ficava aqui.
       setTimeout(() => router.replace("/minha-musica?aba=musicas"), 80)
@@ -1145,6 +1247,10 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
     setSelectedSubcategory(sub.label)
     setQuestionStep(0)
     setAnswers({})
+    // Escolher tema/subtema é o caminho guiado (versão A), mesmo pra quem
+    // sorteou B e preferiu "Responder perguntas" ou "Já tem a letra pronta".
+    setModoHistoria(false)
+    setPerguntaExtra("")
 
     // Entrar na composição livre APAGA o homenageado. Dá pra escolher uma
     // homenagem, digitar o nome, voltar ao passo 1 e trocar pra autoral — e o
@@ -1173,12 +1279,125 @@ function CriarMusicaInner({ initialOccasions, planos }: { initialOccasions: Wiza
           answers: {},
           selectedContext: contextLabel,
           selectedSubcategory: sub.label,
+          modoHistoria: false,
+          perguntaExtra: "",
           ...(viraComposicao ? { honoreeName: "" } : {}),
         }),
         2,
         sid!,
       )
     }, 150)
+  }
+
+  /* ================================================= */
+  /* VERSÃO B: história → tema pela IA → pergunta extra */
+  /* ================================================= */
+
+  const historia = answers[PERGUNTA_HISTORIA] ?? ""
+  const setHistoria = (fn: (atual: string) => string) =>
+    setAnswers((prev) => ({ ...prev, [PERGUNTA_HISTORIA]: fn(prev[PERGUNTA_HISTORIA] ?? "") }))
+
+  async function enviarHistoria() {
+    if (classificando) return
+    setError("")
+    const nomeH = honoreeName.trim()
+    const hist = historia.trim()
+    if (nomeH.length < 2) { mostrarErro("Falta o nome de quem vai receber a música.", "campo-homenageado"); return }
+    if (hist.length < HISTORIA_MIN) { mostrarErro("Conte um pouco mais: uma ou duas frases já ajudam.", "campo-historia"); return }
+
+    let sid = sessionId
+    if (!sid) {
+      sid = crypto.randomUUID()
+      initSession(sid)
+    }
+
+    // Mesma história (e mesma dica) já classificada: segue sem chamar a IA.
+    const chave = `${hist}|${dicaOcasiao}`
+    if (chave === ultimaClassificada.current && selectedContext) {
+      const proximo = perguntaExtra || temaFalhou ? 2 : 3
+      setStep(proximo)
+      saveSession(buildSessionData({ step: proximo }), proximo, sid)
+      return
+    }
+
+    setClassificando(true)
+    let r: { ok?: boolean; context?: string; subcategory?: string; pergunta?: string | null } | null = null
+    try {
+      const res = await fetch("/api/wizard/historia", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ historia: hist, nome: nomeH, dica: dicaOcasiao || null }),
+      })
+      r = await res.json().catch(() => null)
+    } catch { /* cai no "escolha a ocasião" */ }
+    setClassificando(false)
+
+    const deuCerto = !!(r?.ok && r.context && r.subcategory)
+    track("recepcao", deuCerto ? "historia_enviada" : "historia_tema_falhou")
+    let ctx = selectedContext
+    let sub = selectedSubcategory
+    if (deuCerto && !temaManual.current) { ctx = r!.context!; sub = r!.subcategory! }
+    const extra = deuCerto ? (r!.pergunta ?? "").trim() : ""
+    // Pergunta nova = resposta antiga não serve mais (era de outra pergunta).
+    const respostas: Record<string, string> = { [PERGUNTA_HISTORIA]: hist }
+    if (extra && extra === perguntaExtra && answers[extra]) respostas[extra] = answers[extra]
+
+    ultimaClassificada.current = chave
+    const falhou = !ctx || !sub
+    setSelectedContext(ctx)
+    setSelectedSubcategory(sub)
+    setPerguntaExtra(extra)
+    setAnswers(respostas)
+    setTemaFalhou(falhou)
+    if (extra) track("recepcao", "pergunta_extra")
+
+    const proximo = extra || falhou ? 2 : 3
+    setStep(proximo)
+    saveSession(buildSessionData({
+      step: proximo,
+      selectedContext: ctx,
+      selectedSubcategory: sub,
+      perguntaExtra: extra,
+      answers: respostas,
+      honoreeName: nomeH,
+      modoHistoria: true,
+    }), proximo, sid)
+  }
+
+  function pularPerguntaExtra() {
+    track("recepcao", "pergunta_pulada")
+    const respostas = { ...answers }
+    delete respostas[perguntaExtra]
+    setAnswers(respostas)
+    setPerguntaExtra("")
+    if (!selectedContext || !selectedSubcategory) { mostrarErro("Escolha a ocasião da música.", "secao-tema"); return }
+    setStep(3)
+    saveSession(buildSessionData({ step: 3, perguntaExtra: "", answers: respostas }), 3)
+  }
+
+  function trocarTema(ctx: string, sub: string) {
+    track("recepcao", "tema_trocado")
+    temaManual.current = true
+    setSelectedContext(ctx)
+    setSelectedSubcategory(sub)
+    setTemaFalhou(false)
+    saveSession(buildSessionData({ selectedContext: ctx, selectedSubcategory: sub }), step)
+  }
+
+  // "Prefere que a gente pergunte?": volta ao caminho guiado (temas). Conta
+  // como B no teste (a pessoa viu a tela nova), mas segue o fluxo da A.
+  function irParaGuiado() {
+    track("recepcao", "historia_guiado")
+    setModoHistoria(false)
+    setPerguntaExtra("")
+    contentRef.current?.scrollTo({ top: 0 })
+  }
+
+  // Refrão visto (ou não deu pra gerar): na B a próxima tela são os dados.
+  function irParaDadosB() {
+    track("recepcao", "historia_quero")
+    setStep(4)
+    saveSession(buildSessionData({ step: 4 }), 4)
   }
 
   /* ================================================= */
@@ -1295,7 +1514,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
   // Recepção do anúncio na tela: sem barra de etapas, "Etapa 1 de 5" nem
   // Voltar — para quem ainda está decidindo se quer, aquilo era formulário
   // (e o Voltar, a saída mais à mão). Volta tudo ao escolher o tema.
-  const naRecepcao = deFora && !selectedContext && !resumeBanner && step === 1 && !showLeadCapture
+  const naRecepcao = deFora && !modoHistoria && variante !== "B" && !selectedContext && !resumeBanner && step === 1 && !showLeadCapture
+  // A 1ª tela da B também não leva barra de etapas nem Voltar: é a chegada
+  // do anúncio, pelo mesmo motivo da recepção acima.
+  const semCabecalho = naRecepcao || (modoHistoria && step === 1 && !showLeadCapture && !resumeBanner)
 
   /* ================================================= */
   /* RENDER                                            */
@@ -1333,12 +1555,12 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
         </div>
 
         {/* ── Jornada completa (todas as páginas) ── */}
-        <div className={`shrink-0 border-b border-white/[0.06] px-4 ${teclado ? "hidden" : ""} ${naRecepcao ? "max-lg:hidden" : ""}`}>
+        <div className={`shrink-0 border-b border-white/[0.06] px-4 ${teclado ? "hidden" : ""} ${semCabecalho ? "max-lg:hidden" : ""}`}>
           <JourneyProgress current={1} />
         </div>
 
         {/* ── Mobile: barra de progresso + topo ── */}
-        <div className={`lg:hidden shrink-0 ${naRecepcao ? "hidden" : ""}`}>
+        <div className={`lg:hidden shrink-0 ${semCabecalho ? "hidden" : ""}`}>
           <div className="h-1 w-full" style={{ background: "rgba(255,255,255,0.08)" }}>
             <div className="h-full transition-all duration-500"
                  style={{ width: `${progress}%`, background: "linear-gradient(90deg, #f0196b, #d946ef)" }} />
@@ -1353,7 +1575,9 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 telas sem ver nada andar. Este rótulo mostra o avanço dentro
                 do wizard. */}
             <span className="text-[13px] font-medium text-white/55">
-              Etapa {step} de {totalSteps} · {ETAPAS_WIZARD[step - 1]}
+              {modoHistoria
+                ? <>Etapa {etapaHistoria[0]} de 4 · {etapaHistoria[1]}</>
+                : <>Etapa {step} de {totalSteps} · {ETAPAS_WIZARD[step - 1]}</>}
             </span>
             {noApp ? (
               <button onClick={sairDoWizard} aria-label="Sair da criação"
@@ -1627,8 +1851,30 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             </div>
           )}
 
+          {/* ===== STEP 1 (versão B) — Para quem + a história ===== */}
+          {!showLeadCapture && step === 1 && modoHistoria && (
+            <PrimeiraTelaHistoria
+              honoreeName={honoreeName}
+              setHonoreeName={setHonoreeName}
+              historia={historia}
+              setHistoria={setHistoria}
+              dica={dicaOcasiao}
+              setDica={setDicaOcasiao}
+              enviando={classificando}
+              esconderBotao={barraNoTeclado}
+              onContinuar={enviarHistoria}
+              onGuiado={irParaGuiado}
+              onLetraPronta={composicaoLivre && composicaoLivre.wizard_subcategories[0]
+                ? () => {
+                    track("recepcao", "porta_autoral")
+                    handleSubcategoryClick(composicaoLivre.wizard_subcategories[0], composicaoLivre.label)
+                  }
+                : undefined}
+            />
+          )}
+
           {/* ===== STEP 1 — Ocasião ===== */}
-          {!showLeadCapture && step === 1 && (
+          {!showLeadCapture && step === 1 && !modoHistoria && (
             <div>
               {naRecepcao && <RecepcaoAnuncio onCriar={irParaTemas} />}
               <div ref={temasRef} className="mb-5 scroll-mt-4">
@@ -1781,8 +2027,21 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             </div>
           )}
 
+          {/* ===== STEP 2 (versão B) — Tema entendido + pergunta extra ===== */}
+          {!showLeadCapture && step === 2 && modoHistoria && (
+            <PerguntaExtraTela
+              tema={<TemaEntendido temas={temas} context={selectedContext} subcategory={selectedSubcategory} obrigatorio={temaFalhou} onTrocar={trocarTema} />}
+              pergunta={perguntaExtra}
+              resposta={answers[perguntaExtra] ?? ""}
+              setResposta={(fn) => setAnswers((prev) => ({ ...prev, [perguntaExtra]: fn(prev[perguntaExtra] ?? "") }))}
+              esconderBotao={barraNoTeclado}
+              onContinuar={nextStep}
+              onPular={pularPerguntaExtra}
+            />
+          )}
+
           {/* ===== STEP 2 — Perguntas ===== */}
-          {!showLeadCapture && step === 2 && (
+          {!showLeadCapture && step === 2 && !modoHistoria && (
             <div>
               <div className="mb-5">
                 <h1 className="text-xl font-bold tracking-tight">Vamos criar algo inesquecível</h1>
@@ -1857,6 +2116,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           {/* ===== STEP 3 — Estilo musical ===== */}
           {!showLeadCapture && step === 3 && (
             <div>
+              {/* Na B, o tema escolhido pela IA fica à vista (e trocável)
+                  também aqui: sem pergunta extra, esta é a 1ª tela depois
+                  da história. */}
+              {modoHistoria && (
+                <div className="mb-4">
+                  <TemaEntendido temas={temas} context={selectedContext} subcategory={selectedSubcategory} onTrocar={trocarTema} />
+                </div>
+              )}
               <div className="mb-4">
                 <h1 className="text-xl font-bold tracking-tight">Defina o estilo</h1>
               </div>
@@ -1971,8 +2238,11 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             <div>
               <div className="mb-5">
                 <h1 className="text-xl font-bold tracking-tight">
-                  {leadCaptured && nome ? "Confirme seus dados para o envio" : "Preencha os dados para o envio"}
+                  {modoHistoria ? "Para onde mandamos a música?" : leadCaptured && nome ? "Confirme seus dados para o envio" : "Preencha os dados para o envio"}
                 </h1>
+                {modoHistoria && (
+                  <p className="text-white/50 text-sm mt-1">Ela fica pronta em poucos minutos depois do pagamento.</p>
+                )}
                 {leadCaptured && nome && (
                   <p className="text-white/50 text-sm mt-1">Seus dados foram preenchidos automaticamente ✓</p>
                 )}
@@ -2060,7 +2330,8 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   aqui dizia "(opcional)" na autoral, mas opcional não bastava:
                   o campo continuava convidando, e o que entrava nele ia parar
                   no player como destinatário. */}
-              {!ehComposicao && (
+              {/* Na B o nome de quem recebe já foi pedido na 1ª tela. */}
+              {!ehComposicao && !modoHistoria && (
               <div className="mt-5 rounded-2xl p-5" style={{ background: "rgba(240,25,107,0.06)", border: "1px solid rgba(240,25,107,0.2)" }}>
                 <label className="text-sm font-semibold flex items-center gap-2 mb-1" style={{ color: "#f0196b" }}>
                   🎵 Para quem é essa música?
@@ -2094,7 +2365,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           {!showLeadCapture && step === 5 && (
             <div>
               <div className="mb-5">
-                <h1 className="text-xl font-bold tracking-tight">Confira o resumo antes de finalizar</h1>
+                <h1 className="text-xl font-bold tracking-tight">{modoHistoria ? "Veja como ficou" : "Confira o resumo antes de finalizar"}</h1>
               </div>
 
               {/* Mesmos cards de sempre, só menores e sem o brilho: o glow
@@ -2181,7 +2452,10 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 </div>
               )}
 
-              {/* ── Conferência: sempre disponível, em qualquer estado ── */}
+              {/* ── Conferência: sempre disponível, em qualquer estado ──
+                  Fora na B: ali ainda não há dados pra conferir nem corrigir
+                  (eles vêm na tela seguinte). */}
+              {!modoHistoria && (
               <div className="border-t border-white/10 pt-3 mb-2">
                 <button
                   onClick={() => setDadosAbertos(!dadosAbertos)}
@@ -2213,6 +2487,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                   </>
                 )}
               </div>
+              )}
 
             </div>
           )}
@@ -2224,7 +2499,9 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
             {/* Botões de navegação — desktop */}
             {!showLeadCapture && (
               <>
-              {step === 5 && (
+              {/* Termos: junto do botão que cria o pedido. Na A é o resumo
+                  (5); na B, a tela de dados (4), que vem depois do refrão. */}
+              {(modoHistoria ? step === 4 : step === 5) && (
                 <label id="aceite-termos" className="flex items-start gap-3 mt-8 cursor-pointer max-w-2xl scroll-mt-6 lg:scroll-mt-28">
                   <input
                     type="checkbox"
@@ -2258,14 +2535,23 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     ← Voltar
                   </button>
                 ) : <div />}
-                {step > 1 && step < 5 && (
-                  <button onClick={nextStep}
-                          className="transition-all px-9 py-3.5 rounded-2xl text-base font-semibold text-white"
+                {step > 1 && step < 5 && !(modoHistoria && step === 2) && (
+                  <button onClick={nextStep} disabled={submitting}
+                          className="transition-all px-9 py-3.5 rounded-2xl text-base font-semibold text-white disabled:opacity-60 flex items-center gap-3"
                           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
-                    Continuar →
+                    {modoHistoria && step === 4
+                      ? (submitting ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Enviando…</> : "Finalizar e escolher produto →")
+                      : "Continuar →"}
                   </button>
                 )}
-                {step === 5 && (
+                {step === 5 && modoHistoria && (
+                  <button onClick={irParaDadosB}
+                          className="transition-all px-9 py-3.5 rounded-2xl text-base font-semibold text-white"
+                          style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
+                    Quero a música completa →
+                  </button>
+                )}
+                {step === 5 && !modoHistoria && (
                   <button onClick={handleFinalizar} disabled={submitting}
                           className="transition-all px-9 py-3.5 rounded-2xl text-base font-semibold text-white disabled:opacity-60 flex items-center gap-3"
                           style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
@@ -2306,10 +2592,22 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                 Salvar e continuar →
               </button>
             ) : step < 5 ? (
-              <button onClick={nextStep} onMouseDown={(e) => { if (teclado) e.preventDefault() }}
-                      className={`w-full rounded-2xl text-base font-semibold text-white ${teclado ? "py-3" : "py-4"}`}
+              // Na B: 1ª tela (só aparece aqui com o teclado aberto) envia a
+              // história; a tela de dados (4) é a última e cria o pedido.
+              <button onClick={modoHistoria && step === 1 ? enviarHistoria : nextStep}
+                      onMouseDown={(e) => { if (teclado) e.preventDefault() }}
+                      disabled={submitting || classificando}
+                      className={`w-full rounded-2xl text-base font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-3 ${teclado ? "py-3" : "py-4"}`}
                       style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 20px rgba(240,25,107,0.35)" }}>
-                Continuar →
+                {submitting || classificando
+                  ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{classificando ? "Lendo a sua história…" : "Enviando…"}</>
+                  : modoHistoria && step === 4 ? "Finalizar e escolher produto →" : "Continuar →"}
+              </button>
+            ) : modoHistoria ? (
+              <button onClick={irParaDadosB}
+                      className="w-full py-4 rounded-2xl text-base font-semibold text-white"
+                      style={{ background: "linear-gradient(135deg, #f0196b, #d946ef)", boxShadow: "0 4px 24px rgba(240,25,107,0.4)" }}>
+                Quero a música completa →
               </button>
             ) : (
               <button onClick={handleFinalizar} disabled={submitting}

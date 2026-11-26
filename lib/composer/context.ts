@@ -1,4 +1,5 @@
 import { createServerClient } from "@/lib/supabase"
+import { perguntasDaHistoria } from "@/lib/wizardHistoria"
 
 type Campos = {
   context: string | null
@@ -65,6 +66,10 @@ export type SessionWizardData = {
   voiceType?: string
   emotion?: string
   honoreeName?: string
+  // Versão B do wizard ("campo primeiro"): as perguntas não vêm do catálogo
+  // do subtema, e sim de lib/wizardHistoria.ts. Ver o comentário de lá.
+  modoHistoria?: boolean
+  perguntaExtra?: string
 }
 
 // Mesma coisa, porém a partir da sessão do wizard — usado pela prévia da letra,
@@ -85,6 +90,24 @@ export async function buildSessionContext(data: SessionWizardData): Promise<stri
   const respostas = data.answers
 
   let ordem: string[] = []
+
+  // Versão B: a ordem é a da própria B (história, depois a pergunta extra se
+  // houver) — a MESMA que o wizard usa em `position` ao criar o pedido. O
+  // tema/subtema continua vindo do catálogo (a IA escolhe entre os labels
+  // reais), só as perguntas é que não são as do subtema.
+  if (data.modoHistoria) {
+    return formatarContexto(
+      {
+        context: data.selectedContext,
+        subcategory: data.selectedSubcategory ?? null,
+        musicalStyle: data.musicalStyle ?? null,
+        voiceType: data.voiceType ?? null,
+        emotion: data.emotion ?? null,
+        honoreeName: data.honoreeName?.trim() || null,
+      },
+      perguntasDaHistoria(data.perguntaExtra).map((q) => ({ question: q, answer: respostas[q] ?? "" }))
+    )
+  }
 
   const { data: ocasioes } = await supabase
     .from("wizard_occasions")

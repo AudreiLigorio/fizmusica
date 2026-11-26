@@ -155,6 +155,43 @@ Fonte da verdade é o **`orderId`** (não só `localStorage`, que some em navega
 - Banner na home (`ResumeMusicBanner`) aparece se há sessão local.
 - E-mail de recuperação (cron, pedidos UNPAID 4h–7d) aponta pra `/criar?orderId=X` (cross-device).
 
+### 6.4 Teste A/B do wizard: "campo primeiro" (versão B) — no ar desde 2026-11-26
+
+**Por quê.** Em 24-25/11 o anúncio pamela-v4 trouxe ~230 visitas ao wizard e só 4 passaram da 1ª tela (mediana de saída: 3 s, quase ninguém rolava). Quem chegava direto (sem anúncio) ia bem até o fim (28 começaram → 11 pagaram em 45 dias). Ou seja: a jornada não é longa demais, o problema é a **primeira ação**. A B troca a escolha de tema por um campo aberto, como fazem concorrentes.
+
+**Quem entra.** Só quem chega no `/criar` com `utm_` (anúncio) e **não** está retomando pedido (`orderId`/`sessao`/`editar`). Metade cai na A, metade na B. Visita pela home, app ou e-mail: sempre A.
+
+**As duas versões** (passos internos do wizard entre parênteses):
+
+| A (de sempre) | B (campo primeiro) |
+|---|---|
+| Recepção (banner da Pâmela) → tema → subtema (1) | Para quem é + "Conte a história" + dica de ocasião opcional + microfone (1) |
+| 2-3 perguntas fixas do subtema (2) | Tema escolhido pela IA, trocável; **uma** pergunta escrita pela IA **só se** a história vier curta (2) |
+| Estilo (3) | Estilo, **igual** (3) |
+| Dados (4) | Refrão, **igual** (5) |
+| Resumo + refrão + termos (5) | Dados + termos, **iguais** (4) — **depois** do refrão |
+| /produtos → checkout | /produtos → checkout, **iguais** |
+
+**Por que a B não quebra nada.** Ela grava os **mesmos campos** que a A (`context` e `subcategory` com os labels **reais** do catálogo, `answers`, estilo, dados). Só muda quais perguntas existem: `"Conte a história"` (constante `PERGUNTA_HISTORIA`) e, se houver, a pergunta extra da IA — gravadas em `order_answers` com `position` 0 e 1. A ordem é definida num lugar só (`perguntasDaHistoria()` em `lib/wizardHistoria.ts`), usado pelo wizard e por `buildSessionContext` (`lib/composer/context.ts`). Resultado: o contexto da prévia e o do pedido saem **iguais byte a byte**, e a letra da prévia é reaproveitada no pagamento (`aproveitarPrevia.ts`). Letra pós-pagamento, Suno, admin e player não mudam.
+
+**Arquivos.**
+- `lib/wizardHistoria.ts` — regras, constantes, sorteio, **chave liga/desliga** (`AB_HISTORIA.ativo`) e fração (`fracaoB`).
+- `app/criar/page.tsx` — sorteio **no servidor** (cookie `fm_ab_historia`, 30 dias). No navegador a página chegaria como A e trocaria pra B depois do JS, justamente nos segundos em que o anúncio perde gente.
+- `app/criar/HistoriaB.tsx` — só a apresentação das duas telas novas (+ faixa do exemplo da Pâmela e a troca de tema).
+- `app/criar/CriarClient.tsx` — estado `modoHistoria`, `perguntaExtra`, `dicaOcasiao`; navegação da B em `nextStep`/`prevStep`; `enviarHistoria`, `pularPerguntaExtra`, `trocarTema`, `irParaGuiado`, `irParaDadosB`. A sessão grava `modoHistoria`/`perguntaExtra`/`dicaOcasiao`; retomada por `?orderId` reconhece a B pelas próprias respostas (`ehRespostaDaHistoria`).
+- `app/api/wizard/historia/route.ts` + `lib/composer/classificarHistoria.ts` — Gemini escolhe o **número** da opção do catálogo (nunca escreve label) e decide a pergunta extra (nunca acima de 600 caracteres de história). Teto por IP/dia na mesma tabela da prévia (`preview_rate_limit`, chave separada). Falhou → a tela pede a ocasião numa lista; a jornada nunca trava. Leva ~2 s.
+- `app/admin/comportamento/page.tsx` — tabela "Teste A/B do wizard".
+
+**Medição.** Evento `ab` (`historia-A`/`historia-B`, liberado em `/api/track`) marca a versão. `recepcao` ganhou detalhes da B: `historia_digitou` (sinal precoce), `historia_ouvir`, `historia_enviada`, `historia_tema_falhou`, `pergunta_extra`, `pergunta_pulada`, `tema_trocado`, `historia_guiado`, `historia_quero`. **Métrica que decide: viram o refrão.** Regras combinadas: rodar 7 dias sem parar antes; até 2 refrões grátis por pessoa (`preview_max_session`, já existia); rodada 2 = B com os dados ANTES do refrão, pra isolar o efeito dos dados.
+
+**Saídas da B para o caminho de sempre.** "Prefere que a gente pergunte? Responder perguntas" e "Já tem a letra pronta? Cole aqui" desligam o modo e seguem a A (contam como B no teste: a pessoa viu a tela nova).
+
+**Testes feitos antes de subir (local, envio do pedido interceptado no navegador):** B completa (história curta → pergunta extra → estilo → refrão → dados → payload), assinatura do contexto do pedido = assinatura da prévia (A e B); voltar em toda a B (4→5→3→2→1) preservando texto; avançar sem mudar o texto não chama a IA; trocar tema; pular pergunta; retomada por `?sessao=`; A completa igual a antes; HTML do servidor por versão (B não pisca como A); sorteio ~50/50; tema claro e escuro; `next build`. **Não testado:** pedido real criado pela B no banco (só o payload) e retomada por `?orderId` de um pedido B.
+
+**Desligar:** `AB_HISTORIA.ativo = false` em `lib/wizardHistoria.ts` → todos voltam à A na próxima visita; sessões B em andamento continuam funcionando.
+
+**Relacionado (25/11):** o `/criar` passou a ser renderizado no servidor por pedido (`connection()` em `app/criar/page.tsx`, ocasiões e planos em cache de 5 min na memória). Antes o HTML chegava com o `<body>` vazio e a tela só aparecia depois de ~500 KB de JS.
+
 ---
 
 ## 7. Rotas (resumo)
@@ -167,7 +204,7 @@ Fonte da verdade é o **`orderId`** (não só `localStorage`, que some em navega
 
 ### 7.3 APIs principais
 
-**Pedidos/jornada:** `POST/GET /api/orders`, `GET/PATCH /api/orders/[id]`, `GET /api/orders/[id]/status`, `POST /api/orders/[id]/fotos`, `POST /api/orders/[id]/contestar`, `POST /api/orders/[id]/aceitar-entrega`, `GET/PUT /api/wizard-session`, `GET /api/wizard`, `GET /api/produtos`, `GET /api/preparar/[token]`.
+**Pedidos/jornada:** `POST/GET /api/orders`, `GET/PATCH /api/orders/[id]`, `GET /api/orders/[id]/status`, `POST /api/orders/[id]/fotos`, `POST /api/orders/[id]/contestar`, `POST /api/orders/[id]/aceitar-entrega`, `GET/PUT /api/wizard-session`, `GET /api/wizard`, `POST /api/wizard/previa-letra` (refrão antes de pagar), `POST /api/wizard/historia` (versão B: tema e pergunta extra pela IA — §6.4), `GET /api/produtos`, `GET /api/preparar/[token]`.
 
 **Letra por IA:** `GET/POST /api/orders/[id]/letra`, `POST /api/orders/[id]/letra/gerar`, `POST /api/orders/[id]/letra/reprocessar`, `POST /api/orders/[id]/letra/aprovar`.
 
@@ -446,6 +483,7 @@ Levantamento feito a pedido do Audrei, com números medidos em produção — n�
 - **Revisão legal:** Política de Privacidade citar a exclusão de conta pelo próprio cliente (e o login com Facebook, quando voltar).
 - **App Android** — ver seção 22 e `docs/app-android.md`. Base e exclusão de conta no ar; aguardando verificação do Play Console. Decisões em aberto: preço no app, descontos no app, iPhone.
 - Revisão jurídica final por advogado dos textos legais atualizados (IA na produção, licença, privacidade).
+- **Revisão legal (teste A/B do wizard, 2026-11-26, §6.4):** na versão B a história e o nome do homenageado vão ao Gemini (classificar o tema e gerar o refrão) ANTES de qualquer dado de contato e do aceite dos termos, que agora ficam na tela de dados, depois do refrão. Na A a prévia também já rodava antes do aceite (passo 5), mas a B adiciona uma chamada nova (`/api/wizard/historia`). Conferir se a Política de Privacidade cobre o uso de IA na criação ANTES da contratação.
 
 ## 21. Publicação nas redes (agentes de conteúdo)
 
