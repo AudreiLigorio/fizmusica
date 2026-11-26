@@ -1631,13 +1631,14 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
           {!showLeadCapture && step === 1 && (
             <div>
               {naRecepcao && <RecepcaoAnuncio onCriar={irParaTemas} />}
-              <div ref={temasRef} className="mb-8 scroll-mt-4">
-                <h1 className="text-2xl lg:text-3xl font-bold mb-1 tracking-tight">
-                  Qual história você quer transformar em música?
+              <div ref={temasRef} className="mb-5 scroll-mt-4">
+                {/* Quem vem de anúncio veio pelo presente: o título manda
+                    escolher a ocasião. Quem vem pela home vê também a porta do
+                    compositor, que não é "ocasião" — pra esse segue a pergunta
+                    aberta (posicionamento: música pra qualquer história). */}
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+                  {deFora ? "Escolha a ocasião da sua música" : "Qual história você quer transformar em música?"}
                 </h1>
-                <p className="text-white/55 text-[15px]">
-                  Escolha por onde começar.
-                </p>
               </div>
 
               {/* Duas portas, não uma lista de sete.
@@ -1751,7 +1752,7 @@ WHATSAPP: ${whatsapp}${honoreeName ? `\nHOMENAGEADO: ${honoreeName}` : ""}`
                     ) : (
                       <>
                         <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
-                          Escolha o tema. A gente faz as perguntas e escreve a letra com você.
+                          Você conta, a gente escreve a letra.
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           {temas.map((occasion) => (
